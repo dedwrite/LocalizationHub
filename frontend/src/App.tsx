@@ -13,6 +13,7 @@ function App() {
   const [entries, setEntries] = useState<TranslationEntry[]>([])
   const [fileName, setFileName] = useState('')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const translatedCount = entries.filter(
     (entry) => entry.translation.trim() !== '',
@@ -25,6 +26,20 @@ function App() {
 
   const selectedEntry =
     entries.find((entry) => entry.key === selectedKey) ?? null
+
+  const normalizedSearch = searchQuery.trim().toLowerCase()
+
+  const filteredEntries = entries.filter((entry) => {
+    if (!normalizedSearch) {
+      return true
+    }
+
+    return (
+      entry.key.toLowerCase().includes(normalizedSearch) ||
+      entry.source.toLowerCase().includes(normalizedSearch) ||
+      entry.translation.toLowerCase().includes(normalizedSearch)
+    )
+  })
 
   async function handleOpenFile() {
     const selected = await open({
@@ -70,6 +85,7 @@ function App() {
 
       setEntries(parsedEntries)
       setSelectedKey(parsedEntries[0].key)
+      setSearchQuery('')
 
       const normalizedPath = selected.replace(/\\/g, '/')
       const name = normalizedPath.split('/').pop() ?? selected
@@ -166,43 +182,61 @@ function App() {
           <div className="sidebar-header">
             <div>
               <strong>Entries</strong>
+
               <span>
-                {entries.length.toLocaleString()} strings
+                {filteredEntries.length.toLocaleString()} /{' '}
+                {entries.length.toLocaleString()}
               </span>
             </div>
+
+            <input
+              className="search-input"
+              type="text"
+              value={searchQuery}
+              onChange={(event) =>
+                setSearchQuery(event.target.value)
+              }
+              placeholder="Search keys or text..."
+            />
           </div>
 
           <div className="entry-list">
-            {entries.map((entry) => {
-              const isTranslated =
-                entry.translation.trim() !== ''
+            {filteredEntries.length > 0 ? (
+              filteredEntries.map((entry) => {
+                const isTranslated =
+                  entry.translation.trim() !== ''
 
-              const isSelected =
-                entry.key === selectedKey
+                const isSelected =
+                  entry.key === selectedKey
 
-              return (
-                <button
-                  type="button"
-                  key={entry.key}
-                  className={`entry-item ${
-                    isSelected ? 'selected' : ''
-                  }`}
-                  onClick={() =>
-                    setSelectedKey(entry.key)
-                  }
-                >
-                  <span
-                    className={`status-dot ${
-                      isTranslated ? 'translated' : ''
+                return (
+                  <button
+                    type="button"
+                    key={entry.key}
+                    className={`entry-item ${
+                      isSelected ? 'selected' : ''
                     }`}
-                  />
+                    onClick={() =>
+                      setSelectedKey(entry.key)
+                    }
+                  >
+                    <span
+                      className={`status-dot ${
+                        isTranslated ? 'translated' : ''
+                      }`}
+                    />
 
-                  <span className="entry-key">
-                    {entry.key}
-                  </span>
-                </button>
-              )
-            })}
+                    <span className="entry-key">
+                      {entry.key}
+                    </span>
+                  </button>
+                )
+              })
+            ) : (
+              <div className="empty-search">
+                No matching entries.
+              </div>
+            )}
           </div>
         </aside>
 
