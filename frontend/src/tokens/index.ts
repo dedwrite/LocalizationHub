@@ -13,6 +13,8 @@ export type {
   TokenKind,
   TokenProfile,
   TokenProfileId,
+  TokenIssueKind,
+  TokenIssueSeverity,
   TokenValidationIssue,
   TokenValidationResult,
 } from './types'
@@ -100,17 +102,11 @@ function removeProtectedTokens(
 }
 
 /*
- * Token placement should be measured
- * against actual words/numbers.
+ * نستخدم الحروف والأرقام فقط
+ * لتحديد موقع الـtoken.
  *
- * Spaces and punctuation do not count.
- *
- * This avoids cases like:
- *
- *   Hello {0}.
- *
- * treating the "." after the token
- * as real visible content.
+ * علامات الترقيم والمسافات لا تجعل
+ * الـtoken "وسط النص" لوحدها.
  */
 function hasMeaningfulText(
   text: string,
@@ -128,9 +124,9 @@ function hasMeaningfulText(
 }
 
 /*
- * Inside paired tags, punctuation or
- * another protected token can still be
- * meaningful content.
+ * داخل paired tags نعتبر أي محتوى
+ * غير فارغ مهمًا، وحتى وجود token
+ * آخر داخل الوسم يعتبر محتوى.
  */
 function hasTagContent(
   text: string,
@@ -229,6 +225,15 @@ function describeTokenPlacement(
   }
 }
 
+/*
+ * Generic placement warnings.
+ *
+ * مهم:
+ * لا نفحص opening/closing tags هنا.
+ * paired tags لها Tag Scope Guard
+ * مستقل، وإلا سنكرر نفس التحذير
+ * بأكثر من شكل.
+ */
 function detectGenericPlacementIssues(
   source: string,
   translation: string,
@@ -265,6 +270,20 @@ function detectGenericPlacementIssues(
       const translatedToken =
         translatedTokens[index]
 
+      /*
+       * Paired tag placement is handled
+       * by detectTagScopeIssues().
+       */
+      const isPairedTagToken =
+        sourceToken.kind ===
+          'opening-tag' ||
+        sourceToken.kind ===
+          'closing-tag'
+
+      if (isPairedTagToken) {
+        continue
+      }
+
       const sourcePlacement =
         getTokenPlacement(
           sourceToken,
@@ -290,6 +309,9 @@ function detectGenericPlacementIssues(
         kind:
           'token-placement-changed',
 
+        severity:
+          'warning',
+
         token:
           translatedToken,
 
@@ -302,6 +324,12 @@ function detectGenericPlacementIssues(
   return issues
 }
 
+/*
+ * إعادة ترتيب الـtokens ليست دائمًا
+ * خطأ، خصوصًا بين لغتين بتركيب مختلف.
+ *
+ * لذلك هي Warning فقط.
+ */
 function detectTokenOrderIssues(
   sourceTokens:
     ProtectedToken[],
@@ -348,6 +376,9 @@ function detectTokenOrderIssues(
       kind:
         'token-order-changed',
 
+      severity:
+        'warning',
+
       message:
         'Protected tokens appear in a different order than in the source text.',
     },
@@ -392,6 +423,17 @@ function getTagName(
   return null
 }
 
+/*
+ * Broken tag structure is a hard error.
+ *
+ * Examples:
+ *
+ * </color><color>
+ *
+ * <b><i>text</b></i>
+ *
+ * <color>text
+ */
 function detectTagStructureIssues(
   sourceTokens:
     ProtectedToken[],
@@ -402,11 +444,8 @@ function detectTagStructureIssues(
     TokenValidationIssue[] = []
 
   /*
-   * Only validate tag names that are
-   * actually paired in the source.
-   *
-   * This prevents arbitrary bracket
-   * tokens from being treated as HTML.
+   * نتعامل فقط مع أسماء tags
+   * الموجودة كأزواج فعلية في المصدر.
    */
   const pairableNames =
     new Set<string>()
@@ -474,6 +513,9 @@ function detectTagStructureIssues(
         kind:
           'tag-structure-invalid',
 
+        severity:
+          'error',
+
         token,
 
         message:
@@ -487,6 +529,9 @@ function detectTagStructureIssues(
       issues.push({
         kind:
           'tag-structure-invalid',
+
+        severity:
+          'error',
 
         token,
 
@@ -504,6 +549,9 @@ function detectTagStructureIssues(
     issues.push({
       kind:
         'tag-structure-invalid',
+
+      severity:
+        'error',
 
       message:
         `Protected tag ${name} was opened but never closed.`,
@@ -524,7 +572,8 @@ function collectPairedTags(
   text: string,
   tokens: ProtectedToken[],
 ): PairedTag[] {
-  const pairs: PairedTag[] = []
+  const pairs:
+    PairedTag[] = []
 
   const stack: {
     name: string
@@ -615,6 +664,18 @@ function groupPairsByName(
   return groups
 }
 
+/*
+ * إذا الوسم في المصدر يحتوي محتوى،
+ * ثم صار فارغًا في الترجمة:
+ *
+ * [em1]text[/em1]
+ *
+ * إلى:
+ *
+ * [em1][/em1]
+ *
+ * فهذا Hard Error.
+ */
 function detectTagContentIssues(
   source: string,
   translation: string,
@@ -688,6 +749,9 @@ function detectTagContentIssues(
         issues.push({
           kind:
             'tag-content-empty',
+
+          severity:
+            'error',
 
           token:
             translatedPair.opening,
@@ -778,6 +842,15 @@ function describeTagScope(
   }
 }
 
+/*
+ * تغير نطاق الوسم ليس دائمًا
+ * خطأ مؤكد.
+ *
+ * ترتيب الجملة قد يتغير بين
+ * الإنجليزية والعربية.
+ *
+ * لذلك Tag Scope = Warning.
+ */
 function detectTagScopeIssues(
   source: string,
   translation: string,
@@ -833,9 +906,8 @@ function detectTagScopeIssues(
         translatedTags[index]
 
       /*
-       * Empty tag has its own warning.
-       * Do not create two warnings for
-       * the same underlying problem.
+       * إذا الوسم فارغ، Content Guard
+       * سيعطي Error مستقل.
        */
       if (
         !hasTagContent(
@@ -875,6 +947,9 @@ function detectTagScopeIssues(
         kind:
           'tag-scope-changed',
 
+        severity:
+          'warning',
+
         token:
           translatedPair.opening,
 
@@ -899,6 +974,7 @@ function dedupeIssues(
   for (const issue of issues) {
     const key = [
       issue.kind,
+      issue.severity,
       issue.message,
       issue.token?.raw ?? '',
     ].join('|')
@@ -948,7 +1024,9 @@ export function validateProtectedTokens(
     ProtectedToken[] = []
 
   /*
-   * Missing tokens.
+   * Missing protected tokens.
+   *
+   * Missing = blocking error.
    */
   for (
     const [raw, sourceMatches]
@@ -973,7 +1051,9 @@ export function validateProtectedTokens(
   }
 
   /*
-   * Extra tokens.
+   * Extra protected tokens.
+   *
+   * Extra = blocking error.
    */
   for (
     const [raw, translationMatches]
@@ -998,17 +1078,7 @@ export function validateProtectedTokens(
   }
 
   /*
-   * Generic structural placement.
-   *
-   * This applies to ALL token types:
-   *
-   * {0}
-   * {Common.Energy}
-   * %s
-   * ${name}
-   * %PLAYER%
-   * tags
-   * etc.
+   * Non-blocking warnings.
    */
   const placementIssues =
     dedupeIssues([
@@ -1036,6 +1106,9 @@ export function validateProtectedTokens(
       ),
     ])
 
+  /*
+   * Structural issues are blocking.
+   */
   const structureIssues =
     dedupeIssues([
       ...detectTagStructureIssues(
@@ -1052,6 +1125,41 @@ export function validateProtectedTokens(
       ),
     ])
 
+  const allIssues =
+    dedupeIssues([
+      ...placementIssues,
+      ...structureIssues,
+    ])
+
+  const errors =
+    allIssues.filter(
+      (issue) =>
+        issue.severity ===
+        'error',
+    )
+
+  const warnings =
+    allIssues.filter(
+      (issue) =>
+        issue.severity ===
+        'warning',
+    )
+
+  /*
+   * Missing / Extra are represented
+   * in their dedicated arrays rather
+   * than duplicated as generic issues.
+   *
+   * لكنهم يظلون Blocking Errors.
+   */
+  const hasErrors =
+    missingTokens.length > 0 ||
+    extraTokens.length > 0 ||
+    errors.length > 0
+
+  const hasWarnings =
+    warnings.length > 0
+
   return {
     sourceTokens,
     translationTokens,
@@ -1062,11 +1170,14 @@ export function validateProtectedTokens(
     placementIssues,
     structureIssues,
 
+    errors,
+    warnings,
+
     isValid:
-      missingTokens.length === 0 &&
-      extraTokens.length === 0 &&
-      placementIssues.length === 0 &&
-      structureIssues.length === 0,
+      !hasErrors,
+
+    hasErrors,
+    hasWarnings,
   }
 }
 

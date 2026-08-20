@@ -29,6 +29,10 @@ export type TokenRule = {
   pattern: RegExp
 }
 
+export type TokenIssueSeverity =
+  | 'error'
+  | 'warning'
+
 export type TokenIssueKind =
   | 'token-placement-changed'
   | 'token-order-changed'
@@ -38,6 +42,7 @@ export type TokenIssueKind =
 
 export type TokenValidationIssue = {
   kind: TokenIssueKind
+  severity: TokenIssueSeverity
   message: string
   token?: ProtectedToken
 }
@@ -49,10 +54,40 @@ export type TokenValidationResult = {
   missingTokens: ProtectedToken[]
   extraTokens: ProtectedToken[]
 
+  /*
+   * Non-blocking observations.
+   *
+   * Example:
+   * {0} moved from the middle to
+   * the end because Arabic syntax
+   * required a different order.
+   */
   placementIssues: TokenValidationIssue[]
+
+  /*
+   * Structural problems with paired
+   * tags and protected formatting.
+   */
   structureIssues: TokenValidationIssue[]
 
+  /*
+   * Flattened collections that make
+   * UI logic and tests easier.
+   */
+  errors: TokenValidationIssue[]
+  warnings: TokenValidationIssue[]
+
+  /*
+   * isValid means:
+   * "safe enough to export".
+   *
+   * Warnings do NOT make this false.
+   * Blocking errors do.
+   */
   isValid: boolean
+
+  hasErrors: boolean
+  hasWarnings: boolean
 }
 
 export type TokenProfile = {

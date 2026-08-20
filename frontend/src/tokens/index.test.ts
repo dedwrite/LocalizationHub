@@ -25,6 +25,14 @@ describe(
         ).toBe(true)
 
         expect(
+          result.hasErrors,
+        ).toBe(false)
+
+        expect(
+          result.hasWarnings,
+        ).toBe(false)
+
+        expect(
           result.sourceTokens,
         ).toHaveLength(0)
 
@@ -48,13 +56,17 @@ describe(
         ).toBe(true)
 
         expect(
-          result.placementIssues,
-        ).toHaveLength(0)
+          result.hasErrors,
+        ).toBe(false)
+
+        expect(
+          result.hasWarnings,
+        ).toBe(false)
       },
     )
 
     it(
-      'detects a middle variable moved to the end',
+      'warns when a middle variable moves to the end',
       () => {
         const result =
           validateProtectedTokens(
@@ -62,12 +74,24 @@ describe(
             'يستعيد بشكل عشوائي {Common.Energy}',
           )
 
+        /*
+         * Placement changes are warnings,
+         * not blocking errors.
+         */
         expect(
           result.isValid,
+        ).toBe(true)
+
+        expect(
+          result.hasErrors,
         ).toBe(false)
 
         expect(
-          result.placementIssues.some(
+          result.hasWarnings,
+        ).toBe(true)
+
+        expect(
+          result.warnings.some(
             (issue) =>
               issue.kind ===
               'token-placement-changed',
@@ -88,11 +112,15 @@ describe(
         expect(
           result.isValid,
         ).toBe(true)
+
+        expect(
+          result.hasWarnings,
+        ).toBe(false)
       },
     )
 
     it(
-      'detects a missing placeholder',
+      'treats a missing placeholder as an error',
       () => {
         const result =
           validateProtectedTokens(
@@ -105,6 +133,10 @@ describe(
         ).toBe(false)
 
         expect(
+          result.hasErrors,
+        ).toBe(true)
+
+        expect(
           result.missingTokens,
         ).toHaveLength(1)
 
@@ -115,7 +147,7 @@ describe(
     )
 
     it(
-      'detects an unexpected extra placeholder',
+      'treats an unexpected extra placeholder as an error',
       () => {
         const result =
           validateProtectedTokens(
@@ -128,6 +160,10 @@ describe(
         ).toBe(false)
 
         expect(
+          result.hasErrors,
+        ).toBe(true)
+
+        expect(
           result.extraTokens,
         ).toHaveLength(1)
 
@@ -138,7 +174,7 @@ describe(
     )
 
     it(
-      'detects token order changes',
+      'warns when token order changes',
       () => {
         const result =
           validateProtectedTokens(
@@ -148,10 +184,18 @@ describe(
 
         expect(
           result.isValid,
+        ).toBe(true)
+
+        expect(
+          result.hasErrors,
         ).toBe(false)
 
         expect(
-          result.placementIssues.some(
+          result.hasWarnings,
+        ).toBe(true)
+
+        expect(
+          result.warnings.some(
             (issue) =>
               issue.kind ===
               'token-order-changed',
@@ -174,6 +218,14 @@ describe(
         ).toBe(true)
 
         expect(
+          result.hasErrors,
+        ).toBe(false)
+
+        expect(
+          result.hasWarnings,
+        ).toBe(false)
+
+        expect(
           result.structureIssues,
         ).toHaveLength(0)
 
@@ -184,7 +236,7 @@ describe(
     )
 
     it(
-      'detects an empty paired tag',
+      'treats an empty paired tag as an error',
       () => {
         const result =
           validateProtectedTokens(
@@ -197,7 +249,11 @@ describe(
         ).toBe(false)
 
         expect(
-          result.structureIssues.some(
+          result.hasErrors,
+        ).toBe(true)
+
+        expect(
+          result.errors.some(
             (issue) =>
               issue.kind ===
               'tag-content-empty',
@@ -207,7 +263,7 @@ describe(
     )
 
     it(
-      'detects a middle tag expanded over the entire translation',
+      'warns when a middle tag expands over the entire translation',
       () => {
         const result =
           validateProtectedTokens(
@@ -215,12 +271,24 @@ describe(
             '<color=#800000>لقد أصبحت إيلي أقرب بكثير بعد المحادثة.</color>',
           )
 
+        /*
+         * Scope changes are suspicious,
+         * but may be linguistically valid.
+         */
         expect(
           result.isValid,
+        ).toBe(true)
+
+        expect(
+          result.hasErrors,
         ).toBe(false)
 
         expect(
-          result.placementIssues.some(
+          result.hasWarnings,
+        ).toBe(true)
+
+        expect(
+          result.warnings.some(
             (issue) =>
               issue.kind ===
               'tag-scope-changed',
@@ -230,7 +298,7 @@ describe(
     )
 
     it(
-      'detects closing and opening tags in the wrong order',
+      'treats reversed closing and opening tags as an error',
       () => {
         const result =
           validateProtectedTokens(
@@ -243,15 +311,24 @@ describe(
         ).toBe(false)
 
         expect(
-          result.structureIssues.some(
+          result.hasErrors,
+        ).toBe(true)
+
+        expect(
+          result.errors.some(
             (issue) =>
               issue.kind ===
               'tag-structure-invalid',
           ),
         ).toBe(true)
 
+        /*
+         * Order may additionally produce
+         * a warning, but the structural
+         * error is what blocks validity.
+         */
         expect(
-          result.placementIssues.some(
+          result.warnings.some(
             (issue) =>
               issue.kind ===
               'token-order-changed',
@@ -274,13 +351,17 @@ describe(
         ).toBe(true)
 
         expect(
+          result.hasErrors,
+        ).toBe(false)
+
+        expect(
           result.structureIssues,
         ).toHaveLength(0)
       },
     )
 
     it(
-      'detects broken nested tag structure',
+      'treats broken nested tag structure as an error',
       () => {
         const result =
           validateProtectedTokens(
@@ -293,7 +374,11 @@ describe(
         ).toBe(false)
 
         expect(
-          result.structureIssues.some(
+          result.hasErrors,
+        ).toBe(true)
+
+        expect(
+          result.errors.some(
             (issue) =>
               issue.kind ===
               'tag-structure-invalid',

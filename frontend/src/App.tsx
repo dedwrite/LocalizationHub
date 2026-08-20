@@ -315,6 +315,7 @@ function App() {
 
       setSearchQuery('')
       setEntryFilter('all')
+
       setTokenProfile(
         'generic',
       )
@@ -919,14 +920,35 @@ function App() {
                           tokenProfile,
                         )
 
-                      const hasTokenProblem =
+                      const hasTokenError =
                         isTranslated &&
-                        !validation
-                          .isValid
+                        validation.hasErrors
+
+                      const hasTokenWarning =
+                        isTranslated &&
+                        !validation.hasErrors &&
+                        validation.hasWarnings
 
                       const isSelected =
                         entry.id ===
                         selectedEntryId
+
+                      let statusClass = ''
+
+                      if (hasTokenError) {
+                        statusClass =
+                          'token-warning'
+                      } else if (
+                        hasTokenWarning
+                      ) {
+                        statusClass =
+                          'token-warning'
+                      } else if (
+                        isTranslated
+                      ) {
+                        statusClass =
+                          'translated'
+                      }
 
                       return (
                         <button
@@ -954,13 +976,7 @@ function App() {
                         >
                           <span
                             className={
-                              `status-dot ${
-                                hasTokenProblem
-                                  ? 'token-warning'
-                                  : isTranslated
-                                    ? 'translated'
-                                    : ''
-                              }`
+                              `status-dot ${statusClass}`
                             }
                           />
 
@@ -1142,11 +1158,20 @@ function App() {
                   selectedEntry
                     .translation
                     .trim() !== '' &&
-                  !selectedValidation
-                    .isValid && (
+                  (
+                    selectedValidation
+                      .hasErrors ||
+                    selectedValidation
+                      .hasWarnings
+                  ) && (
                     <div className="token-warning-box">
                       <strong>
-                        Protected token warning
+                        {
+                          selectedValidation
+                            .hasErrors
+                            ? 'Protected token error'
+                            : 'Protected token warning'
+                        }
                       </strong>
 
                       {
@@ -1225,7 +1250,7 @@ function App() {
                           .length > 0 && (
                           <div className="token-warning-section">
                             <span>
-                              Placement
+                              Warning
                             </span>
 
                             <div>
@@ -1260,7 +1285,7 @@ function App() {
                           .length > 0 && (
                           <div className="token-warning-section">
                             <span>
-                              Structure
+                              Error
                             </span>
 
                             <div>
@@ -1300,9 +1325,12 @@ function App() {
                         .trim() === ''
                         ? 'Not translated'
                         : selectedValidation
-                            .isValid
-                          ? 'Translated'
-                          : 'Token warning'
+                            .hasErrors
+                          ? 'Token error'
+                          : selectedValidation
+                              .hasWarnings
+                            ? 'Translated with warnings'
+                            : 'Translated'
                     }
                   </span>
 
