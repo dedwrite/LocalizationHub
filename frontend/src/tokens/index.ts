@@ -1,4 +1,5 @@
-import { genericTokenProfile } from './generic'
+﻿import { genericTokenProfile } from './generic'
+import { godotTokenProfile } from './godot'
 
 import type {
   ProtectedToken,
@@ -24,7 +25,7 @@ const tokenProfiles: Record<
   TokenProfile | undefined
 > = {
   generic: genericTokenProfile,
-  godot: undefined,
+  godot: godotTokenProfile,
   unity: undefined,
   unreal: undefined,
   renpy: undefined,
@@ -102,11 +103,11 @@ function removeProtectedTokens(
 }
 
 /*
- * نستخدم الحروف والأرقام فقط
- * لتحديد موقع الـtoken.
+ * Ù†Ø³ØªØ®Ø¯Ù… Ø§Ù„Ø­Ø±ÙˆÙ ÙˆØ§Ù„Ø£Ø±Ù‚Ø§Ù… ÙÙ‚Ø·
+ * Ù„ØªØ­Ø¯ÙŠØ¯ Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù€token.
  *
- * علامات الترقيم والمسافات لا تجعل
- * الـtoken "وسط النص" لوحدها.
+ * Ø¹Ù„Ø§Ù…Ø§Øª Ø§Ù„ØªØ±Ù‚ÙŠÙ… ÙˆØ§Ù„Ù…Ø³Ø§ÙØ§Øª Ù„Ø§ ØªØ¬Ø¹Ù„
+ * Ø§Ù„Ù€token "ÙˆØ³Ø· Ø§Ù„Ù†Øµ" Ù„ÙˆØ­Ø¯Ù‡Ø§.
  */
 function hasMeaningfulText(
   text: string,
@@ -124,9 +125,9 @@ function hasMeaningfulText(
 }
 
 /*
- * داخل paired tags نعتبر أي محتوى
- * غير فارغ مهمًا، وحتى وجود token
- * آخر داخل الوسم يعتبر محتوى.
+ * Ø¯Ø§Ø®Ù„ paired tags Ù†Ø¹ØªØ¨Ø± Ø£ÙŠ Ù…Ø­ØªÙˆÙ‰
+ * ØºÙŠØ± ÙØ§Ø±Øº Ù…Ù‡Ù…Ù‹Ø§ØŒ ÙˆØ­ØªÙ‰ ÙˆØ¬ÙˆØ¯ token
+ * Ø¢Ø®Ø± Ø¯Ø§Ø®Ù„ Ø§Ù„ÙˆØ³Ù… ÙŠØ¹ØªØ¨Ø± Ù…Ø­ØªÙˆÙ‰.
  */
 function hasTagContent(
   text: string,
@@ -228,11 +229,11 @@ function describeTokenPlacement(
 /*
  * Generic placement warnings.
  *
- * مهم:
- * لا نفحص opening/closing tags هنا.
- * paired tags لها Tag Scope Guard
- * مستقل، وإلا سنكرر نفس التحذير
- * بأكثر من شكل.
+ * Ù…Ù‡Ù…:
+ * Ù„Ø§ Ù†ÙØ­Øµ opening/closing tags Ù‡Ù†Ø§.
+ * paired tags Ù„Ù‡Ø§ Tag Scope Guard
+ * Ù…Ø³ØªÙ‚Ù„ØŒ ÙˆØ¥Ù„Ø§ Ø³Ù†ÙƒØ±Ø± Ù†ÙØ³ Ø§Ù„ØªØ­Ø°ÙŠØ±
+ * Ø¨Ø£ÙƒØ«Ø± Ù…Ù† Ø´ÙƒÙ„.
  */
 function detectGenericPlacementIssues(
   source: string,
@@ -325,10 +326,10 @@ function detectGenericPlacementIssues(
 }
 
 /*
- * إعادة ترتيب الـtokens ليست دائمًا
- * خطأ، خصوصًا بين لغتين بتركيب مختلف.
+ * Ø¥Ø¹Ø§Ø¯Ø© ØªØ±ØªÙŠØ¨ Ø§Ù„Ù€tokens Ù„ÙŠØ³Øª Ø¯Ø§Ø¦Ù…Ù‹Ø§
+ * Ø®Ø·Ø£ØŒ Ø®ØµÙˆØµÙ‹Ø§ Ø¨ÙŠÙ† Ù„ØºØªÙŠÙ† Ø¨ØªØ±ÙƒÙŠØ¨ Ù…Ø®ØªÙ„Ù.
  *
- * لذلك هي Warning فقط.
+ * Ù„Ø°Ù„Ùƒ Ù‡ÙŠ Warning ÙÙ‚Ø·.
  */
 function detectTokenOrderIssues(
   sourceTokens:
@@ -444,8 +445,8 @@ function detectTagStructureIssues(
     TokenValidationIssue[] = []
 
   /*
-   * نتعامل فقط مع أسماء tags
-   * الموجودة كأزواج فعلية في المصدر.
+   * Ù†ØªØ¹Ø§Ù…Ù„ ÙÙ‚Ø· Ù…Ø¹ Ø£Ø³Ù…Ø§Ø¡ tags
+   * Ø§Ù„Ù…ÙˆØ¬ÙˆØ¯Ø© ÙƒØ£Ø²ÙˆØ§Ø¬ ÙØ¹Ù„ÙŠØ© ÙÙŠ Ø§Ù„Ù…ØµØ¯Ø±.
    */
   const pairableNames =
     new Set<string>()
@@ -665,16 +666,16 @@ function groupPairsByName(
 }
 
 /*
- * إذا الوسم في المصدر يحتوي محتوى،
- * ثم صار فارغًا في الترجمة:
+ * Ø¥Ø°Ø§ Ø§Ù„ÙˆØ³Ù… ÙÙŠ Ø§Ù„Ù…ØµØ¯Ø± ÙŠØ­ØªÙˆÙŠ Ù…Ø­ØªÙˆÙ‰ØŒ
+ * Ø«Ù… ØµØ§Ø± ÙØ§Ø±ØºÙ‹Ø§ ÙÙŠ Ø§Ù„ØªØ±Ø¬Ù…Ø©:
  *
  * [em1]text[/em1]
  *
- * إلى:
+ * Ø¥Ù„Ù‰:
  *
  * [em1][/em1]
  *
- * فهذا Hard Error.
+ * ÙÙ‡Ø°Ø§ Hard Error.
  */
 function detectTagContentIssues(
   source: string,
@@ -843,13 +844,13 @@ function describeTagScope(
 }
 
 /*
- * تغير نطاق الوسم ليس دائمًا
- * خطأ مؤكد.
+ * ØªØºÙŠØ± Ù†Ø·Ø§Ù‚ Ø§Ù„ÙˆØ³Ù… Ù„ÙŠØ³ Ø¯Ø§Ø¦Ù…Ù‹Ø§
+ * Ø®Ø·Ø£ Ù…Ø¤ÙƒØ¯.
  *
- * ترتيب الجملة قد يتغير بين
- * الإنجليزية والعربية.
+ * ØªØ±ØªÙŠØ¨ Ø§Ù„Ø¬Ù…Ù„Ø© Ù‚Ø¯ ÙŠØªØºÙŠØ± Ø¨ÙŠÙ†
+ * Ø§Ù„Ø¥Ù†Ø¬Ù„ÙŠØ²ÙŠØ© ÙˆØ§Ù„Ø¹Ø±Ø¨ÙŠØ©.
  *
- * لذلك Tag Scope = Warning.
+ * Ù„Ø°Ù„Ùƒ Tag Scope = Warning.
  */
 function detectTagScopeIssues(
   source: string,
@@ -906,8 +907,8 @@ function detectTagScopeIssues(
         translatedTags[index]
 
       /*
-       * إذا الوسم فارغ، Content Guard
-       * سيعطي Error مستقل.
+       * Ø¥Ø°Ø§ Ø§Ù„ÙˆØ³Ù… ÙØ§Ø±ØºØŒ Content Guard
+       * Ø³ÙŠØ¹Ø·ÙŠ Error Ù…Ø³ØªÙ‚Ù„.
        */
       if (
         !hasTagContent(
@@ -1150,7 +1151,7 @@ export function validateProtectedTokens(
    * in their dedicated arrays rather
    * than duplicated as generic issues.
    *
-   * لكنهم يظلون Blocking Errors.
+   * Ù„ÙƒÙ†Ù‡Ù… ÙŠØ¸Ù„ÙˆÙ† Blocking Errors.
    */
   const hasErrors =
     missingTokens.length > 0 ||

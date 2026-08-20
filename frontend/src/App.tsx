@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import {
+  useMemo,
+  useState,
+} from 'react'
 
 import {
   open,
@@ -16,6 +19,10 @@ import {
 } from './tokens'
 
 import {
+  isFullyProtectedText,
+} from './tokens/protection'
+
+import {
   describeParsedDocument,
   parseLocalizationFile,
   type LocalizationFileFormat,
@@ -27,6 +34,8 @@ import {
 import {
   exportLocalizationDocument,
 } from './exporters'
+
+import TokenProfileSelect from './TokenProfileSelect'
 
 import './App.css'
 
@@ -76,16 +85,23 @@ type LocalizationProjectV1 = {
 }
 
 function App() {
-  const [entries, setEntries] =
+  const [
+    entries,
+    setEntries,
+  ] =
     useState<TranslationEntry[]>([])
 
-  const [fileName, setFileName] =
+  const [
+    fileName,
+    setFileName,
+  ] =
     useState('')
 
   const [
     selectedEntryId,
     setSelectedEntryId,
-  ] = useState<string | null>(null)
+  ] =
+    useState<string | null>(null)
 
   const [
     documentInfo,
@@ -98,7 +114,8 @@ function App() {
   const [
     searchQuery,
     setSearchQuery,
-  ] = useState('')
+  ] =
+    useState('')
 
   const [
     entryFilter,
@@ -114,30 +131,97 @@ function App() {
       'generic',
     )
 
+  /*
+   * نحسب الـentries اللي مصدرها
+   * كامل عبارة عن شيء محمي.
+   *
+   * أمثلة:
+   *
+   * :: wait
+   * $ play_anim CharacterA idle
+   * -> next_scene
+   * [...]
+   *
+   * useMemo مهم هنا لأن الملفات
+   * ممكن تحتوي آلاف الأسطر.
+   */
+  const fullyProtectedEntryIds =
+    useMemo(
+      () => {
+        const ids =
+          new Set<string>()
+
+        for (
+          const entry
+          of entries
+        ) {
+          if (
+            isFullyProtectedText(
+              entry.source,
+              tokenProfile,
+            )
+          ) {
+            ids.add(
+              entry.id,
+            )
+          }
+        }
+
+        return ids
+      },
+      [
+        entries,
+        tokenProfile,
+      ],
+    )
+
+  const protectedCount =
+    fullyProtectedEntryIds.size
+
+  const translatableCount =
+    entries.length -
+    protectedCount
+
+  /*
+   * Protected entries لا تدخل
+   * في تقدم الترجمة.
+   */
   const translatedCount =
     entries.filter(
       (entry) =>
+        !fullyProtectedEntryIds.has(
+          entry.id,
+        ) &&
         entry.translation.trim() !== '',
     ).length
 
   const untranslatedCount =
-    entries.length - translatedCount
+    translatableCount -
+    translatedCount
 
   const progress =
-    entries.length === 0
+    translatableCount === 0
       ? 0
       : Math.round(
           (
             translatedCount /
-            entries.length
+            translatableCount
           ) * 100,
         )
 
   const selectedEntry =
     entries.find(
       (entry) =>
-        entry.id === selectedEntryId,
+        entry.id ===
+        selectedEntryId,
     ) ?? null
+
+  const selectedFullyProtected =
+    selectedEntry
+      ? fullyProtectedEntryIds.has(
+          selectedEntry.id,
+        )
+      : false
 
   const selectedValidation =
     selectedEntry
@@ -170,62 +254,72 @@ function App() {
       .toLowerCase()
 
   const filteredEntries =
-    entries.filter((entry) => {
-      const isTranslated =
-        entry.translation.trim() !== ''
-
-      const context =
-        entry.context ?? ''
-
-      const notes =
-        entry.notes ?? ''
-
-      const matchesSearch =
-        !normalizedSearch ||
-        entry.key
-          .toLowerCase()
-          .includes(
-            normalizedSearch,
-          ) ||
-        entry.source
-          .toLowerCase()
-          .includes(
-            normalizedSearch,
-          ) ||
-        entry.translation
-          .toLowerCase()
-          .includes(
-            normalizedSearch,
-          ) ||
-        context
-          .toLowerCase()
-          .includes(
-            normalizedSearch,
-          ) ||
-        notes
-          .toLowerCase()
-          .includes(
-            normalizedSearch,
+    entries.filter(
+      (entry) => {
+        const isProtected =
+          fullyProtectedEntryIds.has(
+            entry.id,
           )
 
-      const matchesFilter =
-        entryFilter === 'all' ||
-        (
-          entryFilter ===
-            'translated' &&
-          isTranslated
-        ) ||
-        (
-          entryFilter ===
-            'untranslated' &&
-          !isTranslated
-        )
+        const isTranslated =
+          !isProtected &&
+          entry.translation.trim() !== ''
 
-      return (
-        matchesSearch &&
-        matchesFilter
-      )
-    })
+        const context =
+          entry.context ?? ''
+
+        const notes =
+          entry.notes ?? ''
+
+        const matchesSearch =
+          !normalizedSearch ||
+          entry.key
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            ) ||
+          entry.source
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            ) ||
+          entry.translation
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            ) ||
+          context
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            ) ||
+          notes
+            .toLowerCase()
+            .includes(
+              normalizedSearch,
+            )
+
+        const matchesFilter =
+          entryFilter ===
+            'all' ||
+          (
+            entryFilter ===
+              'translated' &&
+            isTranslated
+          ) ||
+          (
+            entryFilter ===
+              'untranslated' &&
+            !isProtected &&
+            !isTranslated
+          )
+
+        return (
+          matchesSearch &&
+          matchesFilter
+        )
+      },
+    )
 
   async function handleOpenFile() {
     const selected =
@@ -272,7 +366,10 @@ function App() {
         )
 
       if (!result.ok) {
-        alert(result.reason)
+        alert(
+          result.reason,
+        )
+
         return
       }
 
@@ -307,7 +404,9 @@ function App() {
           document.schema,
       })
 
-      setFileName(name)
+      setFileName(
+        name,
+      )
 
       setSelectedEntryId(
         document.entries[0].id,
@@ -316,11 +415,18 @@ function App() {
       setSearchQuery('')
       setEntryFilter('all')
 
+      /*
+       * الملفات الجديدة تبدأ على
+       * Generic، وبعدها المستخدم
+       * يختار المحرك المناسب.
+       */
       setTokenProfile(
         'generic',
       )
     } catch (error) {
-      console.error(error)
+      console.error(
+        error,
+      )
 
       alert(
         'حدث خطأ أثناء فتح الملف.',
@@ -401,7 +507,9 @@ function App() {
         'تم حفظ المشروع بنجاح.',
       )
     } catch (error) {
-      console.error(error)
+      console.error(
+        error,
+      )
 
       alert(
         'فشل حفظ المشروع.',
@@ -411,6 +519,35 @@ function App() {
 
   async function handleExportFile() {
     if (!currentDocument) {
+      return
+    }
+
+    /*
+     * حماية إضافية:
+     *
+     * لو كان هناك entry محمي بالكامل
+     * لكنه يحتوي Translation قديمة،
+     * لا نصدر الملف حتى يتم تنظيفها.
+     *
+     * لا نحذف بيانات المستخدم بصمت.
+     */
+    const protectedWithTranslation =
+      entries.filter(
+        (entry) =>
+          fullyProtectedEntryIds.has(
+            entry.id,
+          ) &&
+          entry.translation.trim() !== '',
+      )
+
+    if (
+      protectedWithTranslation.length >
+      0
+    ) {
+      alert(
+        `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text. Clear them before export.`,
+      )
+
       return
     }
 
@@ -455,7 +592,9 @@ function App() {
         'تم تصدير ملف JSON بنجاح.',
       )
     } catch (error) {
-      console.error(error)
+      console.error(
+        error,
+      )
 
       alert(
         'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
@@ -494,11 +633,13 @@ function App() {
       const parsed:
         | LocalizationProjectV1
         | LocalizationProjectV2 =
-          JSON.parse(content)
+          JSON.parse(
+            content,
+          )
 
       if (
         parsed.format !==
-          'LocalizationHubProject'
+        'LocalizationHubProject'
       ) {
         alert(
           'ملف المشروع غير صالح.',
@@ -609,12 +750,14 @@ function App() {
         )
 
         setDocumentInfo({
-          parser: 'json',
+          parser:
+            'json',
 
           format:
             'flat-json-object',
 
-          sourceText: '',
+          sourceText:
+            '',
         })
 
         const restored =
@@ -644,7 +787,9 @@ function App() {
         'إصدار المشروع غير مدعوم.',
       )
     } catch (error) {
-      console.error(error)
+      console.error(
+        error,
+      )
 
       alert(
         'فشل فتح المشروع.',
@@ -663,6 +808,7 @@ function App() {
             entry.id === id
               ? {
                   ...entry,
+
                   translation:
                     value,
                 }
@@ -743,15 +889,26 @@ function App() {
         </div>
 
         <div className="topbar-actions">
+          <TokenProfileSelect
+            value={
+              tokenProfile
+            }
+            onChange={
+              setTokenProfile
+            }
+          />
+
           <div className="progress-info">
             <span>
               {
                 translatedCount
                   .toLocaleString()
               }
+
               {' / '}
+
               {
-                entries.length
+                translatableCount
                   .toLocaleString()
               }
             </span>
@@ -807,7 +964,9 @@ function App() {
                     .length
                     .toLocaleString()
                 }
+
                 {' / '}
+
                 {
                   entries.length
                     .toLocaleString()
@@ -824,8 +983,7 @@ function App() {
               onChange={
                 (event) =>
                   setSearchQuery(
-                    event.target
-                      .value,
+                    event.target.value,
                   )
               }
               placeholder="Search keys or text..."
@@ -901,33 +1059,63 @@ function App() {
                 </span>
               </button>
             </div>
+
+            {
+              protectedCount > 0 && (
+                <div className="entries-summary">
+                  <span>
+                    Protected
+                  </span>
+
+                  <span>
+                    {
+                      protectedCount
+                        .toLocaleString()
+                    }
+                  </span>
+                </div>
+              )
+            }
           </div>
 
           <div className="entry-list">
             {
-              filteredEntries
-                .length > 0
+              filteredEntries.length > 0
                 ? filteredEntries.map(
                     (entry) => {
+                      const isProtected =
+                        fullyProtectedEntryIds.has(
+                          entry.id,
+                        )
+
                       const isTranslated =
+                        !isProtected &&
                         entry.translation
                           .trim() !== ''
 
                       const validation =
-                        validateProtectedTokens(
-                          entry.source,
-                          entry.translation,
-                          tokenProfile,
-                        )
+                        isProtected
+                          ? null
+                          : validateProtectedTokens(
+                              entry.source,
+                              entry.translation,
+                              tokenProfile,
+                            )
 
                       const hasTokenError =
                         isTranslated &&
-                        validation.hasErrors
+                        Boolean(
+                          validation
+                            ?.hasErrors,
+                        )
 
                       const hasTokenWarning =
                         isTranslated &&
-                        !validation.hasErrors &&
-                        validation.hasWarnings
+                        !hasTokenError &&
+                        Boolean(
+                          validation
+                            ?.hasWarnings,
+                        )
 
                       const isSelected =
                         entry.id ===
@@ -935,7 +1123,12 @@ function App() {
 
                       let statusClass = ''
 
-                      if (hasTokenError) {
+                      if (isProtected) {
+                        statusClass =
+                          'protected'
+                      } else if (
+                        hasTokenError
+                      ) {
                         statusClass =
                           'token-warning'
                       } else if (
@@ -949,6 +1142,11 @@ function App() {
                         statusClass =
                           'translated'
                       }
+
+                      const entryTitle =
+                        entry.context
+                          ? `${entry.context} · ${entry.key}`
+                          : entry.key
 
                       return (
                         <button
@@ -964,9 +1162,9 @@ function App() {
                             }`
                           }
                           title={
-                            entry.context
-                              ? `${entry.context} · ${entry.key}`
-                              : entry.key
+                            isProtected
+                              ? `Protected · ${entryTitle}`
+                              : entryTitle
                           }
                           onClick={() =>
                             setSelectedEntryId(
@@ -1075,16 +1273,23 @@ function App() {
                                 token,
                                 index,
                               ) => {
+                                /*
+                                 * Fully protected entry طبيعي
+                                 * تكون ترجمتها فاضية.
+                                 *
+                                 * لذلك لا نصبغ Tokens فيها
+                                 * كـMissing.
+                                 */
                                 const isMissing =
+                                  !selectedFullyProtected &&
                                   selectedValidation
                                     .missingTokens
                                     .some(
                                       (
                                         missing,
                                       ) =>
-                                        missing
-                                          .raw ===
-                                          token.raw,
+                                        missing.raw ===
+                                        token.raw,
                                     )
 
                                 return (
@@ -1120,7 +1325,10 @@ function App() {
                         Notes
                       </label>
 
-                      <div className="source-text">
+                      <div
+                        className="source-text"
+                        dir="auto"
+                      >
                         {
                           selectedEntry
                             .notes
@@ -1130,31 +1338,88 @@ function App() {
                   )
                 }
 
-                <div className="editor-section translation-section">
-                  <label htmlFor="translation">
-                    Translation
-                  </label>
+                {
+                  selectedFullyProtected
+                    ? (
+                      <div className="editor-section translation-section">
+                        <label>
+                          Translation
+                        </label>
 
-                  <textarea
-                    id="translation"
-                    dir="auto"
-                    value={
-                      selectedEntry
-                        .translation
-                    }
-                    onChange={
-                      (event) =>
-                        handleTranslationChange(
-                          selectedEntry.id,
-                          event.target
-                            .value,
-                        )
-                    }
-                    placeholder="Enter translation..."
-                  />
-                </div>
+                        <div className="token-panel">
+                          <div className="token-panel-header">
+                            <strong>
+                              Protected — Not translatable
+                            </strong>
+
+                            <span>
+                              ENGINE
+                            </span>
+                          </div>
+
+                          <p>
+                            This entry is fully protected and must remain exactly as it appears in the source.
+                          </p>
+
+                          {
+                            selectedEntry
+                              .translation
+                              .trim() !== '' && (
+                              <div className="token-warning-box">
+                                <strong>
+                                  Protected entry contains translation text
+                                </strong>
+
+                                <p>
+                                  This translation will not be exported until it is cleared.
+                                </p>
+
+                                <button
+                                  className="secondary-button"
+                                  type="button"
+                                  onClick={() =>
+                                    handleTranslationChange(
+                                      selectedEntry.id,
+                                      '',
+                                    )
+                                  }
+                                >
+                                  Clear Translation
+                                </button>
+                              </div>
+                            )
+                          }
+                        </div>
+                      </div>
+                    )
+                    : (
+                      <div className="editor-section translation-section">
+                        <label htmlFor="translation">
+                          Translation
+                        </label>
+
+                        <textarea
+                          id="translation"
+                          dir="auto"
+                          value={
+                            selectedEntry
+                              .translation
+                          }
+                          onChange={
+                            (event) =>
+                              handleTranslationChange(
+                                selectedEntry.id,
+                                event.target.value,
+                              )
+                          }
+                          placeholder="Enter translation..."
+                        />
+                      </div>
+                    )
+                }
 
                 {
+                  !selectedFullyProtected &&
                   selectedEntry
                     .translation
                     .trim() !== '' &&
@@ -1320,27 +1585,28 @@ function App() {
                 <footer className="editor-footer">
                   <span>
                     {
-                      selectedEntry
-                        .translation
-                        .trim() === ''
-                        ? 'Not translated'
-                        : selectedValidation
-                            .hasErrors
-                          ? 'Token error'
+                      selectedFullyProtected
+                        ? 'Protected · Not translatable'
+                        : selectedEntry
+                            .translation
+                            .trim() === ''
+                          ? 'Not translated'
                           : selectedValidation
-                              .hasWarnings
-                            ? 'Translated with warnings'
-                            : 'Translated'
+                              .hasErrors
+                            ? 'Token error'
+                            : selectedValidation
+                                .hasWarnings
+                              ? 'Translated with warnings'
+                              : 'Translated'
                     }
                   </span>
 
                   <span>
                     {
-                      selectedEntry
-                        .translation
-                        .length
-                    }{' '}
-                    characters
+                      selectedFullyProtected
+                        ? 'Excluded from progress'
+                        : `${selectedEntry.translation.length} characters`
+                    }
                   </span>
                 </footer>
               </>

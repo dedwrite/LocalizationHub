@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:tokens": "vitest run src/tokens/index.test.ts"
+    "test:tokens": "vitest run src/tokens"
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.7.2",

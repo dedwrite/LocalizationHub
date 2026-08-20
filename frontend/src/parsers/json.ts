@@ -15,22 +15,38 @@ const KEY_FIELDS = [
   'stringKey',
   'key_name',
   'keyName',
-  'name',
+  'entry_id',
+  'entryId',
   'id',
+  'name',
 ]
 
+/*
+ * الحقول الأكثر تحديدًا تأتي أولًا.
+ *
+ * مهم جدًا:
+ * بعض الملفات عندها field اسمه
+ * "source" لكنه يعني اسم المصدر،
+ * وليس النص الإنجليزي نفسه.
+ *
+ * لذلك text_en يسبق source.
+ */
 const SOURCE_FIELDS = [
-  'source',
+  'text_en',
+  'textEn',
   'source_text',
   'sourceText',
-  'text',
-  'value',
   'english',
   'en',
   'original',
+  'text',
+  'value',
+  'source',
 ]
 
 const TRANSLATION_FIELDS = [
+  'text_ar',
+  'textAr',
   'arabic',
   'translation',
   'translated',
@@ -41,7 +57,9 @@ const TRANSLATION_FIELDS = [
 ]
 
 const CONTEXT_FIELDS = [
+  'scene',
   'table',
+  'chapter',
   'namespace',
   'category',
   'group',
@@ -56,6 +74,29 @@ const NOTES_FIELDS = [
   'description',
 ]
 
+type LosslessNumberLike = {
+  isLosslessNumber: true
+  value: string
+}
+
+function isLosslessNumberValue(
+  value: unknown,
+): value is LosslessNumberLike {
+  if (
+    value === null ||
+    typeof value !== 'object'
+  ) {
+    return false
+  }
+
+  return (
+    'isLosslessNumber' in value &&
+    value.isLosslessNumber === true &&
+    'value' in value &&
+    typeof value.value === 'string'
+  )
+}
+
 function isRecord(
   value: unknown,
 ): value is Record<string, unknown> {
@@ -67,9 +108,12 @@ function isRecord(
     return false
   }
 
+  /*
+   * LosslessNumber نفسه object،
+   * لكن مو JSON record.
+   */
   if (
-    'isLosslessNumber' in value &&
-    value.isLosslessNumber === true
+    isLosslessNumberValue(value)
   ) {
     return false
   }
@@ -80,7 +124,34 @@ function isRecord(
 function isStringEntry(
   entry: [string, unknown],
 ): entry is [string, string] {
-  return typeof entry[1] === 'string'
+  return (
+    typeof entry[1] ===
+    'string'
+  )
+}
+
+function scalarToString(
+  value: unknown,
+): string | undefined {
+  if (
+    typeof value === 'string'
+  ) {
+    return value
+  }
+
+  if (
+    typeof value === 'number'
+  ) {
+    return String(value)
+  }
+
+  if (
+    isLosslessNumberValue(value)
+  ) {
+    return value.value
+  }
+
+  return undefined
 }
 
 function getSampleRecords(
@@ -95,17 +166,28 @@ function findStringField(
   records: Record<string, unknown>[],
   candidates: string[],
 ): string | undefined {
-  if (records.length === 0) {
+  if (
+    records.length === 0
+  ) {
     return undefined
   }
 
-  let bestField: string | undefined
+  let bestField:
+    | string
+    | undefined
+
   let bestScore = 0
 
-  for (const candidate of candidates) {
+  for (
+    const candidate
+    of candidates
+  ) {
     let score = 0
 
-    for (const record of records) {
+    for (
+      const record
+      of records
+    ) {
       if (
         typeof record[candidate] ===
         'string'
@@ -114,7 +196,9 @@ function findStringField(
       }
     }
 
-    if (score > bestScore) {
+    if (
+      score > bestScore
+    ) {
       bestField = candidate
       bestScore = score
     }
@@ -126,7 +210,77 @@ function findStringField(
       Math.max(
         1,
         Math.floor(
-          records.length * 0.25,
+          records.length *
+            0.25,
+        ),
+      )
+  ) {
+    return bestField
+  }
+
+  return undefined
+}
+
+/*
+ * الـkey قد يكون:
+ *
+ * "HELLO_WORLD"
+ * 123
+ * LosslessNumber(123)
+ *
+ * لذلك ما نقيده بالـstring فقط.
+ */
+function findScalarField(
+  records: Record<string, unknown>[],
+  candidates: string[],
+): string | undefined {
+  if (
+    records.length === 0
+  ) {
+    return undefined
+  }
+
+  let bestField:
+    | string
+    | undefined
+
+  let bestScore = 0
+
+  for (
+    const candidate
+    of candidates
+  ) {
+    let score = 0
+
+    for (
+      const record
+      of records
+    ) {
+      if (
+        scalarToString(
+          record[candidate],
+        ) !== undefined
+      ) {
+        score += 1
+      }
+    }
+
+    if (
+      score > bestScore
+    ) {
+      bestField = candidate
+      bestScore = score
+    }
+  }
+
+  if (
+    bestField &&
+    bestScore >=
+      Math.max(
+        1,
+        Math.floor(
+          records.length *
+            0.25,
         ),
       )
   ) {
@@ -142,16 +296,24 @@ function detectRecordArraySchema(
   const records =
     getSampleRecords(array)
 
-  if (records.length === 0) {
+  if (
+    records.length === 0
+  ) {
     return null
   }
 
+  /*
+   * key يسمح string أو number.
+   */
   const keyField =
-    findStringField(
+    findScalarField(
       records,
       KEY_FIELDS,
     )
 
+  /*
+   * source لازم يكون نصًا.
+   */
   const sourceField =
     findStringField(
       records,
@@ -200,7 +362,9 @@ function parseFlatObject(
     Object.entries(value)
       .filter(isStringEntry)
 
-  if (entries.length === 0) {
+  if (
+    entries.length === 0
+  ) {
     return null
   }
 
@@ -209,40 +373,58 @@ function parseFlatObject(
 
   const stringRatio =
     entries.length /
-    Math.max(1, totalFields)
+    Math.max(
+      1,
+      totalFields,
+    )
 
   /*
-   * إذا أقل من 70% من حقول الـobject
-   * نصوص، غالبًا هذا JSON config أو
-   * بنية مركبة وليس ملف localization
-   * مسطح.
+   * إذا أقل من 70% من حقول
+   * الـobject نصوص، غالبًا
+   * هذا config وليس localization
+   * flat object.
    */
-  if (stringRatio < 0.7) {
+  if (
+    stringRatio < 0.7
+  ) {
     return null
   }
 
   const parsedEntries:
     ParsedLocalizationEntry[] =
       entries.map(
-        ([key, source], index) => ({
+        (
+          [key, source],
+          index,
+        ) => ({
           id:
             `flat:${index}:${key}`,
 
           key,
           source,
-          translation: '',
 
-          keyPath: [key],
-          sourcePath: [key],
+          translation:
+            '',
+
+          keyPath:
+            [key],
+
+          sourcePath:
+            [key],
         }),
       )
 
   return {
-    parser: 'json',
-    format: 'flat-json-object',
+    parser:
+      'json',
+
+    format:
+      'flat-json-object',
 
     sourceText,
-    entries: parsedEntries,
+
+    entries:
+      parsedEntries,
   }
 }
 
@@ -251,7 +433,9 @@ function parseRecordArray(
   sourceText: string,
 ): ParsedLocalizationDocument | null {
   const schema =
-    detectRecordArraySchema(value)
+    detectRecordArraySchema(
+      value,
+    )
 
   if (!schema) {
     return null
@@ -261,20 +445,34 @@ function parseRecordArray(
     ParsedLocalizationEntry[] = []
 
   value.forEach(
-    (item, index) => {
-      if (!isRecord(item)) {
+    (
+      item,
+      index,
+    ) => {
+      if (
+        !isRecord(item)
+      ) {
         return
       }
 
-      const keyValue =
-        item[schema.keyField]
+      const rawKeyValue =
+        item[
+          schema.keyField
+        ]
 
       const sourceValue =
-        item[schema.sourceField]
+        item[
+          schema.sourceField
+        ]
+
+      const keyValue =
+        scalarToString(
+          rawKeyValue,
+        )
 
       if (
-        typeof keyValue !==
-          'string' ||
+        keyValue ===
+          undefined ||
         typeof sourceValue !==
           'string'
       ) {
@@ -292,22 +490,23 @@ function parseRecordArray(
       const contextValue =
         schema.contextField
           ? item[
-              schema.contextField
+              schema
+                .contextField
             ]
           : undefined
 
       const notesValue =
         schema.notesField
           ? item[
-              schema.notesField
+              schema
+                .notesField
             ]
           : undefined
 
       const context =
-        typeof contextValue ===
-          'string'
-          ? contextValue
-          : undefined
+        scalarToString(
+          contextValue,
+        )
 
       const notes =
         typeof notesValue ===
@@ -321,6 +520,11 @@ function parseRecordArray(
           ? translationValue
           : ''
 
+      /*
+       * index داخل id يضمن أن
+       * entry_id المكرر في scenes
+       * مختلفة ما يسبب collision.
+       */
       const id =
         context
           ? `record:${index}:${context}:${keyValue}`
@@ -329,8 +533,12 @@ function parseRecordArray(
       parsedEntries.push({
         id,
 
-        key: keyValue,
-        source: sourceValue,
+        key:
+          keyValue,
+
+        source:
+          sourceValue,
+
         translation,
 
         context,
@@ -365,8 +573,11 @@ function parseRecordArray(
   }
 
   return {
-    parser: 'json',
-    format: 'json-record-array',
+    parser:
+      'json',
+
+    format:
+      'json-record-array',
 
     sourceText,
 
@@ -380,22 +591,33 @@ function parseRecordArray(
 export function parseJsonLocalization(
   text: string,
 ): LocalizationParseResult {
-  let parsed: unknown
+  let parsed:
+    unknown
 
   try {
     parsed =
-      parseLosslessJson(text)
+      parseLosslessJson(
+        text,
+      )
   } catch (error) {
-    console.error(error)
+    console.error(
+      error,
+    )
 
     return {
-      ok: false,
+      ok:
+        false,
+
       reason:
         'الملف ليس JSON صالحًا.',
     }
   }
 
-  if (Array.isArray(parsed)) {
+  if (
+    Array.isArray(
+      parsed,
+    )
+  ) {
     const document =
       parseRecordArray(
         parsed,
@@ -404,19 +626,25 @@ export function parseJsonLocalization(
 
     if (document) {
       return {
-        ok: true,
+        ok:
+          true,
+
         document,
       }
     }
 
     return {
-      ok: false,
+      ok:
+        false,
+
       reason:
-        'تم التعرف على JSON Array، لكن لم نستطع تحديد حقول key/source/translation تلقائيًا.',
+        'تم التعرف على JSON Array، لكن لم نستطع تحديد حقول المفتاح والنص والترجمة تلقائيًا.',
     }
   }
 
-  if (isRecord(parsed)) {
+  if (
+    isRecord(parsed)
+  ) {
     const document =
       parseFlatObject(
         parsed,
@@ -425,20 +653,26 @@ export function parseJsonLocalization(
 
     if (document) {
       return {
-        ok: true,
+        ok:
+          true,
+
         document,
       }
     }
 
     return {
-      ok: false,
+      ok:
+        false,
+
       reason:
         'تم التعرف على JSON Object، لكن بنيته ليست من الأنماط المدعومة حاليًا.',
     }
   }
 
   return {
-    ok: false,
+    ok:
+      false,
+
     reason:
       'بنية JSON غير مدعومة حاليًا.',
   }

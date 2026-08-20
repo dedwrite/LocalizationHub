@@ -1,0 +1,51 @@
+.token-profile-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #a9b1c3;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.token-profile-control span {
+  color: #c7cede;
+}
+
+.token-profile-control select {
+  min-width: 100px;
+  height: 34px;
+
+  padding: 0 30px 0 11px;
+
+  border: 1px solid #343a49;
+  border-radius: 7px;
+
+  background-color: #181c26;
+  color: #e8ebf2;
+
+  font: inherit;
+  font-size: 12px;
+
+  outline: none;
+  cursor: pointer;
+
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.token-profile-control select:hover {
+  border-color: #565d72;
+  background-color: #1d2230;
+}
+
+.token-profile-control select:focus {
+  border-color: #7667ff;
+}
+
+.token-profile-control select option {
+  background-color: #181c26;
+  color: #e8ebf2;
+}
