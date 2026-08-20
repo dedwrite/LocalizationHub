@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { open } from '@tauri-apps/plugin-dialog'
-import { readTextFile } from '@tauri-apps/plugin-fs'
+import {
+  open,
+  save,
+} from '@tauri-apps/plugin-dialog'
+import {
+  readTextFile,
+  writeTextFile,
+} from '@tauri-apps/plugin-fs'
 import './App.css'
 
 type TranslationEntry = {
@@ -9,15 +15,28 @@ type TranslationEntry = {
   translation: string
 }
 
+type EntryFilter = 'all' | 'untranslated' | 'translated'
+
+type LocalizationProject = {
+  format: 'LocalizationHubProject'
+  version: 1
+  sourceFileName: string
+  selectedKey: string | null
+  entries: TranslationEntry[]
+}
+
 function App() {
   const [entries, setEntries] = useState<TranslationEntry[]>([])
   const [fileName, setFileName] = useState('')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [entryFilter, setEntryFilter] = useState<EntryFilter>('all')
 
   const translatedCount = entries.filter(
     (entry) => entry.translation.trim() !== '',
   ).length
+
+  const untranslatedCount = entries.length - translatedCount
 
   const progress =
     entries.length === 0
@@ -30,15 +49,20 @@ function App() {
   const normalizedSearch = searchQuery.trim().toLowerCase()
 
   const filteredEntries = entries.filter((entry) => {
-    if (!normalizedSearch) {
-      return true
-    }
+    const isTranslated = entry.translation.trim() !== ''
 
-    return (
+    const matchesSearch =
+      !normalizedSearch ||
       entry.key.toLowerCase().includes(normalizedSearch) ||
       entry.source.toLowerCase().includes(normalizedSearch) ||
       entry.translation.toLowerCase().includes(normalizedSearch)
-    )
+
+    const matchesFilter =
+      entryFilter === 'all' ||
+      (entryFilter === 'translated' && isTranslated) ||
+      (entryFilter === 'untranslated' && !isTranslated)
+
+    return matchesSearch && matchesFilter
   })
 
   async function handleOpenFile() {
@@ -83,17 +107,115 @@ function App() {
         return
       }
 
-      setEntries(parsedEntries)
-      setSelectedKey(parsedEntries[0].key)
-      setSearchQuery('')
-
       const normalizedPath = selected.replace(/\\/g, '/')
       const name = normalizedPath.split('/').pop() ?? selected
 
+      setEntries(parsedEntries)
       setFileName(name)
+      setSelectedKey(parsedEntries[0].key)
+      setSearchQuery('')
+      setEntryFilter('all')
     } catch (error) {
       console.error(error)
       alert('فشل تحليل الملف. تأكد أن الملف JSON صالح.')
+    }
+  }
+
+  async function handleSaveProject() {
+    if (entries.length === 0) {
+      return
+    }
+
+    const baseName =
+      fileName.replace(/\.[^/.]+$/, '') || 'localization-project'
+
+    const selectedPath = await save({
+      defaultPath: `${baseName}.lhproj`,
+      filters: [
+        {
+          name: 'LocalizationHub Project',
+          extensions: ['lhproj'],
+        },
+      ],
+    })
+
+    if (!selectedPath) {
+      return
+    }
+
+    const project: LocalizationProject = {
+      format: 'LocalizationHubProject',
+      version: 1,
+      sourceFileName: fileName,
+      selectedKey,
+      entries,
+    }
+
+    try {
+      const projectContent = JSON.stringify(project, null, 2)
+
+      await writeTextFile(
+        selectedPath,
+        projectContent,
+      )
+
+      alert('تم حفظ المشروع بنجاح.')
+    } catch (error) {
+      console.error(error)
+      alert('فشل حفظ المشروع.')
+    }
+  }
+
+  async function handleOpenProject() {
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      filters: [
+        {
+          name: 'LocalizationHub Project',
+          extensions: ['lhproj'],
+        },
+      ],
+    })
+
+    if (!selected) {
+      return
+    }
+
+    try {
+      const content = await readTextFile(selected)
+      const parsed = JSON.parse(content) as LocalizationProject
+
+      if (
+        parsed.format !== 'LocalizationHubProject' ||
+        parsed.version !== 1 ||
+        !Array.isArray(parsed.entries)
+      ) {
+        alert('ملف المشروع غير صالح أو غير مدعوم.')
+        return
+      }
+
+      if (parsed.entries.length === 0) {
+        alert('المشروع لا يحتوي على نصوص.')
+        return
+      }
+
+      const restoredSelectedKey =
+        parsed.selectedKey &&
+        parsed.entries.some(
+          (entry) => entry.key === parsed.selectedKey,
+        )
+          ? parsed.selectedKey
+          : parsed.entries[0].key
+
+      setEntries(parsed.entries)
+      setFileName(parsed.sourceFileName)
+      setSelectedKey(restoredSelectedKey)
+      setSearchQuery('')
+      setEntryFilter('all')
+    } catch (error) {
+      console.error(error)
+      alert('فشل فتح المشروع.')
     }
   }
 
@@ -129,6 +251,14 @@ function App() {
               onClick={handleOpenFile}
             >
               Open File
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={handleOpenProject}
+            >
+              Open Project
             </button>
 
             <button
@@ -170,6 +300,14 @@ function App() {
           <button
             className="secondary-button"
             type="button"
+            onClick={handleSaveProject}
+          >
+            Save Project
+          </button>
+
+          <button
+            className="secondary-button"
+            type="button"
             onClick={handleOpenFile}
           >
             Open File
@@ -180,7 +318,7 @@ function App() {
       <div className="workspace">
         <aside className="sidebar">
           <div className="sidebar-header">
-            <div>
+            <div className="entries-summary">
               <strong>Entries</strong>
 
               <span>
@@ -198,6 +336,47 @@ function App() {
               }
               placeholder="Search keys or text..."
             />
+
+            <div className="filter-tabs">
+              <button
+                type="button"
+                className={
+                  entryFilter === 'all'
+                    ? 'filter-button active'
+                    : 'filter-button'
+                }
+                onClick={() => setEntryFilter('all')}
+              >
+                All
+                <span>{entries.length}</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  entryFilter === 'untranslated'
+                    ? 'filter-button active'
+                    : 'filter-button'
+                }
+                onClick={() => setEntryFilter('untranslated')}
+              >
+                Untranslated
+                <span>{untranslatedCount}</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  entryFilter === 'translated'
+                    ? 'filter-button active'
+                    : 'filter-button'
+                }
+                onClick={() => setEntryFilter('translated')}
+              >
+                Translated
+                <span>{translatedCount}</span>
+              </button>
+            </div>
           </div>
 
           <div className="entry-list">
