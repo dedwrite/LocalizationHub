@@ -24,6 +24,10 @@ import {
   type RecordArraySchema,
 } from './parsers'
 
+import {
+  exportLocalizationDocument,
+} from './exporters'
+
 import './App.css'
 
 type TranslationEntry =
@@ -404,6 +408,60 @@ function App() {
     }
   }
 
+  async function handleExportFile() {
+    if (!currentDocument) {
+      return
+    }
+
+    const baseName =
+      fileName.replace(
+        /\.[^/.]+$/,
+        '',
+      ) ||
+      'localization'
+
+    const selectedPath =
+      await save({
+        defaultPath:
+          `${baseName}_translated.json`,
+
+        filters: [
+          {
+            name: 'JSON',
+            extensions: [
+              'json',
+            ],
+          },
+        ],
+      })
+
+    if (!selectedPath) {
+      return
+    }
+
+    try {
+      const output =
+        exportLocalizationDocument(
+          currentDocument,
+        )
+
+      await writeTextFile(
+        selectedPath,
+        output,
+      )
+
+      alert(
+        'تم تصدير ملف JSON بنجاح.',
+      )
+    } catch (error) {
+      console.error(error)
+
+      alert(
+        'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
+      )
+    }
+  }
+
   async function handleOpenProject() {
     const selected =
       await open({
@@ -461,9 +519,6 @@ function App() {
         return
       }
 
-      /*
-       * Project V2
-       */
       if (
         parsed.version === 2
       ) {
@@ -508,12 +563,6 @@ function App() {
         return
       }
 
-      /*
-       * Legacy Project V1
-       *
-       * نخليه يفتح المشاريع القديمة
-       * بدل ما نكسرها بعد تحديث البرنامج.
-       */
       if (
         parsed.version === 1
       ) {
@@ -564,21 +613,14 @@ function App() {
           format:
             'flat-json-object',
 
-          /*
-           * مشاريع V1 القديمة لم تكن
-           * تحفظ النص الأصلي.
-           */
           sourceText: '',
         })
-
-        const oldSelected =
-          legacy.selectedKey
 
         const restored =
           migratedEntries.find(
             (entry) =>
               entry.key ===
-              oldSelected,
+              legacy.selectedKey,
           )
 
         setSelectedEntryId(
@@ -726,6 +768,16 @@ function App() {
             }
           >
             Save Project
+          </button>
+
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={
+              handleExportFile
+            }
+          >
+            Export JSON
           </button>
 
           <button
