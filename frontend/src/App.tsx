@@ -1142,14 +1142,8 @@ function App() {
                   selectedEntry
                     .translation
                     .trim() !== '' &&
-                  (
-                    selectedValidation
-                      .missingTokens
-                      .length > 0 ||
-                    selectedValidation
-                      .extraTokens
-                      .length > 0
-                  ) && (
+                  !selectedValidation
+                    .isValid && (
                     <div className="token-warning-box">
                       <strong>
                         Protected token warning
@@ -1175,7 +1169,7 @@ function App() {
                                     ) => (
                                       <code
                                         key={
-                                          `missing-${token.raw}-${index}`
+                                          `missing-${token.start}-${index}`
                                         }
                                       >
                                         {
@@ -1210,13 +1204,83 @@ function App() {
                                     ) => (
                                       <code
                                         key={
-                                          `extra-${token.raw}-${index}`
+                                          `extra-${token.start}-${index}`
                                         }
                                       >
                                         {
                                           token.raw
                                         }
                                       </code>
+                                    ),
+                                  )
+                              }
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      {
+                        selectedValidation
+                          .placementIssues
+                          .length > 0 && (
+                          <div className="token-warning-section">
+                            <span>
+                              Placement
+                            </span>
+
+                            <div>
+                              {
+                                selectedValidation
+                                  .placementIssues
+                                  .map(
+                                    (
+                                      issue,
+                                      index,
+                                    ) => (
+                                      <p
+                                        key={
+                                          `placement-${issue.kind}-${index}`
+                                        }
+                                      >
+                                        {
+                                          issue.message
+                                        }
+                                      </p>
+                                    ),
+                                  )
+                              }
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      {
+                        selectedValidation
+                          .structureIssues
+                          .length > 0 && (
+                          <div className="token-warning-section">
+                            <span>
+                              Structure
+                            </span>
+
+                            <div>
+                              {
+                                selectedValidation
+                                  .structureIssues
+                                  .map(
+                                    (
+                                      issue,
+                                      index,
+                                    ) => (
+                                      <p
+                                        key={
+                                          `structure-${issue.kind}-${index}`
+                                        }
+                                      >
+                                        {
+                                          issue.message
+                                        }
+                                      </p>
                                     ),
                                   )
                               }

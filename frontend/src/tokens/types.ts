@@ -29,15 +29,28 @@ export type TokenRule = {
   pattern: RegExp
 }
 
+export type TokenIssueKind =
+  | 'token-placement-changed'
+  | 'token-order-changed'
+  | 'tag-structure-invalid'
+  | 'tag-content-empty'
+  | 'tag-scope-changed'
+
+export type TokenValidationIssue = {
+  kind: TokenIssueKind
+  message: string
+  token?: ProtectedToken
+}
+
 export type TokenValidationResult = {
   sourceTokens: ProtectedToken[]
   translationTokens: ProtectedToken[]
 
   missingTokens: ProtectedToken[]
   extraTokens: ProtectedToken[]
-  misplacedTokens: ProtectedToken[]
 
-  orderMismatch: boolean
+  placementIssues: TokenValidationIssue[]
+  structureIssues: TokenValidationIssue[]
 
   isValid: boolean
 }
