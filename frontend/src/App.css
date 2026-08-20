@@ -167,11 +167,11 @@ button {
 
 .sidebar-header {
   flex-shrink: 0;
-  padding: 14px 12px;
+  padding: 14px 12px 12px;
   border-bottom: 1px solid #262a35;
 }
 
-.sidebar-header > div {
+.entries-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -202,6 +202,43 @@ button {
 .search-input:focus {
   border-color: #6d5dfc;
   box-shadow: 0 0 0 3px rgba(109, 93, 252, 0.1);
+}
+
+.filter-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.filter-button {
+  min-width: 0;
+  padding: 7px 5px;
+  border: 1px solid #292e3a;
+  border-radius: 6px;
+  background: #11141b;
+  color: #737b8c;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.filter-button:hover {
+  background: #1a1e27;
+  color: #aeb4c1;
+}
+
+.filter-button.active {
+  border-color: #4b436f;
+  background: #25243a;
+  color: #d2ceff;
+}
+
+.filter-button span {
+  display: block;
+  margin-top: 3px;
+  color: inherit;
+  font-size: 9px;
+  opacity: 0.7;
 }
 
 .entry-list {
@@ -371,5 +408,9 @@ button {
 
   .editor-panel {
     padding: 26px 22px;
+  }
+
+  .filter-button {
+    font-size: 9px;
   }
 }
