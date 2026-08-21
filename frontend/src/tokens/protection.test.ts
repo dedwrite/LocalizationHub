@@ -24,19 +24,31 @@ describe(
     )
 
     it(
-      'marks double-colon commands as fully protected',
+      'does not mark double-colon dialogue as fully protected',
       () => {
         expect(
           isFullyProtectedText(
             ':: wait',
             'godot',
           ),
-        ).toBe(true)
+        ).toBe(false)
       },
     )
 
     it(
-      'marks divert commands as fully protected',
+      'does not mark double-colon dialogue with control markers as fully protected',
+      () => {
+        expect(
+          isFullyProtectedText(
+            ':: Wait.[.] That grad pic...',
+            'godot',
+          ),
+        ).toBe(false)
+      },
+    )
+
+    it(
+      'marks divert command lines as fully protected',
       () => {
         expect(
           isFullyProtectedText(

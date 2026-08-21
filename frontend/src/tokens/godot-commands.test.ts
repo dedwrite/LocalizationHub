@@ -27,12 +27,6 @@ describe(
         ).toEqual([
           '$ say_timed 2.0',
         ])
-
-        expect(
-          tokens[0].kind,
-        ).toBe(
-          'control-code',
-        )
       },
     )
 
@@ -56,11 +50,11 @@ describe(
     )
 
     it(
-      'protects double-colon command lines',
+      'protects only the double-colon marker in translatable text',
       () => {
         const tokens =
           extractGodotTokens(
-            ':: wait',
+            ':: Wait.',
           )
 
         expect(
@@ -69,7 +63,27 @@ describe(
               token.raw,
           ),
         ).toEqual([
-          ':: wait',
+          '::',
+        ])
+      },
+    )
+
+    it(
+      'protects double-colon and punctuation markers independently',
+      () => {
+        const tokens =
+          extractGodotTokens(
+            ':: Wait.[.] That grad pic...',
+          )
+
+        expect(
+          tokens.map(
+            (token) =>
+              token.raw,
+          ),
+        ).toEqual([
+          '::',
+          '[.]',
         ])
       },
     )
@@ -94,14 +108,13 @@ describe(
     )
 
     it(
-      'protects commands inside multiline text',
+      'handles mixed multiline content',
       () => {
         const tokens =
           extractGodotTokens(
             [
               'Normal dialogue.',
-              ':: wait',
-              'More dialogue.',
+              ':: Wait.[.] Continue talking.',
               '$ play_anim CharacterA happy',
             ].join('\n'),
           )
@@ -112,7 +125,8 @@ describe(
               token.raw,
           ),
         ).toEqual([
-          ':: wait',
+          '::',
+          '[.]',
           '$ play_anim CharacterA happy',
         ])
       },

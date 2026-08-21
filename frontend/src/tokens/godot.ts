@@ -18,8 +18,54 @@ const GODOT_RULES:
       kind:
         'control-code',
 
+      /*
+       * أوامر واضحة نعرف أن السطر
+       * نفسه أمر تقني بالكامل.
+       *
+       * Examples:
+       *
+       * $ say_timed 2.0
+       * $ play_anim CharacterA idle
+       * -> next_scene
+       *
+       * ملاحظة مهمة:
+       *
+       * :: غير موجود هنا عمدًا.
+       *
+       * لأن ملفات حقيقية قد تستخدمه
+       * كبادئة داخل نص قابل للترجمة:
+       *
+       * :: Wait.[.] That grad pic...
+       */
       pattern:
-        /^[ \t]*(?:\$|::|->)[^\r\n]*$/gm,
+        /^[ \t]*(?:\$|->)[^\r\n]*$/gm,
+    },
+
+    {
+      id:
+        'godot-double-colon-marker',
+
+      kind:
+        'control-code',
+
+      /*
+       * :: قد يكون مجرد marker
+       * في بداية نص قابل للترجمة.
+       *
+       * لذلك نحمي العلامة فقط،
+       * وليس بقية السطر.
+       *
+       * Example:
+       *
+       * :: Wait.[.] That grad pic...
+       *
+       * Tokens:
+       *
+       * ::
+       * [.]
+       */
+      pattern:
+        /^::/gm,
     },
 
     {
@@ -29,6 +75,15 @@ const GODOT_RULES:
       kind:
         'control-code',
 
+      /*
+       * Inline engine/project commands.
+       *
+       * Examples:
+       *
+       * [$ F CharacterA concerned]
+       * [$ D internal_value]
+       * [$ F "..."]
+       */
       pattern:
         /\[\$[^\]\r\n]*\]/g,
     },
@@ -40,6 +95,17 @@ const GODOT_RULES:
       kind:
         'format',
 
+      /*
+       * Keep this before percent
+       * references so:
+       *
+       * %s
+       * %d
+       * %f
+       * %v
+       *
+       * stay format tokens.
+       */
       pattern:
         /%(?!%)[+\-]?(?:0?(?:\d+|\*))?(?:\.(?:\d*|\*))?[scdoxXfv]/g,
     },
@@ -51,6 +117,14 @@ const GODOT_RULES:
       kind:
         'variable',
 
+      /*
+       * Examples:
+       *
+       * %CharacterA
+       * %NPC
+       * %player_name
+       * %speaker_01
+       */
       pattern:
         /(?<![\p{L}\p{N}])%[A-Za-z_][A-Za-z0-9_]*/gu,
     },
@@ -84,6 +158,22 @@ const GODOT_RULES:
       kind:
         'control-code',
 
+      /*
+       * Project control markers made
+       * only from punctuation.
+       *
+       * Examples:
+       *
+       * [...]
+       * [.]
+       * [!]
+       * [---]
+       * [???]
+       *
+       * Tags containing letters or
+       * numbers are handled by the
+       * normal tag rules.
+       */
       pattern:
         /\[[^\p{L}\p{N}\[\]\r\n]+\]/gu,
     },
@@ -125,16 +215,16 @@ function overlaps(
  *
  * 100%discount
  *
- * لأن Generic/Godot قد يرى "%d"
- * في بداية كلمة "discount".
+ * لأن parser قد يرى %d داخل
+ * بداية كلمة discount.
  *
- * لكن:
+ * بينما:
  *
  * Count: %d
  * Value: %s
  * Health: %d%%
  *
- * تبقى سليمة.
+ * تبقى Tokens صحيحة.
  */
 function isPercentageWordFalsePositive(
   text: string,
@@ -156,11 +246,15 @@ function isPercentageWordFalsePositive(
 
   const after =
     token.end < text.length
-      ? text[token.end]
+      ? text[
+          token.end
+        ]
       : ''
 
   const precededByDigit =
-    /\d/.test(before)
+    /\d/.test(
+      before,
+    )
 
   const followedByWordCharacter =
     /[\p{L}\p{N}_]/u.test(
@@ -223,7 +317,9 @@ function extractGodotSpecificTokens(
         continue
       }
 
-      tokens.push(token)
+      tokens.push(
+        token,
+      )
     }
   }
 
@@ -255,7 +351,10 @@ function mergeTokens(
     ]
 
   candidates.sort(
-    (first, second) => {
+    (
+      first,
+      second,
+    ) => {
       if (
         first.start !==
         second.start
@@ -266,6 +365,16 @@ function mergeTokens(
         )
       }
 
+      /*
+       * عند وجود overlap نفضل
+       * أطول Token.
+       *
+       * مثال:
+       *
+       * [$ F CharacterA concerned]
+       *
+       * يبقى Token واحد كاملًا.
+       */
       const lengthDifference =
         second.raw.length -
         first.raw.length
@@ -273,7 +382,9 @@ function mergeTokens(
       if (
         lengthDifference !== 0
       ) {
-        return lengthDifference
+        return (
+          lengthDifference
+        )
       }
 
       return (
@@ -291,12 +402,13 @@ function mergeTokens(
     of candidates
   ) {
     /*
-     * Generic profile قد يكون هو
-     * الذي التقط %d داخل:
+     * Generic profile قد يلتقط
+     * %d داخل:
      *
      * 100%discount
      *
-     * لذلك نعيد نفس الفحص بعد الدمج.
+     * لذلك نطبق الفحص مرة ثانية
+     * بعد دمج الـprofiles.
      */
     if (
       isPercentageWordFalsePositive(
@@ -316,7 +428,9 @@ function mergeTokens(
           ),
       )
 
-    if (hasOverlap) {
+    if (
+      hasOverlap
+    ) {
       continue
     }
 
@@ -339,7 +453,10 @@ function mergeTokens(
   }
 
   return accepted.sort(
-    (first, second) =>
+    (
+      first,
+      second,
+    ) =>
       first.start -
       second.start,
   )
@@ -374,7 +491,7 @@ export const godotTokenProfile:
       'Godot',
 
     description:
-      'Protection for Godot and project localization markup, engine command lines, inline commands, percent references, format strings, BBCode, control markers, escaped percent signs, and common localization tokens.',
+      'Protection for Godot and project localization markup, explicit engine commands, inline commands, control markers, percent references, format strings, BBCode, escaped percent signs, and common localization tokens.',
 
     extract:
       extractGodotTokens,

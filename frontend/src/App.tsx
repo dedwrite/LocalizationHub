@@ -36,6 +36,7 @@ import {
 } from './exporters'
 
 import TokenProfileSelect from './TokenProfileSelect'
+import TranslationEditor from './TranslationEditor'
 
 import './App.css'
 
@@ -131,20 +132,6 @@ function App() {
       'generic',
     )
 
-  /*
-   * نحسب الـentries اللي مصدرها
-   * كامل عبارة عن شيء محمي.
-   *
-   * أمثلة:
-   *
-   * :: wait
-   * $ play_anim CharacterA idle
-   * -> next_scene
-   * [...]
-   *
-   * useMemo مهم هنا لأن الملفات
-   * ممكن تحتوي آلاف الأسطر.
-   */
   const fullyProtectedEntryIds =
     useMemo(
       () => {
@@ -182,10 +169,6 @@ function App() {
     entries.length -
     protectedCount
 
-  /*
-   * Protected entries لا تدخل
-   * في تقدم الترجمة.
-   */
   const translatedCount =
     entries.filter(
       (entry) =>
@@ -415,11 +398,6 @@ function App() {
       setSearchQuery('')
       setEntryFilter('all')
 
-      /*
-       * الملفات الجديدة تبدأ على
-       * Generic، وبعدها المستخدم
-       * يختار المحرك المناسب.
-       */
       setTokenProfile(
         'generic',
       )
@@ -522,15 +500,6 @@ function App() {
       return
     }
 
-    /*
-     * حماية إضافية:
-     *
-     * لو كان هناك entry محمي بالكامل
-     * لكنه يحتوي Translation قديمة،
-     * لا نصدر الملف حتى يتم تنظيفها.
-     *
-     * لا نحذف بيانات المستخدم بصمت.
-     */
     const protectedWithTranslation =
       entries.filter(
         (entry) =>
@@ -823,9 +792,11 @@ function App() {
     return (
       <main className="welcome-screen">
         <div className="welcome-card">
-          <div className="brand-mark">
-            LH
-          </div>
+          <img
+            className="welcome-logo"
+            src="/images/logo-center.jpg"
+            alt="LocalizationHub"
+          />
 
           <h1>
             LocalizationHub
@@ -873,9 +844,11 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div className="topbar-brand">
-          <div className="brand-mark small">
-            LH
-          </div>
+          <img
+            className="brand-mark brand-mark-image small"
+            src="/images/logo-center.jpg"
+            alt="LocalizationHub"
+          />
 
           <div>
             <h1>
@@ -1062,7 +1035,7 @@ function App() {
 
             {
               protectedCount > 0 && (
-                <div className="entries-summary">
+                <div className="entries-summary protected-summary">
                   <span>
                     Protected
                   </span>
@@ -1123,7 +1096,9 @@ function App() {
 
                       let statusClass = ''
 
-                      if (isProtected) {
+                      if (
+                        isProtected
+                      ) {
                         statusClass =
                           'protected'
                       } else if (
@@ -1236,7 +1211,8 @@ function App() {
 
                   <div
                     className="source-text"
-                    dir="auto"
+                    dir="ltr"
+                    lang="en"
                   >
                     {
                       selectedEntry
@@ -1273,13 +1249,6 @@ function App() {
                                 token,
                                 index,
                               ) => {
-                                /*
-                                 * Fully protected entry طبيعي
-                                 * تكون ترجمتها فاضية.
-                                 *
-                                 * لذلك لا نصبغ Tokens فيها
-                                 * كـMissing.
-                                 */
                                 const isMissing =
                                   !selectedFullyProtected &&
                                   selectedValidation
@@ -1394,25 +1363,25 @@ function App() {
                     )
                     : (
                       <div className="editor-section translation-section">
-                        <label htmlFor="translation">
+                        <label>
                           Translation
                         </label>
 
-                        <textarea
-                          id="translation"
-                          dir="auto"
+                        <TranslationEditor
                           value={
                             selectedEntry
                               .translation
                           }
+                          tokenProfile={
+                            tokenProfile
+                          }
                           onChange={
-                            (event) =>
+                            (value) =>
                               handleTranslationChange(
                                 selectedEntry.id,
-                                event.target.value,
+                                value,
                               )
                           }
-                          placeholder="Enter translation..."
                         />
                       </div>
                     )
