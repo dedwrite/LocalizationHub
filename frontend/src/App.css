@@ -78,10 +78,12 @@ button {
 
 .welcome-card {
   position: relative;
-  width: min(
-    560px,
-    calc(100vw - 48px)
-  );
+
+  width:
+    min(
+      560px,
+      calc(100vw - 48px)
+    );
 
   padding:
     38px
@@ -90,7 +92,12 @@ button {
 
   border:
     1px solid
-    rgba(255, 255, 255, 0.075);
+    rgba(
+      255,
+      255,
+      255,
+      0.075
+    );
 
   border-radius:
     24px;
@@ -99,13 +106,28 @@ button {
     center;
 
   background:
-    rgba(8, 10, 16, 0.56);
+    rgba(
+      8,
+      10,
+      16,
+      0.56
+    );
 
   box-shadow:
     0 26px 80px
-      rgba(0, 0, 0, 0.48),
+      rgba(
+        0,
+        0,
+        0,
+        0.48
+      ),
     inset 0 1px 0
-      rgba(255, 255, 255, 0.045);
+      rgba(
+        255,
+        255,
+        255,
+        0.045
+      );
 
   backdrop-filter:
     blur(14px);
@@ -137,7 +159,9 @@ button {
 .welcome-logo {
   width: 112px;
   height: 112px;
+
   display: block;
+
   margin:
     0
     auto
@@ -160,14 +184,25 @@ button {
 
   box-shadow:
     0 20px 45px
-      rgba(0, 0, 0, 0.42),
+      rgba(
+        0,
+        0,
+        0,
+        0.42
+      ),
     0 0 35px
-      rgba(190, 25, 25, 0.12);
+      rgba(
+        190,
+        25,
+        25,
+        0.12
+      );
 }
 
 .brand-mark {
   width: 64px;
   height: 64px;
+
   margin:
     0
     auto
@@ -184,8 +219,11 @@ button {
 .brand-mark.small {
   width: 42px;
   height: 42px;
+
   margin: 0;
-  border-radius: 12px;
+
+  border-radius:
+    12px;
 }
 
 .brand-mark-image {
@@ -205,7 +243,12 @@ button {
 
   box-shadow:
     0 8px 22px
-      rgba(0, 0, 0, 0.3);
+    rgba(
+      0,
+      0,
+      0,
+      0.3
+    );
 }
 
 .welcome-card h1 {
@@ -229,7 +272,12 @@ button {
 
   text-shadow:
     0 5px 20px
-      rgba(0, 0, 0, 0.35);
+    rgba(
+      0,
+      0,
+      0,
+      0.35
+    );
 }
 
 .welcome-card p {
@@ -252,6 +300,7 @@ button {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
+
   gap: 10px;
 }
 
@@ -290,12 +339,12 @@ button {
 
   box-shadow:
     0 10px 28px
-      rgba(
-        109,
-        93,
-        252,
-        0.25
-      );
+    rgba(
+      109,
+      93,
+      252,
+      0.25
+    );
 }
 
 .secondary-button {
@@ -326,12 +375,12 @@ button {
 
   box-shadow:
     0 13px 32px
-      rgba(
-        109,
-        93,
-        252,
-        0.32
-      );
+    rgba(
+      109,
+      93,
+      252,
+      0.32
+    );
 }
 
 .secondary-button:hover {
@@ -403,6 +452,7 @@ button {
 
 .topbar-brand h1 {
   margin: 0;
+
   font-size:
     18px;
 }
@@ -1055,6 +1105,13 @@ button {
     #ffaaaa;
 }
 
+/*
+ * Legacy textarea styling.
+ *
+ * CodeMirror صار هو المحرر الحالي،
+ * لكن نخليها مؤقتًا لأي fallback
+ * قد نحتاجه لاحقًا.
+ */
 .translation-section textarea {
   width:
     100%;
@@ -1300,12 +1357,31 @@ button {
     1.6;
 }
 
+/*
+ * Editor footer
+ *
+ * Previous | Status | Next
+ */
 .editor-footer {
   display:
-    flex;
+    grid;
 
-  justify-content:
-    space-between;
+  grid-template-columns:
+    minmax(
+      0,
+      1fr
+    )
+    auto
+    minmax(
+      0,
+      1fr
+    );
+
+  align-items:
+    center;
+
+  gap:
+    18px;
 
   padding-top:
     18px;
@@ -1319,6 +1395,223 @@ button {
 
   font-size:
     12px;
+}
+
+.editor-footer-status {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    6px
+    12px;
+
+  min-width:
+    0;
+
+  text-align:
+    center;
+}
+
+.editor-footer-status strong {
+  color:
+    #b9bfcc;
+
+  font-size:
+    12px;
+
+  font-weight:
+    700;
+}
+
+.editor-footer-status > span {
+  color:
+    #737b8a;
+
+  white-space:
+    nowrap;
+}
+
+.footer-remaining {
+  padding:
+    3px
+    7px;
+
+  border:
+    1px solid
+    #2d3240;
+
+  border-radius:
+    999px;
+
+  background:
+    #14171f;
+
+  color:
+    #969dae !important;
+
+  font-size:
+    10px;
+}
+
+.footer-nav-group {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  min-width:
+    0;
+}
+
+.footer-nav-group.previous {
+  justify-content:
+    flex-start;
+}
+
+.footer-nav-group.next {
+  justify-content:
+    flex-end;
+}
+
+.footer-nav-button {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    8px;
+
+  min-height:
+    36px;
+
+  padding:
+    8px
+    12px;
+
+  border:
+    1px solid
+    #343947;
+
+  border-radius:
+    8px;
+
+  background:
+    #171a22;
+
+  color:
+    #aeb5c4;
+
+  font-size:
+    11px;
+
+  font-weight:
+    650;
+
+  white-space:
+    nowrap;
+
+  transition:
+    transform
+      120ms ease,
+    background-color
+      120ms ease,
+    border-color
+      120ms ease,
+    color
+      120ms ease,
+    box-shadow
+      120ms ease;
+}
+
+.footer-nav-button:hover:not(:disabled) {
+  transform:
+    translateY(-1px);
+
+  border-color:
+    #484e60;
+
+  background:
+    #20242e;
+
+  color:
+    #eef0f5;
+}
+
+.footer-nav-button.primary {
+  border-color:
+    rgba(
+      109,
+      93,
+      252,
+      0.42
+    );
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.12
+    );
+
+  color:
+    #c9c4ff;
+}
+
+.footer-nav-button.primary:hover:not(:disabled) {
+  border-color:
+    rgba(
+      109,
+      93,
+      252,
+      0.68
+    );
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.2
+    );
+
+  color:
+    #e3e0ff;
+
+  box-shadow:
+    0 8px 20px
+    rgba(
+      109,
+      93,
+      252,
+      0.12
+    );
+}
+
+.footer-nav-button:disabled {
+  cursor:
+    default;
+
+  opacity:
+    0.35;
+
+  transform:
+    none;
 }
 
 html,
@@ -1383,7 +1676,46 @@ body::-webkit-scrollbar-thumb:hover {
 
 @media (
   max-width:
-  760px
+    900px
+) {
+  .editor-footer {
+    grid-template-columns:
+      1fr
+      1fr;
+
+    gap:
+      12px;
+  }
+
+  .editor-footer-status {
+    grid-column:
+      1 /
+      -1;
+
+    grid-row:
+      1;
+  }
+
+  .footer-nav-group.previous {
+    grid-column:
+      1;
+
+    grid-row:
+      2;
+  }
+
+  .footer-nav-group.next {
+    grid-column:
+      2;
+
+    grid-row:
+      2;
+  }
+}
+
+@media (
+  max-width:
+    760px
 ) {
   .workspace {
     grid-template-columns:
@@ -1412,11 +1744,16 @@ body::-webkit-scrollbar-thumb:hover {
     font-size:
       9px;
   }
+
+  .footer-nav-button {
+    width:
+      100%;
+  }
 }
 
 @media (
   max-width:
-  620px
+    620px
 ) {
   .welcome-screen {
     padding:
@@ -1451,6 +1788,38 @@ body::-webkit-scrollbar-thumb:hover {
   }
 
   .welcome-actions button {
+    width:
+      100%;
+  }
+
+  .editor-footer {
+    display:
+      flex;
+
+    flex-direction:
+      column;
+
+    align-items:
+      stretch;
+  }
+
+  .editor-footer-status {
+    order:
+      1;
+  }
+
+  .footer-nav-group.previous {
+    order:
+      2;
+  }
+
+  .footer-nav-group.next {
+    order:
+      3;
+  }
+
+  .footer-nav-group,
+  .footer-nav-button {
     width:
       100%;
   }

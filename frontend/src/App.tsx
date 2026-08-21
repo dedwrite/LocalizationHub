@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useMemo,
   useState,
 } from 'react'
 
@@ -20,25 +19,41 @@ import {
 } from './tokens'
 
 import {
-  isFullyProtectedText,
-} from './tokens/protection'
-
-import {
   describeParsedDocument,
   parseLocalizationFile,
-  type LocalizationFileFormat,
-  type LocalizationLanguageInfo,
   type ParsedLocalizationDocument,
   type ParsedLocalizationEntry,
-  type RecordArraySchema,
 } from './parsers'
 
 import {
   exportLocalizationDocument,
 } from './exporters'
 
+import {
+  useProtectedEntryIds,
+} from './useProtectedEntryIds'
+
+import {
+  useEntryCollections,
+} from './useEntryCollections'
+
+import {
+  writeLocalizationProject,
+  type LocalizationProjectV2,
+  type StoredDocumentInfo,
+} from './projectFiles'
+
+import {
+  confirmUnsavedChanges,
+} from './confirmUnsavedChanges'
+
+import {
+  useUnsavedCloseGuard,
+} from './useUnsavedCloseGuard'
+
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
+import EntryListItem from './EntryListItem'
 
 import Toast, {
   type ToastMessage,
@@ -54,45 +69,6 @@ type EntryFilter =
   | 'all'
   | 'untranslated'
   | 'translated'
-
-type StoredDocumentInfo = {
-  parser: 'json'
-
-  format:
-    LocalizationFileFormat
-
-  sourceText:
-    string
-
-  schema?:
-    RecordArraySchema
-
-  language?:
-    LocalizationLanguageInfo
-}
-
-type LocalizationProjectV2 = {
-  format:
-    'LocalizationHubProject'
-
-  version:
-    2
-
-  sourceFileName:
-    string
-
-  selectedEntryId:
-    string | null
-
-  tokenProfile:
-    TokenProfileId
-
-  document:
-    StoredDocumentInfo
-
-  entries:
-    TranslationEntry[]
-}
 
 type LegacyTranslationEntry = {
   key:
@@ -141,6 +117,20 @@ function App() {
     useState('')
 
   const [
+    projectPath,
+    setProjectPath,
+  ] =
+    useState<string | null>(
+      null,
+    )
+
+  const [
+    isDirty,
+    setIsDirty,
+  ] =
+    useState(false)
+
+  const [
     selectedEntryId,
     setSelectedEntryId,
   ] =
@@ -186,6 +176,14 @@ function App() {
       null,
     )
 
+  /*
+   * يحمي إغلاق نافذة التطبيق
+   * إذا عندنا تغييرات غير محفوظة.
+   */
+  useUnsavedCloseGuard(
+    isDirty,
+  )
+
   const dismissToast =
     useCallback(
       () => {
@@ -218,34 +216,22 @@ function App() {
     )
 
   const fullyProtectedEntryIds =
-    useMemo(
-      () => {
-        const ids =
-          new Set<string>()
-
-        for (
-          const entry
-          of entries
-        ) {
-          if (
-            isFullyProtectedText(
-              entry.source,
-              tokenProfile,
-            )
-          ) {
-            ids.add(
-              entry.id,
-            )
-          }
-        }
-
-        return ids
-      },
-      [
-        entries,
-        tokenProfile,
-      ],
+    useProtectedEntryIds(
+      entries,
+      tokenProfile,
     )
+
+  const {
+    translatedCount,
+    filteredEntries,
+    navigableEntries,
+  } =
+    useEntryCollections({
+      entries,
+      fullyProtectedEntryIds,
+      searchQuery,
+      entryFilter,
+    })
 
   const protectedCount =
     fullyProtectedEntryIds.size
@@ -253,16 +239,6 @@ function App() {
   const translatableCount =
     entries.length -
     protectedCount
-
-  const translatedCount =
-    entries.filter(
-      (entry) =>
-        !fullyProtectedEntryIds.has(
-          entry.id,
-        ) &&
-        entry.translation
-          .trim() !== '',
-    ).length
 
   const untranslatedCount =
     translatableCount -
@@ -349,99 +325,6 @@ function App() {
         )
       : ''
 
-  const normalizedSearch =
-    searchQuery
-      .trim()
-      .toLowerCase()
-
-  const filteredEntries =
-    entries.filter(
-      (entry) => {
-        const isProtected =
-          fullyProtectedEntryIds.has(
-            entry.id,
-          )
-
-        const isTranslated =
-          !isProtected &&
-          entry.translation
-            .trim() !== ''
-
-        const context =
-          entry.context ?? ''
-
-        const notes =
-          entry.notes ?? ''
-
-        const matchesSearch =
-          !normalizedSearch ||
-          entry.key
-            .toLowerCase()
-            .includes(
-              normalizedSearch,
-            ) ||
-          entry.source
-            .toLowerCase()
-            .includes(
-              normalizedSearch,
-            ) ||
-          entry.translation
-            .toLowerCase()
-            .includes(
-              normalizedSearch,
-            ) ||
-          context
-            .toLowerCase()
-            .includes(
-              normalizedSearch,
-            ) ||
-          notes
-            .toLowerCase()
-            .includes(
-              normalizedSearch,
-            )
-
-        const matchesFilter =
-          entryFilter ===
-            'all' ||
-          (
-            entryFilter ===
-              'translated' &&
-            isTranslated
-          ) ||
-          (
-            entryFilter ===
-              'untranslated' &&
-            !isProtected &&
-            !isTranslated
-          )
-
-        return (
-          matchesSearch &&
-          matchesFilter
-        )
-      },
-    )
-
-  /*
-   * كل Entry قابلة للترجمة.
-   *
-   * المحمية بالكامل تُستبعد.
-   */
-  const navigableEntries =
-    entries.filter(
-      (entry) =>
-        !fullyProtectedEntryIds.has(
-          entry.id,
-        ),
-    )
-
-  /*
-   * التنقل العادي:
-   *
-   * Alt + ↓
-   * Alt + ↑
-   */
   function selectRelativeEntry(
     offset: number,
   ) {
@@ -492,15 +375,6 @@ function App() {
     )
   }
 
-  /*
-   * نبحث من مكان الـEntry الحالية
-   * عن أقرب Entry غير مترجمة.
-   *
-   * ما نعتمد على القائمة المفلترة
-   * في الـsidebar، لذلك الاختصار
-   * يظل شغال حتى لو المستخدم
-   * يبحث عن شيء آخر.
-   */
   function selectRelativeUntranslated(
     direction: 1 | -1,
   ) {
@@ -599,7 +473,38 @@ function App() {
     )
   }
 
+  function handleTokenProfileChange(
+    nextProfile:
+      TokenProfileId,
+  ) {
+    if (
+      nextProfile ===
+      tokenProfile
+    ) {
+      return
+    }
+
+    setTokenProfile(
+      nextProfile,
+    )
+
+    setIsDirty(
+      true,
+    )
+  }
+
   async function handleOpenFile() {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
     const selected =
       await open({
         multiple:
@@ -699,6 +604,10 @@ function App() {
         name,
       )
 
+      setProjectPath(
+        null,
+      )
+
       setSelectedEntryId(
         document.entries[0].id,
       )
@@ -711,6 +620,10 @@ function App() {
 
       setTokenProfile(
         'generic',
+      )
+
+      setIsDirty(
+        false,
       )
 
       showToast(
@@ -731,15 +644,78 @@ function App() {
     }
   }
 
-  async function handleSaveProject() {
+  function createCurrentProject():
+    LocalizationProjectV2 | null {
     if (
       entries.length === 0 ||
       !documentInfo
     ) {
+      return null
+    }
+
+    return {
+      format:
+        'LocalizationHubProject',
+
+      version:
+        2,
+
+      sourceFileName:
+        fileName,
+
+      selectedEntryId,
+
+      tokenProfile,
+
+      document:
+        documentInfo,
+
+      entries,
+    }
+  }
+
+  async function handleSaveProject() {
+    const project =
+      createCurrentProject()
+
+    if (!project) {
       showToast(
         'warning',
         'لا يوجد مشروع لحفظه.',
       )
+
+      return
+    }
+
+    if (
+      projectPath
+    ) {
+      try {
+        await writeLocalizationProject(
+          projectPath,
+          project,
+        )
+
+        setIsDirty(
+          false,
+        )
+
+        showToast(
+          'success',
+          'تم حفظ المشروع.',
+        )
+      } catch (
+        error
+      ) {
+        console.error(
+          error,
+        )
+
+        showToast(
+          'error',
+          'فشل حفظ المشروع.',
+        )
+      }
 
       return
     }
@@ -774,38 +750,18 @@ function App() {
       return
     }
 
-    const project:
-      LocalizationProjectV2 = {
-        format:
-          'LocalizationHubProject',
-
-        version:
-          2,
-
-        sourceFileName:
-          fileName,
-
-        selectedEntryId,
-
-        tokenProfile,
-
-        document:
-          documentInfo,
-
-        entries,
-      }
-
     try {
-      const projectContent =
-        JSON.stringify(
-          project,
-          null,
-          2,
-        )
-
-      await writeTextFile(
+      await writeLocalizationProject(
         selectedPath,
-        projectContent,
+        project,
+      )
+
+      setProjectPath(
+        selectedPath,
+      )
+
+      setIsDirty(
+        false,
       )
 
       showToast(
@@ -920,6 +876,17 @@ function App() {
   }
 
   async function handleOpenProject() {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
     const selected =
       await open({
         multiple:
@@ -1005,6 +972,10 @@ function App() {
           project.document,
         )
 
+        setProjectPath(
+          selected,
+        )
+
         const selectedExists =
           project.selectedEntryId &&
           project.entries.some(
@@ -1028,6 +999,10 @@ function App() {
 
         setEntryFilter(
           'all',
+        )
+
+        setIsDirty(
+          false,
         )
 
         showToast(
@@ -1101,6 +1076,10 @@ function App() {
           },
         })
 
+        setProjectPath(
+          null,
+        )
+
         const restored =
           migratedEntries.find(
             (entry) =>
@@ -1122,6 +1101,10 @@ function App() {
 
         setEntryFilter(
           'all',
+        )
+
+        setIsDirty(
+          false,
         )
 
         showToast(
@@ -1154,6 +1137,20 @@ function App() {
     id: string,
     value: string,
   ) {
+    const currentEntry =
+      entries.find(
+        (entry) =>
+          entry.id === id,
+      )
+
+    if (
+      !currentEntry ||
+      currentEntry.translation ===
+        value
+    ) {
+      return
+    }
+
     setEntries(
       (
         currentEntries,
@@ -1169,6 +1166,10 @@ function App() {
                 }
               : entry,
         ),
+    )
+
+    setIsDirty(
+      true,
     )
   }
 
@@ -1256,6 +1257,12 @@ function App() {
 
               <span>
                 {fileName}
+
+                {
+                  isDirty
+                    ? ' • Unsaved'
+                    : ' • Saved'
+                }
               </span>
             </div>
           </div>
@@ -1266,7 +1273,7 @@ function App() {
                 tokenProfile
               }
               onChange={
-                setTokenProfile
+                handleTokenProfileChange
               }
             />
 
@@ -1458,113 +1465,36 @@ function App() {
                 filteredEntries
                   .length > 0
                   ? filteredEntries.map(
-                      (entry) => {
-                        const isProtected =
-                          fullyProtectedEntryIds.has(
-                            entry.id,
-                          )
+                      (entry) => (
+                        <EntryListItem
+                          key={
+                            entry.id
+                          }
 
-                        const isTranslated =
-                          !isProtected &&
-                          entry.translation
-                            .trim() !== ''
+                          entry={
+                            entry
+                          }
 
-                        const validation =
-                          isProtected
-                            ? null
-                            : validateProtectedTokens(
-                                entry.source,
-                                entry.translation,
-                                tokenProfile,
-                              )
+                          tokenProfile={
+                            tokenProfile
+                          }
 
-                        const hasTokenError =
-                          isTranslated &&
-                          Boolean(
-                            validation
-                              ?.hasErrors,
-                          )
+                          isProtected={
+                            fullyProtectedEntryIds.has(
+                              entry.id,
+                            )
+                          }
 
-                        const hasTokenWarning =
-                          isTranslated &&
-                          !hasTokenError &&
-                          Boolean(
-                            validation
-                              ?.hasWarnings,
-                          )
+                          isSelected={
+                            entry.id ===
+                            selectedEntryId
+                          }
 
-                        const isSelected =
-                          entry.id ===
-                          selectedEntryId
-
-                        let statusClass =
-                          ''
-
-                        if (
-                          isProtected
-                        ) {
-                          statusClass =
-                            'protected'
-                        } else if (
-                          hasTokenError
-                        ) {
-                          statusClass =
-                            'token-warning'
-                        } else if (
-                          hasTokenWarning
-                        ) {
-                          statusClass =
-                            'token-warning'
-                        } else if (
-                          isTranslated
-                        ) {
-                          statusClass =
-                            'translated'
-                        }
-
-                        const entryTitle =
-                          entry.context
-                            ? `${entry.context} · ${entry.key}`
-                            : entry.key
-
-                        return (
-                          <button
-                            type="button"
-                            key={
-                              entry.id
-                            }
-                            className={
-                              `entry-item ${
-                                isSelected
-                                  ? 'selected'
-                                  : ''
-                              }`
-                            }
-                            title={
-                              isProtected
-                                ? `Protected · ${entryTitle}`
-                                : entryTitle
-                            }
-                            onClick={() =>
-                              setSelectedEntryId(
-                                entry.id,
-                              )
-                            }
-                          >
-                            <span
-                              className={
-                                `status-dot ${statusClass}`
-                              }
-                            />
-
-                            <span className="entry-key">
-                              {
-                                entry.key
-                              }
-                            </span>
-                          </button>
-                        )
-                      },
+                          onSelect={
+                            setSelectedEntryId
+                          }
+                        />
+                      ),
                     )
                   : (
                     <div className="empty-search">
@@ -2002,31 +1932,84 @@ function App() {
                   }
 
                   <footer className="editor-footer">
-                    <span>
-                      {
-                        selectedFullyProtected
-                          ? 'Protected · Not translatable'
-                          : selectedEntry
-                              .translation
-                              .trim() === ''
-                            ? 'Not translated'
-                            : selectedValidation
-                                .hasErrors
-                              ? 'Token error'
-                              : selectedValidation
-                                  .hasWarnings
-                                ? 'Translated with warnings'
-                                : 'Translated'
-                      }
-                    </span>
+                    <div className="footer-nav-group previous">
+                      <button
+                        className="footer-nav-button"
+                        type="button"
+                        onClick={
+                          handlePreviousUntranslated
+                        }
+                        disabled={
+                          untranslatedCount ===
+                          0
+                        }
+                        title="Previous untranslated · Ctrl+Shift+Enter"
+                      >
+                        <span aria-hidden="true">
+                          ←
+                        </span>
 
-                    <span>
-                      {
-                        selectedFullyProtected
-                          ? 'Excluded from progress'
-                          : `${selectedEntry.translation.length} characters`
-                      }
-                    </span>
+                        Previous Untranslated
+                      </button>
+                    </div>
+
+                    <div className="editor-footer-status">
+                      <strong>
+                        {
+                          selectedFullyProtected
+                            ? 'Protected · Not translatable'
+                            : selectedEntry
+                                .translation
+                                .trim() === ''
+                              ? 'Not translated'
+                              : selectedValidation
+                                  .hasErrors
+                                ? 'Token error'
+                                : selectedValidation
+                                    .hasWarnings
+                                  ? 'Translated with warnings'
+                                  : 'Translated'
+                        }
+                      </strong>
+
+                      <span>
+                        {
+                          selectedFullyProtected
+                            ? 'Excluded from progress'
+                            : `${selectedEntry.translation.length} characters`
+                        }
+                      </span>
+
+                      <span className="footer-remaining">
+                        {
+                          untranslatedCount
+                            .toLocaleString()
+                        }
+
+                        {' remaining'}
+                      </span>
+                    </div>
+
+                    <div className="footer-nav-group next">
+                      <button
+                        className="footer-nav-button primary"
+                        type="button"
+                        onClick={
+                          handleNextUntranslated
+                        }
+                        disabled={
+                          untranslatedCount ===
+                          0
+                        }
+                        title="Next untranslated · Ctrl+Enter"
+                      >
+                        Next Untranslated
+
+                        <span aria-hidden="true">
+                          →
+                        </span>
+                      </button>
+                    </div>
                   </footer>
                 </>
               )
