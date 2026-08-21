@@ -12,10 +12,12 @@ import type {
 export type {
   JsonPathSegment,
   LocalizationFileFormat,
+  LocalizationLanguageInfo,
   LocalizationParseResult,
   ParsedLocalizationDocument,
   ParsedLocalizationEntry,
   RecordArraySchema,
+  TextDirection,
 } from './types'
 
 export function parseLocalizationFile(
@@ -28,7 +30,10 @@ export function parseLocalizationFile(
       .pop()
       ?.toLowerCase()
 
-  if (extension === 'json') {
+  if (
+    extension ===
+    'json'
+  ) {
     return parseJsonLocalization(
       text,
     )
@@ -36,15 +41,19 @@ export function parseLocalizationFile(
 
   return {
     ok: false,
+
     reason:
       `صيغة .${extension ?? ''} غير مدعومة حاليًا.`,
   }
 }
 
 export function describeParsedDocument(
-  document: ParsedLocalizationDocument,
+  document:
+    ParsedLocalizationDocument,
 ): string {
-  switch (document.format) {
+  switch (
+    document.format
+  ) {
     case 'flat-json-object':
       return (
         `Flat JSON Object — ` +
@@ -65,21 +74,30 @@ export function describeParsedDocument(
 
       return [
         'JSON Record Array',
+
         `${document.entries.length.toLocaleString()} entries`,
+
         `key: ${schema.keyField}`,
+
         `source: ${schema.sourceField}`,
+
         `translation: ${
           schema.translationField ??
           'not detected'
         }`,
-      ].join(' | ')
+      ].join(
+        ' | ',
+      )
     }
   }
 }
 
 export function getEntryById(
-  document: ParsedLocalizationDocument,
-  id: string,
+  document:
+    ParsedLocalizationDocument,
+
+  id:
+    string,
 ): ParsedLocalizationEntry | undefined {
   return document.entries.find(
     (entry) =>

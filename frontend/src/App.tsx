@@ -26,6 +26,7 @@ import {
   describeParsedDocument,
   parseLocalizationFile,
   type LocalizationFileFormat,
+  type LocalizationLanguageInfo,
   type ParsedLocalizationDocument,
   type ParsedLocalizationEntry,
   type RecordArraySchema,
@@ -50,39 +51,76 @@ type EntryFilter =
 
 type StoredDocumentInfo = {
   parser: 'json'
-  format: LocalizationFileFormat
-  sourceText: string
-  schema?: RecordArraySchema
+
+  format:
+    LocalizationFileFormat
+
+  sourceText:
+    string
+
+  schema?:
+    RecordArraySchema
+
+  /*
+   * Optional حتى مشاريع v2
+   * القديمة تظل تفتح طبيعي.
+   */
+  language?:
+    LocalizationLanguageInfo
 }
 
 type LocalizationProjectV2 = {
-  format: 'LocalizationHubProject'
-  version: 2
+  format:
+    'LocalizationHubProject'
 
-  sourceFileName: string
-  selectedEntryId: string | null
-  tokenProfile: TokenProfileId
+  version:
+    2
 
-  document: StoredDocumentInfo
+  sourceFileName:
+    string
 
-  entries: TranslationEntry[]
+  selectedEntryId:
+    string | null
+
+  tokenProfile:
+    TokenProfileId
+
+  document:
+    StoredDocumentInfo
+
+  entries:
+    TranslationEntry[]
 }
 
 type LegacyTranslationEntry = {
-  key: string
-  source: string
-  translation: string
+  key:
+    string
+
+  source:
+    string
+
+  translation:
+    string
 }
 
 type LocalizationProjectV1 = {
-  format: 'LocalizationHubProject'
-  version: 1
+  format:
+    'LocalizationHubProject'
 
-  sourceFileName: string
-  selectedKey: string | null
-  tokenProfile?: TokenProfileId
+  version:
+    1
 
-  entries: LegacyTranslationEntry[]
+  sourceFileName:
+    string
+
+  selectedKey:
+    string | null
+
+  tokenProfile?:
+    TokenProfileId
+
+  entries:
+    LegacyTranslationEntry[]
 }
 
 function App() {
@@ -90,7 +128,9 @@ function App() {
     entries,
     setEntries,
   ] =
-    useState<TranslationEntry[]>([])
+    useState<TranslationEntry[]>(
+      [],
+    )
 
   const [
     fileName,
@@ -102,7 +142,9 @@ function App() {
     selectedEntryId,
     setSelectedEntryId,
   ] =
-    useState<string | null>(null)
+    useState<string | null>(
+      null,
+    )
 
   const [
     documentInfo,
@@ -122,7 +164,9 @@ function App() {
     entryFilter,
     setEntryFilter,
   ] =
-    useState<EntryFilter>('all')
+    useState<EntryFilter>(
+      'all',
+    )
 
   const [
     tokenProfile,
@@ -132,6 +176,10 @@ function App() {
       'generic',
     )
 
+  /*
+   * نحدد الـentries التي تتكون
+   * بالكامل من محتوى محمي.
+   */
   const fullyProtectedEntryIds =
     useMemo(
       () => {
@@ -175,7 +223,8 @@ function App() {
         !fullyProtectedEntryIds.has(
           entry.id,
         ) &&
-        entry.translation.trim() !== '',
+        entry.translation
+          .trim() !== '',
     ).length
 
   const untranslatedCount =
@@ -215,11 +264,60 @@ function App() {
         )
       : null
 
+  /*
+   * اتجاهات ولغات المستند.
+   *
+   * مثال:
+   *
+   * text_en
+   * ↓
+   * en / ltr
+   *
+   * text_ar
+   * ↓
+   * ar / rtl
+   *
+   * وإذا ما عرفنا:
+   *
+   * auto
+   */
+  const sourceDirection =
+    documentInfo
+      ?.language
+      ?.sourceDirection ??
+    'auto'
+
+  const translationDirection =
+    documentInfo
+      ?.language
+      ?.translationDirection ??
+    'auto'
+
+  const sourceLocale =
+    documentInfo
+      ?.language
+      ?.sourceLocale
+
+  const translationLocale =
+    documentInfo
+      ?.language
+      ?.translationLocale
+
+  const translationPlaceholder =
+    translationLocale
+      ?.toLowerCase()
+      .startsWith(
+        'ar',
+      )
+      ? 'أدخل الترجمة...'
+      : 'Enter translation...'
+
   const currentDocument:
     ParsedLocalizationDocument | null =
       documentInfo
         ? {
             ...documentInfo,
+
             entries,
           }
         : null
@@ -246,7 +344,8 @@ function App() {
 
         const isTranslated =
           !isProtected &&
-          entry.translation.trim() !== ''
+          entry.translation
+            .trim() !== ''
 
         const context =
           entry.context ?? ''
@@ -304,15 +403,108 @@ function App() {
       },
     )
 
+  /*
+   * التنقل بالكيبورد يتجاوز
+   * الـentries المحمية بالكامل.
+   */
+  const navigableEntries =
+    entries.filter(
+      (entry) =>
+        !fullyProtectedEntryIds.has(
+          entry.id,
+        ),
+    )
+
+  function selectRelativeEntry(
+    offset: number,
+  ) {
+    if (
+      navigableEntries.length ===
+      0
+    ) {
+      return
+    }
+
+    const currentIndex =
+      navigableEntries.findIndex(
+        (entry) =>
+          entry.id ===
+          selectedEntryId,
+      )
+
+    /*
+     * لو الـentry الحالية غير موجودة
+     * في القائمة لأي سبب، نبدأ
+     * من أول/آخر entry.
+     */
+    if (
+      currentIndex === -1
+    ) {
+      const fallbackEntry =
+        offset >= 0
+          ? navigableEntries[0]
+          : navigableEntries[
+              navigableEntries.length -
+                1
+            ]
+
+      setSelectedEntryId(
+        fallbackEntry.id,
+      )
+
+      return
+    }
+
+    /*
+     * Wrap-around:
+     *
+     * آخر entry + Next
+     * يرجع لأول entry.
+     *
+     * أول entry + Previous
+     * يروح لآخر entry.
+     */
+    const nextIndex =
+      (
+        currentIndex +
+        offset +
+        navigableEntries.length
+      ) %
+      navigableEntries.length
+
+    setSelectedEntryId(
+      navigableEntries[
+        nextIndex
+      ].id,
+    )
+  }
+
+  function handleNextEntry() {
+    selectRelativeEntry(
+      1,
+    )
+  }
+
+  function handlePreviousEntry() {
+    selectRelativeEntry(
+      -1,
+    )
+  }
+
   async function handleOpenFile() {
     const selected =
       await open({
-        multiple: false,
-        directory: false,
+        multiple:
+          false,
+
+        directory:
+          false,
 
         filters: [
           {
-            name: 'JSON',
+            name:
+              'JSON',
+
             extensions: [
               'json',
             ],
@@ -348,7 +540,9 @@ function App() {
           name,
         )
 
-      if (!result.ok) {
+      if (
+        !result.ok
+      ) {
         alert(
           result.reason,
         )
@@ -360,7 +554,8 @@ function App() {
         result.document
 
       if (
-        document.entries.length === 0
+        document.entries
+          .length === 0
       ) {
         alert(
           'لم يتم العثور على نصوص قابلة للترجمة.',
@@ -373,6 +568,11 @@ function App() {
         document.entries,
       )
 
+      /*
+       * نحفظ معلومات اللغة أيضًا
+       * عشان الاتجاه يستمر داخل
+       * ملفات .lhproj.
+       */
       setDocumentInfo({
         parser:
           document.parser,
@@ -385,6 +585,9 @@ function App() {
 
         schema:
           document.schema,
+
+        language:
+          document.language,
       })
 
       setFileName(
@@ -396,12 +599,16 @@ function App() {
       )
 
       setSearchQuery('')
-      setEntryFilter('all')
+      setEntryFilter(
+        'all',
+      )
 
       setTokenProfile(
         'generic',
       )
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         error,
       )
@@ -444,7 +651,9 @@ function App() {
         ],
       })
 
-    if (!selectedPath) {
+    if (
+      !selectedPath
+    ) {
       return
     }
 
@@ -453,7 +662,8 @@ function App() {
         format:
           'LocalizationHubProject',
 
-        version: 2,
+        version:
+          2,
 
         sourceFileName:
           fileName,
@@ -484,7 +694,9 @@ function App() {
       alert(
         'تم حفظ المشروع بنجاح.',
       )
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         error,
       )
@@ -496,7 +708,9 @@ function App() {
   }
 
   async function handleExportFile() {
-    if (!currentDocument) {
+    if (
+      !currentDocument
+    ) {
       return
     }
 
@@ -506,12 +720,13 @@ function App() {
           fullyProtectedEntryIds.has(
             entry.id,
           ) &&
-          entry.translation.trim() !== '',
+          entry.translation
+            .trim() !== '',
       )
 
     if (
-      protectedWithTranslation.length >
-      0
+      protectedWithTranslation
+        .length > 0
     ) {
       alert(
         `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text. Clear them before export.`,
@@ -534,7 +749,9 @@ function App() {
 
         filters: [
           {
-            name: 'JSON',
+            name:
+              'JSON',
+
             extensions: [
               'json',
             ],
@@ -542,7 +759,9 @@ function App() {
         ],
       })
 
-    if (!selectedPath) {
+    if (
+      !selectedPath
+    ) {
       return
     }
 
@@ -560,7 +779,9 @@ function App() {
       alert(
         'تم تصدير ملف JSON بنجاح.',
       )
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         error,
       )
@@ -574,8 +795,11 @@ function App() {
   async function handleOpenProject() {
     const selected =
       await open({
-        multiple: false,
-        directory: false,
+        multiple:
+          false,
+
+        directory:
+          false,
 
         filters: [
           {
@@ -589,7 +813,9 @@ function App() {
         ],
       })
 
-    if (!selected) {
+    if (
+      !selected
+    ) {
       return
     }
 
@@ -621,7 +847,8 @@ function App() {
         !Array.isArray(
           parsed.entries,
         ) ||
-        parsed.entries.length === 0
+        parsed.entries
+          .length === 0
       ) {
         alert(
           'المشروع لا يحتوي على نصوص.',
@@ -645,6 +872,13 @@ function App() {
           project.sourceFileName,
         )
 
+        /*
+         * المشاريع v2 القديمة قد
+         * لا تحتوي language.
+         *
+         * عادي، لأن الخاصية Optional
+         * ونرجع وقتها لـauto.
+         */
         setDocumentInfo(
           project.document,
         )
@@ -669,7 +903,9 @@ function App() {
         )
 
         setSearchQuery('')
-        setEntryFilter('all')
+        setEntryFilter(
+          'all',
+        )
 
         return
       }
@@ -727,6 +963,14 @@ function App() {
 
           sourceText:
             '',
+
+          language: {
+            sourceDirection:
+              'auto',
+
+            translationDirection:
+              'auto',
+          },
         })
 
         const restored =
@@ -747,7 +991,9 @@ function App() {
         )
 
         setSearchQuery('')
-        setEntryFilter('all')
+        setEntryFilter(
+          'all',
+        )
 
         return
       }
@@ -755,7 +1001,9 @@ function App() {
       alert(
         'إصدار المشروع غير مدعوم.',
       )
-    } catch (error) {
+    } catch (
+      error
+    ) {
       console.error(
         error,
       )
@@ -771,7 +1019,9 @@ function App() {
     value: string,
   ) {
     setEntries(
-      (currentEntries) =>
+      (
+        currentEntries,
+      ) =>
         currentEntries.map(
           (entry) =>
             entry.id === id
@@ -787,7 +1037,8 @@ function App() {
   }
 
   if (
-    entries.length === 0
+    entries.length ===
+    0
   ) {
     return (
       <main className="welcome-screen">
@@ -956,7 +1207,9 @@ function App() {
               onChange={
                 (event) =>
                   setSearchQuery(
-                    event.target.value,
+                    event
+                      .target
+                      .value,
                   )
               }
               placeholder="Search keys or text..."
@@ -1034,7 +1287,8 @@ function App() {
             </div>
 
             {
-              protectedCount > 0 && (
+              protectedCount >
+                0 && (
                 <div className="entries-summary protected-summary">
                   <span>
                     Protected
@@ -1053,7 +1307,8 @@ function App() {
 
           <div className="entry-list">
             {
-              filteredEntries.length > 0
+              filteredEntries
+                .length > 0
                 ? filteredEntries.map(
                     (entry) => {
                       const isProtected =
@@ -1094,7 +1349,8 @@ function App() {
                         entry.id ===
                         selectedEntryId
 
-                      let statusClass = ''
+                      let statusClass =
+                        ''
 
                       if (
                         isProtected
@@ -1211,8 +1467,12 @@ function App() {
 
                   <div
                     className="source-text"
-                    dir="ltr"
-                    lang="en"
+                    dir={
+                      sourceDirection
+                    }
+                    lang={
+                      sourceLocale
+                    }
                   >
                     {
                       selectedEntry
@@ -1224,7 +1484,8 @@ function App() {
                 {
                   selectedValidation
                     .sourceTokens
-                    .length > 0 && (
+                    .length >
+                    0 && (
                     <div className="token-panel">
                       <div className="token-panel-header">
                         <strong>
@@ -1333,7 +1594,8 @@ function App() {
                           {
                             selectedEntry
                               .translation
-                              .trim() !== '' && (
+                              .trim() !==
+                              '' && (
                               <div className="token-warning-box">
                                 <strong>
                                   Protected entry contains translation text
@@ -1375,12 +1637,32 @@ function App() {
                           tokenProfile={
                             tokenProfile
                           }
+                          direction={
+                            translationDirection
+                          }
+                          locale={
+                            translationLocale
+                          }
+                          placeholderText={
+                            translationPlaceholder
+                          }
                           onChange={
-                            (value) =>
+                            (
+                              value,
+                            ) =>
                               handleTranslationChange(
                                 selectedEntry.id,
                                 value,
                               )
+                          }
+                          onSave={() => {
+                            void handleSaveProject()
+                          }}
+                          onNext={
+                            handleNextEntry
+                          }
+                          onPrevious={
+                            handlePreviousEntry
                           }
                         />
                       </div>
@@ -1411,7 +1693,8 @@ function App() {
                       {
                         selectedValidation
                           .missingTokens
-                          .length > 0 && (
+                          .length >
+                          0 && (
                           <div className="token-warning-section">
                             <span>
                               Missing
@@ -1446,7 +1729,8 @@ function App() {
                       {
                         selectedValidation
                           .extraTokens
-                          .length > 0 && (
+                          .length >
+                          0 && (
                           <div className="token-warning-section">
                             <span>
                               Extra
@@ -1481,7 +1765,8 @@ function App() {
                       {
                         selectedValidation
                           .placementIssues
-                          .length > 0 && (
+                          .length >
+                          0 && (
                           <div className="token-warning-section">
                             <span>
                               Warning
@@ -1516,7 +1801,8 @@ function App() {
                       {
                         selectedValidation
                           .structureIssues
-                          .length > 0 && (
+                          .length >
+                          0 && (
                           <div className="token-warning-section">
                             <span>
                               Error

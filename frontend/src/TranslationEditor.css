@@ -107,34 +107,63 @@
   padding:
     18px;
 
-  direction:
-    rtl;
-
-  text-align:
-    right;
-
   caret-color:
     #f1f2f5;
 }
 
 .translation-editor
 .cm-line {
+  line-height:
+    1.9;
+
+  /*
+   * هذا يساعد كل سطر يتعامل
+   * مع النص المختلط بشكل مستقل.
+   */
+  unicode-bidi:
+    plaintext;
+}
+
+/*
+ * RTL
+ */
+.translation-editor.direction-rtl
+.cm-content,
+.translation-editor.direction-rtl
+.cm-line {
   direction:
     rtl;
 
   text-align:
     right;
+}
 
-  line-height:
-    1.9;
+/*
+ * LTR
+ */
+.translation-editor.direction-ltr
+.cm-content,
+.translation-editor.direction-ltr
+.cm-line {
+  direction:
+    ltr;
 
-  /*
-   * مهم للنص المختلط.
-   * نخلي كل سطر يعتمد على
-   * اتجاه المحتوى الداخلي.
-   */
-  unicode-bidi:
-    plaintext;
+  text-align:
+    left;
+}
+
+/*
+ * AUTO
+ *
+ * نخلي المتصفح يقرر اتجاه
+ * السطر حسب المحتوى نفسه.
+ */
+.translation-editor.direction-auto
+.cm-content,
+.translation-editor.direction-auto
+.cm-line {
+  text-align:
+    start;
 }
 
 .translation-editor
@@ -167,12 +196,57 @@
 }
 
 /*
+ * Placeholder
+ */
+.translation-editor
+.cm-placeholder {
+  color:
+    #747b8a;
+
+  opacity:
+    1;
+}
+
+/*
+ * Placeholder RTL
+ */
+.translation-editor.direction-rtl
+.cm-placeholder {
+  direction:
+    rtl;
+
+  text-align:
+    right;
+}
+
+/*
+ * Placeholder LTR
+ */
+.translation-editor.direction-ltr
+.cm-placeholder {
+  direction:
+    ltr;
+
+  text-align:
+    left;
+}
+
+/*
+ * Placeholder AUTO
+ */
+.translation-editor.direction-auto
+.cm-placeholder {
+  text-align:
+    start;
+}
+
+/*
  * Protected Tokens
  *
- * CodeMirror يلف الـToken المرئي
- * بـspan فقط داخل الواجهة.
+ * مجرد Decoration بصري.
  *
- * النص الحقيقي ما يتغير أبدًا.
+ * النص الخام ما يتغير،
+ * وما نضيف Unicode controls.
  */
 .translation-editor
 .cm-protected-token {
@@ -231,15 +305,6 @@
     0.95em;
 }
 
-/*
- * عشان الرموز مثل:
- *
- * ::
- * [.]
- * %CharacterA
- *
- * ما تنقلب بصريًا داخل RTL.
- */
 .translation-editor
 .cm-protected-token::selection {
   background:
@@ -252,21 +317,46 @@
 }
 
 /*
- * Placeholder
- *
- * CodeMirror نفسه ما عنده
- * placeholder هنا للحين،
- * لكن نخلي الكلاس جاهز إذا
- * أضفناه بالخطوة الجاية.
+ * لو الـtoken داخل سطر RTL
+ * يظل هو نفسه LTR.
+ */
+.translation-editor.direction-rtl
+.cm-protected-token {
+  direction:
+    ltr;
+
+  unicode-bidi:
+    isolate;
+}
+
+/*
+ * CodeMirror gutters غير مستخدمة
+ * حاليًا، لكن لو ظهرت لأي سبب
+ * نخليها متناسقة مع الثيم.
  */
 .translation-editor
-.cm-placeholder {
+.cm-gutters {
+  background:
+    #151820;
+
   color:
-    #747b8a;
+    #737b8a;
 
-  direction:
-    rtl;
+  border-right:
+    1px solid
+    #2d3240;
+}
 
-  text-align:
-    right;
+/*
+ * Active line مستقبلًا.
+ */
+.translation-editor
+.cm-activeLine {
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.015
+    );
 }

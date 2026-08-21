@@ -6,6 +6,51 @@ export type LocalizationFileFormat =
   | 'flat-json-object'
   | 'json-record-array'
 
+/*
+ * اتجاه عرض النص.
+ *
+ * ltr:
+ *   English / French / Spanish...
+ *
+ * rtl:
+ *   Arabic / Hebrew / Persian...
+ *
+ * auto:
+ *   لما ما نقدر نحدد اللغة
+ *   بثقة من الملف.
+ */
+export type TextDirection =
+  | 'ltr'
+  | 'rtl'
+  | 'auto'
+
+/*
+ * معلومات لغة المستند.
+ *
+ * هذه معلومات عرض / تحرير فقط.
+ * لا تغيّر النص الأصلي ولا تدخل
+ * أي Unicode direction markers
+ * إلى الملف المصدر.
+ *
+ * Examples:
+ *
+ * text_en -> sourceLocale: en
+ * text_ar -> translationLocale: ar
+ *
+ * sourceDirection: ltr
+ * translationDirection: rtl
+ */
+export type LocalizationLanguageInfo = {
+  sourceLocale?: string
+  translationLocale?: string
+
+  sourceDirection:
+    TextDirection
+
+  translationDirection:
+    TextDirection
+}
+
 export type ParsedLocalizationEntry = {
   id: string
 
@@ -16,9 +61,14 @@ export type ParsedLocalizationEntry = {
   context?: string
   notes?: string
 
-  keyPath: JsonPathSegment[]
-  sourcePath: JsonPathSegment[]
-  translationPath?: JsonPathSegment[]
+  keyPath:
+    JsonPathSegment[]
+
+  sourcePath:
+    JsonPathSegment[]
+
+  translationPath?:
+    JsonPathSegment[]
 }
 
 export type RecordArraySchema = {
@@ -32,7 +82,9 @@ export type RecordArraySchema = {
 
 export type ParsedLocalizationDocument = {
   parser: 'json'
-  format: LocalizationFileFormat
+
+  format:
+    LocalizationFileFormat
 
   /*
    * نحفظ النص الأصلي كما هو حرفيًا.
@@ -43,18 +95,35 @@ export type ParsedLocalizationDocument = {
    */
   sourceText: string
 
-  entries: ParsedLocalizationEntry[]
+  entries:
+    ParsedLocalizationEntry[]
 
-  schema?: RecordArraySchema
+  schema?:
+    RecordArraySchema
+
+  /*
+   * معلومات اللغة والاتجاه.
+   *
+   * Optional حتى تبقى مشاريع
+   * LocalizationHub القديمة متوافقة.
+   *
+   * الملفات الجديدة سيحاول الـparser
+   * اكتشافها تلقائيًا.
+   */
+  language?:
+    LocalizationLanguageInfo
 }
 
 export type ParseSuccess = {
   ok: true
-  document: ParsedLocalizationDocument
+
+  document:
+    ParsedLocalizationDocument
 }
 
 export type ParseFailure = {
   ok: false
+
   reason: string
 }
 

@@ -3,10 +3,12 @@ import {
 } from 'lossless-json'
 
 import type {
+  LocalizationLanguageInfo,
   LocalizationParseResult,
   ParsedLocalizationDocument,
   ParsedLocalizationEntry,
   RecordArraySchema,
+  TextDirection,
 } from './types'
 
 const KEY_FIELDS = [
@@ -74,6 +76,79 @@ const NOTES_FIELDS = [
   'description',
 ]
 
+/*
+ * بعض الملفات توفر اللغة صراحة
+ * كـmetadata بجانب النص.
+ */
+const SOURCE_LOCALE_FIELDS = [
+  'source_locale',
+  'sourceLocale',
+  'source_language',
+  'sourceLanguage',
+  'original_locale',
+  'originalLocale',
+  'original_language',
+  'originalLanguage',
+]
+
+const TRANSLATION_LOCALE_FIELDS = [
+  'target_locale',
+  'targetLocale',
+  'target_language',
+  'targetLanguage',
+  'translation_locale',
+  'translationLocale',
+  'translation_language',
+  'translationLanguage',
+]
+
+/*
+ * أسماء لغات شائعة قد تظهر
+ * كاسم field بدل locale code.
+ */
+const LANGUAGE_NAME_TO_LOCALE:
+  Record<string, string> = {
+    english: 'en',
+    arabic: 'ar',
+    hebrew: 'he',
+    persian: 'fa',
+    farsi: 'fa',
+    urdu: 'ur',
+    french: 'fr',
+    spanish: 'es',
+    german: 'de',
+    italian: 'it',
+    portuguese: 'pt',
+    russian: 'ru',
+    ukrainian: 'uk',
+    polish: 'pl',
+    turkish: 'tr',
+    japanese: 'ja',
+    korean: 'ko',
+    chinese: 'zh',
+  }
+
+/*
+ * لغات تُكتب غالبًا من اليمين
+ * إلى اليسار.
+ *
+ * إذا ما عرفنا اللغة، نرجع auto
+ * بدل التخمين.
+ */
+const RTL_LANGUAGE_CODES =
+  new Set([
+    'ar',
+    'he',
+    'fa',
+    'ur',
+    'ps',
+    'sd',
+    'ug',
+    'yi',
+    'dv',
+    'ckb',
+  ])
+
 type LosslessNumberLike = {
   isLosslessNumber: true
   value: string
@@ -110,7 +185,7 @@ function isRecord(
 
   /*
    * LosslessNumber نفسه object،
-   * لكن مو JSON record.
+   * لكنه مو JSON record.
    */
   if (
     isLosslessNumberValue(value)
@@ -163,8 +238,10 @@ function getSampleRecords(
 }
 
 function findStringField(
-  records: Record<string, unknown>[],
-  candidates: string[],
+  records:
+    Record<string, unknown>[],
+  candidates:
+    string[],
 ): string | undefined {
   if (
     records.length === 0
@@ -199,8 +276,11 @@ function findStringField(
     if (
       score > bestScore
     ) {
-      bestField = candidate
-      bestScore = score
+      bestField =
+        candidate
+
+      bestScore =
+        score
     }
   }
 
@@ -231,8 +311,10 @@ function findStringField(
  * لذلك ما نقيده بالـstring فقط.
  */
 function findScalarField(
-  records: Record<string, unknown>[],
-  candidates: string[],
+  records:
+    Record<string, unknown>[],
+  candidates:
+    string[],
 ): string | undefined {
   if (
     records.length === 0
@@ -268,8 +350,11 @@ function findScalarField(
     if (
       score > bestScore
     ) {
-      bestField = candidate
-      bestScore = score
+      bestField =
+        candidate
+
+      bestScore =
+        score
     }
   }
 
@@ -294,7 +379,9 @@ function detectRecordArraySchema(
   array: unknown[],
 ): RecordArraySchema | null {
   const records =
-    getSampleRecords(array)
+    getSampleRecords(
+      array,
+    )
 
   if (
     records.length === 0
@@ -354,13 +441,447 @@ function detectRecordArraySchema(
   }
 }
 
+/*
+ * يحول:
+ *
+ * textAr
+ * sourceLocale
+ *
+ * إلى:
+ *
+ * text_ar
+ * source_locale
+ *
+ * حتى يكون تحليل اسم الحقل أسهل.
+ */
+function normalizeFieldName(
+  fieldName: string,
+): string {
+  return fieldName
+    .replace(
+      /([a-z0-9])([A-Z])/g,
+      '$1_$2',
+    )
+    .replace(
+      /-/g,
+      '_',
+    )
+    .toLowerCase()
+}
+
+/*
+ * نقبل locale codes البسيطة مثل:
+ *
+ * en
+ * ar
+ * pt-BR
+ * zh-Hans
+ *
+ * ونرفض النصوص الطويلة العشوائية.
+ */
+function normalizeLocale(
+  value: string,
+): string | undefined {
+  const trimmed =
+    value.trim()
+
+  if (
+    !/^[A-Za-z]{2,3}(?:[-_][A-Za-z]{2,8}){0,2}$/
+      .test(
+        trimmed,
+      )
+  ) {
+    return undefined
+  }
+
+  const parts =
+    trimmed
+      .replace(
+        /_/g,
+        '-',
+      )
+      .split('-')
+
+  const language =
+    parts[0]
+      .toLowerCase()
+
+  if (
+    parts.length === 1
+  ) {
+    return language
+  }
+
+  const normalizedParts =
+    parts
+      .slice(1)
+      .map(
+        (part) => {
+          if (
+            part.length === 2
+          ) {
+            return (
+              part
+                .toUpperCase()
+            )
+          }
+
+          if (
+            part.length === 4
+          ) {
+            return (
+              part[0]
+                .toUpperCase() +
+              part
+                .slice(1)
+                .toLowerCase()
+            )
+          }
+
+          return (
+            part
+              .toLowerCase()
+          )
+        },
+      )
+
+  return [
+    language,
+    ...normalizedParts,
+  ].join('-')
+}
+
+/*
+ * نحاول معرفة locale من اسم
+ * field نفسه.
+ *
+ * Examples:
+ *
+ * text_en      -> en
+ * textEn       -> en
+ * text_ar      -> ar
+ * arabic       -> ar
+ * english      -> en
+ * translation_ja -> ja
+ * text_pt_br   -> pt-BR
+ */
+function inferLocaleFromFieldName(
+  fieldName:
+    string | undefined,
+): string | undefined {
+  if (!fieldName) {
+    return undefined
+  }
+
+  const normalizedName =
+    normalizeFieldName(
+      fieldName,
+    )
+
+  const directLanguageName =
+    LANGUAGE_NAME_TO_LOCALE[
+      normalizedName
+    ]
+
+  if (
+    directLanguageName
+  ) {
+    return (
+      directLanguageName
+    )
+  }
+
+  const parts =
+    normalizedName
+      .split('_')
+      .filter(Boolean)
+
+  /*
+   * source_arabic
+   * target_french
+   */
+  const lastPart =
+    parts[
+      parts.length - 1
+    ]
+
+  if (
+    lastPart &&
+    LANGUAGE_NAME_TO_LOCALE[
+      lastPart
+    ]
+  ) {
+    return (
+      LANGUAGE_NAME_TO_LOCALE[
+        lastPart
+      ]
+    )
+  }
+
+  /*
+   * لو اسم الحقل نفسه locale:
+   *
+   * en
+   * ar
+   */
+  if (
+    parts.length === 1
+  ) {
+    return normalizeLocale(
+      parts[0],
+    )
+  }
+
+  /*
+   * text_pt_br
+   * translation_zh_hans
+   *
+   * نجرب آخر جزئين أولًا.
+   */
+  if (
+    parts.length >= 3
+  ) {
+    const possibleLocale =
+      normalizeLocale(
+        [
+          parts[
+            parts.length - 2
+          ],
+
+          parts[
+            parts.length - 1
+          ],
+        ].join('-'),
+      )
+
+    if (
+      possibleLocale
+    ) {
+      return possibleLocale
+    }
+  }
+
+  /*
+   * text_en
+   * text_ar
+   * translation_ja
+   */
+  if (
+    lastPart
+  ) {
+    return normalizeLocale(
+      lastPart,
+    )
+  }
+
+  return undefined
+}
+
+/*
+ * لو الملف يوفر source_locale
+ * أو target_locale، نفضله على
+ * التخمين من اسم الحقل.
+ *
+ * نأخذ القيمة الأكثر شيوعًا
+ * داخل sample records.
+ */
+function findLocaleFromMetadata(
+  records:
+    Record<string, unknown>[],
+  candidates:
+    string[],
+): string | undefined {
+  const counts =
+    new Map<string, number>()
+
+  for (
+    const candidate
+    of candidates
+  ) {
+    for (
+      const record
+      of records
+    ) {
+      const value =
+        record[candidate]
+
+      if (
+        typeof value !==
+        'string'
+      ) {
+        continue
+      }
+
+      const locale =
+        normalizeLocale(
+          value,
+        )
+
+      if (!locale) {
+        continue
+      }
+
+      counts.set(
+        locale,
+        (
+          counts.get(
+            locale,
+          ) ?? 0
+        ) + 1,
+      )
+    }
+  }
+
+  let bestLocale:
+    | string
+    | undefined
+
+  let bestScore = 0
+
+  for (
+    const [
+      locale,
+      score,
+    ]
+    of counts
+  ) {
+    if (
+      score > bestScore
+    ) {
+      bestLocale =
+        locale
+
+      bestScore =
+        score
+    }
+  }
+
+  return bestLocale
+}
+
+function directionForLocale(
+  locale:
+    string | undefined,
+): TextDirection {
+  if (!locale) {
+    return 'auto'
+  }
+
+  const normalized =
+    locale
+      .replace(
+        /_/g,
+        '-',
+      )
+      .toLowerCase()
+
+  const parts =
+    normalized.split('-')
+
+  const language =
+    parts[0]
+
+  /*
+   * Script tags:
+   *
+   * az-Arab
+   * ku-Arab
+   * yi-Hebr
+   */
+  if (
+    parts.includes(
+      'arab',
+    ) ||
+    parts.includes(
+      'hebr',
+    )
+  ) {
+    return 'rtl'
+  }
+
+  if (
+    RTL_LANGUAGE_CODES.has(
+      language,
+    )
+  ) {
+    return 'rtl'
+  }
+
+  /*
+   * طالما عرفنا locale صالح،
+   * والباقي ليس من لغات RTL،
+   * اتجاه الكتابة القياسي LTR.
+   */
+  return 'ltr'
+}
+
+function detectLanguageInfo(
+  records:
+    Record<string, unknown>[],
+  schema:
+    RecordArraySchema,
+): LocalizationLanguageInfo {
+  /*
+   * Metadata الصريح له الأولوية.
+   */
+  const sourceLocale =
+    findLocaleFromMetadata(
+      records,
+      SOURCE_LOCALE_FIELDS,
+    ) ??
+    inferLocaleFromFieldName(
+      schema.sourceField,
+    )
+
+  const translationLocale =
+    findLocaleFromMetadata(
+      records,
+      TRANSLATION_LOCALE_FIELDS,
+    ) ??
+    inferLocaleFromFieldName(
+      schema.translationField,
+    )
+
+  return {
+    sourceLocale,
+    translationLocale,
+
+    sourceDirection:
+      directionForLocale(
+        sourceLocale,
+      ),
+
+    translationDirection:
+      directionForLocale(
+        translationLocale,
+      ),
+  }
+}
+
+function createUnknownLanguageInfo():
+  LocalizationLanguageInfo {
+  return {
+    sourceDirection:
+      'auto',
+
+    translationDirection:
+      'auto',
+  }
+}
+
 function parseFlatObject(
-  value: Record<string, unknown>,
-  sourceText: string,
+  value:
+    Record<string, unknown>,
+  sourceText:
+    string,
 ): ParsedLocalizationDocument | null {
   const entries =
-    Object.entries(value)
-      .filter(isStringEntry)
+    Object.entries(
+      value,
+    )
+      .filter(
+        isStringEntry,
+      )
 
   if (
     entries.length === 0
@@ -369,7 +890,9 @@ function parseFlatObject(
   }
 
   const totalFields =
-    Object.keys(value).length
+    Object.keys(
+      value,
+    ).length
 
   const stringRatio =
     entries.length /
@@ -394,26 +917,41 @@ function parseFlatObject(
     ParsedLocalizationEntry[] =
       entries.map(
         (
-          [key, source],
+          [
+            key,
+            source,
+          ],
           index,
         ) => ({
           id:
             `flat:${index}:${key}`,
 
           key,
+
           source,
 
           translation:
             '',
 
           keyPath:
-            [key],
+            [
+              key,
+            ],
 
           sourcePath:
-            [key],
+            [
+              key,
+            ],
         }),
       )
 
+  /*
+   * Flat JSON ما يعطينا
+   * source/translation field names
+   * يمكن استنتاج اللغة منها.
+   *
+   * لذلك ما نخمن.
+   */
   return {
     parser:
       'json',
@@ -425,12 +963,17 @@ function parseFlatObject(
 
     entries:
       parsedEntries,
+
+    language:
+      createUnknownLanguageInfo(),
   }
 }
 
 function parseRecordArray(
-  value: unknown[],
-  sourceText: string,
+  value:
+    unknown[],
+  sourceText:
+    string,
 ): ParsedLocalizationDocument | null {
   const schema =
     detectRecordArraySchema(
@@ -450,7 +993,9 @@ function parseRecordArray(
       index,
     ) => {
       if (
-        !isRecord(item)
+        !isRecord(
+          item,
+        )
       ) {
         return
       }
@@ -572,6 +1117,17 @@ function parseRecordArray(
     return null
   }
 
+  const sampleRecords =
+    getSampleRecords(
+      value,
+    )
+
+  const language =
+    detectLanguageInfo(
+      sampleRecords,
+      schema,
+    )
+
   return {
     parser:
       'json',
@@ -585,6 +1141,8 @@ function parseRecordArray(
       parsedEntries,
 
     schema,
+
+    language,
   }
 }
 
@@ -624,7 +1182,9 @@ export function parseJsonLocalization(
         text,
       )
 
-    if (document) {
+    if (
+      document
+    ) {
       return {
         ok:
           true,
@@ -643,7 +1203,9 @@ export function parseJsonLocalization(
   }
 
   if (
-    isRecord(parsed)
+    isRecord(
+      parsed,
+    )
   ) {
     const document =
       parseFlatObject(
@@ -651,7 +1213,9 @@ export function parseJsonLocalization(
         text,
       )
 
-    if (document) {
+    if (
+      document
+    ) {
       return {
         ok:
           true,

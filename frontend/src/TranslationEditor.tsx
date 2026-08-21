@@ -12,6 +12,7 @@ import {
   Direction,
   EditorView,
   keymap,
+  placeholder as codeMirrorPlaceholder,
   type DecorationSet,
 } from '@codemirror/view'
 
@@ -28,14 +29,37 @@ import {
 
 import './TranslationEditor.css'
 
+type EditorDirection =
+  | 'ltr'
+  | 'rtl'
+  | 'auto'
+
 type TranslationEditorProps = {
   value: string
 
   tokenProfile:
     TokenProfileId
 
+  direction:
+    EditorDirection
+
+  locale?:
+    string
+
+  placeholderText?:
+    string
+
   onChange:
     (value: string) => void
+
+  onSave?:
+    () => void
+
+  onNext?:
+    () => void
+
+  onPrevious?:
+    () => void
 }
 
 function createTokenDecorations(
@@ -59,23 +83,24 @@ function createTokenDecorations(
           class:
             'cm-protected-token',
 
-          /*
-           * مهم للـDOM نفسه.
-           *
-           * الـToken يظهر LTR حتى
-           * داخل سطر عربي RTL.
-           */
           attributes: {
             dir:
               'ltr',
           },
 
           /*
-           * والأهم:
+           * مهم جدًا لـRTL.
            *
-           * هذا يخبر خوارزمية
-           * CodeMirror نفسها أن
-           * هذا النطاق LTR isolate.
+           * يخبر CodeMirror أن الـToken
+           * نفسه جزيرة LTR مستقلة.
+           *
+           * مثال:
+           *
+           * %CharacterA
+           *
+           * ما ينقلب إلى:
+           *
+           * CharacterA%
            */
           bidiIsolate:
             Direction.LTR,
@@ -95,16 +120,6 @@ function createTokenExtensions(
   tokenProfile:
     TokenProfileId,
 ) {
-  /*
-   * نفس الـDecorationSet لازم:
-   *
-   * 1. يظهر بصريًا.
-   * 2. يدخل في bidiIsolatedRanges.
-   *
-   * غير كذا CodeMirror قد يعرض
-   * punctuation مثل % بمكان خاطئ
-   * داخل النص العربي.
-   */
   const getDecorations =
     (
       view:
@@ -116,9 +131,11 @@ function createTokenExtensions(
       )
 
   return [
-    EditorView.decorations.of(
-      getDecorations,
-    ),
+    EditorView
+      .decorations
+      .of(
+        getDecorations,
+      ),
 
     EditorView
       .bidiIsolatedRanges
@@ -130,8 +147,23 @@ function createTokenExtensions(
 
 function TranslationEditor({
   value,
+
   tokenProfile,
+
+  direction,
+
+  locale,
+
+  placeholderText =
+    'Enter translation...',
+
   onChange,
+
+  onSave,
+
+  onNext,
+
+  onPrevious,
 }: TranslationEditorProps) {
   const containerRef =
     useRef<HTMLDivElement | null>(
@@ -148,11 +180,21 @@ function TranslationEditor({
       onChange,
     )
 
-  /*
-   * نخزن أحدث onChange
-   * بدون إعادة إنشاء المحرر
-   * كل مرة React يعمل render.
-   */
+  const onSaveRef =
+    useRef(
+      onSave,
+    )
+
+  const onNextRef =
+    useRef(
+      onNext,
+    )
+
+  const onPreviousRef =
+    useRef(
+      onPrevious,
+    )
+
   useEffect(
     () => {
       onChangeRef.current =
@@ -163,13 +205,36 @@ function TranslationEditor({
     ],
   )
 
-  /*
-   * ننشئ CodeMirror.
-   *
-   * لو تغير Token Profile
-   * نعيد إنشاءه عشان Decorations
-   * تستخدم profile الجديد.
-   */
+  useEffect(
+    () => {
+      onSaveRef.current =
+        onSave
+    },
+    [
+      onSave,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onNextRef.current =
+        onNext
+    },
+    [
+      onNext,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onPreviousRef.current =
+        onPrevious
+    },
+    [
+      onPrevious,
+    ],
+  )
+
   useEffect(
     () => {
       const container =
@@ -184,6 +249,36 @@ function TranslationEditor({
           tokenProfile,
         )
 
+      /*
+       * هذه attributes تؤثر على
+       * العرض فقط.
+       *
+       * ما نضيف أي Unicode direction
+       * characters إلى النص المحفوظ.
+       */
+      const contentAttributes:
+        Record<string, string> = {
+          dir:
+            direction,
+
+          spellcheck:
+            'true',
+        }
+
+      if (
+        locale
+      ) {
+        contentAttributes.lang =
+          locale
+      }
+
+      const textAlign =
+        direction === 'rtl'
+          ? 'right'
+          : direction === 'ltr'
+            ? 'left'
+            : 'start'
+
       const state =
         EditorState.create({
           doc:
@@ -192,43 +287,83 @@ function TranslationEditor({
           extensions: [
             history(),
 
+            /*
+             * اختصارات LocalizationHub.
+             *
+             * Mod:
+             *
+             * Ctrl على Windows/Linux
+             * Cmd على macOS
+             */
             keymap.of([
+              {
+                key:
+                  'Mod-s',
+
+                preventDefault:
+                  true,
+
+                run:
+                  () => {
+                    onSaveRef
+                      .current
+                      ?.()
+
+                    return true
+                  },
+              },
+
+              {
+                key:
+                  'Mod-Enter',
+
+                preventDefault:
+                  true,
+
+                run:
+                  () => {
+                    onNextRef
+                      .current
+                      ?.()
+
+                    return true
+                  },
+              },
+
+              {
+                key:
+                  'Shift-Mod-Enter',
+
+                preventDefault:
+                  true,
+
+                run:
+                  () => {
+                    onPreviousRef
+                      .current
+                      ?.()
+
+                    return true
+                  },
+              },
+
               ...defaultKeymap,
+
               ...historyKeymap,
             ]),
 
-            /*
-             * الاتجاه الأساسي
-             * لمحرر الترجمة عربي.
-             *
-             * هذا يؤثر على العرض فقط،
-             * ولا يضيف Unicode controls
-             * إلى النص المحفوظ.
-             */
             EditorView
               .contentAttributes
-              .of({
-                dir:
-                  'rtl',
+              .of(
+                contentAttributes,
+              ),
 
-                lang:
-                  'ar',
+            codeMirrorPlaceholder(
+              placeholderText,
+            ),
 
-                spellcheck:
-                  'true',
-              }),
-
-            /*
-             * Protected Token
-             * decorations + bidi
-             * isolation.
-             */
             ...tokenExtensions,
 
-            /*
-             * مزامنة CodeMirror
-             * مع React.
-             */
             EditorView
               .updateListener
               .of(
@@ -253,13 +388,6 @@ function TranslationEditor({
 
             EditorView.lineWrapping,
 
-            /*
-             * Theme الأساسي للمحرر.
-             *
-             * أغلب الشكل موجود
-             * أيضًا في
-             * TranslationEditor.css.
-             */
             EditorView.theme({
               '&': {
                 height:
@@ -287,19 +415,15 @@ function TranslationEditor({
                 caretColor:
                   '#f1f2f5',
 
-                direction:
-                  'rtl',
+                direction,
 
-                textAlign:
-                  'right',
+                textAlign,
               },
 
               '.cm-line': {
-                direction:
-                  'rtl',
+                direction,
 
-                textAlign:
-                  'right',
+                textAlign,
 
                 lineHeight:
                   '1.9',
@@ -350,18 +474,19 @@ function TranslationEditor({
     },
     [
       tokenProfile,
+      direction,
+      locale,
+      placeholderText,
     ],
   )
 
   /*
-   * لو React غير القيمة من الخارج
-   * مثل:
+   * مزامنة القيمة القادمة من React.
    *
-   * - اختيار Entry جديد
-   * - فتح مشروع
-   * - تحميل ترجمة محفوظة
+   * مثال:
    *
-   * نزامن CodeMirror.
+   * اختيار Entry جديد.
+   * فتح Project.
    */
   useEffect(
     () => {
@@ -402,7 +527,9 @@ function TranslationEditor({
 
   return (
     <div
-      className="translation-editor"
+      className={
+        `translation-editor direction-${direction}`
+      }
       ref={
         containerRef
       }
