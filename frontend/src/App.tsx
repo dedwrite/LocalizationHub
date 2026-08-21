@@ -54,12 +54,20 @@ import {
 } from './projectFiles'
 
 import {
+  chooseProjectSavePath,
+} from './projectSaveDialog'
+
+import {
   confirmUnsavedChanges,
 } from './confirmUnsavedChanges'
 
 import {
   useUnsavedCloseGuard,
 } from './useUnsavedCloseGuard'
+
+import {
+  useSaveAsShortcut,
+} from './useSaveAsShortcut'
 
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
@@ -684,7 +692,7 @@ function App() {
     }
   }
 
-  async function handleSaveProject() {
+  async function handleSaveProjectAs() {
     const project =
       createCurrentProject()
 
@@ -697,62 +705,10 @@ function App() {
       return
     }
 
-    if (
-      projectPath
-    ) {
-      try {
-        await writeLocalizationProject(
-          projectPath,
-          project,
-        )
-
-        setIsDirty(
-          false,
-        )
-
-        showToast(
-          'success',
-          'تم حفظ المشروع.',
-        )
-      } catch (
-        error
-      ) {
-        console.error(
-          error,
-        )
-
-        showToast(
-          'error',
-          'فشل حفظ المشروع.',
-        )
-      }
-
-      return
-    }
-
-    const baseName =
-      fileName.replace(
-        /\.[^/.]+$/,
-        '',
-      ) ||
-      'localization-project'
-
     const selectedPath =
-      await save({
-        defaultPath:
-          `${baseName}.lhproj`,
-
-        filters: [
-          {
-            name:
-              'LocalizationHub Project',
-
-            extensions: [
-              'lhproj',
-            ],
-          },
-        ],
-      })
+      await chooseProjectSavePath(
+        fileName,
+      )
 
     if (
       !selectedPath
@@ -776,7 +732,66 @@ function App() {
 
       showToast(
         'success',
-        'تم حفظ المشروع بنجاح.',
+        'تم حفظ نسخة المشروع بنجاح.',
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        'فشل حفظ نسخة المشروع.',
+      )
+    }
+  }
+
+  /*
+   * Ctrl+Shift+S / Cmd+Shift+S
+   *
+   * Save As يعمل حتى لو كان
+   * التركيز داخل CodeMirror.
+   */
+  useSaveAsShortcut(
+    handleSaveProjectAs,
+  )
+
+  async function handleSaveProject() {
+    const project =
+      createCurrentProject()
+
+    if (!project) {
+      showToast(
+        'warning',
+        'لا يوجد مشروع لحفظه.',
+      )
+
+      return
+    }
+
+    if (
+      !projectPath
+    ) {
+      await handleSaveProjectAs()
+
+      return
+    }
+
+    try {
+      await writeLocalizationProject(
+        projectPath,
+        project,
+      )
+
+      setIsDirty(
+        false,
+      )
+
+      showToast(
+        'success',
+        'تم حفظ المشروع.',
       )
     } catch (
       error
@@ -804,10 +819,6 @@ function App() {
       return
     }
 
-    /*
-     * Fully Protected entries
-     * يجب ألا تحتوي على ترجمة.
-     */
     const protectedWithTranslation =
       entries.filter(
         (entry) =>
@@ -834,10 +845,6 @@ function App() {
       return
     }
 
-    /*
-     * نفحص كل الترجمات مرة واحدة
-     * وقت Export فقط.
-     */
     const exportValidation =
       analyzeExportValidation(
         entries,
@@ -845,9 +852,6 @@ function App() {
         tokenProfile,
       )
 
-    /*
-     * Token Errors = Blocking.
-     */
     if (
       exportValidation.errorCount >
       0
@@ -871,11 +875,6 @@ function App() {
       return
     }
 
-    /*
-     * Warnings ليست Blocking،
-     * لكن لازم المستخدم يعرف
-     * قبل ما يكمل.
-     */
     if (
       exportValidation.warningCount >
       0
@@ -1408,8 +1407,20 @@ function App() {
               onClick={
                 handleSaveProject
               }
+              title="Save Project · Ctrl+S"
             >
               Save Project
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={
+                handleSaveProjectAs
+              }
+              title="Save As · Ctrl+Shift+S"
+            >
+              Save As
             </button>
 
             <button
