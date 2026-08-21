@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "localizationhub",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Desktop localization editor for structured game text and protected-token workflows.",
   "type": "module",
   "scripts": {
     "dev": "vite",
