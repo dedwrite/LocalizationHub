@@ -10,6 +10,8 @@ export type EntryFilter =
   | 'all'
   | 'untranslated'
   | 'translated'
+  | 'errors'
+  | 'warnings'
   | 'needs-review'
 
 type UseEntryCollectionsOptions = {
@@ -17,6 +19,12 @@ type UseEntryCollectionsOptions = {
     ParsedLocalizationEntry[]
 
   fullyProtectedEntryIds:
+    Set<string>
+
+  errorEntryIds:
+    Set<string>
+
+  warningEntryIds:
     Set<string>
 
   needsReviewEntryIds:
@@ -33,6 +41,12 @@ type EntryCollections = {
   translatedCount:
     number
 
+  errorCount:
+    number
+
+  warningCount:
+    number
+
   needsReviewCount:
     number
 
@@ -43,24 +57,11 @@ type EntryCollections = {
     ParsedLocalizationEntry[]
 }
 
-/*
- * Loop واحد فقط على Entries.
- *
- * يحسب:
- *
- * - translatedCount
- * - needsReviewCount
- * - filteredEntries
- * - navigableEntries
- *
- * بدون ما نسوي validation هنا.
- *
- * Needs Review جاي جاهز من
- * useNeedsReviewEntryIds.
- */
 export function useEntryCollections({
   entries,
   fullyProtectedEntryIds,
+  errorEntryIds,
+  warningEntryIds,
   needsReviewEntryIds,
   searchQuery,
   entryFilter,
@@ -68,6 +69,12 @@ export function useEntryCollections({
   return useMemo(
     () => {
       let translatedCount =
+        0
+
+      let errorCount =
+        0
+
+      let warningCount =
         0
 
       let needsReviewCount =
@@ -100,14 +107,24 @@ export function useEntryCollections({
           entry.translation
             .trim() !== ''
 
+        const hasError =
+          errorEntryIds.has(
+            entry.id,
+          )
+
+        const hasWarning =
+          warningEntryIds.has(
+            entry.id,
+          )
+
         const needsReview =
           needsReviewEntryIds.has(
             entry.id,
           )
 
         /*
-         * كل Entry غير محمية
-         * تدخل في التنقل.
+         * كل Entry غير Protected
+         * تدخل التنقل العادي.
          */
         if (
           !isProtected
@@ -118,14 +135,32 @@ export function useEntryCollections({
         }
 
         /*
-         * أي Entry عندها ترجمة
-         * تدخل translatedCount
-         * حتى لو تحتاج مراجعة.
+         * Progress.
+         *
+         * حتى لو فيها Error أو Warning،
+         * ما زالت تحتوي ترجمة.
          */
         if (
           isTranslated
         ) {
           translatedCount +=
+            1
+        }
+
+        /*
+         * Review counters.
+         */
+        if (
+          hasError
+        ) {
+          errorCount +=
+            1
+        }
+
+        if (
+          hasWarning
+        ) {
+          warningCount +=
             1
         }
 
@@ -137,7 +172,7 @@ export function useEntryCollections({
         }
 
         /*
-         * Status filter.
+         * Filters.
          */
         const matchesFilter =
           entryFilter ===
@@ -155,6 +190,16 @@ export function useEntryCollections({
           ) ||
           (
             entryFilter ===
+              'errors' &&
+            hasError
+          ) ||
+          (
+            entryFilter ===
+              'warnings' &&
+            hasWarning
+          ) ||
+          (
+            entryFilter ===
               'needs-review' &&
             needsReview
           )
@@ -166,8 +211,8 @@ export function useEntryCollections({
         }
 
         /*
-         * ما فيه Search؟
-         * ندخل مباشرة.
+         * بدون Search:
+         * نضيف مباشرة.
          */
         if (
           !normalizedSearch
@@ -180,10 +225,12 @@ export function useEntryCollections({
         }
 
         const context =
-          entry.context ?? ''
+          entry.context ??
+          ''
 
         const notes =
-          entry.notes ?? ''
+          entry.notes ??
+          ''
 
         const matchesSearch =
           entry.key
@@ -224,6 +271,10 @@ export function useEntryCollections({
       return {
         translatedCount,
 
+        errorCount,
+
+        warningCount,
+
         needsReviewCount,
 
         filteredEntries,
@@ -234,6 +285,8 @@ export function useEntryCollections({
     [
       entries,
       fullyProtectedEntryIds,
+      errorEntryIds,
+      warningEntryIds,
       needsReviewEntryIds,
       searchQuery,
       entryFilter,

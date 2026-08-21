@@ -1,0 +1,55 @@
+.entry-status-indicator {
+  width: 8px;
+  height: 8px;
+
+  flex: 0 0 auto;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.22);
+
+  box-shadow:
+    0 0 0 1px
+    rgba(255, 255, 255, 0.05);
+
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.entry-status-indicator.untranslated {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.entry-status-indicator.translated {
+  background: #55c987;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(85, 201, 135, 0.18);
+}
+
+.entry-status-indicator.warning {
+  background: #e6a23c;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(230, 162, 60, 0.22);
+}
+
+.entry-status-indicator.error {
+  background: #ef5b5b;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(239, 91, 91, 0.24);
+}
+
+.entry-status-indicator.protected {
+  background: #8b93a7;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(139, 147, 167, 0.2);
+}

@@ -2,36 +2,39 @@ import {
   memo,
 } from 'react'
 
-import {
-  validateProtectedTokens,
-  type TokenProfileId,
-} from './tokens'
-
 import type {
   ParsedLocalizationEntry,
 } from './parsers'
+
+import EntryStatusIndicator from './EntryStatusIndicator'
 
 type EntryListItemProps = {
   entry:
     ParsedLocalizationEntry
 
-  tokenProfile:
-    TokenProfileId
-
   isProtected:
+    boolean
+
+  hasError:
+    boolean
+
+  hasWarning:
     boolean
 
   isSelected:
     boolean
 
   onSelect:
-    (id: string) => void
+    (
+      id: string,
+    ) => void
 }
 
 function EntryListItem({
   entry,
-  tokenProfile,
   isProtected,
+  hasError,
+  hasWarning,
   isSelected,
   onSelect,
 }: EntryListItemProps) {
@@ -40,66 +43,38 @@ function EntryListItem({
     entry.translation
       .trim() !== ''
 
-  /*
-   * المهم هنا:
-   *
-   * الـvalidation صار داخل
-   * الـmemoized item نفسه.
-   *
-   * إذا Entry ثانية تغيرت،
-   * React.memo يمنع إعادة
-   * validation لهذه الـEntry.
-   */
-  const validation =
-    isProtected ||
-    !isTranslated
-      ? null
-      : validateProtectedTokens(
-          entry.source,
-          entry.translation,
-          tokenProfile,
-        )
-
-  const hasTokenError =
-    isTranslated &&
-    Boolean(
-      validation
-        ?.hasErrors,
-    )
-
-  const hasTokenWarning =
-    isTranslated &&
-    !hasTokenError &&
-    Boolean(
-      validation
-        ?.hasWarnings,
-    )
-
-  let statusClass =
-    ''
-
-  if (
-    isProtected
-  ) {
-    statusClass =
-      'protected'
-  } else if (
-    hasTokenError ||
-    hasTokenWarning
-  ) {
-    statusClass =
-      'token-warning'
-  } else if (
-    isTranslated
-  ) {
-    statusClass =
-      'translated'
-  }
-
   const entryTitle =
     entry.context
       ? `${entry.context} · ${entry.key}`
       : entry.key
+
+  let title =
+    entryTitle
+
+  if (
+    isProtected
+  ) {
+    title =
+      `Protected · ${entryTitle}`
+  } else if (
+    hasError
+  ) {
+    title =
+      `Token Error · ${entryTitle}`
+  } else if (
+    hasWarning
+  ) {
+    title =
+      `Token Warning · ${entryTitle}`
+  } else if (
+    isTranslated
+  ) {
+    title =
+      `Translated · ${entryTitle}`
+  } else {
+    title =
+      `Untranslated · ${entryTitle}`
+  }
 
   return (
     <button
@@ -112,9 +87,7 @@ function EntryListItem({
         }`
       }
       title={
-        isProtected
-          ? `Protected · ${entryTitle}`
-          : entryTitle
+        title
       }
       onClick={() =>
         onSelect(
@@ -122,9 +95,18 @@ function EntryListItem({
         )
       }
     >
-      <span
-        className={
-          `status-dot ${statusClass}`
+      <EntryStatusIndicator
+        isProtected={
+          isProtected
+        }
+        isTranslated={
+          isTranslated
+        }
+        hasError={
+          hasError
+        }
+        hasWarning={
+          hasWarning
         }
       />
 
@@ -137,12 +119,6 @@ function EntryListItem({
   )
 }
 
-/*
- * أهم سطر في الملف 😈
- *
- * الـEntries غير المتغيرة
- * ما تعيد render ولا validation.
- */
 export default memo(
   EntryListItem,
 )

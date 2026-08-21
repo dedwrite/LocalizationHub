@@ -39,8 +39,8 @@ import {
 } from './useProtectedEntryIds'
 
 import {
-  useNeedsReviewEntryIds,
-} from './useNeedsReviewEntryIds'
+  useReviewEntryIds,
+} from './useReviewEntryIds'
 
 import {
   useEntryCollections,
@@ -69,9 +69,19 @@ import {
   useSaveAsShortcut,
 } from './useSaveAsShortcut'
 
+import {
+  clearRecentProjects,
+  getRecentProjects,
+  rememberRecentProject,
+  removeRecentProject,
+  type RecentProject,
+} from './recentProjects'
+
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
 import EntryListItem from './EntryListItem'
+import DedwriteMark from './DedwriteMark'
+import RecentProjects from './RecentProjectsPanel'
 
 import Toast, {
   type ToastMessage,
@@ -182,6 +192,15 @@ function App() {
     )
 
   const [
+    recentProjects,
+    setRecentProjects,
+  ] =
+    useState<RecentProject[]>(
+      () =>
+        getRecentProjects(),
+    )
+
+  const [
     toast,
     setToast,
   ] =
@@ -230,8 +249,12 @@ function App() {
       tokenProfile,
     )
 
-  const needsReviewEntryIds =
-    useNeedsReviewEntryIds(
+  const {
+    errorEntryIds,
+    warningEntryIds,
+    needsReviewEntryIds,
+  } =
+    useReviewEntryIds(
       entries,
       fullyProtectedEntryIds,
       tokenProfile,
@@ -239,6 +262,8 @@ function App() {
 
   const {
     translatedCount,
+    errorCount,
+    warningCount,
     needsReviewCount,
     filteredEntries,
     navigableEntries,
@@ -246,6 +271,8 @@ function App() {
     useEntryCollections({
       entries,
       fullyProtectedEntryIds,
+      errorEntryIds,
+      warningEntryIds,
       needsReviewEntryIds,
       searchQuery,
       entryFilter,
@@ -511,6 +538,37 @@ function App() {
     )
   }
 
+  function rememberProject(
+    path: string,
+    sourceFileName: string,
+  ) {
+    setRecentProjects(
+      rememberRecentProject(
+        path,
+        sourceFileName,
+      ),
+    )
+  }
+
+  function handleRemoveRecentProject(
+    project:
+      RecentProject,
+  ) {
+    setRecentProjects(
+      removeRecentProject(
+        project.path,
+      ),
+    )
+  }
+
+  function handleClearRecentProjects() {
+    clearRecentProjects()
+
+    setRecentProjects(
+      [],
+    )
+  }
+
   async function handleOpenFile() {
     const canContinue =
       await confirmUnsavedChanges(
@@ -730,6 +788,11 @@ function App() {
         false,
       )
 
+      rememberProject(
+        selectedPath,
+        project.sourceFileName,
+      )
+
       showToast(
         'success',
         'تم حفظ نسخة المشروع بنجاح.',
@@ -748,12 +811,6 @@ function App() {
     }
   }
 
-  /*
-   * Ctrl+Shift+S / Cmd+Shift+S
-   *
-   * Save As يعمل حتى لو كان
-   * التركيز داخل CodeMirror.
-   */
   useSaveAsShortcut(
     handleSaveProjectAs,
   )
@@ -807,164 +864,21 @@ function App() {
     }
   }
 
-  async function handleExportFile() {
-    if (
-      !currentDocument
-    ) {
-      showToast(
-        'warning',
-        'لا يوجد ملف لتصديره.',
-      )
+  async function loadProjectFromPath(
+    selected:
+      string,
 
-      return
-    }
-
-    const protectedWithTranslation =
-      entries.filter(
-        (entry) =>
-          fullyProtectedEntryIds.has(
-            entry.id,
-          ) &&
-          entry.translation
-            .trim() !== '',
-      )
-
-    if (
-      protectedWithTranslation
-        .length > 0
-    ) {
-      setSelectedEntryId(
-        protectedWithTranslation[0].id,
-      )
-
-      showToast(
-        'error',
-        `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text.`,
-      )
-
-      return
-    }
-
-    const exportValidation =
-      analyzeExportValidation(
-        entries,
-        fullyProtectedEntryIds,
-        tokenProfile,
-      )
-
-    if (
-      exportValidation.errorCount >
-      0
-    ) {
-      setSearchQuery('')
-
-      setEntryFilter(
-        'needs-review',
-      )
-
-      setSelectedEntryId(
-        exportValidation
-          .errorEntryIds[0],
-      )
-
-      showToast(
-        'error',
-        `Export blocked: ${exportValidation.errorCount.toLocaleString()} translated entries contain token errors.`,
-      )
-
-      return
-    }
-
-    if (
-      exportValidation.warningCount >
-      0
-    ) {
-      const continueExport =
-        await confirm(
-          `${exportValidation.warningCount.toLocaleString()} translated entries contain token warnings. You can continue exporting, but reviewing them first is recommended.`,
-          {
-            title:
-              'Token Warnings',
-
-            kind:
-              'warning',
-
-            okLabel:
-              'Continue Export',
-
-            cancelLabel:
-              'Review First',
-          },
-        )
-
-      if (
-        !continueExport
-      ) {
-        setSearchQuery('')
-
-        setEntryFilter(
-          'needs-review',
-        )
-
-        setSelectedEntryId(
-          exportValidation
-            .warningEntryIds[0],
-        )
-
-        showToast(
-          'warning',
-          'تم إلغاء التصدير لعرض الترجمات التي تحتاج مراجعة.',
-        )
-
-        return
-      }
-    }
-
-    const baseName =
-      fileName.replace(
-        /\.[^/.]+$/,
-        '',
-      ) ||
-      'localization'
-
-    const selectedPath =
-      await save({
-        defaultPath:
-          `${baseName}_translated.json`,
-
-        filters: [
-          {
-            name:
-              'JSON',
-
-            extensions: [
-              'json',
-            ],
-          },
-        ],
-      })
-
-    if (
-      !selectedPath
-    ) {
-      return
-    }
+    openedFromRecent =
+      false,
+  ) {
+    let content:
+      string
 
     try {
-      const output =
-        exportLocalizationDocument(
-          currentDocument,
+      content =
+        await readTextFile(
+          selected,
         )
-
-      await writeTextFile(
-        selectedPath,
-        output,
-      )
-
-      showToast(
-        'success',
-        'تم تصدير ملف JSON بنجاح.',
-      )
     } catch (
       error
     ) {
@@ -972,57 +886,30 @@ function App() {
         error,
       )
 
-      showToast(
-        'error',
-        'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
-      )
-    }
-  }
+      if (
+        openedFromRecent
+      ) {
+        setRecentProjects(
+          removeRecentProject(
+            selected,
+          ),
+        )
 
-  async function handleOpenProject() {
-    const canContinue =
-      await confirmUnsavedChanges(
-        isDirty,
-      )
+        showToast(
+          'warning',
+          'تعذر العثور على المشروع. تمت إزالته من Recent Projects.',
+        )
+      } else {
+        showToast(
+          'error',
+          'فشل قراءة ملف المشروع.',
+        )
+      }
 
-    if (
-      !canContinue
-    ) {
-      return
-    }
-
-    const selected =
-      await open({
-        multiple:
-          false,
-
-        directory:
-          false,
-
-        filters: [
-          {
-            name:
-              'LocalizationHub Project',
-
-            extensions: [
-              'lhproj',
-            ],
-          },
-        ],
-      })
-
-    if (
-      !selected
-    ) {
       return
     }
 
     try {
-      const content =
-        await readTextFile(
-          selected,
-        )
-
       const parsed:
         | LocalizationProjectV1
         | LocalizationProjectV2 =
@@ -1058,7 +945,8 @@ function App() {
       }
 
       if (
-        parsed.version === 2
+        parsed.version ===
+        2
       ) {
         const project =
           parsed as
@@ -1109,6 +997,11 @@ function App() {
           false,
         )
 
+        rememberProject(
+          selected,
+          project.sourceFileName,
+        )
+
         showToast(
           'success',
           'تم فتح المشروع بنجاح.',
@@ -1118,7 +1011,8 @@ function App() {
       }
 
       if (
-        parsed.version === 1
+        parsed.version ===
+        1
       ) {
         const legacy =
           parsed as
@@ -1180,6 +1074,13 @@ function App() {
           },
         })
 
+        /*
+         * Legacy v1 لا نربطه مباشرة
+         * بالمسار للحفظ.
+         *
+         * أول Save سيطلب Save As
+         * ويحوله عمليًا إلى v2.
+         */
         setProjectPath(
           null,
         )
@@ -1211,6 +1112,11 @@ function App() {
           false,
         )
 
+        rememberProject(
+          selected,
+          legacy.sourceFileName,
+        )
+
         showToast(
           'info',
           'تم فتح المشروع القديم وترحيله للتنسيق الحالي.',
@@ -1232,7 +1138,243 @@ function App() {
 
       showToast(
         'error',
-        'فشل فتح المشروع.',
+        'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
+      )
+    }
+  }
+
+  async function handleOpenProject() {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
+    const selected =
+      await open({
+        multiple:
+          false,
+
+        directory:
+          false,
+
+        filters: [
+          {
+            name:
+              'LocalizationHub Project',
+
+            extensions: [
+              'lhproj',
+            ],
+          },
+        ],
+      })
+
+    if (
+      !selected
+    ) {
+      return
+    }
+
+    await loadProjectFromPath(
+      selected,
+    )
+  }
+
+  async function handleOpenRecentProject(
+    project:
+      RecentProject,
+  ) {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
+    await loadProjectFromPath(
+      project.path,
+      true,
+    )
+  }
+
+  async function handleExportFile() {
+    if (
+      !currentDocument
+    ) {
+      showToast(
+        'warning',
+        'لا يوجد ملف لتصديره.',
+      )
+
+      return
+    }
+
+    const protectedWithTranslation =
+      entries.filter(
+        (entry) =>
+          fullyProtectedEntryIds.has(
+            entry.id,
+          ) &&
+          entry.translation
+            .trim() !== '',
+      )
+
+    if (
+      protectedWithTranslation
+        .length > 0
+    ) {
+      setSelectedEntryId(
+        protectedWithTranslation[0].id,
+      )
+
+      showToast(
+        'error',
+        `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text.`,
+      )
+
+      return
+    }
+
+    const exportValidation =
+      analyzeExportValidation(
+        entries,
+        fullyProtectedEntryIds,
+        tokenProfile,
+      )
+
+    if (
+      exportValidation.errorCount >
+      0
+    ) {
+      setSearchQuery('')
+
+      setEntryFilter(
+        'errors',
+      )
+
+      setSelectedEntryId(
+        exportValidation
+          .errorEntryIds[0],
+      )
+
+      showToast(
+        'error',
+        `Export blocked: ${exportValidation.errorCount.toLocaleString()} translated entries contain token errors.`,
+      )
+
+      return
+    }
+
+    if (
+      exportValidation.warningCount >
+      0
+    ) {
+      const continueExport =
+        await confirm(
+          `${exportValidation.warningCount.toLocaleString()} translated entries contain token warnings. You can continue exporting, but reviewing them first is recommended.`,
+          {
+            title:
+              'Token Warnings',
+
+            kind:
+              'warning',
+
+            okLabel:
+              'Continue Export',
+
+            cancelLabel:
+              'Review First',
+          },
+        )
+
+      if (
+        !continueExport
+      ) {
+        setSearchQuery('')
+
+        setEntryFilter(
+          'warnings',
+        )
+
+        setSelectedEntryId(
+          exportValidation
+            .warningEntryIds[0],
+        )
+
+        showToast(
+          'warning',
+          'تم إلغاء التصدير لعرض التحذيرات.',
+        )
+
+        return
+      }
+    }
+
+    const baseName =
+      fileName.replace(
+        /\.[^/.]+$/,
+        '',
+      ) ||
+      'localization'
+
+    const selectedPath =
+      await save({
+        defaultPath:
+          `${baseName}_translated.json`,
+
+        filters: [
+          {
+            name:
+              'JSON',
+
+            extensions: [
+              'json',
+            ],
+          },
+        ],
+      })
+
+    if (
+      !selectedPath
+    ) {
+      return
+    }
+
+    try {
+      const output =
+        exportLocalizationDocument(
+          currentDocument,
+        )
+
+      await writeTextFile(
+        selectedPath,
+        output,
+      )
+
+      showToast(
+        'success',
+        'تم تصدير ملف JSON بنجاح.',
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
       )
     }
   }
@@ -1327,6 +1469,36 @@ function App() {
               >
                 Join Project
               </button>
+            </div>
+
+            <RecentProjects
+              projects={
+                recentProjects
+              }
+
+              onOpen={
+                handleOpenRecentProject
+              }
+
+              onRemove={
+                handleRemoveRecentProject
+              }
+
+              onClear={
+                handleClearRecentProjects
+              }
+            />
+
+            <div
+              style={{
+                marginTop:
+                  recentProjects.length >
+                  0
+                    ? '1.1rem'
+                    : '1.35rem',
+              }}
+            >
+              <DedwriteMark />
             </div>
           </div>
         </main>
@@ -1490,7 +1662,7 @@ function App() {
                 className="filter-tabs"
                 style={{
                   gridTemplateColumns:
-                    'repeat(4, minmax(0, 1fr))',
+                    'repeat(3, minmax(0, 1fr))',
                 }}
               >
                 <button
@@ -1569,6 +1741,56 @@ function App() {
                   type="button"
                   className={
                     entryFilter ===
+                    'errors'
+                      ? 'filter-button active'
+                      : 'filter-button'
+                  }
+                  onClick={() =>
+                    setEntryFilter(
+                      'errors',
+                    )
+                  }
+                  title="Token errors that block export"
+                >
+                  Errors
+
+                  <span>
+                    {
+                      errorCount
+                        .toLocaleString()
+                    }
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
+                    'warnings'
+                      ? 'filter-button active'
+                      : 'filter-button'
+                  }
+                  onClick={() =>
+                    setEntryFilter(
+                      'warnings',
+                    )
+                  }
+                  title="Token warnings that should be reviewed"
+                >
+                  Warnings
+
+                  <span>
+                    {
+                      warningCount
+                        .toLocaleString()
+                    }
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
                     'needs-review'
                       ? 'filter-button active'
                       : 'filter-button'
@@ -1578,7 +1800,7 @@ function App() {
                       'needs-review',
                     )
                   }
-                  title="Translations with token errors or warnings"
+                  title="All translations that need review"
                 >
                   Review
 
@@ -1625,12 +1847,20 @@ function App() {
                             entry
                           }
 
-                          tokenProfile={
-                            tokenProfile
-                          }
-
                           isProtected={
                             fullyProtectedEntryIds.has(
+                              entry.id,
+                            )
+                          }
+
+                          hasError={
+                            errorEntryIds.has(
+                              entry.id,
+                            )
+                          }
+
+                          hasWarning={
+                            warningEntryIds.has(
                               entry.id,
                             )
                           }
@@ -1650,13 +1880,39 @@ function App() {
                     <div className="empty-search">
                       {
                         entryFilter ===
-                        'needs-review'
-                          ? 'No entries need review.'
-                          : 'No matching entries.'
+                        'errors'
+                          ? 'No token errors.'
+                          : entryFilter ===
+                              'warnings'
+                            ? 'No token warnings.'
+                            : entryFilter ===
+                                'needs-review'
+                              ? 'No entries need review.'
+                              : 'No matching entries.'
                       }
                     </div>
                   )
               }
+            </div>
+
+            <div
+              style={{
+                flexShrink:
+                  0,
+
+                padding:
+                  '0.55rem 0.75rem',
+
+                borderTop:
+                  '1px solid rgba(255, 255, 255, 0.06)',
+
+                textAlign:
+                  'center',
+              }}
+            >
+              <DedwriteMark
+                compact
+              />
             </div>
           </aside>
 
@@ -2186,3 +2442,4 @@ function App() {
 }
 
 export default App
+
