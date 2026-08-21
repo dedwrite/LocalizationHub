@@ -4,6 +4,7 @@ import {
 } from 'react'
 
 import {
+  confirm,
   open,
   save,
 } from '@tauri-apps/plugin-dialog'
@@ -30,11 +31,20 @@ import {
 } from './exporters'
 
 import {
+  analyzeExportValidation,
+} from './exportValidation'
+
+import {
   useProtectedEntryIds,
 } from './useProtectedEntryIds'
 
 import {
+  useNeedsReviewEntryIds,
+} from './useNeedsReviewEntryIds'
+
+import {
   useEntryCollections,
+  type EntryFilter,
 } from './useEntryCollections'
 
 import {
@@ -64,11 +74,6 @@ import './App.css'
 
 type TranslationEntry =
   ParsedLocalizationEntry
-
-type EntryFilter =
-  | 'all'
-  | 'untranslated'
-  | 'translated'
 
 type LegacyTranslationEntry = {
   key:
@@ -176,10 +181,6 @@ function App() {
       null,
     )
 
-  /*
-   * يحمي إغلاق نافذة التطبيق
-   * إذا عندنا تغييرات غير محفوظة.
-   */
   useUnsavedCloseGuard(
     isDirty,
   )
@@ -221,14 +222,23 @@ function App() {
       tokenProfile,
     )
 
+  const needsReviewEntryIds =
+    useNeedsReviewEntryIds(
+      entries,
+      fullyProtectedEntryIds,
+      tokenProfile,
+    )
+
   const {
     translatedCount,
+    needsReviewCount,
     filteredEntries,
     navigableEntries,
   } =
     useEntryCollections({
       entries,
       fullyProtectedEntryIds,
+      needsReviewEntryIds,
       searchQuery,
       entryFilter,
     })
@@ -794,6 +804,10 @@ function App() {
       return
     }
 
+    /*
+     * Fully Protected entries
+     * يجب ألا تحتوي على ترجمة.
+     */
     const protectedWithTranslation =
       entries.filter(
         (entry) =>
@@ -808,12 +822,103 @@ function App() {
       protectedWithTranslation
         .length > 0
     ) {
+      setSelectedEntryId(
+        protectedWithTranslation[0].id,
+      )
+
       showToast(
         'error',
         `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text.`,
       )
 
       return
+    }
+
+    /*
+     * نفحص كل الترجمات مرة واحدة
+     * وقت Export فقط.
+     */
+    const exportValidation =
+      analyzeExportValidation(
+        entries,
+        fullyProtectedEntryIds,
+        tokenProfile,
+      )
+
+    /*
+     * Token Errors = Blocking.
+     */
+    if (
+      exportValidation.errorCount >
+      0
+    ) {
+      setSearchQuery('')
+
+      setEntryFilter(
+        'needs-review',
+      )
+
+      setSelectedEntryId(
+        exportValidation
+          .errorEntryIds[0],
+      )
+
+      showToast(
+        'error',
+        `Export blocked: ${exportValidation.errorCount.toLocaleString()} translated entries contain token errors.`,
+      )
+
+      return
+    }
+
+    /*
+     * Warnings ليست Blocking،
+     * لكن لازم المستخدم يعرف
+     * قبل ما يكمل.
+     */
+    if (
+      exportValidation.warningCount >
+      0
+    ) {
+      const continueExport =
+        await confirm(
+          `${exportValidation.warningCount.toLocaleString()} translated entries contain token warnings. You can continue exporting, but reviewing them first is recommended.`,
+          {
+            title:
+              'Token Warnings',
+
+            kind:
+              'warning',
+
+            okLabel:
+              'Continue Export',
+
+            cancelLabel:
+              'Review First',
+          },
+        )
+
+      if (
+        !continueExport
+      ) {
+        setSearchQuery('')
+
+        setEntryFilter(
+          'needs-review',
+        )
+
+        setSelectedEntryId(
+          exportValidation
+            .warningEntryIds[0],
+        )
+
+        showToast(
+          'warning',
+          'تم إلغاء التصدير لعرض الترجمات التي تحتاج مراجعة.',
+        )
+
+        return
+      }
     }
 
     const baseName =
@@ -1370,7 +1475,13 @@ function App() {
                 placeholder="Search keys or text..."
               />
 
-              <div className="filter-tabs">
+              <div
+                className="filter-tabs"
+                style={{
+                  gridTemplateColumns:
+                    'repeat(4, minmax(0, 1fr))',
+                }}
+              >
                 <button
                   type="button"
                   className={
@@ -1390,6 +1501,7 @@ function App() {
                   <span>
                     {
                       entries.length
+                        .toLocaleString()
                     }
                   </span>
                 </button>
@@ -1413,6 +1525,7 @@ function App() {
                   <span>
                     {
                       untranslatedCount
+                        .toLocaleString()
                     }
                   </span>
                 </button>
@@ -1436,6 +1549,32 @@ function App() {
                   <span>
                     {
                       translatedCount
+                        .toLocaleString()
+                    }
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
+                    'needs-review'
+                      ? 'filter-button active'
+                      : 'filter-button'
+                  }
+                  onClick={() =>
+                    setEntryFilter(
+                      'needs-review',
+                    )
+                  }
+                  title="Translations with token errors or warnings"
+                >
+                  Review
+
+                  <span>
+                    {
+                      needsReviewCount
+                        .toLocaleString()
                     }
                   </span>
                 </button>
@@ -1498,7 +1637,12 @@ function App() {
                     )
                   : (
                     <div className="empty-search">
-                      No matching entries.
+                      {
+                        entryFilter ===
+                        'needs-review'
+                          ? 'No entries need review.'
+                          : 'No matching entries.'
+                      }
                     </div>
                   )
               }

@@ -6,16 +6,20 @@ import type {
   ParsedLocalizationEntry,
 } from './parsers'
 
-type EntryFilter =
+export type EntryFilter =
   | 'all'
   | 'untranslated'
   | 'translated'
+  | 'needs-review'
 
 type UseEntryCollectionsOptions = {
   entries:
     ParsedLocalizationEntry[]
 
   fullyProtectedEntryIds:
+    Set<string>
+
+  needsReviewEntryIds:
     Set<string>
 
   searchQuery:
@@ -29,6 +33,9 @@ type EntryCollections = {
   translatedCount:
     number
 
+  needsReviewCount:
+    number
+
   filteredEntries:
     ParsedLocalizationEntry[]
 
@@ -37,28 +44,33 @@ type EntryCollections = {
 }
 
 /*
- * يجمع أغلب العمليات التي كانت
- * تمر على entries بشكل منفصل.
+ * Loop واحد فقط على Entries.
  *
- * سابقًا:
+ * يحسب:
  *
- * translatedCount  -> loop
- * filteredEntries  -> loop
- * navigableEntries -> loop
+ * - translatedCount
+ * - needsReviewCount
+ * - filteredEntries
+ * - navigableEntries
  *
- * الآن:
+ * بدون ما نسوي validation هنا.
  *
- * Loop واحد فقط.
+ * Needs Review جاي جاهز من
+ * useNeedsReviewEntryIds.
  */
 export function useEntryCollections({
   entries,
   fullyProtectedEntryIds,
+  needsReviewEntryIds,
   searchQuery,
   entryFilter,
 }: UseEntryCollectionsOptions): EntryCollections {
   return useMemo(
     () => {
       let translatedCount =
+        0
+
+      let needsReviewCount =
         0
 
       const filteredEntries:
@@ -88,6 +100,11 @@ export function useEntryCollections({
           entry.translation
             .trim() !== ''
 
+        const needsReview =
+          needsReviewEntryIds.has(
+            entry.id,
+          )
+
         /*
          * كل Entry غير محمية
          * تدخل في التنقل.
@@ -101,7 +118,9 @@ export function useEntryCollections({
         }
 
         /*
-         * نحسب المترجمة.
+         * أي Entry عندها ترجمة
+         * تدخل translatedCount
+         * حتى لو تحتاج مراجعة.
          */
         if (
           isTranslated
@@ -110,8 +129,15 @@ export function useEntryCollections({
             1
         }
 
+        if (
+          needsReview
+        ) {
+          needsReviewCount +=
+            1
+        }
+
         /*
-         * Filter status.
+         * Status filter.
          */
         const matchesFilter =
           entryFilter ===
@@ -126,13 +152,13 @@ export function useEntryCollections({
               'untranslated' &&
             !isProtected &&
             !isTranslated
+          ) ||
+          (
+            entryFilter ===
+              'needs-review' &&
+            needsReview
           )
 
-        /*
-         * إذا الـstatus filter
-         * ما يطابق، ما فيه داعي
-         * حتى نسوي search checks.
-         */
         if (
           !matchesFilter
         ) {
@@ -140,8 +166,8 @@ export function useEntryCollections({
         }
 
         /*
-         * إذا ما فيه search،
-         * ندخل الـEntry مباشرة.
+         * ما فيه Search؟
+         * ندخل مباشرة.
          */
         if (
           !normalizedSearch
@@ -198,6 +224,8 @@ export function useEntryCollections({
       return {
         translatedCount,
 
+        needsReviewCount,
+
         filteredEntries,
 
         navigableEntries,
@@ -206,6 +234,7 @@ export function useEntryCollections({
     [
       entries,
       fullyProtectedEntryIds,
+      needsReviewEntryIds,
       searchQuery,
       entryFilter,
     ],
