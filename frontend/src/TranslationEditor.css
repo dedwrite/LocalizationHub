@@ -1,6 +1,14 @@
+.translation-editor-shell {
+  width:
+    100%;
+}
+
 .translation-editor {
-  width: 100%;
-  min-height: 220px;
+  width:
+    100%;
+
+  min-height:
+    220px;
 
   border:
     1px solid
@@ -9,7 +17,8 @@
   border-radius:
     10px;
 
-  overflow: hidden;
+  overflow:
+    hidden;
 
   background:
     #181b24;
@@ -40,8 +49,11 @@
 
 .translation-editor
 .cm-editor {
-  width: 100%;
-  min-height: 220px;
+  width:
+    100%;
+
+  min-height:
+    220px;
 
   background:
     transparent;
@@ -58,7 +70,8 @@
 
 .translation-editor
 .cm-scroller {
-  min-height: 220px;
+  min-height:
+    220px;
 
   overflow:
     auto;
@@ -76,7 +89,8 @@
 
 .translation-editor
 .cm-scroller::-webkit-scrollbar {
-  width: 5px;
+  width:
+    5px;
 }
 
 .translation-editor
@@ -102,7 +116,8 @@
 
 .translation-editor
 .cm-content {
-  min-height: 220px;
+  min-height:
+    220px;
 
   padding:
     18px;
@@ -116,10 +131,6 @@
   line-height:
     1.9;
 
-  /*
-   * هذا يساعد كل سطر يتعامل
-   * مع النص المختلط بشكل مستقل.
-   */
   unicode-bidi:
     plaintext;
 }
@@ -154,9 +165,6 @@
 
 /*
  * AUTO
- *
- * نخلي المتصفح يقرر اتجاه
- * السطر حسب المحتوى نفسه.
  */
 .translation-editor.direction-auto
 .cm-content,
@@ -207,9 +215,6 @@
     1;
 }
 
-/*
- * Placeholder RTL
- */
 .translation-editor.direction-rtl
 .cm-placeholder {
   direction:
@@ -219,9 +224,6 @@
     right;
 }
 
-/*
- * Placeholder LTR
- */
 .translation-editor.direction-ltr
 .cm-placeholder {
   direction:
@@ -231,9 +233,6 @@
     left;
 }
 
-/*
- * Placeholder AUTO
- */
 .translation-editor.direction-auto
 .cm-placeholder {
   text-align:
@@ -242,11 +241,6 @@
 
 /*
  * Protected Tokens
- *
- * مجرد Decoration بصري.
- *
- * النص الخام ما يتغير،
- * وما نضيف Unicode controls.
  */
 .translation-editor
 .cm-protected-token {
@@ -316,10 +310,6 @@
     );
 }
 
-/*
- * لو الـtoken داخل سطر RTL
- * يظل هو نفسه LTR.
- */
 .translation-editor.direction-rtl
 .cm-protected-token {
   direction:
@@ -330,9 +320,136 @@
 }
 
 /*
- * CodeMirror gutters غير مستخدمة
- * حاليًا، لكن لو ظهرت لأي سبب
- * نخليها متناسقة مع الثيم.
+ * Shortcut bar
+ */
+.editor-shortcuts {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    10px;
+
+  min-height:
+    38px;
+
+  padding:
+    8px 4px 0;
+
+  color:
+    #737b91;
+
+  font-size:
+    11px;
+
+  user-select:
+    none;
+}
+
+.editor-shortcut {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    4px;
+
+  white-space:
+    nowrap;
+}
+
+.editor-shortcut kbd {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  min-width:
+    24px;
+
+  height:
+    22px;
+
+  padding:
+    0 6px;
+
+  border:
+    1px solid
+    #343a49;
+
+  border-bottom-color:
+    #444b5c;
+
+  border-radius:
+    5px;
+
+  background:
+    #191c25;
+
+  color:
+    #b8bfd0;
+
+  box-shadow:
+    0 1px 0
+    rgba(
+      255,
+      255,
+      255,
+      0.035
+    );
+
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace;
+
+  font-size:
+    10px;
+
+  font-weight:
+    600;
+
+  line-height:
+    1;
+}
+
+.shortcut-label {
+  margin-left:
+    3px;
+
+  color:
+    #7d8599;
+}
+
+.shortcut-divider {
+  width:
+    1px;
+
+  height:
+    16px;
+
+  background:
+    #2d3240;
+}
+
+/*
+ * Gutters
  */
 .translation-editor
 .cm-gutters {
@@ -347,9 +464,6 @@
     #2d3240;
 }
 
-/*
- * Active line مستقبلًا.
- */
 .translation-editor
 .cm-activeLine {
   background:
@@ -359,4 +473,19 @@
       255,
       0.015
     );
+}
+
+@media (
+  max-width:
+    800px
+) {
+  .shortcut-divider {
+    display:
+      none;
+  }
+
+  .editor-shortcuts {
+    gap:
+      8px 14px;
+  }
 }

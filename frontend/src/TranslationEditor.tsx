@@ -55,6 +55,12 @@ type TranslationEditorProps = {
   onSave?:
     () => void
 
+  onNextUntranslated?:
+    () => void
+
+  onPreviousUntranslated?:
+    () => void
+
   onNext?:
     () => void
 
@@ -88,20 +94,6 @@ function createTokenDecorations(
               'ltr',
           },
 
-          /*
-           * مهم جدًا لـRTL.
-           *
-           * يخبر CodeMirror أن الـToken
-           * نفسه جزيرة LTR مستقلة.
-           *
-           * مثال:
-           *
-           * %CharacterA
-           *
-           * ما ينقلب إلى:
-           *
-           * CharacterA%
-           */
           bidiIsolate:
             Direction.LTR,
         }).range(
@@ -161,6 +153,10 @@ function TranslationEditor({
 
   onSave,
 
+  onNextUntranslated,
+
+  onPreviousUntranslated,
+
   onNext,
 
   onPrevious,
@@ -183,6 +179,16 @@ function TranslationEditor({
   const onSaveRef =
     useRef(
       onSave,
+    )
+
+  const onNextUntranslatedRef =
+    useRef(
+      onNextUntranslated,
+    )
+
+  const onPreviousUntranslatedRef =
+    useRef(
+      onPreviousUntranslated,
     )
 
   const onNextRef =
@@ -212,6 +218,26 @@ function TranslationEditor({
     },
     [
       onSave,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onNextUntranslatedRef.current =
+        onNextUntranslated
+    },
+    [
+      onNextUntranslated,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onPreviousUntranslatedRef.current =
+        onPreviousUntranslated
+    },
+    [
+      onPreviousUntranslated,
     ],
   )
 
@@ -249,13 +275,6 @@ function TranslationEditor({
           tokenProfile,
         )
 
-      /*
-       * هذه attributes تؤثر على
-       * العرض فقط.
-       *
-       * ما نضيف أي Unicode direction
-       * characters إلى النص المحفوظ.
-       */
       const contentAttributes:
         Record<string, string> = {
           dir:
@@ -287,15 +306,10 @@ function TranslationEditor({
           extensions: [
             history(),
 
-            /*
-             * اختصارات LocalizationHub.
-             *
-             * Mod:
-             *
-             * Ctrl على Windows/Linux
-             * Cmd على macOS
-             */
             keymap.of([
+              /*
+               * Save Project
+               */
               {
                 key:
                   'Mod-s',
@@ -313,9 +327,52 @@ function TranslationEditor({
                   },
               },
 
+              /*
+               * Next untranslated.
+               */
               {
                 key:
                   'Mod-Enter',
+
+                preventDefault:
+                  true,
+
+                run:
+                  () => {
+                    onNextUntranslatedRef
+                      .current
+                      ?.()
+
+                    return true
+                  },
+              },
+
+              /*
+               * Previous untranslated.
+               */
+              {
+                key:
+                  'Shift-Mod-Enter',
+
+                preventDefault:
+                  true,
+
+                run:
+                  () => {
+                    onPreviousUntranslatedRef
+                      .current
+                      ?.()
+
+                    return true
+                  },
+              },
+
+              /*
+               * Normal entry navigation.
+               */
+              {
+                key:
+                  'Alt-ArrowDown',
 
                 preventDefault:
                   true,
@@ -332,7 +389,7 @@ function TranslationEditor({
 
               {
                 key:
-                  'Shift-Mod-Enter',
+                  'Alt-ArrowUp',
 
                 preventDefault:
                   true,
@@ -480,14 +537,6 @@ function TranslationEditor({
     ],
   )
 
-  /*
-   * مزامنة القيمة القادمة من React.
-   *
-   * مثال:
-   *
-   * اختيار Entry جديد.
-   * فتح Project.
-   */
   useEffect(
     () => {
       const view =
@@ -526,14 +575,125 @@ function TranslationEditor({
   )
 
   return (
-    <div
-      className={
-        `translation-editor direction-${direction}`
-      }
-      ref={
-        containerRef
-      }
-    />
+    <div className="translation-editor-shell">
+      <div
+        className={
+          `translation-editor direction-${direction}`
+        }
+        ref={
+          containerRef
+        }
+      />
+
+      <div
+        className="editor-shortcuts"
+        aria-label="Editor shortcuts"
+      >
+        <div className="editor-shortcut">
+          <kbd>
+            Ctrl
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            S
+          </kbd>
+
+          <span className="shortcut-label">
+            Save
+          </span>
+        </div>
+
+        <span className="shortcut-divider" />
+
+        <div className="editor-shortcut">
+          <kbd>
+            Ctrl
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            Enter
+          </kbd>
+
+          <span className="shortcut-label">
+            Next Untranslated
+          </span>
+        </div>
+
+        <span className="shortcut-divider" />
+
+        <div className="editor-shortcut">
+          <kbd>
+            Ctrl
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            Shift
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            Enter
+          </kbd>
+
+          <span className="shortcut-label">
+            Previous Untranslated
+          </span>
+        </div>
+
+        <span className="shortcut-divider" />
+
+        <div className="editor-shortcut">
+          <kbd>
+            Alt
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            ↓
+          </kbd>
+
+          <span className="shortcut-label">
+            Next
+          </span>
+        </div>
+
+        <div className="editor-shortcut">
+          <kbd>
+            Alt
+          </kbd>
+
+          <span>
+            +
+          </span>
+
+          <kbd>
+            ↑
+          </kbd>
+
+          <span className="shortcut-label">
+            Previous
+          </span>
+        </div>
+      </div>
+    </div>
   )
 }
 

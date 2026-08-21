@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useMemo,
   useState,
 } from 'react'
@@ -39,6 +40,11 @@ import {
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
 
+import Toast, {
+  type ToastMessage,
+  type ToastType,
+} from './Toast'
+
 import './App.css'
 
 type TranslationEntry =
@@ -61,10 +67,6 @@ type StoredDocumentInfo = {
   schema?:
     RecordArraySchema
 
-  /*
-   * Optional حتى مشاريع v2
-   * القديمة تظل تفتح طبيعي.
-   */
   language?:
     LocalizationLanguageInfo
 }
@@ -176,10 +178,45 @@ function App() {
       'generic',
     )
 
-  /*
-   * نحدد الـentries التي تتكون
-   * بالكامل من محتوى محمي.
-   */
+  const [
+    toast,
+    setToast,
+  ] =
+    useState<ToastMessage | null>(
+      null,
+    )
+
+  const dismissToast =
+    useCallback(
+      () => {
+        setToast(
+          null,
+        )
+      },
+      [],
+    )
+
+  const showToast =
+    useCallback(
+      (
+        type:
+          ToastType,
+
+        message:
+          string,
+      ) => {
+        setToast({
+          id:
+            Date.now(),
+
+          type,
+
+          message,
+        })
+      },
+      [],
+    )
+
   const fullyProtectedEntryIds =
     useMemo(
       () => {
@@ -264,23 +301,6 @@ function App() {
         )
       : null
 
-  /*
-   * اتجاهات ولغات المستند.
-   *
-   * مثال:
-   *
-   * text_en
-   * ↓
-   * en / ltr
-   *
-   * text_ar
-   * ↓
-   * ar / rtl
-   *
-   * وإذا ما عرفنا:
-   *
-   * auto
-   */
   const sourceDirection =
     documentInfo
       ?.language
@@ -404,8 +424,9 @@ function App() {
     )
 
   /*
-   * التنقل بالكيبورد يتجاوز
-   * الـentries المحمية بالكامل.
+   * كل Entry قابلة للترجمة.
+   *
+   * المحمية بالكامل تُستبعد.
    */
   const navigableEntries =
     entries.filter(
@@ -415,6 +436,12 @@ function App() {
         ),
     )
 
+  /*
+   * التنقل العادي:
+   *
+   * Alt + ↓
+   * Alt + ↑
+   */
   function selectRelativeEntry(
     offset: number,
   ) {
@@ -432,11 +459,6 @@ function App() {
           selectedEntryId,
       )
 
-    /*
-     * لو الـentry الحالية غير موجودة
-     * في القائمة لأي سبب، نبدأ
-     * من أول/آخر entry.
-     */
     if (
       currentIndex === -1
     ) {
@@ -455,15 +477,6 @@ function App() {
       return
     }
 
-    /*
-     * Wrap-around:
-     *
-     * آخر entry + Next
-     * يرجع لأول entry.
-     *
-     * أول entry + Previous
-     * يروح لآخر entry.
-     */
     const nextIndex =
       (
         currentIndex +
@@ -479,6 +492,89 @@ function App() {
     )
   }
 
+  /*
+   * نبحث من مكان الـEntry الحالية
+   * عن أقرب Entry غير مترجمة.
+   *
+   * ما نعتمد على القائمة المفلترة
+   * في الـsidebar، لذلك الاختصار
+   * يظل شغال حتى لو المستخدم
+   * يبحث عن شيء آخر.
+   */
+  function selectRelativeUntranslated(
+    direction: 1 | -1,
+  ) {
+    if (
+      navigableEntries.length ===
+      0
+    ) {
+      return
+    }
+
+    const currentIndex =
+      navigableEntries.findIndex(
+        (entry) =>
+          entry.id ===
+          selectedEntryId,
+      )
+
+    const startIndex =
+      currentIndex === -1
+        ? (
+            direction === 1
+              ? -1
+              : 0
+          )
+        : currentIndex
+
+    for (
+      let step = 1;
+      step <=
+        navigableEntries.length;
+      step += 1
+    ) {
+      const index =
+        (
+          startIndex +
+          (
+            step *
+            direction
+          ) +
+          navigableEntries.length *
+            2
+        ) %
+        navigableEntries.length
+
+      const candidate =
+        navigableEntries[
+          index
+        ]
+
+      if (
+        candidate.id ===
+        selectedEntryId
+      ) {
+        continue
+      }
+
+      if (
+        candidate.translation
+          .trim() === ''
+      ) {
+        setSelectedEntryId(
+          candidate.id,
+        )
+
+        return
+      }
+    }
+
+    showToast(
+      'info',
+      'لا توجد Entries أخرى غير مترجمة.',
+    )
+  }
+
   function handleNextEntry() {
     selectRelativeEntry(
       1,
@@ -487,6 +583,18 @@ function App() {
 
   function handlePreviousEntry() {
     selectRelativeEntry(
+      -1,
+    )
+  }
+
+  function handleNextUntranslated() {
+    selectRelativeUntranslated(
+      1,
+    )
+  }
+
+  function handlePreviousUntranslated() {
+    selectRelativeUntranslated(
       -1,
     )
   }
@@ -543,7 +651,8 @@ function App() {
       if (
         !result.ok
       ) {
-        alert(
+        showToast(
+          'error',
           result.reason,
         )
 
@@ -557,7 +666,8 @@ function App() {
         document.entries
           .length === 0
       ) {
-        alert(
+        showToast(
+          'warning',
           'لم يتم العثور على نصوص قابلة للترجمة.',
         )
 
@@ -568,11 +678,6 @@ function App() {
         document.entries,
       )
 
-      /*
-       * نحفظ معلومات اللغة أيضًا
-       * عشان الاتجاه يستمر داخل
-       * ملفات .lhproj.
-       */
       setDocumentInfo({
         parser:
           document.parser,
@@ -599,12 +704,18 @@ function App() {
       )
 
       setSearchQuery('')
+
       setEntryFilter(
         'all',
       )
 
       setTokenProfile(
         'generic',
+      )
+
+      showToast(
+        'success',
+        `تم فتح ${name} بنجاح.`,
       )
     } catch (
       error
@@ -613,7 +724,8 @@ function App() {
         error,
       )
 
-      alert(
+      showToast(
+        'error',
         'حدث خطأ أثناء فتح الملف.',
       )
     }
@@ -624,6 +736,11 @@ function App() {
       entries.length === 0 ||
       !documentInfo
     ) {
+      showToast(
+        'warning',
+        'لا يوجد مشروع لحفظه.',
+      )
+
       return
     }
 
@@ -691,7 +808,8 @@ function App() {
         projectContent,
       )
 
-      alert(
+      showToast(
+        'success',
         'تم حفظ المشروع بنجاح.',
       )
     } catch (
@@ -701,7 +819,8 @@ function App() {
         error,
       )
 
-      alert(
+      showToast(
+        'error',
         'فشل حفظ المشروع.',
       )
     }
@@ -711,6 +830,11 @@ function App() {
     if (
       !currentDocument
     ) {
+      showToast(
+        'warning',
+        'لا يوجد ملف لتصديره.',
+      )
+
       return
     }
 
@@ -728,8 +852,9 @@ function App() {
       protectedWithTranslation
         .length > 0
     ) {
-      alert(
-        `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text. Clear them before export.`,
+      showToast(
+        'error',
+        `Export blocked: ${protectedWithTranslation.length.toLocaleString()} protected entries contain translation text.`,
       )
 
       return
@@ -776,7 +901,8 @@ function App() {
         output,
       )
 
-      alert(
+      showToast(
+        'success',
         'تم تصدير ملف JSON بنجاح.',
       )
     } catch (
@@ -786,7 +912,8 @@ function App() {
         error,
       )
 
-      alert(
+      showToast(
+        'error',
         'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
       )
     }
@@ -836,7 +963,8 @@ function App() {
         parsed.format !==
         'LocalizationHubProject'
       ) {
-        alert(
+        showToast(
+          'error',
           'ملف المشروع غير صالح.',
         )
 
@@ -850,7 +978,8 @@ function App() {
         parsed.entries
           .length === 0
       ) {
-        alert(
+        showToast(
+          'warning',
           'المشروع لا يحتوي على نصوص.',
         )
 
@@ -872,13 +1001,6 @@ function App() {
           project.sourceFileName,
         )
 
-        /*
-         * المشاريع v2 القديمة قد
-         * لا تحتوي language.
-         *
-         * عادي، لأن الخاصية Optional
-         * ونرجع وقتها لـauto.
-         */
         setDocumentInfo(
           project.document,
         )
@@ -903,8 +1025,14 @@ function App() {
         )
 
         setSearchQuery('')
+
         setEntryFilter(
           'all',
+        )
+
+        showToast(
+          'success',
+          'تم فتح المشروع بنجاح.',
         )
 
         return
@@ -991,14 +1119,21 @@ function App() {
         )
 
         setSearchQuery('')
+
         setEntryFilter(
           'all',
+        )
+
+        showToast(
+          'info',
+          'تم فتح المشروع القديم وترحيله للتنسيق الحالي.',
         )
 
         return
       }
 
-      alert(
+      showToast(
+        'error',
         'إصدار المشروع غير مدعوم.',
       )
     } catch (
@@ -1008,7 +1143,8 @@ function App() {
         error,
       )
 
-      alert(
+      showToast(
+        'error',
         'فشل فتح المشروع.',
       )
     }
@@ -1041,26 +1177,141 @@ function App() {
     0
   ) {
     return (
-      <main className="welcome-screen">
-        <div className="welcome-card">
-          <img
-            className="welcome-logo"
-            src="/images/logo-center.jpg"
-            alt="LocalizationHub"
-          />
+      <>
+        <main className="welcome-screen">
+          <div className="welcome-card">
+            <img
+              className="welcome-logo"
+              src="/images/logo-center.jpg"
+              alt="LocalizationHub"
+            />
 
-          <h1>
-            LocalizationHub
-          </h1>
+            <h1>
+              LocalizationHub
+            </h1>
 
-          <p>
-            A collaborative workspace
-            for game localization.
-          </p>
+            <p>
+              A collaborative workspace
+              for game localization.
+            </p>
 
-          <div className="welcome-actions">
+            <div className="welcome-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={
+                  handleOpenFile
+                }
+              >
+                Open File
+              </button>
+
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={
+                  handleOpenProject
+                }
+              >
+                Open Project
+              </button>
+
+              <button
+                className="secondary-button"
+                type="button"
+              >
+                Join Project
+              </button>
+            </div>
+          </div>
+        </main>
+
+        <Toast
+          toast={
+            toast
+          }
+          onClose={
+            dismissToast
+          }
+        />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <main className="app-shell">
+        <header className="topbar">
+          <div className="topbar-brand">
+            <img
+              className="brand-mark brand-mark-image small"
+              src="/images/logo-center.jpg"
+              alt="LocalizationHub"
+            />
+
+            <div>
+              <h1>
+                LocalizationHub
+              </h1>
+
+              <span>
+                {fileName}
+              </span>
+            </div>
+          </div>
+
+          <div className="topbar-actions">
+            <TokenProfileSelect
+              value={
+                tokenProfile
+              }
+              onChange={
+                setTokenProfile
+              }
+            />
+
+            <div className="progress-info">
+              <span>
+                {
+                  translatedCount
+                    .toLocaleString()
+                }
+
+                {' / '}
+
+                {
+                  translatableCount
+                    .toLocaleString()
+                }
+              </span>
+
+              <strong>
+                {progress}%
+              </strong>
+            </div>
+
             <button
-              className="primary-button"
+              className="secondary-button"
+              type="button"
+              onClick={
+                handleSaveProject
+              }
+            >
+              Save Project
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={
+                handleExportFile
+              }
+            >
+              Export JSON
+            </button>
+
+            <button
+              className="secondary-button"
               type="button"
               onClick={
                 handleOpenFile
@@ -1068,808 +1319,731 @@ function App() {
             >
               Open File
             </button>
-
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={
-                handleOpenProject
-              }
-            >
-              Open Project
-            </button>
-
-            <button
-              className="secondary-button"
-              type="button"
-            >
-              Join Project
-            </button>
           </div>
-        </div>
-      </main>
-    )
-  }
+        </header>
 
-  return (
-    <main className="app-shell">
-      <header className="topbar">
-        <div className="topbar-brand">
-          <img
-            className="brand-mark brand-mark-image small"
-            src="/images/logo-center.jpg"
-            alt="LocalizationHub"
-          />
-
-          <div>
-            <h1>
-              LocalizationHub
-            </h1>
-
-            <span>
-              {fileName}
-            </span>
-          </div>
-        </div>
-
-        <div className="topbar-actions">
-          <TokenProfileSelect
-            value={
-              tokenProfile
-            }
-            onChange={
-              setTokenProfile
-            }
-          />
-
-          <div className="progress-info">
-            <span>
-              {
-                translatedCount
-                  .toLocaleString()
-              }
-
-              {' / '}
-
-              {
-                translatableCount
-                  .toLocaleString()
-              }
-            </span>
-
-            <strong>
-              {progress}%
-            </strong>
-          </div>
-
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={
-              handleSaveProject
-            }
-          >
-            Save Project
-          </button>
-
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={
-              handleExportFile
-            }
-          >
-            Export JSON
-          </button>
-
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={
-              handleOpenFile
-            }
-          >
-            Open File
-          </button>
-        </div>
-      </header>
-
-      <div className="workspace">
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <div className="entries-summary">
-              <strong>
-                Entries
-              </strong>
-
-              <span>
-                {
-                  filteredEntries
-                    .length
-                    .toLocaleString()
-                }
-
-                {' / '}
-
-                {
-                  entries.length
-                    .toLocaleString()
-                }
-              </span>
-            </div>
-
-            <input
-              className="search-input"
-              type="text"
-              value={
-                searchQuery
-              }
-              onChange={
-                (event) =>
-                  setSearchQuery(
-                    event
-                      .target
-                      .value,
-                  )
-              }
-              placeholder="Search keys or text..."
-            />
-
-            <div className="filter-tabs">
-              <button
-                type="button"
-                className={
-                  entryFilter ===
-                  'all'
-                    ? 'filter-button active'
-                    : 'filter-button'
-                }
-                onClick={() =>
-                  setEntryFilter(
-                    'all',
-                  )
-                }
-              >
-                All
+        <div className="workspace">
+          <aside className="sidebar">
+            <div className="sidebar-header">
+              <div className="entries-summary">
+                <strong>
+                  Entries
+                </strong>
 
                 <span>
+                  {
+                    filteredEntries
+                      .length
+                      .toLocaleString()
+                  }
+
+                  {' / '}
+
                   {
                     entries.length
+                      .toLocaleString()
                   }
                 </span>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                className={
-                  entryFilter ===
-                  'untranslated'
-                    ? 'filter-button active'
-                    : 'filter-button'
+              <input
+                className="search-input"
+                type="text"
+                value={
+                  searchQuery
                 }
-                onClick={() =>
-                  setEntryFilter(
-                    'untranslated',
-                  )
+                onChange={
+                  (event) =>
+                    setSearchQuery(
+                      event
+                        .target
+                        .value,
+                    )
                 }
-              >
-                Untranslated
+                placeholder="Search keys or text..."
+              />
 
-                <span>
-                  {
-                    untranslatedCount
+              <div className="filter-tabs">
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
+                    'all'
+                      ? 'filter-button active'
+                      : 'filter-button'
                   }
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={
-                  entryFilter ===
-                  'translated'
-                    ? 'filter-button active'
-                    : 'filter-button'
-                }
-                onClick={() =>
-                  setEntryFilter(
-                    'translated',
-                  )
-                }
-              >
-                Translated
-
-                <span>
-                  {
-                    translatedCount
-                  }
-                </span>
-              </button>
-            </div>
-
-            {
-              protectedCount >
-                0 && (
-                <div className="entries-summary protected-summary">
-                  <span>
-                    Protected
-                  </span>
-
-                  <span>
-                    {
-                      protectedCount
-                        .toLocaleString()
-                    }
-                  </span>
-                </div>
-              )
-            }
-          </div>
-
-          <div className="entry-list">
-            {
-              filteredEntries
-                .length > 0
-                ? filteredEntries.map(
-                    (entry) => {
-                      const isProtected =
-                        fullyProtectedEntryIds.has(
-                          entry.id,
-                        )
-
-                      const isTranslated =
-                        !isProtected &&
-                        entry.translation
-                          .trim() !== ''
-
-                      const validation =
-                        isProtected
-                          ? null
-                          : validateProtectedTokens(
-                              entry.source,
-                              entry.translation,
-                              tokenProfile,
-                            )
-
-                      const hasTokenError =
-                        isTranslated &&
-                        Boolean(
-                          validation
-                            ?.hasErrors,
-                        )
-
-                      const hasTokenWarning =
-                        isTranslated &&
-                        !hasTokenError &&
-                        Boolean(
-                          validation
-                            ?.hasWarnings,
-                        )
-
-                      const isSelected =
-                        entry.id ===
-                        selectedEntryId
-
-                      let statusClass =
-                        ''
-
-                      if (
-                        isProtected
-                      ) {
-                        statusClass =
-                          'protected'
-                      } else if (
-                        hasTokenError
-                      ) {
-                        statusClass =
-                          'token-warning'
-                      } else if (
-                        hasTokenWarning
-                      ) {
-                        statusClass =
-                          'token-warning'
-                      } else if (
-                        isTranslated
-                      ) {
-                        statusClass =
-                          'translated'
-                      }
-
-                      const entryTitle =
-                        entry.context
-                          ? `${entry.context} · ${entry.key}`
-                          : entry.key
-
-                      return (
-                        <button
-                          type="button"
-                          key={
-                            entry.id
-                          }
-                          className={
-                            `entry-item ${
-                              isSelected
-                                ? 'selected'
-                                : ''
-                            }`
-                          }
-                          title={
-                            isProtected
-                              ? `Protected · ${entryTitle}`
-                              : entryTitle
-                          }
-                          onClick={() =>
-                            setSelectedEntryId(
-                              entry.id,
-                            )
-                          }
-                        >
-                          <span
-                            className={
-                              `status-dot ${statusClass}`
-                            }
-                          />
-
-                          <span className="entry-key">
-                            {
-                              entry.key
-                            }
-                          </span>
-                        </button>
-                      )
-                    },
-                  )
-                : (
-                  <div className="empty-search">
-                    No matching entries.
-                  </div>
-                )
-            }
-          </div>
-        </aside>
-
-        <section className="editor-panel">
-          {
-            selectedEntry &&
-            selectedValidation && (
-              <>
-                <div className="editor-header">
-                  <span className="editor-label">
-                    {
-                      selectedEntry
-                        .context
-                        ? `Key · ${selectedEntry.context}`
-                        : 'Key'
-                    }
-                  </span>
-
-                  <h2>
-                    {
-                      selectedEntry
-                        .key
-                    }
-                  </h2>
-
-                  {
-                    documentDescription && (
-                      <span className="editor-label">
-                        {
-                          documentDescription
-                        }
-                      </span>
+                  onClick={() =>
+                    setEntryFilter(
+                      'all',
                     )
                   }
-                </div>
+                >
+                  All
 
-                <div className="editor-section">
-                  <label>
-                    Source
-                  </label>
-
-                  <div
-                    className="source-text"
-                    dir={
-                      sourceDirection
-                    }
-                    lang={
-                      sourceLocale
-                    }
-                  >
+                  <span>
                     {
-                      selectedEntry
-                        .source
+                      entries.length
+                    }
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
+                    'untranslated'
+                      ? 'filter-button active'
+                      : 'filter-button'
+                  }
+                  onClick={() =>
+                    setEntryFilter(
+                      'untranslated',
+                    )
+                  }
+                >
+                  Untranslated
+
+                  <span>
+                    {
+                      untranslatedCount
+                    }
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    entryFilter ===
+                    'translated'
+                      ? 'filter-button active'
+                      : 'filter-button'
+                  }
+                  onClick={() =>
+                    setEntryFilter(
+                      'translated',
+                    )
+                  }
+                >
+                  Translated
+
+                  <span>
+                    {
+                      translatedCount
+                    }
+                  </span>
+                </button>
+              </div>
+
+              {
+                protectedCount >
+                  0 && (
+                  <div className="entries-summary protected-summary">
+                    <span>
+                      Protected
+                    </span>
+
+                    <span>
+                      {
+                        protectedCount
+                          .toLocaleString()
+                      }
+                    </span>
+                  </div>
+                )
+              }
+            </div>
+
+            <div className="entry-list">
+              {
+                filteredEntries
+                  .length > 0
+                  ? filteredEntries.map(
+                      (entry) => {
+                        const isProtected =
+                          fullyProtectedEntryIds.has(
+                            entry.id,
+                          )
+
+                        const isTranslated =
+                          !isProtected &&
+                          entry.translation
+                            .trim() !== ''
+
+                        const validation =
+                          isProtected
+                            ? null
+                            : validateProtectedTokens(
+                                entry.source,
+                                entry.translation,
+                                tokenProfile,
+                              )
+
+                        const hasTokenError =
+                          isTranslated &&
+                          Boolean(
+                            validation
+                              ?.hasErrors,
+                          )
+
+                        const hasTokenWarning =
+                          isTranslated &&
+                          !hasTokenError &&
+                          Boolean(
+                            validation
+                              ?.hasWarnings,
+                          )
+
+                        const isSelected =
+                          entry.id ===
+                          selectedEntryId
+
+                        let statusClass =
+                          ''
+
+                        if (
+                          isProtected
+                        ) {
+                          statusClass =
+                            'protected'
+                        } else if (
+                          hasTokenError
+                        ) {
+                          statusClass =
+                            'token-warning'
+                        } else if (
+                          hasTokenWarning
+                        ) {
+                          statusClass =
+                            'token-warning'
+                        } else if (
+                          isTranslated
+                        ) {
+                          statusClass =
+                            'translated'
+                        }
+
+                        const entryTitle =
+                          entry.context
+                            ? `${entry.context} · ${entry.key}`
+                            : entry.key
+
+                        return (
+                          <button
+                            type="button"
+                            key={
+                              entry.id
+                            }
+                            className={
+                              `entry-item ${
+                                isSelected
+                                  ? 'selected'
+                                  : ''
+                              }`
+                            }
+                            title={
+                              isProtected
+                                ? `Protected · ${entryTitle}`
+                                : entryTitle
+                            }
+                            onClick={() =>
+                              setSelectedEntryId(
+                                entry.id,
+                              )
+                            }
+                          >
+                            <span
+                              className={
+                                `status-dot ${statusClass}`
+                              }
+                            />
+
+                            <span className="entry-key">
+                              {
+                                entry.key
+                              }
+                            </span>
+                          </button>
+                        )
+                      },
+                    )
+                  : (
+                    <div className="empty-search">
+                      No matching entries.
+                    </div>
+                  )
+              }
+            </div>
+          </aside>
+
+          <section className="editor-panel">
+            {
+              selectedEntry &&
+              selectedValidation && (
+                <>
+                  <div className="editor-header">
+                    <span className="editor-label">
+                      {
+                        selectedEntry
+                          .context
+                          ? `Key · ${selectedEntry.context}`
+                          : 'Key'
+                      }
+                    </span>
+
+                    <h2>
+                      {
+                        selectedEntry
+                          .key
+                      }
+                    </h2>
+
+                    {
+                      documentDescription && (
+                        <span className="editor-label">
+                          {
+                            documentDescription
+                          }
+                        </span>
+                      )
                     }
                   </div>
-                </div>
 
-                {
-                  selectedValidation
-                    .sourceTokens
-                    .length >
-                    0 && (
-                    <div className="token-panel">
-                      <div className="token-panel-header">
-                        <strong>
-                          Protected Tokens
-                        </strong>
+                  <div className="editor-section">
+                    <label>
+                      Source
+                    </label>
 
-                        <span>
+                    <div
+                      className="source-text"
+                      dir={
+                        sourceDirection
+                      }
+                      lang={
+                        sourceLocale
+                      }
+                    >
+                      {
+                        selectedEntry
+                          .source
+                      }
+                    </div>
+                  </div>
+
+                  {
+                    selectedValidation
+                      .sourceTokens
+                      .length >
+                      0 && (
+                      <div className="token-panel">
+                        <div className="token-panel-header">
+                          <strong>
+                            Protected Tokens
+                          </strong>
+
+                          <span>
+                            {
+                              selectedValidation
+                                .sourceTokens
+                                .length
+                            }
+                          </span>
+                        </div>
+
+                        <div className="token-list">
                           {
                             selectedValidation
                               .sourceTokens
-                              .length
-                          }
-                        </span>
-                      </div>
+                              .map(
+                                (
+                                  token,
+                                  index,
+                                ) => {
+                                  const isMissing =
+                                    !selectedFullyProtected &&
+                                    selectedValidation
+                                      .missingTokens
+                                      .some(
+                                        (
+                                          missing,
+                                        ) =>
+                                          missing.raw ===
+                                          token.raw,
+                                      )
 
-                      <div className="token-list">
-                        {
-                          selectedValidation
-                            .sourceTokens
-                            .map(
-                              (
-                                token,
-                                index,
-                              ) => {
-                                const isMissing =
-                                  !selectedFullyProtected &&
-                                  selectedValidation
-                                    .missingTokens
-                                    .some(
-                                      (
-                                        missing,
-                                      ) =>
-                                        missing.raw ===
-                                        token.raw,
-                                    )
-
-                                return (
-                                  <code
-                                    key={
-                                      `${token.start}-${token.raw}-${index}`
-                                    }
-                                    className={
-                                      isMissing
-                                        ? 'token-chip missing'
-                                        : 'token-chip'
-                                    }
-                                  >
-                                    {
-                                      token.raw
-                                    }
-                                  </code>
-                                )
-                              },
-                            )
-                        }
-                      </div>
-                    </div>
-                  )
-                }
-
-                {
-                  selectedEntry.notes &&
-                  selectedEntry.notes
-                    .trim() !== '' && (
-                    <div className="editor-section">
-                      <label>
-                        Notes
-                      </label>
-
-                      <div
-                        className="source-text"
-                        dir="auto"
-                      >
-                        {
-                          selectedEntry
-                            .notes
-                        }
-                      </div>
-                    </div>
-                  )
-                }
-
-                {
-                  selectedFullyProtected
-                    ? (
-                      <div className="editor-section translation-section">
-                        <label>
-                          Translation
-                        </label>
-
-                        <div className="token-panel">
-                          <div className="token-panel-header">
-                            <strong>
-                              Protected — Not translatable
-                            </strong>
-
-                            <span>
-                              ENGINE
-                            </span>
-                          </div>
-
-                          <p>
-                            This entry is fully protected and must remain exactly as it appears in the source.
-                          </p>
-
-                          {
-                            selectedEntry
-                              .translation
-                              .trim() !==
-                              '' && (
-                              <div className="token-warning-box">
-                                <strong>
-                                  Protected entry contains translation text
-                                </strong>
-
-                                <p>
-                                  This translation will not be exported until it is cleared.
-                                </p>
-
-                                <button
-                                  className="secondary-button"
-                                  type="button"
-                                  onClick={() =>
-                                    handleTranslationChange(
-                                      selectedEntry.id,
-                                      '',
-                                    )
-                                  }
-                                >
-                                  Clear Translation
-                                </button>
-                              </div>
-                            )
+                                  return (
+                                    <code
+                                      key={
+                                        `${token.start}-${token.raw}-${index}`
+                                      }
+                                      className={
+                                        isMissing
+                                          ? 'token-chip missing'
+                                          : 'token-chip'
+                                      }
+                                    >
+                                      {
+                                        token.raw
+                                      }
+                                    </code>
+                                  )
+                                },
+                              )
                           }
                         </div>
                       </div>
                     )
-                    : (
-                      <div className="editor-section translation-section">
+                  }
+
+                  {
+                    selectedEntry.notes &&
+                    selectedEntry.notes
+                      .trim() !== '' && (
+                      <div className="editor-section">
                         <label>
-                          Translation
+                          Notes
                         </label>
 
-                        <TranslationEditor
-                          value={
+                        <div
+                          className="source-text"
+                          dir="auto"
+                        >
+                          {
                             selectedEntry
-                              .translation
+                              .notes
                           }
-                          tokenProfile={
-                            tokenProfile
-                          }
-                          direction={
-                            translationDirection
-                          }
-                          locale={
-                            translationLocale
-                          }
-                          placeholderText={
-                            translationPlaceholder
-                          }
-                          onChange={
-                            (
-                              value,
-                            ) =>
-                              handleTranslationChange(
-                                selectedEntry.id,
-                                value,
-                              )
-                          }
-                          onSave={() => {
-                            void handleSaveProject()
-                          }}
-                          onNext={
-                            handleNextEntry
-                          }
-                          onPrevious={
-                            handlePreviousEntry
-                          }
-                        />
+                        </div>
                       </div>
                     )
-                }
+                  }
 
-                {
-                  !selectedFullyProtected &&
-                  selectedEntry
-                    .translation
-                    .trim() !== '' &&
-                  (
-                    selectedValidation
-                      .hasErrors ||
-                    selectedValidation
-                      .hasWarnings
-                  ) && (
-                    <div className="token-warning-box">
-                      <strong>
+                  {
+                    selectedFullyProtected
+                      ? (
+                        <div className="editor-section translation-section">
+                          <label>
+                            Translation
+                          </label>
+
+                          <div className="token-panel">
+                            <div className="token-panel-header">
+                              <strong>
+                                Protected — Not translatable
+                              </strong>
+
+                              <span>
+                                ENGINE
+                              </span>
+                            </div>
+
+                            <p>
+                              This entry is fully protected and must remain exactly as it appears in the source.
+                            </p>
+
+                            {
+                              selectedEntry
+                                .translation
+                                .trim() !==
+                                '' && (
+                                <div className="token-warning-box">
+                                  <strong>
+                                    Protected entry contains translation text
+                                  </strong>
+
+                                  <p>
+                                    This translation will not be exported until it is cleared.
+                                  </p>
+
+                                  <button
+                                    className="secondary-button"
+                                    type="button"
+                                    onClick={() =>
+                                      handleTranslationChange(
+                                        selectedEntry.id,
+                                        '',
+                                      )
+                                    }
+                                  >
+                                    Clear Translation
+                                  </button>
+                                </div>
+                              )
+                            }
+                          </div>
+                        </div>
+                      )
+                      : (
+                        <div className="editor-section translation-section">
+                          <label>
+                            Translation
+                          </label>
+
+                          <TranslationEditor
+                            value={
+                              selectedEntry
+                                .translation
+                            }
+
+                            tokenProfile={
+                              tokenProfile
+                            }
+
+                            direction={
+                              translationDirection
+                            }
+
+                            locale={
+                              translationLocale
+                            }
+
+                            placeholderText={
+                              translationPlaceholder
+                            }
+
+                            onChange={
+                              (
+                                value,
+                              ) =>
+                                handleTranslationChange(
+                                  selectedEntry.id,
+                                  value,
+                                )
+                            }
+
+                            onSave={() => {
+                              void handleSaveProject()
+                            }}
+
+                            onNextUntranslated={
+                              handleNextUntranslated
+                            }
+
+                            onPreviousUntranslated={
+                              handlePreviousUntranslated
+                            }
+
+                            onNext={
+                              handleNextEntry
+                            }
+
+                            onPrevious={
+                              handlePreviousEntry
+                            }
+                          />
+                        </div>
+                      )
+                  }
+
+                  {
+                    !selectedFullyProtected &&
+                    selectedEntry
+                      .translation
+                      .trim() !== '' &&
+                    (
+                      selectedValidation
+                        .hasErrors ||
+                      selectedValidation
+                        .hasWarnings
+                    ) && (
+                      <div className="token-warning-box">
+                        <strong>
+                          {
+                            selectedValidation
+                              .hasErrors
+                              ? 'Protected token error'
+                              : 'Protected token warning'
+                          }
+                        </strong>
+
                         {
                           selectedValidation
-                            .hasErrors
-                            ? 'Protected token error'
-                            : 'Protected token warning'
+                            .missingTokens
+                            .length >
+                            0 && (
+                            <div className="token-warning-section">
+                              <span>
+                                Missing
+                              </span>
+
+                              <div>
+                                {
+                                  selectedValidation
+                                    .missingTokens
+                                    .map(
+                                      (
+                                        token,
+                                        index,
+                                      ) => (
+                                        <code
+                                          key={
+                                            `missing-${token.start}-${index}`
+                                          }
+                                        >
+                                          {
+                                            token.raw
+                                          }
+                                        </code>
+                                      ),
+                                    )
+                                }
+                              </div>
+                            </div>
+                          )
                         }
-                      </strong>
 
-                      {
-                        selectedValidation
-                          .missingTokens
-                          .length >
-                          0 && (
-                          <div className="token-warning-section">
-                            <span>
-                              Missing
-                            </span>
+                        {
+                          selectedValidation
+                            .extraTokens
+                            .length >
+                            0 && (
+                            <div className="token-warning-section">
+                              <span>
+                                Extra
+                              </span>
 
-                            <div>
-                              {
-                                selectedValidation
-                                  .missingTokens
-                                  .map(
-                                    (
-                                      token,
-                                      index,
-                                    ) => (
-                                      <code
-                                        key={
-                                          `missing-${token.start}-${index}`
-                                        }
-                                      >
-                                        {
-                                          token.raw
-                                        }
-                                      </code>
-                                    ),
-                                  )
-                              }
+                              <div>
+                                {
+                                  selectedValidation
+                                    .extraTokens
+                                    .map(
+                                      (
+                                        token,
+                                        index,
+                                      ) => (
+                                        <code
+                                          key={
+                                            `extra-${token.start}-${index}`
+                                          }
+                                        >
+                                          {
+                                            token.raw
+                                          }
+                                        </code>
+                                      ),
+                                    )
+                                }
+                              </div>
                             </div>
-                          </div>
-                        )
-                      }
+                          )
+                        }
 
-                      {
-                        selectedValidation
-                          .extraTokens
-                          .length >
-                          0 && (
-                          <div className="token-warning-section">
-                            <span>
-                              Extra
-                            </span>
+                        {
+                          selectedValidation
+                            .placementIssues
+                            .length >
+                            0 && (
+                            <div className="token-warning-section">
+                              <span>
+                                Warning
+                              </span>
 
-                            <div>
-                              {
-                                selectedValidation
-                                  .extraTokens
-                                  .map(
-                                    (
-                                      token,
-                                      index,
-                                    ) => (
-                                      <code
-                                        key={
-                                          `extra-${token.start}-${index}`
-                                        }
-                                      >
-                                        {
-                                          token.raw
-                                        }
-                                      </code>
-                                    ),
-                                  )
-                              }
+                              <div>
+                                {
+                                  selectedValidation
+                                    .placementIssues
+                                    .map(
+                                      (
+                                        issue,
+                                        index,
+                                      ) => (
+                                        <p
+                                          key={
+                                            `placement-${issue.kind}-${index}`
+                                          }
+                                        >
+                                          {
+                                            issue.message
+                                          }
+                                        </p>
+                                      ),
+                                    )
+                                }
+                              </div>
                             </div>
-                          </div>
-                        )
-                      }
+                          )
+                        }
 
-                      {
-                        selectedValidation
-                          .placementIssues
-                          .length >
-                          0 && (
-                          <div className="token-warning-section">
-                            <span>
-                              Warning
-                            </span>
+                        {
+                          selectedValidation
+                            .structureIssues
+                            .length >
+                            0 && (
+                            <div className="token-warning-section">
+                              <span>
+                                Error
+                              </span>
 
-                            <div>
-                              {
-                                selectedValidation
-                                  .placementIssues
-                                  .map(
-                                    (
-                                      issue,
-                                      index,
-                                    ) => (
-                                      <p
-                                        key={
-                                          `placement-${issue.kind}-${index}`
-                                        }
-                                      >
-                                        {
-                                          issue.message
-                                        }
-                                      </p>
-                                    ),
-                                  )
-                              }
+                              <div>
+                                {
+                                  selectedValidation
+                                    .structureIssues
+                                    .map(
+                                      (
+                                        issue,
+                                        index,
+                                      ) => (
+                                        <p
+                                          key={
+                                            `structure-${issue.kind}-${index}`
+                                          }
+                                        >
+                                          {
+                                            issue.message
+                                          }
+                                        </p>
+                                      ),
+                                    )
+                                }
+                              </div>
                             </div>
-                          </div>
-                        )
-                      }
+                          )
+                        }
+                      </div>
+                    )
+                  }
 
+                  <footer className="editor-footer">
+                    <span>
                       {
-                        selectedValidation
-                          .structureIssues
-                          .length >
-                          0 && (
-                          <div className="token-warning-section">
-                            <span>
-                              Error
-                            </span>
-
-                            <div>
-                              {
-                                selectedValidation
-                                  .structureIssues
-                                  .map(
-                                    (
-                                      issue,
-                                      index,
-                                    ) => (
-                                      <p
-                                        key={
-                                          `structure-${issue.kind}-${index}`
-                                        }
-                                      >
-                                        {
-                                          issue.message
-                                        }
-                                      </p>
-                                    ),
-                                  )
-                              }
-                            </div>
-                          </div>
-                        )
-                      }
-                    </div>
-                  )
-                }
-
-                <footer className="editor-footer">
-                  <span>
-                    {
-                      selectedFullyProtected
-                        ? 'Protected · Not translatable'
-                        : selectedEntry
-                            .translation
-                            .trim() === ''
-                          ? 'Not translated'
-                          : selectedValidation
-                              .hasErrors
-                            ? 'Token error'
+                        selectedFullyProtected
+                          ? 'Protected · Not translatable'
+                          : selectedEntry
+                              .translation
+                              .trim() === ''
+                            ? 'Not translated'
                             : selectedValidation
-                                .hasWarnings
-                              ? 'Translated with warnings'
-                              : 'Translated'
-                    }
-                  </span>
+                                .hasErrors
+                              ? 'Token error'
+                              : selectedValidation
+                                  .hasWarnings
+                                ? 'Translated with warnings'
+                                : 'Translated'
+                      }
+                    </span>
 
-                  <span>
-                    {
-                      selectedFullyProtected
-                        ? 'Excluded from progress'
-                        : `${selectedEntry.translation.length} characters`
-                    }
-                  </span>
-                </footer>
-              </>
-            )
-          }
-        </section>
-      </div>
-    </main>
+                    <span>
+                      {
+                        selectedFullyProtected
+                          ? 'Excluded from progress'
+                          : `${selectedEntry.translation.length} characters`
+                      }
+                    </span>
+                  </footer>
+                </>
+              )
+            }
+          </section>
+        </div>
+      </main>
+
+      <Toast
+        toast={
+          toast
+        }
+        onClose={
+          dismissToast
+        }
+      />
+    </>
   )
 }
 
