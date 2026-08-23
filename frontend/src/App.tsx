@@ -36,7 +36,7 @@ import {
 
 import {
   analyzeExportValidation,
-  decodeLocalizationProject,
+  ProjectStorageError,
 } from '@localizationhub/core'
 
 import type {
@@ -58,7 +58,7 @@ import {
 } from './useEntryCollections'
 
 import {
-  writeLocalizationProject,
+  desktopProjectStorage,
 } from './projectFiles'
 
 import {
@@ -1231,8 +1231,15 @@ function App() {
     }
 
     try {
-      await writeLocalizationProject(
-        selectedPath,
+      await desktopProjectStorage.save(
+        {
+          kind:
+            'local',
+
+          path:
+            selectedPath,
+        },
+
         project,
       )
 
@@ -1293,8 +1300,15 @@ function App() {
     }
 
     try {
-      await writeLocalizationProject(
-        projectPath,
+      await desktopProjectStorage.save(
+        {
+          kind:
+            'local',
+
+          path:
+            projectPath,
+        },
+
         project,
       )
 
@@ -1327,94 +1341,20 @@ function App() {
     openedFromRecent =
       false,
   ) {
-    let content:
-      string
-
     try {
-      content =
-        await readTextFile(
-          selected,
+      const loaded =
+        await desktopProjectStorage.load(
+          {
+            kind:
+              'local',
+
+            path:
+              selected,
+          },
         )
-    } catch (
-      error
-    ) {
-      console.error(
-        error,
-      )
-
-      if (
-        lastSession?.projectPath ===
-        selected
-      ) {
-        forgetSession()
-      }
-
-
-      if (
-        openedFromRecent
-      ) {
-        setRecentProjects(
-          removeRecentProject(
-            selected,
-          ),
-        )
-
-        showToast(
-          'warning',
-          'تعذر العثور على المشروع. تمت إزالته من Recent Projects.',
-        )
-      } else {
-        showToast(
-          'error',
-          'فشل قراءة ملف المشروع.',
-        )
-      }
-
-      return
-    }
-
-    try {
-      const decoded =
-        decodeLocalizationProject(
-          content,
-        )
-
-      if (!decoded.ok) {
-        switch (
-          decoded.reason
-        ) {
-          case 'invalid-format':
-            showToast(
-              'error',
-              '??? ??????? ??? ????.',
-            )
-            return
-
-          case 'empty-project':
-            showToast(
-              'warning',
-              '??????? ?? ????? ??? ????.',
-            )
-            return
-
-          case 'unsupported-version':
-            showToast(
-              'error',
-              '????? ??????? ??? ?????.',
-            )
-            return
-
-          case 'invalid-json':
-            showToast(
-              'error',
-              '??? ??? ???????. ?? ???? ????? ?????? ?? ??? ????.',
-            )
-            return
-        }
-      }
 
       const project =
-        decoded.project
+        loaded.project
 
       setEntries(
         project.entries,
@@ -1433,7 +1373,7 @@ function App() {
        * so they are written back as v2.
        */
       setProjectPath(
-        decoded.migratedFromVersion === 1
+        loaded.migratedFromVersion === 1
           ? null
           : selected,
       )
@@ -1473,13 +1413,13 @@ function App() {
       )
 
       showToast(
-        decoded.migratedFromVersion === 1
+        loaded.migratedFromVersion === 1
           ? 'info'
           : 'success',
 
-        decoded.migratedFromVersion === 1
-          ? '?? ??? ??????? ?????? ??????? ??????? ??????.'
-          : '?? ??? ??????? ?????.',
+        loaded.migratedFromVersion === 1
+          ? 'تم فتح المشروع القديم وترحيله للتنسيق الحالي.'
+          : 'تم فتح المشروع بنجاح.',
       )
     } catch (
       error
@@ -1488,9 +1428,80 @@ function App() {
         error,
       )
 
+      if (
+        error instanceof
+        ProjectStorageError
+      ) {
+        if (
+          error.code ===
+          'read-failed'
+        ) {
+          if (
+            lastSession?.projectPath ===
+            selected
+          ) {
+            forgetSession()
+          }
+
+          if (
+            openedFromRecent
+          ) {
+            setRecentProjects(
+              removeRecentProject(
+                selected,
+              ),
+            )
+
+            showToast(
+              'warning',
+              'تعذر العثور على المشروع. تمت إزالته من Recent Projects.',
+            )
+          } else {
+            showToast(
+              'error',
+              'فشل قراءة ملف المشروع.',
+            )
+          }
+
+          return
+        }
+
+        switch (
+          error.code
+        ) {
+          case 'invalid-format':
+            showToast(
+              'error',
+              'ملف المشروع غير صالح.',
+            )
+            return
+
+          case 'empty-project':
+            showToast(
+              'warning',
+              'المشروع لا يحتوي على نصوص.',
+            )
+            return
+
+          case 'unsupported-version':
+            showToast(
+              'error',
+              'إصدار المشروع غير مدعوم.',
+            )
+            return
+
+          case 'invalid-json':
+            showToast(
+              'error',
+              'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
+            )
+            return
+        }
+      }
+
       showToast(
         'error',
-        '??? ??? ???????. ?? ???? ????? ?????? ?? ??? ????.',
+        'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
       )
     }
   }
