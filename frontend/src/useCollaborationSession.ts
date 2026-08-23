@@ -15,6 +15,7 @@ import type {
 import type {
   CollaborationProjectSnapshot,
   CollaborationServerMessage,
+  CollaborationTranslationConflict,
   CollaborationTranslationUpdatePayload,
 } from './collaborationProtocol'
 
@@ -35,6 +36,11 @@ type UseCollaborationSessionOptions = {
   onTranslationUpdate?: (
     update:
       CollaborationTranslationUpdatePayload,
+  ) => void | Promise<void>
+
+  onTranslationConflict?: (
+    conflict:
+      CollaborationTranslationConflict,
   ) => void | Promise<void>
 }
 
@@ -82,6 +88,11 @@ export function useCollaborationSession(
       options.onTranslationUpdate,
     )
 
+  const onTranslationConflictRef =
+    useRef(
+      options.onTranslationConflict,
+    )
+
   const requestProjectRef =
     useRef<
       (() => Promise<void>) |
@@ -117,6 +128,16 @@ export function useCollaborationSession(
     },
     [
       options.onTranslationUpdate,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onTranslationConflictRef.current =
+        options.onTranslationConflict
+    },
+    [
+      options.onTranslationConflict,
     ],
   )
 
@@ -302,6 +323,15 @@ export function useCollaborationSession(
             void onTranslationUpdateRef
               .current?.(
                 message.update,
+              )
+
+            break
+          }
+
+          case 'translation-conflict': {
+            void onTranslationConflictRef
+              .current?.(
+                message.conflict,
               )
 
             break

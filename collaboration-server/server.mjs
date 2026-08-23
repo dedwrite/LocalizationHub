@@ -455,6 +455,9 @@ function handleHostSession(
      */
     translationRevisions:
       new Map(),
+
+    translationValues:
+      new Map(),
   }
 
   sessions.set(
@@ -852,23 +855,89 @@ function handleTranslationUpdate(
     0
 
   /*
-   * For the first Live Sync pass we
-   * accept updates in arrival order.
+   * Reject stale edits.
    *
-   * baseRevision is already carried by
-   * the protocol, but stale-update
-   * rejection is intentionally added
-   * later with conflict handling.
+   * The client may only update the
+   * revision it currently knows.
    */
+  if (
+    update.baseRevision !==
+    currentRevision
+  ) {
+    const latest =
+      session
+        .translationValues
+        .get(
+          update.entryId,
+        )
+
+    if (!latest) {
+      sendError(
+        socket,
+        'revision-conflict',
+        'This translation changed before your edit could be applied.',
+      )
+
+      return
+    }
+
+    send(
+      socket,
+      {
+        type:
+          'translation-conflict',
+
+        conflict: {
+          entryId:
+            update.entryId,
+
+          attemptedTranslation:
+            update.translation,
+
+          currentTranslation:
+            latest.translation,
+
+          currentRevision,
+
+          participantId:
+            latest.participantId,
+
+          updatedAt:
+            latest.updatedAt,
+        },
+      },
+    )
+
+    return
+  }
+
   const nextRevision =
     currentRevision +
     1
+
+  const updatedAt =
+    Date.now()
 
   session
     .translationRevisions
     .set(
       update.entryId,
       nextRevision,
+    )
+
+  session
+    .translationValues
+    .set(
+      update.entryId,
+      {
+        translation:
+          update.translation,
+
+        participantId:
+          state.participantId,
+
+        updatedAt,
+      },
     )
 
   broadcast(
@@ -890,8 +959,7 @@ function handleTranslationUpdate(
         participantId:
           state.participantId,
 
-        updatedAt:
-          Date.now(),
+        updatedAt,
       },
     },
   )

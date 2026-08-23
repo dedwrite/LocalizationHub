@@ -158,6 +158,52 @@ function App() {
       new Map<string, number>(),
     )
 
+  const collaborationPendingEditsRef =
+    useRef(
+      new Map<
+        string,
+        {
+          translation:
+            string
+
+          baseRevision:
+            number
+
+          timeoutId:
+            number
+        }
+      >(),
+    )
+
+  const [
+    collaborationConflicts,
+    setCollaborationConflicts,
+  ] =
+    useState(
+      new Map<
+        string,
+        {
+          entryId:
+            string
+
+          attemptedTranslation:
+            string
+
+          currentTranslation:
+            string
+
+          currentRevision:
+            number
+
+          participantId:
+            string
+
+          updatedAt:
+            number
+        }
+      >(),
+    )
+
   const collaboration:
     CollaborationController =
     useCollaborationSession({
@@ -229,6 +275,72 @@ function App() {
           )
         },
 
+      onTranslationConflict:
+        async (conflict) => {
+          /*
+           * Keep the translator's rejected
+           * text so it can be reviewed or
+           * restored later.
+           */
+          setCollaborationConflicts(
+            (current) => {
+              const next =
+                new Map(
+                  current,
+                )
+
+              next.set(
+                conflict.entryId,
+                conflict,
+              )
+
+              return next
+            },
+          )
+
+          /*
+           * We now know the authoritative
+           * revision held by the relay.
+           */
+          collaborationRevisionsRef
+            .current
+            .set(
+              conflict.entryId,
+              conflict.currentRevision,
+            )
+
+          /*
+           * Restore the accepted server
+           * value instead of silently
+           * overwriting another person's
+           * translation.
+           */
+          setEntries(
+            (currentEntries) =>
+              currentEntries.map(
+                (entry) =>
+                  entry.id ===
+                  conflict.entryId
+                    ? {
+                        ...entry,
+
+                        translation:
+                          conflict.currentTranslation,
+                      }
+                    : entry,
+              ),
+          )
+
+          setIsDirty(
+            true,
+          )
+
+          showToast(
+            'error',
+            'Translation conflict detected. Your edit was preserved for review.',
+          )
+        },
+
       onProjectSnapshot:
         async (snapshot) => {
           try {
@@ -274,6 +386,25 @@ function App() {
                 'Unsupported collaboration project.'
               )
             }
+
+            for (
+              const pendingEdit of
+                collaborationPendingEditsRef
+                  .current
+                  .values()
+            ) {
+              window.clearTimeout(
+                pendingEdit.timeoutId,
+              )
+            }
+
+            collaborationPendingEditsRef
+              .current
+              .clear()
+
+            setCollaborationConflicts(
+              new Map(),
+            )
 
             collaborationRevisionsRef
               .current
@@ -542,6 +673,14 @@ function App() {
         selectedEntryId,
     ) ?? null
 
+
+  const selectedCollaborationConflict =
+    selectedEntry
+      ? collaborationConflicts.get(
+          selectedEntry.id,
+        ) ??
+        null
+      : null
   const selectedFullyProtected =
     selectedEntry
       ? fullyProtectedEntryIds.has(
@@ -1921,7 +2060,25 @@ function App() {
       collaboration.status ===
         'connected'
     ) {
+      const existingPending =
+        collaborationPendingEditsRef
+          .current
+          .get(
+            id,
+          )
+
+      /*
+       * Keep the revision from the start
+       * of this editing burst.
+       *
+       * If another participant changes
+       * the same entry meanwhile, the
+       * server can correctly detect the
+       * stale edit.
+       */
       const baseRevision =
+        existingPending
+          ?.baseRevision ??
         collaborationRevisionsRef
           .current
           .get(
@@ -1929,22 +2086,66 @@ function App() {
           ) ??
         0
 
-      void collaboration
-        .sendTranslationUpdate({
-          entryId:
-            id,
+      if (existingPending) {
+        window.clearTimeout(
+          existingPending.timeoutId,
+        )
+      }
 
-          translation:
-            value,
+      const timeoutId =
+        window.setTimeout(
+          () => {
+            const pending =
+              collaborationPendingEditsRef
+                .current
+                .get(
+                  id,
+                )
 
-          baseRevision,
-        })
-        .catch(
-          (error) => {
-            console.error(
-              'Failed to sync translation update.',
-              error,
-            )
+            if (!pending) {
+              return
+            }
+
+            collaborationPendingEditsRef
+              .current
+              .delete(
+                id,
+              )
+
+            void collaboration
+              .sendTranslationUpdate({
+                entryId:
+                  id,
+
+                translation:
+                  pending.translation,
+
+                baseRevision:
+                  pending.baseRevision,
+              })
+              .catch(
+                (error) => {
+                  console.error(
+                    'Failed to sync translation update.',
+                    error,
+                  )
+                },
+              )
+          },
+          300,
+        )
+
+      collaborationPendingEditsRef
+        .current
+        .set(
+          id,
+          {
+            translation:
+              value,
+
+            baseRevision,
+
+            timeoutId,
           },
         )
     }
@@ -2771,6 +2972,161 @@ function App() {
                               handlePreviousEntry
                             }
                           />
+
+                          {
+                            selectedCollaborationConflict && (
+                              <div className="collaboration-conflict-card">
+                                <div className="collaboration-conflict-header">
+                                  <div>
+                                    <strong>
+                                      Translation Conflict
+                                    </strong>
+
+                                    <p>
+                                      Another participant changed this entry while you were editing it.
+                                    </p>
+                                  </div>
+
+                                  <span>
+                                    Review
+                                  </span>
+                                </div>
+
+                                <div className="collaboration-conflict-versions">
+                                  <div className="collaboration-conflict-version">
+                                    <span>
+                                      Mine
+                                    </span>
+
+                                    <div className="collaboration-conflict-text">
+                                      {
+                                        selectedCollaborationConflict
+                                          .attemptedTranslation
+                                      }
+                                    </div>
+                                  </div>
+
+                                  <div className="collaboration-conflict-version">
+                                    <span>
+                                      Theirs
+                                    </span>
+
+                                    <div className="collaboration-conflict-text">
+                                      {
+                                        selectedCollaborationConflict
+                                          .currentTranslation
+                                      }
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="collaboration-conflict-actions">
+                                  <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() => {
+                                      const entryId =
+                                        selectedCollaborationConflict
+                                          .entryId
+
+                                      setCollaborationConflicts(
+                                        (current) => {
+                                          const next =
+                                            new Map(
+                                              current,
+                                            )
+
+                                          next.delete(
+                                            entryId,
+                                          )
+
+                                          return next
+                                        },
+                                      )
+
+                                      showToast(
+                                        'success',
+                                        'Kept the latest collaborative translation.',
+                                      )
+                                    }}
+                                  >
+                                    Keep Theirs
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="primary-button"
+                                    onClick={() => {
+                                      const conflict =
+                                        selectedCollaborationConflict
+
+                                      setEntries(
+                                        (currentEntries) =>
+                                          currentEntries.map(
+                                            (entry) =>
+                                              entry.id ===
+                                              conflict.entryId
+                                                ? {
+                                                    ...entry,
+
+                                                    translation:
+                                                      conflict.attemptedTranslation,
+                                                  }
+                                                : entry,
+                                          ),
+                                      )
+
+                                      setIsDirty(
+                                        true,
+                                      )
+
+                                      setCollaborationConflicts(
+                                        (current) => {
+                                          const next =
+                                            new Map(
+                                              current,
+                                            )
+
+                                          next.delete(
+                                            conflict.entryId,
+                                          )
+
+                                          return next
+                                        },
+                                      )
+
+                                      void collaboration
+                                        .sendTranslationUpdate({
+                                          entryId:
+                                            conflict.entryId,
+
+                                          translation:
+                                            conflict.attemptedTranslation,
+
+                                          baseRevision:
+                                            conflict.currentRevision,
+                                        })
+                                        .catch(
+                                          (error) => {
+                                            console.error(
+                                              'Failed to resolve translation conflict.',
+                                              error,
+                                            )
+
+                                            showToast(
+                                              'error',
+                                              'Could not apply your conflict resolution.',
+                                            )
+                                          },
+                                        )
+                                    }}
+                                  >
+                                    Keep Mine
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          }
                         </div>
                       )
                   }

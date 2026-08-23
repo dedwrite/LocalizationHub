@@ -19,15 +19,6 @@ export type CollaborationProjectSnapshot = {
   sentAt: number
 }
 
-/*
- * Translation updates carry the revision
- * the sender currently knows about.
- *
- * We are not enforcing conflicts yet,
- * but having this in the protocol now
- * prepares us for revision protection
- * without redesigning the messages later.
- */
 export type CollaborationTranslationUpdate = {
   entryId: string
 
@@ -36,16 +27,34 @@ export type CollaborationTranslationUpdate = {
   baseRevision: number
 }
 
-/*
- * The relay will eventually become the
- * authority that increments revisions.
- */
 export type CollaborationTranslationUpdatePayload = {
   entryId: string
 
   translation: string
 
   revision: number
+
+  participantId: string
+
+  updatedAt: number
+}
+
+/*
+ * Returned when a participant tries
+ * to edit an older revision.
+ *
+ * The client can restore the latest
+ * accepted translation instead of
+ * overwriting somebody else's work.
+ */
+export type CollaborationTranslationConflict = {
+  entryId: string
+
+  attemptedTranslation: string
+
+  currentTranslation: string
+
+  currentRevision: number
 
   participantId: string
 
@@ -165,6 +174,13 @@ export type CollaborationServerMessage =
 
       update:
         CollaborationTranslationUpdatePayload
+    }
+  | {
+      type:
+        'translation-conflict'
+
+      conflict:
+        CollaborationTranslationConflict
     }
   | {
       type:
