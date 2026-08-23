@@ -7,12 +7,14 @@
   "scripts": {
     "dev": "node dev.mjs",
     "start": "node server.mjs",
-    "check": "node --check server.mjs"
+    "check": "node --check server.mjs",
+    "db:migrate": "node migrate.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "pg": "^8.23.0",
     "ws": "^8.18.0"
   }
 }
