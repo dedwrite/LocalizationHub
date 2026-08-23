@@ -9,11 +9,16 @@ import type {
   SaveCloudProjectResponse,
 } from '@localizationhub/core'
 
+import {
+  getAuthToken,
+} from './authSession'
+
 type CloudProjectsApiErrorCode =
   | 'disabled'
   | 'network-error'
   | 'invalid-response'
   | 'invalid-request'
+  | 'unauthorized'
   | 'project-not-found'
   | 'revision-conflict'
   | 'not-found'
@@ -82,6 +87,9 @@ async function requestJson<T>(
   const baseUrl =
     getCloudApiBaseUrl()
 
+  const authToken =
+    getAuthToken()
+
   let response:
     Response
 
@@ -100,6 +108,13 @@ async function requestJson<T>(
               ? {
                   'Content-Type':
                     'application/json; charset=utf-8',
+                }
+              : {}),
+
+            ...(authToken
+              ? {
+                  Authorization:
+                    `Bearer ${authToken}`,
                 }
               : {}),
 
@@ -181,6 +196,7 @@ async function requestJson<T>(
     const knownCodes:
       CloudProjectsApiErrorCode[] = [
         'invalid-request',
+        'unauthorized',
         'project-not-found',
         'not-found',
         'internal-error',
