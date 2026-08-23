@@ -591,3 +591,36 @@ export async function verifyEmailToken(
     client.release()
   }
 }
+
+
+export async function discardEmailVerificationToken(
+  token,
+) {
+  if (
+    typeof token !==
+      'string' ||
+    token.length === 0
+  ) {
+    return false
+  }
+
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `DELETE FROM email_verification_tokens
+       WHERE token_hash = $1
+         AND used_at IS NULL`,
+      [
+        hashToken(
+          token,
+        ),
+      ],
+    )
+
+  return (
+    result.rowCount >
+      0
+  )
+}

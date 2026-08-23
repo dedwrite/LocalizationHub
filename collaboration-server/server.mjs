@@ -15,6 +15,20 @@ import {
   logoutUser,
   registerUser,
 } from './auth.mjs'
+import {
+  EmailVerificationCooldownError,
+  EmailVerificationTokenError,
+  EmailVerificationUserNotFoundError,
+  discardEmailVerificationToken,
+  requestEmailVerification,
+  verifyEmailToken,
+} from './email-verification.mjs'
+
+import {
+  EmailDeliveryConfigurationError,
+  EmailDeliveryError,
+  sendVerificationEmail,
+} from './email-delivery.mjs'
 
 import { randomUUID, randomInt } from 'node:crypto'
 
@@ -1675,6 +1689,128 @@ function sendAuthError(
   )
 }
 
+function sendEmailVerificationError(
+  response,
+  error,
+) {
+  if (
+    error instanceof
+      EmailVerificationCooldownError
+  ) {
+    response.setHeader(
+      'Retry-After',
+      String(
+        error.retryAfterSeconds,
+      ),
+    )
+
+    sendJson(
+      response,
+      429,
+      {
+        error:
+          'verification-cooldown',
+
+        message:
+          error.message,
+
+        retryAfterSeconds:
+          error.retryAfterSeconds,
+      },
+    )
+
+    return
+  }
+
+  if (
+    error instanceof
+      EmailVerificationTokenError
+  ) {
+    const statusCode =
+      error.code ===
+        'verification-token-expired'
+        ? 410
+        : 400
+
+    sendJson(
+      response,
+      statusCode,
+      {
+        error:
+          error.code,
+
+        message:
+          error.message,
+      },
+    )
+
+    return
+  }
+
+  if (
+    error instanceof
+      EmailVerificationUserNotFoundError
+  ) {
+    sendJson(
+      response,
+      401,
+      {
+        error:
+          'unauthorized',
+
+        message:
+          'Authentication is required.',
+      },
+    )
+
+    return
+  }
+
+  if (
+    error instanceof
+      EmailDeliveryConfigurationError ||
+    error instanceof
+      EmailDeliveryError
+  ) {
+    console.error(
+      'Verification email delivery failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      503,
+      {
+        error:
+          'email-delivery-unavailable',
+
+        message:
+          'Verification email could not be sent right now.',
+      },
+    )
+
+    return
+  }
+
+  console.error(
+    'Email verification request failed:',
+    error,
+  )
+
+  sendJson(
+    response,
+    500,
+    {
+      error:
+        'internal-error',
+
+      message:
+        'Email verification encountered an internal error.',
+    },
+  )
+}
+
+
 async function getAuthenticatedRequest(
   request,
 ) {
@@ -2029,6 +2165,191 @@ const httpServer =
               true,
           },
         )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/auth/verification/send'
+      ) {
+        const authenticated =
+          await getAuthenticatedRequest(
+            request,
+          )
+
+        if (!authenticated) {
+          sendJson(
+            response,
+            401,
+            {
+              error:
+                'unauthorized',
+
+              message:
+                'Authentication is required.',
+            },
+          )
+
+          return
+        }
+
+        try {
+          const verification =
+            await requestEmailVerification(
+              authenticated.user.id,
+            )
+
+          if (
+            verification.alreadyVerified
+          ) {
+            sendJson(
+              response,
+              200,
+              {
+                ok:
+                  true,
+
+                alreadyVerified:
+                  true,
+
+                user:
+                  verification.user,
+              },
+            )
+
+            return
+          }
+
+          try {
+            await sendVerificationEmail({
+              email:
+                verification.user.email,
+
+              username:
+                verification.user.username,
+
+              token:
+                verification.token,
+
+              expiresAt:
+                verification.expiresAt,
+            })
+          } catch (
+            deliveryError
+          ) {
+            try {
+              await discardEmailVerificationToken(
+                verification.token,
+              )
+            } catch (
+              cleanupError
+            ) {
+              console.error(
+                'Verification token cleanup failed:',
+                cleanupError,
+              )
+            }
+
+            throw deliveryError
+          }
+
+          sendJson(
+            response,
+            202,
+            {
+              ok:
+                true,
+
+              alreadyVerified:
+                false,
+
+              expiresAt:
+                verification.expiresAt,
+            },
+          )
+        } catch (
+          error
+        ) {
+          sendEmailVerificationError(
+            response,
+            error,
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/auth/verification/verify'
+      ) {
+        let body
+
+        try {
+          body =
+            await readJsonBody(
+              request,
+            )
+        } catch {
+          sendJson(
+            response,
+            400,
+            {
+              error:
+                'invalid-request',
+
+              message:
+                'Invalid email verification request.',
+            },
+          )
+
+          return
+        }
+
+        try {
+          if (
+            !body ||
+            typeof body !==
+              'object' ||
+            typeof body.token !==
+              'string' ||
+            body.token.length ===
+              0
+          ) {
+            throw new EmailVerificationTokenError(
+              'verification-token-invalid',
+              'Email verification token is invalid.',
+            )
+          }
+
+          const user =
+            await verifyEmailToken(
+              body.token,
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              ok:
+                true,
+
+              user,
+            },
+          )
+        } catch (
+          error
+        ) {
+          sendEmailVerificationError(
+            response,
+            error,
+          )
+        }
 
         return
       }
