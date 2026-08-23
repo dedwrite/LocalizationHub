@@ -4,6 +4,7 @@ import {
 } from 'react'
 
 import {
+  translateWithDeepL,
   translateWithGemini,
   translateWithGoogle,
   type TranslationProviderId,
@@ -204,8 +205,8 @@ function MachineTranslationPanel({
   /*
    * Project languages are defaults only.
    *
-   * Changing these values inside the
-   * MT panel never modifies the project.
+   * Changing these inside the MT panel
+   * never modifies the project.
    */
   const [
     sourceLanguage,
@@ -278,14 +279,9 @@ function MachineTranslationPanel({
       ? 'Google AI Studio key · session only'
       : provider === 'google'
         ? 'Google Cloud key · session only'
-        : 'DeepL key · session only'
-
-  const providerReady =
-    provider === 'gemini' ||
-    provider === 'google'
+        : 'DeepL API key · session only'
 
   const canTranslate =
-    providerReady &&
     apiKey.trim() !== '' &&
     inputText.trim() !== '' &&
     targetLanguage.trim() !== '' &&
@@ -364,16 +360,6 @@ function MachineTranslationPanel({
 
   async function handleTranslate() {
     if (
-      provider === 'deepl'
-    ) {
-      setErrorMessage(
-        'DeepL support is not connected yet.',
-      )
-
-      return
-    }
-
-    if (
       apiKey.trim() === ''
     ) {
       setErrorMessage(
@@ -432,9 +418,13 @@ function MachineTranslationPanel({
           ? await translateWithGemini(
               request,
             )
-          : await translateWithGoogle(
-              request,
-            )
+          : provider === 'google'
+            ? await translateWithGoogle(
+                request,
+              )
+            : await translateWithDeepL(
+                request,
+              )
 
       setResult(
         response.translatedText,
@@ -618,7 +608,7 @@ function MachineTranslationPanel({
                   </option>
 
                   <option value="deepl">
-                    DeepL · Coming Next
+                    DeepL
                   </option>
                 </select>
               </label>
@@ -634,9 +624,7 @@ function MachineTranslationPanel({
                     apiKey
                   }
                   disabled={
-                    isTranslating ||
-                    provider ===
-                      'deepl'
+                    isTranslating
                   }
                   onChange={
                     (event) => {
@@ -800,13 +788,11 @@ function MachineTranslationPanel({
             <div className="machine-translation-actions">
               <span>
                 {
-                  provider ===
-                  'gemini'
+                  provider === 'gemini'
                     ? 'Sent to Gemini only when you press Translate.'
-                    : provider ===
-                        'google'
+                    : provider === 'google'
                       ? 'Sent to Google Cloud only when you press Translate.'
-                      : 'DeepL support will be connected next.'
+                      : 'Sent to DeepL only when you press Translate.'
                 }
               </span>
 
@@ -819,16 +805,11 @@ function MachineTranslationPanel({
                   void handleTranslate()
                 }}
                 title={
-                  provider ===
-                  'deepl'
-                    ? 'DeepL support is not connected yet'
-                    : apiKey.trim() ===
-                        ''
-                      ? 'Enter an API key'
-                      : inputText.trim() ===
-                          ''
-                        ? 'Paste some text first'
-                        : `Translate with ${providerLabel}`
+                  apiKey.trim() === ''
+                    ? 'Enter an API key'
+                    : inputText.trim() === ''
+                      ? 'Paste some text first'
+                      : `Translate with ${providerLabel}`
                 }
               >
                 {

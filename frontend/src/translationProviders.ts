@@ -30,10 +30,11 @@ export type TranslateResult = {
 }
 
 /*
- * Gemini API
- * Google AI Studio key.
+ * Gemini
+ * Google AI Studio API key.
  *
- * The key is passed only for this invoke call.
+ * The API key is passed only with
+ * the current Tauri invoke call.
  * Nothing is persisted here.
  */
 export async function translateWithGemini(
@@ -49,11 +50,11 @@ export async function translateWithGemini(
 }
 
 /*
- * Google Cloud Translation API.
+ * Google Cloud Translation.
  *
  * Kept as an additional provider
- * for users who prefer the dedicated
- * translation service.
+ * for users who prefer Google's
+ * dedicated translation service.
  */
 export async function translateWithGoogle(
   request:
@@ -61,6 +62,27 @@ export async function translateWithGoogle(
 ) {
   return invoke<TranslateResult>(
     'translate_with_google',
+    {
+      request,
+    },
+  )
+}
+
+/*
+ * DeepL.
+ *
+ * DeepL Free / Pro endpoint selection
+ * is handled entirely by the Rust
+ * backend.
+ *
+ * The key remains session-only.
+ */
+export async function translateWithDeepL(
+  request:
+    TranslateRequest,
+) {
+  return invoke<TranslateResult>(
+    'translate_with_deepl',
     {
       request,
     },

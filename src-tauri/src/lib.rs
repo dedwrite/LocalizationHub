@@ -1,3 +1,4 @@
+mod deepl;
 mod translation;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -11,6 +12,7 @@ pub fn run() {
             tauri::generate_handler![
                 translation::translate_with_google,
                 translation::translate_with_gemini,
+                deepl::translate_with_deepl,
             ],
         )
         .setup(|app| {
