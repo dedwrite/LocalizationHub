@@ -36,6 +36,7 @@ import {
 
 import {
   analyzeExportValidation,
+  decodeLocalizationProject,
 } from '@localizationhub/core'
 
 import type {
@@ -120,37 +121,6 @@ import './App.css'
 
 type TranslationEntry =
   ParsedLocalizationEntry
-
-type LegacyTranslationEntry = {
-  key:
-    string
-
-  source:
-    string
-
-  translation:
-    string
-}
-
-type LocalizationProjectV1 = {
-  format:
-    'LocalizationHubProject'
-
-  version:
-    1
-
-  sourceFileName:
-    string
-
-  selectedKey:
-    string | null
-
-  tokenProfile?:
-    TokenProfileId
-
-  entries:
-    LegacyTranslationEntry[]
-}
 
 function App() {
   const [
@@ -1404,224 +1374,112 @@ function App() {
     }
 
     try {
-      const parsed:
-        | LocalizationProjectV1
-        | LocalizationProjectV2 =
-          JSON.parse(
-            content,
-          )
-
-      if (
-        parsed.format !==
-        'LocalizationHubProject'
-      ) {
-        showToast(
-          'error',
-          'ملف المشروع غير صالح.',
+      const decoded =
+        decodeLocalizationProject(
+          content,
         )
 
-        return
-      }
-
-      if (
-        !Array.isArray(
-          parsed.entries,
-        ) ||
-        parsed.entries
-          .length === 0
-      ) {
-        showToast(
-          'warning',
-          'المشروع لا يحتوي على نصوص.',
-        )
-
-        return
-      }
-
-      if (
-        parsed.version ===
-        2
-      ) {
-        const project =
-          parsed as
-            LocalizationProjectV2
-
-        setEntries(
-          project.entries,
-        )
-
-        setFileName(
-          project.sourceFileName,
-        )
-
-        setDocumentInfo(
-          project.document,
-        )
-
-        setProjectPath(
-          selected,
-        )
-
-        const selectedExists =
-          project.selectedEntryId &&
-          project.entries.some(
-            (entry) =>
-              entry.id ===
-              project.selectedEntryId,
-          )
-
-        setSelectedEntryId(
-          selectedExists
-            ? project.selectedEntryId
-            : project.entries[0].id,
-        )
-
-        setTokenProfile(
-          project.tokenProfile ??
-            'generic',
-        )
-
-        setSearchQuery('')
-
-        setEntryFilter(
-          'all',
-        )
-
-        setIsDirty(
-          false,
-        )
-
-        rememberProject(
-          selected,
-          project.sourceFileName,
-        )
-
-        showToast(
-          'success',
-          'تم فتح المشروع بنجاح.',
-        )
-
-        return
-      }
-
-      if (
-        parsed.version ===
-        1
-      ) {
-        const legacy =
-          parsed as
-            LocalizationProjectV1
-
-        const migratedEntries:
-          TranslationEntry[] =
-            legacy.entries.map(
-              (
-                entry,
-                index,
-              ) => ({
-                id:
-                  `legacy:${index}:${entry.key}`,
-
-                key:
-                  entry.key,
-
-                source:
-                  entry.source,
-
-                translation:
-                  entry.translation,
-
-                keyPath: [
-                  entry.key,
-                ],
-
-                sourcePath: [
-                  entry.key,
-                ],
-              }),
+      if (!decoded.ok) {
+        switch (
+          decoded.reason
+        ) {
+          case 'invalid-format':
+            showToast(
+              'error',
+              '??? ??????? ??? ????.',
             )
+            return
 
-        setEntries(
-          migratedEntries,
-        )
+          case 'empty-project':
+            showToast(
+              'warning',
+              '??????? ?? ????? ??? ????.',
+            )
+            return
 
-        setFileName(
-          legacy.sourceFileName,
-        )
+          case 'unsupported-version':
+            showToast(
+              'error',
+              '????? ??????? ??? ?????.',
+            )
+            return
 
-        setDocumentInfo({
-          parser:
-            'json',
-
-          format:
-            'flat-json-object',
-
-          sourceText:
-            '',
-
-          language: {
-            sourceDirection:
-              'auto',
-
-            translationDirection:
-              'auto',
-          },
-        })
-
-        /*
-         * Legacy v1 لا نربطه مباشرة
-         * بالمسار للحفظ.
-         *
-         * أول Save سيطلب Save As
-         * ويحوله عمليًا إلى v2.
-         */
-        setProjectPath(
-          null,
-        )
-
-        const restored =
-          migratedEntries.find(
-            (entry) =>
-              entry.key ===
-              legacy.selectedKey,
-          )
-
-        setSelectedEntryId(
-          restored?.id ??
-            migratedEntries[0].id,
-        )
-
-        setTokenProfile(
-          legacy.tokenProfile ??
-            'generic',
-        )
-
-        setSearchQuery('')
-
-        setEntryFilter(
-          'all',
-        )
-
-        setIsDirty(
-          false,
-        )
-
-        rememberProject(
-          selected,
-          legacy.sourceFileName,
-        )
-
-        showToast(
-          'info',
-          'تم فتح المشروع القديم وترحيله للتنسيق الحالي.',
-        )
-
-        return
+          case 'invalid-json':
+            showToast(
+              'error',
+              '??? ??? ???????. ?? ???? ????? ?????? ?? ??? ????.',
+            )
+            return
+        }
       }
+
+      const project =
+        decoded.project
+
+      setEntries(
+        project.entries,
+      )
+
+      setFileName(
+        project.sourceFileName,
+      )
+
+      setDocumentInfo(
+        project.document,
+      )
+
+      /*
+       * Legacy v1 projects must use Save As
+       * so they are written back as v2.
+       */
+      setProjectPath(
+        decoded.migratedFromVersion === 1
+          ? null
+          : selected,
+      )
+
+      const selectedExists =
+        project.selectedEntryId &&
+        project.entries.some(
+          (entry) =>
+            entry.id ===
+            project.selectedEntryId,
+        )
+
+      setSelectedEntryId(
+        selectedExists
+          ? project.selectedEntryId
+          : project.entries[0].id,
+      )
+
+      setTokenProfile(
+        project.tokenProfile ??
+          'generic',
+      )
+
+      setSearchQuery('')
+
+      setEntryFilter(
+        'all',
+      )
+
+      setIsDirty(
+        false,
+      )
+
+      rememberProject(
+        selected,
+        project.sourceFileName,
+      )
 
       showToast(
-        'error',
-        'إصدار المشروع غير مدعوم.',
+        decoded.migratedFromVersion === 1
+          ? 'info'
+          : 'success',
+
+        decoded.migratedFromVersion === 1
+          ? '?? ??? ??????? ?????? ??????? ??????? ??????.'
+          : '?? ??? ??????? ?????.',
       )
     } catch (
       error
@@ -1632,7 +1490,7 @@ function App() {
 
       showToast(
         'error',
-        'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
+        '??? ??? ???????. ?? ???? ????? ?????? ?? ??? ????.',
       )
     }
   }
