@@ -29,6 +29,9 @@ const MAX_SESSION_PARTICIPANTS =
 const RECONNECT_GRACE_MS =
   15_000
 
+const HEARTBEAT_INTERVAL_MS =
+  30_000
+
 const SESSION_ID_ALPHABET =
   'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -1459,6 +1462,17 @@ const server =
 server.on(
   'connection',
   (socket) => {
+    socket.isAlive =
+      true
+
+    socket.on(
+      'pong',
+      () => {
+        socket.isAlive =
+          true
+      },
+    )
+
     clients.set(
       socket,
       {
@@ -1540,6 +1554,37 @@ server.on(
   },
 )
 
+const heartbeatInterval =
+  setInterval(
+    () => {
+      for (
+        const socket of
+          server.clients
+      ) {
+        if (
+          socket.isAlive ===
+          false
+        ) {
+          console.log(
+            '[client] heartbeat timeout',
+          )
+
+          socket.terminate()
+
+          continue
+        }
+
+        socket.isAlive =
+          false
+
+        socket.ping()
+      }
+    },
+    HEARTBEAT_INTERVAL_MS,
+  )
+
+heartbeatInterval.unref?.()
+
 server.on(
   'listening',
   () => {
@@ -1566,6 +1611,15 @@ server.on(
     console.error(
       '[server] failed',
       error,
+    )
+  },
+)
+
+server.on(
+  'close',
+  () => {
+    clearInterval(
+      heartbeatInterval,
     )
   },
 )
