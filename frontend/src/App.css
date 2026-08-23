@@ -19,13 +19,48 @@ button {
 
 .welcome-screen {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: 32px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   isolation: isolate;
   background: #07080c;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    #2b303b
+    #07080c;
+
+  scrollbar-gutter:
+    stable;
+}
+
+.welcome-screen::-webkit-scrollbar {
+  width: 10px;
+}
+
+.welcome-screen::-webkit-scrollbar-track {
+  background:
+    #07080c;
+}
+
+.welcome-screen::-webkit-scrollbar-thumb {
+  background:
+    #2b303b;
+
+  border:
+    2px solid
+    #07080c;
+
+  border-radius:
+    999px;
+}
+
+.welcome-screen::-webkit-scrollbar-thumb:hover {
+  background:
+    #3b4150;
 }
 
 .welcome-screen::before {
@@ -78,6 +113,9 @@ button {
 
 .welcome-card {
   position: relative;
+
+  margin-block:
+    auto;
 
   width:
     min(
@@ -2122,6 +2160,196 @@ body::-webkit-scrollbar-thumb:hover {
   }
 
   .cloud-project-open .secondary-button {
+    width:
+      100%;
+  }
+}
+
+
+.cloud-projects-panel {
+  width:
+    100%;
+
+  margin-top:
+    14px;
+
+  padding:
+    14px;
+
+  border:
+    1px solid
+    #2d3240;
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(
+      12,
+      15,
+      22,
+      0.8
+    );
+
+  text-align:
+    left;
+}
+
+.cloud-projects-header {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+.cloud-projects-header > div {
+  display:
+    flex;
+
+  align-items:
+    baseline;
+
+  gap:
+    8px;
+}
+
+.cloud-projects-header strong {
+  color:
+    #f0f2f7;
+}
+
+.cloud-projects-header span {
+  color:
+    #7d8494;
+
+  font-size:
+    12px;
+}
+
+.cloud-projects-list {
+  display:
+    grid;
+
+  gap:
+    8px;
+
+  margin-top:
+    12px;
+}
+
+.cloud-project-card {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    14px;
+
+  padding:
+    11px
+    12px;
+
+  border:
+    1px solid
+    #292e3a;
+
+  border-radius:
+    8px;
+
+  background:
+    #0f1219;
+}
+
+.cloud-project-card-info {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  min-width:
+    0;
+
+  gap:
+    3px;
+}
+
+.cloud-project-card-info strong {
+  overflow:
+    hidden;
+
+  color:
+    #e8eaf0;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.cloud-project-card-info span {
+  overflow:
+    hidden;
+
+  color:
+    #9aa1af;
+
+  font-size:
+    12px;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.cloud-project-card-info small {
+  color:
+    #686f7e;
+}
+
+.cloud-projects-empty {
+  margin:
+    12px
+    0
+    0 !important;
+
+  color:
+    #6f7685 !important;
+
+  font-size:
+    12px;
+}
+
+@media (
+  max-width:
+    620px
+) {
+  .cloud-projects-header,
+  .cloud-project-card {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+  .cloud-projects-header .secondary-button,
+  .cloud-project-card .secondary-button {
     width:
       100%;
   }

@@ -40,6 +40,7 @@ import {
 } from '@localizationhub/core'
 
 import type {
+  CloudProjectSummary,
   LocalizationProjectV2,
   ProjectLocation,
   StoredDocumentInfo,
@@ -68,6 +69,8 @@ import {
 
 import {
   CloudProjectsApiError,
+  createCloudProject,
+  listCloudProjects,
 } from './cloudProjectsApi'
 
 import {
@@ -510,6 +513,20 @@ function App() {
     setCloudProjectId,
   ] =
     useState('')
+
+  const [
+    cloudProjects,
+    setCloudProjects,
+  ] =
+    useState<CloudProjectSummary[]>(
+      [],
+    )
+
+  const [
+    cloudProjectsLoading,
+    setCloudProjectsLoading,
+  ] =
+    useState(false)
 
   const [
     isDirty,
@@ -1234,6 +1251,112 @@ function App() {
     }
   }
 
+  async function handleCreateCloudProject() {
+    const project =
+      createCurrentProject()
+
+    if (!project) {
+      return
+    }
+
+    try {
+      const projectName =
+        project.sourceFileName
+          .replace(
+            /\.[^.]+$/,
+            '',
+          )
+          .trim() ||
+        'Cloud Project'
+
+      const snapshot =
+        await createCloudProject({
+          name:
+            projectName,
+
+          project,
+        })
+
+      const location:
+        ProjectLocation = {
+          kind:
+            'cloud',
+
+          projectId:
+            snapshot.id,
+        }
+
+      setProjectLocation(
+        location,
+      )
+
+      setCloudRevision(
+        snapshot.revision,
+      )
+
+      setCloudProjectId(
+        snapshot.id,
+      )
+
+      setLastSession(
+        rememberLastSession(
+          location,
+          project.sourceFileName,
+        ),
+      )
+
+      setCloudProjects(
+        (current) => [
+          {
+            id:
+              snapshot.id,
+
+            name:
+              snapshot.name,
+
+            sourceFileName:
+              snapshot.project.sourceFileName,
+
+            role:
+              snapshot.role,
+
+            revision:
+              snapshot.revision,
+
+            updatedAt:
+              snapshot.updatedAt,
+          },
+
+          ...current.filter(
+            (item) =>
+              item.id !==
+              snapshot.id,
+          ),
+        ],
+      )
+
+      setIsDirty(
+        false,
+      )
+
+      showToast(
+        'success',
+        'Cloud Project created successfully.',
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        'Could not create Cloud Project.',
+      )
+    }
+  }
+
   async function handleSaveProjectAs() {
     const project =
       createCurrentProject()
@@ -1649,6 +1772,36 @@ try {
 
       openedFromRecent,
     )
+  }
+
+  async function handleRefreshCloudProjects() {
+    setCloudProjectsLoading(
+      true,
+    )
+
+    try {
+      const projects =
+        await listCloudProjects()
+
+      setCloudProjects(
+        projects,
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        'Could not load Cloud Projects.',
+      )
+    } finally {
+      setCloudProjectsLoading(
+        false,
+      )
+    }
   }
 
   async function handleOpenCloudProject() {
@@ -2328,6 +2481,107 @@ try {
               </button>
             </div>
 
+            <section className="cloud-projects-panel">
+              <div className="cloud-projects-header">
+                <div>
+                  <strong>
+                    My Cloud Projects
+                  </strong>
+
+                  <span>
+                    Experimental
+                  </span>
+                </div>
+
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={
+                    cloudProjectsLoading
+                  }
+                  onClick={() => {
+                    void handleRefreshCloudProjects()
+                  }}
+                >
+                  {
+                    cloudProjectsLoading
+                      ? 'Loading...'
+                      : 'Refresh'
+                  }
+                </button>
+              </div>
+
+              {
+                cloudProjects.length >
+                  0 ? (
+                  <div className="cloud-projects-list">
+                    {
+                      cloudProjects.map(
+                        (
+                          project,
+                        ) => (
+                          <div
+                            className="cloud-project-card"
+                            key={
+                              project.id
+                            }
+                          >
+                            <div className="cloud-project-card-info">
+                              <strong>
+                                {
+                                  project.name
+                                }
+                              </strong>
+
+                              <span>
+                                {
+                                  project.sourceFileName
+                                }
+                              </span>
+
+                              <small>
+                                Revision {
+                                  project.revision
+                                }
+                                {' ? '}
+                                {
+                                  project.role
+                                }
+                              </small>
+                            </div>
+
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              onClick={() => {
+                                setCloudProjectId(
+                                  project.id,
+                                )
+
+                                void loadProjectFromLocation({
+                                  kind:
+                                    'cloud',
+
+                                  projectId:
+                                    project.id,
+                                })
+                              }}
+                            >
+                              Open
+                            </button>
+                          </div>
+                        ),
+                      )
+                    }
+                  </div>
+                ) : (
+                  <p className="cloud-projects-empty">
+                    Refresh to load available Cloud Projects.
+                  </p>
+                )
+              }
+            </section>
+
             <WelcomeDropZone />
 
             {
@@ -2513,6 +2767,22 @@ try {
             >
               Save Project
             </button>
+
+            {
+              projectLocation?.kind !==
+                'cloud' && (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    void handleCreateCloudProject()
+                  }}
+                  title="Create a Cloud copy of this project"
+                >
+                  Save to Cloud
+                </button>
+              )
+            }
 
             <button
               className="secondary-button"
