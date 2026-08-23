@@ -2384,6 +2384,10 @@ function App() {
                     entries
                   }
 
+                  onSelectEntry={
+                    setSelectedEntryId
+                  }
+
                   onLeave={
                     collaboration.leaveSession
                   }

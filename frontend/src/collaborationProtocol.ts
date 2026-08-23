@@ -56,15 +56,30 @@ export type CollaborationTranslationConflict = {
   updatedAt: number
 }
 
-/*
- * A participant tells the relay which
- * entry they are currently viewing.
- *
- * null means no entry is selected.
- */
 export type CollaborationEntrySelection = {
   entryId:
     string | null
+}
+
+/*
+ * Reconnect credentials exist only for
+ * the lifetime of the running app.
+ *
+ * They are never written to .lhproj,
+ * localStorage, config files, or logs.
+ */
+export type CollaborationReconnectCredentials = {
+  sessionId: string
+
+  participantId: string
+
+  reconnectToken: string
+
+  role:
+    | 'host'
+    | 'guest'
+
+  displayName: string
 }
 
 export type CollaborationClientMessage =
@@ -89,6 +104,22 @@ export type CollaborationClientMessage =
         string
 
       displayName:
+        string
+    }
+  | {
+      type:
+        'resume-session'
+
+      protocolVersion:
+        number
+
+      sessionId:
+        string
+
+      participantId:
+        string
+
+      reconnectToken:
         string
     }
   | {
@@ -135,10 +166,26 @@ export type CollaborationServerMessage =
 
       participantId:
         string
+
+      reconnectToken:
+        string
     }
   | {
       type:
         'session-joined'
+
+      sessionId:
+        string
+
+      participantId:
+        string
+
+      reconnectToken:
+        string
+    }
+  | {
+      type:
+        'session-resumed'
 
       sessionId:
         string
@@ -222,6 +269,7 @@ export type CollaborationServerMessage =
         | 'not-in-session'
         | 'host-only'
         | 'revision-conflict'
+        | 'resume-invalid'
         | 'server-error'
 
       message:

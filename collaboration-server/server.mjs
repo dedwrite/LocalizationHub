@@ -26,6 +26,9 @@ const MAX_PAYLOAD =
 const MAX_SESSION_PARTICIPANTS =
   16
 
+const RECONNECT_GRACE_MS =
+  15_000
+
 const SESSION_ID_ALPHABET =
   'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -296,6 +299,23 @@ function clearClientSession(
   state.role =
     null
 
+  if (
+    state.reconnectTimer
+  ) {
+    clearTimeout(
+      state.reconnectTimer,
+    )
+
+    state.reconnectTimer =
+      null
+  }
+
+  state.reconnectToken =
+    null
+
+  state.disconnectedAt =
+    null
+
   state.selectedEntryId =
     null
 }
@@ -390,6 +410,251 @@ function leaveSession(
   )
 }
 
+
+function scheduleClientDisconnect(
+  socket,
+) {
+  const state =
+    getClientState(
+      socket,
+    )
+
+  if (!state) {
+    return
+  }
+
+  if (!state.sessionId) {
+    clients.delete(
+      socket,
+    )
+
+    return
+  }
+
+  if (
+    state.reconnectTimer
+  ) {
+    clearTimeout(
+      state.reconnectTimer,
+    )
+  }
+
+  state.disconnectedAt =
+    Date.now()
+
+  state.reconnectTimer =
+    setTimeout(
+      () => {
+        const currentState =
+          getClientState(
+            socket,
+          )
+
+        if (!currentState) {
+          return
+        }
+
+        currentState.reconnectTimer =
+          null
+
+        leaveSession(
+          socket,
+        )
+
+        clients.delete(
+          socket,
+        )
+
+        console.log(
+          '[client] reconnect grace expired',
+        )
+      },
+      RECONNECT_GRACE_MS,
+    )
+}
+
+function handleResumeSession(
+  socket,
+  message,
+) {
+  if (
+    message.protocolVersion !==
+    PROTOCOL_VERSION
+  ) {
+    sendError(
+      socket,
+      'unsupported-version',
+      'Unsupported collaboration protocol version.',
+    )
+
+    return
+  }
+
+  const sessionId =
+    normalizeSessionId(
+      message.sessionId,
+    )
+
+  if (
+    !sessionId ||
+    typeof message.participantId !==
+      'string' ||
+    !message.participantId ||
+    typeof message.reconnectToken !==
+      'string' ||
+    !message.reconnectToken
+  ) {
+    sendError(
+      socket,
+      'resume-invalid',
+      'The collaboration session could not be resumed.',
+    )
+
+    return
+  }
+
+  const session =
+    sessions.get(
+      sessionId,
+    )
+
+  if (!session) {
+    sendError(
+      socket,
+      'session-not-found',
+      'Collaboration session was not found.',
+    )
+
+    return
+  }
+
+  let previousSocket =
+    null
+
+  for (
+    const candidate of
+      session.sockets
+  ) {
+    const candidateState =
+      getClientState(
+        candidate,
+      )
+
+    if (
+      candidateState
+        ?.participantId ===
+      message.participantId
+    ) {
+      previousSocket =
+        candidate
+
+      break
+    }
+  }
+
+  if (!previousSocket) {
+    sendError(
+      socket,
+      'resume-invalid',
+      'The collaboration participant could not be resumed.',
+    )
+
+    return
+  }
+
+  const previousState =
+    getClientState(
+      previousSocket,
+    )
+
+  if (
+    !previousState ||
+    previousState.reconnectToken !==
+      message.reconnectToken
+  ) {
+    sendError(
+      socket,
+      'resume-invalid',
+      'The collaboration reconnect token is invalid.',
+    )
+
+    return
+  }
+
+  if (
+    previousSocket.readyState ===
+    WebSocket.OPEN
+  ) {
+    sendError(
+      socket,
+      'resume-invalid',
+      'This collaboration participant is already connected.',
+    )
+
+    return
+  }
+
+  if (
+    previousState.reconnectTimer
+  ) {
+    clearTimeout(
+      previousState.reconnectTimer,
+    )
+  }
+
+  previousState.reconnectTimer =
+    null
+
+  previousState.disconnectedAt =
+    null
+
+  clients.delete(
+    previousSocket,
+  )
+
+  clients.set(
+    socket,
+    previousState,
+  )
+
+  session.sockets.delete(
+    previousSocket,
+  )
+
+  session.sockets.add(
+    socket,
+  )
+
+  if (
+    session.hostSocket ===
+    previousSocket
+  ) {
+    session.hostSocket =
+      socket
+  }
+
+  send(
+    socket,
+    {
+      type:
+        'session-resumed',
+
+      sessionId,
+
+      participantId:
+        previousState.participantId,
+    },
+  )
+
+  broadcastParticipants(
+    session,
+  )
+
+  console.log(
+    `[session] resumed ${sessionId}`,
+  )
+}
+
 function handleHostSession(
   socket,
   message,
@@ -443,6 +708,15 @@ function handleHostSession(
   state.sessionId =
     sessionId
 
+  state.reconnectToken =
+    randomUUID()
+
+  state.reconnectTimer =
+    null
+
+  state.disconnectedAt =
+    null
+
   const session = {
     sessionId,
 
@@ -482,6 +756,9 @@ function handleHostSession(
 
       participantId:
         state.participantId,
+
+      reconnectToken:
+        state.reconnectToken,
     },
   )
 
@@ -587,6 +864,15 @@ function handleJoinSession(
   state.sessionId =
     sessionId
 
+  state.reconnectToken =
+    randomUUID()
+
+  state.reconnectTimer =
+    null
+
+  state.disconnectedAt =
+    null
+
   session.sockets.add(
     socket,
   )
@@ -601,6 +887,9 @@ function handleJoinSession(
 
       participantId:
         state.participantId,
+
+      reconnectToken:
+        state.reconnectToken,
     },
   )
 
@@ -1088,6 +1377,14 @@ function handleMessage(
       )
 
       break
+    case 'resume-session':
+      handleResumeSession(
+        socket,
+        message,
+      )
+
+      break
+
 
     case 'leave-session':
       leaveSession(
@@ -1179,6 +1476,15 @@ server.on(
 
         selectedEntryId:
           null,
+
+        reconnectToken:
+          null,
+
+        reconnectTimer:
+          null,
+
+        disconnectedAt:
+          null,
       },
     )
 
@@ -1212,16 +1518,12 @@ server.on(
     socket.on(
       'close',
       () => {
-        leaveSession(
-          socket,
-        )
-
-        clients.delete(
+        scheduleClientDisconnect(
           socket,
         )
 
         console.log(
-          '[client] disconnected',
+          '[client] disconnected; waiting for reconnect',
         )
       },
     )

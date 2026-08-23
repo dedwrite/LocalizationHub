@@ -26,6 +26,11 @@ type WorkspaceCollaborationStatusProps = {
   entries:
     ParsedLocalizationEntry[]
 
+  onSelectEntry:
+    (
+      entryId: string,
+    ) => void
+
   onLeave:
     () => void | Promise<void>
 }
@@ -34,6 +39,7 @@ function WorkspaceCollaborationStatus({
   session,
   status,
   entries,
+  onSelectEntry,
   onLeave,
 }: WorkspaceCollaborationStatusProps) {
   const [
@@ -69,6 +75,21 @@ function WorkspaceCollaborationStatus({
       entry.context
         ? `${entry.context} · ${entry.key}`
         : entry.key
+    )
+  }
+
+  function canNavigateToEntry(
+    entryId:
+      string | undefined,
+  ) {
+    if (!entryId) {
+      return false
+    }
+
+    return entries.some(
+      (entry) =>
+        entry.id ===
+        entryId,
     )
   }
 
@@ -169,65 +190,107 @@ function WorkspaceCollaborationStatus({
                   .map(
                     (
                       participant,
-                    ) => (
-                      <div
-                        className="workspace-collaboration-person"
-                        key={
-                          participant.id
-                        }
-                      >
-                        <span className="workspace-collaboration-person-avatar">
-                          {
-                            participant
-                              .displayName
-                              .trim()
-                              .slice(
-                                0,
-                                1,
-                              )
-                              .toUpperCase() ||
-                            '?'
+                    ) => {
+                      const canNavigate =
+                        canNavigateToEntry(
+                          participant
+                            .selectedEntryId,
+                        )
+
+                      return (
+                        <button
+                          type="button"
+                          className={
+                            `workspace-collaboration-person ${
+                              canNavigate
+                                ? 'navigable'
+                                : ''
+                            }`
                           }
-                        </span>
+                          key={
+                            participant.id
+                          }
+                          disabled={
+                            !canNavigate
+                          }
+                          title={
+                            canNavigate
+                              ? `Go to ${getEntryLabel(
+                                  participant
+                                    .selectedEntryId,
+                                )}`
+                              : getEntryLabel(
+                                  participant
+                                    .selectedEntryId,
+                                )
+                          }
+                          onClick={() => {
+                            const entryId =
+                              participant
+                                .selectedEntryId
 
-                        <div className="workspace-collaboration-person-info">
-                          <div>
-                            <strong>
-                              {
-                                participant
-                                  .displayName
-                              }
-                            </strong>
-
-                            <span>
-                              {
-                                participant
-                                  .role ===
-                                'host'
-                                  ? 'Host'
-                                  : 'Guest'
-                              }
-                            </span>
-                          </div>
-
-                          <small
-                            title={
-                              getEntryLabel(
-                                participant
-                                  .selectedEntryId,
-                              )
+                            if (
+                              !entryId ||
+                              !canNavigate
+                            ) {
+                              return
                             }
-                          >
+
+                            onSelectEntry(
+                              entryId,
+                            )
+
+                            setIsOpen(
+                              false,
+                            )
+                          }}
+                        >
+                          <span className="workspace-collaboration-person-avatar">
                             {
-                              getEntryLabel(
-                                participant
-                                  .selectedEntryId,
-                              )
+                              participant
+                                .displayName
+                                .trim()
+                                .slice(
+                                  0,
+                                  1,
+                                )
+                                .toUpperCase() ||
+                              '?'
                             }
-                          </small>
-                        </div>
-                      </div>
-                    ),
+                          </span>
+
+                          <span className="workspace-collaboration-person-info">
+                            <span>
+                              <strong>
+                                {
+                                  participant
+                                    .displayName
+                                }
+                              </strong>
+
+                              <span>
+                                {
+                                  participant
+                                    .role ===
+                                  'host'
+                                    ? 'Host'
+                                    : 'Guest'
+                                }
+                              </span>
+                            </span>
+
+                            <small>
+                              {
+                                getEntryLabel(
+                                  participant
+                                    .selectedEntryId,
+                                )
+                              }
+                            </small>
+                          </span>
+                        </button>
+                      )
+                    },
                   )
               }
             </div>

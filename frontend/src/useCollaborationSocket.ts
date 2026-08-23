@@ -10,30 +10,28 @@ import {
   type CollaborationClientMessage,
   type CollaborationEntrySelection,
   type CollaborationProjectSnapshot,
+  type CollaborationReconnectCredentials,
   type CollaborationServerMessage,
   type CollaborationTranslationUpdate,
 } from './collaborationProtocol'
 
-/*
- * Default development relay.
- *
- * A different server can be supplied with:
- *
- * VITE_COLLABORATION_SERVER_URL
- *
- * Production will eventually use
- * a public secure wss:// relay.
- */
 const COLLABORATION_SERVER_URL =
   import.meta.env
     .VITE_COLLABORATION_SERVER_URL
     ?.trim() ||
   'ws://127.0.0.1:8787'
 
+const RECONNECT_DELAY_MS =
+  750
+
+const RESUME_TIMEOUT_MS =
+  3_000
+
 export type CollaborationSocketStatus =
   | 'disconnected'
   | 'connecting'
   | 'connected'
+  | 'reconnecting'
   | 'error'
 
 type CollaborationSocketOptions = {
@@ -41,6 +39,28 @@ type CollaborationSocketOptions = {
     message:
       CollaborationServerMessage,
   ) => void
+}
+
+type PendingIdentity = {
+  role:
+    | 'host'
+    | 'guest'
+
+  displayName:
+    string
+}
+
+type QueuedMessage = {
+  message:
+    CollaborationClientMessage
+
+  resolve:
+    () => void
+
+  reject:
+    (
+      error: Error,
+    ) => void
 }
 
 export function useCollaborationSocket(
@@ -55,6 +75,60 @@ export function useCollaborationSocket(
   const onMessageRef =
     useRef(
       options.onMessage,
+    )
+
+  /*
+   * Reconnect credentials live only
+   * in memory for this app process.
+   */
+  const reconnectCredentialsRef =
+    useRef<
+      CollaborationReconnectCredentials |
+      null
+    >(
+      null,
+    )
+
+  const pendingIdentityRef =
+    useRef<
+      PendingIdentity |
+      null
+    >(
+      null,
+    )
+
+  const reconnectTimerRef =
+    useRef<number | null>(
+      null,
+    )
+
+  const resumeTimeoutRef =
+    useRef<number | null>(
+      null,
+    )
+
+  const reconnectInFlightRef =
+    useRef(false)
+
+  const awaitingResumeRef =
+    useRef(false)
+
+  const intentionalDisconnectRef =
+    useRef(false)
+
+  const reconnectRef =
+    useRef<
+      (() => Promise<void>) |
+      null
+    >(
+      null,
+    )
+
+  const queuedMessagesRef =
+    useRef<
+      QueuedMessage[]
+    >(
+      [],
     )
 
   const [
@@ -83,29 +157,151 @@ export function useCollaborationSocket(
     ],
   )
 
-  const disconnect =
+  const clearReconnectTimer =
     useCallback(
       () => {
-        const socket =
-          socketRef.current
-
-        socketRef.current =
+        if (
+          reconnectTimerRef.current !==
           null
+        ) {
+          window.clearTimeout(
+            reconnectTimerRef.current,
+          )
 
-        if (socket) {
-          socket.close()
+          reconnectTimerRef.current =
+            null
         }
-
-        setStatus(
-          'disconnected',
-        )
       },
       [],
     )
 
-  const connect =
+  const clearResumeTimeout =
     useCallback(
       () => {
+        if (
+          resumeTimeoutRef.current !==
+          null
+        ) {
+          window.clearTimeout(
+            resumeTimeoutRef.current,
+          )
+
+          resumeTimeoutRef.current =
+            null
+        }
+      },
+      [],
+    )
+
+  const rejectQueuedMessages =
+    useCallback(
+      (
+        error:
+          Error,
+      ) => {
+        const queued =
+          queuedMessagesRef.current
+
+        queuedMessagesRef.current =
+          []
+
+        for (
+          const item of
+            queued
+        ) {
+          item.reject(
+            error,
+          )
+        }
+      },
+      [],
+    )
+
+  const flushQueuedMessages =
+    useCallback(
+      (
+        socket:
+          WebSocket,
+      ) => {
+        if (
+          socket.readyState !==
+          WebSocket.OPEN
+        ) {
+          return
+        }
+
+        const queued =
+          queuedMessagesRef.current
+
+        queuedMessagesRef.current =
+          []
+
+        for (
+          const item of
+            queued
+        ) {
+          try {
+            socket.send(
+              JSON.stringify(
+                item.message,
+              ),
+            )
+
+            item.resolve()
+          } catch (
+            error
+          ) {
+            item.reject(
+              error instanceof Error
+                ? error
+                : new Error(
+                    'Could not send collaboration message.',
+                  ),
+            )
+          }
+        }
+      },
+      [],
+    )
+
+  const scheduleReconnect =
+    useCallback(
+      () => {
+        if (
+          reconnectTimerRef.current !==
+            null ||
+          intentionalDisconnectRef.current ||
+          !reconnectCredentialsRef.current
+        ) {
+          return
+        }
+
+        setStatus(
+          'reconnecting',
+        )
+
+        reconnectTimerRef.current =
+          window.setTimeout(
+            () => {
+              reconnectTimerRef.current =
+                null
+
+              void reconnectRef
+                .current?.()
+            },
+            RECONNECT_DELAY_MS,
+          )
+      },
+      [],
+    )
+
+  const openSocket =
+    useCallback(
+      (
+        mode:
+          | 'normal'
+          | 'reconnect',
+      ) => {
         return new Promise<WebSocket>(
           (
             resolve,
@@ -115,7 +311,8 @@ export function useCollaborationSocket(
               socketRef.current
 
             if (
-              existingSocket?.readyState ===
+              existingSocket
+                ?.readyState ===
               WebSocket.OPEN
             ) {
               resolve(
@@ -126,7 +323,8 @@ export function useCollaborationSocket(
             }
 
             if (
-              existingSocket?.readyState ===
+              existingSocket
+                ?.readyState ===
               WebSocket.CONNECTING
             ) {
               reject(
@@ -138,9 +336,21 @@ export function useCollaborationSocket(
               return
             }
 
-            setStatus(
-              'connecting',
-            )
+            intentionalDisconnectRef.current =
+              false
+
+            if (
+              mode ===
+              'reconnect'
+            ) {
+              setStatus(
+                'reconnecting',
+              )
+            } else {
+              setStatus(
+                'connecting',
+              )
+            }
 
             setErrorMessage(
               null,
@@ -154,20 +364,29 @@ export function useCollaborationSocket(
             socketRef.current =
               socket
 
+            let settled =
+              false
+
             socket.addEventListener(
               'open',
               () => {
-                setStatus(
-                  'connected',
-                )
+                if (
+                  mode ===
+                  'normal'
+                ) {
+                  setStatus(
+                    'connected',
+                  )
+                }
 
-                setErrorMessage(
-                  null,
-                )
+                if (!settled) {
+                  settled =
+                    true
 
-                resolve(
-                  socket,
-                )
+                  resolve(
+                    socket,
+                  )
+                }
               },
             )
 
@@ -186,6 +405,149 @@ export function useCollaborationSocket(
                     JSON.parse(
                       event.data,
                     ) as CollaborationServerMessage
+
+                  if (
+                    message.type ===
+                    'session-hosted'
+                  ) {
+                    const identity =
+                      pendingIdentityRef.current
+
+                    if (identity) {
+                      reconnectCredentialsRef.current =
+                        {
+                          sessionId:
+                            message.sessionId,
+
+                          participantId:
+                            message.participantId,
+
+                          reconnectToken:
+                            message.reconnectToken,
+
+                          role:
+                            'host',
+
+                          displayName:
+                            identity.displayName,
+                        }
+                    }
+
+                    reconnectInFlightRef.current =
+                      false
+
+                    awaitingResumeRef.current =
+                      false
+
+                    clearResumeTimeout()
+
+                    setStatus(
+                      'connected',
+                    )
+                  }
+
+                  if (
+                    message.type ===
+                    'session-joined'
+                  ) {
+                    const identity =
+                      pendingIdentityRef.current
+
+                    if (identity) {
+                      reconnectCredentialsRef.current =
+                        {
+                          sessionId:
+                            message.sessionId,
+
+                          participantId:
+                            message.participantId,
+
+                          reconnectToken:
+                            message.reconnectToken,
+
+                          role:
+                            'guest',
+
+                          displayName:
+                            identity.displayName,
+                        }
+                    }
+
+                    reconnectInFlightRef.current =
+                      false
+
+                    awaitingResumeRef.current =
+                      false
+
+                    clearResumeTimeout()
+
+                    setStatus(
+                      'connected',
+                    )
+                  }
+
+                  if (
+                    message.type ===
+                    'session-resumed'
+                  ) {
+                    reconnectInFlightRef.current =
+                      false
+
+                    awaitingResumeRef.current =
+                      false
+
+                    clearReconnectTimer()
+                    clearResumeTimeout()
+
+                    setErrorMessage(
+                      null,
+                    )
+
+                    setStatus(
+                      'connected',
+                    )
+
+                    flushQueuedMessages(
+                      socket,
+                    )
+                  }
+
+                  if (
+                    message.type ===
+                    'error' &&
+                    (
+                      message.code ===
+                        'resume-invalid' ||
+                      message.code ===
+                        'session-not-found'
+                    )
+                  ) {
+                    reconnectInFlightRef.current =
+                      false
+
+                    awaitingResumeRef.current =
+                      false
+
+                    clearReconnectTimer()
+                    clearResumeTimeout()
+
+                    reconnectCredentialsRef.current =
+                      null
+
+                    setStatus(
+                      'error',
+                    )
+
+                    setErrorMessage(
+                      message.message,
+                    )
+
+                    rejectQueuedMessages(
+                      new Error(
+                        message.message,
+                      ),
+                    )
+                  }
 
                   onMessageRef.current?.(
                     message,
@@ -209,34 +571,271 @@ export function useCollaborationSocket(
                     null
                 }
 
-                setStatus(
-                  'disconnected',
-                )
+                reconnectInFlightRef.current =
+                  false
+
+                awaitingResumeRef.current =
+                  false
+
+                clearResumeTimeout()
+
+                if (
+                  intentionalDisconnectRef.current
+                ) {
+                  setStatus(
+                    'disconnected',
+                  )
+
+                  return
+                }
+
+                if (
+                  reconnectCredentialsRef.current
+                ) {
+                  setStatus(
+                    'reconnecting',
+                  )
+
+                  scheduleReconnect()
+                } else {
+                  setStatus(
+                    'disconnected',
+                  )
+                }
+
+                if (!settled) {
+                  settled =
+                    true
+
+                  reject(
+                    new Error(
+                      'Collaboration connection closed.',
+                    ),
+                  )
+                }
               },
             )
 
             socket.addEventListener(
               'error',
               () => {
-                setStatus(
-                  'error',
-                )
+                if (
+                  reconnectCredentialsRef.current &&
+                  !intentionalDisconnectRef.current
+                ) {
+                  setStatus(
+                    'reconnecting',
+                  )
+                } else {
+                  setStatus(
+                    'error',
+                  )
+                }
 
                 setErrorMessage(
                   'Could not connect to the collaboration server.',
                 )
 
-                reject(
-                  new Error(
-                    'Could not connect to the collaboration server.',
-                  ),
-                )
+                if (!settled) {
+                  settled =
+                    true
+
+                  reject(
+                    new Error(
+                      'Could not connect to the collaboration server.',
+                    ),
+                  )
+                }
               },
             )
           },
         )
       },
-      [],
+      [
+        clearReconnectTimer,
+        clearResumeTimeout,
+        flushQueuedMessages,
+        rejectQueuedMessages,
+        scheduleReconnect,
+      ],
+    )
+
+  const attemptReconnect =
+    useCallback(
+      async () => {
+        const credentials =
+          reconnectCredentialsRef.current
+
+        if (
+          !credentials ||
+          intentionalDisconnectRef.current ||
+          reconnectInFlightRef.current
+        ) {
+          return
+        }
+
+        reconnectInFlightRef.current =
+          true
+
+        try {
+          const socket =
+            await openSocket(
+              'reconnect',
+            )
+
+          awaitingResumeRef.current =
+            true
+
+          socket.send(
+            JSON.stringify({
+              type:
+                'resume-session',
+
+              protocolVersion:
+                COLLABORATION_PROTOCOL_VERSION,
+
+              sessionId:
+                credentials.sessionId,
+
+              participantId:
+                credentials.participantId,
+
+              reconnectToken:
+                credentials.reconnectToken,
+            }),
+          )
+
+          clearResumeTimeout()
+
+          resumeTimeoutRef.current =
+            window.setTimeout(
+              () => {
+                resumeTimeoutRef.current =
+                  null
+
+                if (
+                  !awaitingResumeRef.current
+                ) {
+                  return
+                }
+
+                awaitingResumeRef.current =
+                  false
+
+                reconnectInFlightRef.current =
+                  false
+
+                socket.close()
+              },
+              RESUME_TIMEOUT_MS,
+            )
+        } catch {
+          reconnectInFlightRef.current =
+            false
+
+          scheduleReconnect()
+        }
+      },
+      [
+        clearResumeTimeout,
+        openSocket,
+        scheduleReconnect,
+      ],
+    )
+
+  useEffect(
+    () => {
+      reconnectRef.current =
+        attemptReconnect
+
+      return () => {
+        reconnectRef.current =
+          null
+      }
+    },
+    [
+      attemptReconnect,
+    ],
+  )
+
+  const connect =
+    useCallback(
+      async () => {
+        if (
+          reconnectCredentialsRef.current
+        ) {
+          await attemptReconnect()
+
+          const socket =
+            socketRef.current
+
+          if (
+            socket?.readyState ===
+              WebSocket.OPEN &&
+            !awaitingResumeRef.current
+          ) {
+            return socket
+          }
+
+          throw new Error(
+            'Collaboration session is reconnecting.',
+          )
+        }
+
+        return openSocket(
+          'normal',
+        )
+      },
+      [
+        attemptReconnect,
+        openSocket,
+      ],
+    )
+
+  const disconnect =
+    useCallback(
+      () => {
+        intentionalDisconnectRef.current =
+          true
+
+        clearReconnectTimer()
+        clearResumeTimeout()
+
+        reconnectInFlightRef.current =
+          false
+
+        awaitingResumeRef.current =
+          false
+
+        reconnectCredentialsRef.current =
+          null
+
+        pendingIdentityRef.current =
+          null
+
+        rejectQueuedMessages(
+          new Error(
+            'Collaboration session disconnected.',
+          ),
+        )
+
+        const socket =
+          socketRef.current
+
+        socketRef.current =
+          null
+
+        socket?.close()
+
+        setStatus(
+          'disconnected',
+        )
+      },
+      [
+        clearReconnectTimer,
+        clearResumeTimeout,
+        rejectQueuedMessages,
+      ],
     )
 
   const send =
@@ -245,26 +844,64 @@ export function useCollaborationSocket(
         message:
           CollaborationClientMessage,
       ) => {
-        let socket =
+        const socket =
           socketRef.current
 
         if (
-          !socket ||
-          socket.readyState !==
-            WebSocket.OPEN
+          socket?.readyState ===
+            WebSocket.OPEN &&
+          !awaitingResumeRef.current
         ) {
-          socket =
-            await connect()
+          socket.send(
+            JSON.stringify(
+              message,
+            ),
+          )
+
+          return
         }
 
-        socket.send(
+        /*
+         * During a temporary disconnect,
+         * keep outgoing collaboration
+         * updates in RAM until resume
+         * succeeds.
+         */
+        if (
+          reconnectCredentialsRef.current
+        ) {
+          await new Promise<void>(
+            (
+              resolve,
+              reject,
+            ) => {
+              queuedMessagesRef.current.push({
+                message,
+                resolve,
+                reject,
+              })
+
+              scheduleReconnect()
+            },
+          )
+
+          return
+        }
+
+        const connectedSocket =
+          await openSocket(
+            'normal',
+          )
+
+        connectedSocket.send(
           JSON.stringify(
             message,
           ),
         )
       },
       [
-        connect,
+        openSocket,
+        scheduleReconnect,
       ],
     )
 
@@ -274,6 +911,17 @@ export function useCollaborationSocket(
         displayName:
           string,
       ) => {
+        reconnectCredentialsRef.current =
+          null
+
+        pendingIdentityRef.current =
+          {
+            role:
+              'host',
+
+            displayName,
+          }
+
         await send({
           type:
             'host-session',
@@ -298,6 +946,17 @@ export function useCollaborationSocket(
         displayName:
           string,
       ) => {
+        reconnectCredentialsRef.current =
+          null
+
+        pendingIdentityRef.current =
+          {
+            role:
+              'guest',
+
+            displayName,
+          }
+
         await send({
           type:
             'join-session',
@@ -315,10 +974,6 @@ export function useCollaborationSocket(
       ],
     )
 
-  /*
-   * Guest asks the host for the
-   * currently opened project.
-   */
   const requestProject =
     useCallback(
       async () => {
@@ -332,10 +987,6 @@ export function useCollaborationSocket(
       ],
     )
 
-  /*
-   * Host sends a serialized project
-   * snapshot through the relay.
-   */
   const sendProjectSnapshot =
     useCallback(
       async (
@@ -354,10 +1005,6 @@ export function useCollaborationSocket(
       ],
     )
 
-  /*
-   * Send one translation edit through
-   * the collaboration relay.
-   */
   const sendTranslationUpdate =
     useCallback(
       async (
@@ -376,10 +1023,6 @@ export function useCollaborationSocket(
       ],
     )
 
-  /*
-   * Tell the relay which entry this
-   * participant is currently viewing.
-   */
   const sendEntrySelection =
     useCallback(
       async (
@@ -401,6 +1044,12 @@ export function useCollaborationSocket(
   const leaveSession =
     useCallback(
       async () => {
+        intentionalDisconnectRef.current =
+          true
+
+        clearReconnectTimer()
+        clearResumeTimeout()
+
         const socket =
           socketRef.current
 
@@ -416,16 +1065,49 @@ export function useCollaborationSocket(
           )
         }
 
-        disconnect()
+        reconnectCredentialsRef.current =
+          null
+
+        pendingIdentityRef.current =
+          null
+
+        reconnectInFlightRef.current =
+          false
+
+        awaitingResumeRef.current =
+          false
+
+        rejectQueuedMessages(
+          new Error(
+            'Collaboration session ended.',
+          ),
+        )
+
+        socketRef.current =
+          null
+
+        socket?.close()
+
+        setStatus(
+          'disconnected',
+        )
       },
       [
-        disconnect,
+        clearReconnectTimer,
+        clearResumeTimeout,
+        rejectQueuedMessages,
       ],
     )
 
   useEffect(
     () => {
       return () => {
+        intentionalDisconnectRef.current =
+          true
+
+        clearReconnectTimer()
+        clearResumeTimeout()
+
         const socket =
           socketRef.current
 
@@ -433,9 +1115,19 @@ export function useCollaborationSocket(
           null
 
         socket?.close()
+
+        rejectQueuedMessages(
+          new Error(
+            'Collaboration connection closed.',
+          ),
+        )
       }
     },
-    [],
+    [
+      clearReconnectTimer,
+      clearResumeTimeout,
+      rejectQueuedMessages,
+    ],
   )
 
   return {

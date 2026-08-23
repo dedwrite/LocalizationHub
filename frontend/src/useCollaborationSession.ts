@@ -216,6 +216,36 @@ export function useCollaborationSession(
             break
           }
 
+          case 'session-resumed': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  sessionId:
+                    message.sessionId,
+
+                  connectionStatus:
+                    'connected',
+                }
+              },
+            )
+
+            setActionError(
+              null,
+            )
+
+            setIsSubmitting(
+              false,
+            )
+
+            break
+          }
+
           case 'participants': {
             setSession(
               (current) => {
@@ -377,7 +407,9 @@ export function useCollaborationSession(
 
             if (
               message.code ===
-              'session-not-found'
+                'session-not-found' ||
+              message.code ===
+                'resume-invalid'
             ) {
               setSession(
                 null,
@@ -418,6 +450,37 @@ export function useCollaborationSession(
       onMessage:
         handleServerMessage,
     })
+
+  /*
+   * Keep the session-level connection
+   * status synchronized with the actual
+   * WebSocket state.
+   *
+   * During a temporary outage this
+   * becomes "reconnecting", then returns
+   * to "connected" after resume.
+   */
+  useEffect(
+    () => {
+      setSession(
+        (current) => {
+          if (!current) {
+            return current
+          }
+
+          return {
+            ...current,
+
+            connectionStatus:
+              status,
+          }
+        },
+      )
+    },
+    [
+      status,
+    ],
+  )
 
   useEffect(
     () => {
