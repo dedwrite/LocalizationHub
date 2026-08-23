@@ -48,9 +48,16 @@ function WorkspaceCollaborationStatus({
   ] =
     useState(false)
 
-  const isConnected =
-    status ===
-    'connected'
+  const statusLabel =
+    status === 'connected'
+      ? 'Connected'
+      : status === 'reconnecting'
+        ? 'Reconnecting…'
+        : status === 'connecting'
+          ? 'Connecting…'
+          : status === 'error'
+            ? 'Connection Error'
+            : 'Disconnected'
 
   function getEntryLabel(
     entryId:
@@ -98,11 +105,7 @@ function WorkspaceCollaborationStatus({
       <button
         type="button"
         className={
-          `workspace-collaboration-status ${
-            isConnected
-              ? 'connected'
-              : ''
-          }`
+          `workspace-collaboration-status ${status}`
         }
         title="Show collaboration participants"
         aria-expanded={
@@ -115,7 +118,11 @@ function WorkspaceCollaborationStatus({
           )
         }}
       >
-        <span className="workspace-collaboration-dot" />
+        <span
+          className={
+            `workspace-collaboration-dot ${status}`
+          }
+        />
 
         <span className="workspace-collaboration-session">
           {
@@ -168,17 +175,11 @@ function WorkspaceCollaborationStatus({
 
               <span
                 className={
-                  `workspace-collaboration-connection ${
-                    isConnected
-                      ? 'connected'
-                      : ''
-                  }`
+                  `workspace-collaboration-connection ${status}`
                 }
               >
                 {
-                  isConnected
-                    ? 'Connected'
-                    : 'Disconnected'
+                  statusLabel
                 }
               </span>
             </div>
