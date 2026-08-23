@@ -2570,7 +2570,7 @@ try {
                                 Revision {
                                   project.revision
                                 }
-                                {' ? '}
+                                {'\u00B7'}
                                 {
                                   project.role
                                 }
