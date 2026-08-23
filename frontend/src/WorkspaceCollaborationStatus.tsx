@@ -12,7 +12,7 @@ import type {
 
 import type {
   ParsedLocalizationEntry,
-} from './parsers'
+} from '@localizationhub/core'
 
 import './WorkspaceCollaborationStatus.css'
 

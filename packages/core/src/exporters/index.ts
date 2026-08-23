@@ -4,7 +4,7 @@ import {
 
 import type {
   ParsedLocalizationDocument,
-} from '../parsers'
+} from '@localizationhub/core'
 
 export function exportLocalizationDocument(
   document: ParsedLocalizationDocument,

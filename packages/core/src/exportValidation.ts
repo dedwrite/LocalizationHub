@@ -1,11 +1,11 @@
 import type {
   ParsedLocalizationEntry,
-} from './parsers'
+} from '@localizationhub/core'
 
 import {
   validateProtectedTokens,
   type TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 export type ExportValidationSummary = {
   errorEntryIds:

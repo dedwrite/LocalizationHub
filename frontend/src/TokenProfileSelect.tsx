@@ -1,6 +1,6 @@
 import type {
   TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 import './TokenProfileSelect.css'
 

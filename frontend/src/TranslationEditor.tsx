@@ -25,7 +25,7 @@ import {
 import {
   extractProtectedTokens,
   type TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 import './TranslationEditor.css'
 

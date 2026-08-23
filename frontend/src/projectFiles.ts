@@ -4,14 +4,14 @@ import {
 
 import type {
   TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 import type {
   LocalizationFileFormat,
   LocalizationLanguageInfo,
   ParsedLocalizationEntry,
   RecordArraySchema,
-} from './parsers'
+} from '@localizationhub/core'
 
 export type StoredDocumentInfo = {
   parser: 'json'

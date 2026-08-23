@@ -21,22 +21,22 @@ import {
 import {
   validateProtectedTokens,
   type TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 import {
   describeParsedDocument,
   parseLocalizationFile,
   type ParsedLocalizationDocument,
   type ParsedLocalizationEntry,
-} from './parsers'
+} from '@localizationhub/core'
 
 import {
   exportLocalizationDocument,
-} from './exporters'
+} from '@localizationhub/core'
 
 import {
   analyzeExportValidation,
-} from './exportValidation'
+} from '@localizationhub/core'
 
 import {
   useProtectedEntryIds,

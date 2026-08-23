@@ -12,5 +12,11 @@
   "type": "commonjs",
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4"
-  }
+  },
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "collaboration-server",
+    "packages/*"
+  ]
 }

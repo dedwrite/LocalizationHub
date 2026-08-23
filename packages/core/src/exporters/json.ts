@@ -7,7 +7,7 @@ import type {
   JsonPathSegment,
   ParsedLocalizationDocument,
   ParsedLocalizationEntry,
-} from '../parsers'
+} from '@localizationhub/core'
 
 type JsonContainer =
   | Record<string, unknown>

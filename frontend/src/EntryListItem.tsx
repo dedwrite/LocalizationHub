@@ -4,7 +4,7 @@ import {
 
 import type {
   ParsedLocalizationEntry,
-} from './parsers'
+} from '@localizationhub/core'
 
 import EntryStatusIndicator from './EntryStatusIndicator'
 

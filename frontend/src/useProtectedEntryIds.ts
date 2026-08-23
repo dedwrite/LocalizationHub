@@ -5,15 +5,15 @@ import {
 
 import type {
   ParsedLocalizationEntry,
-} from './parsers'
+} from '@localizationhub/core'
 
 import type {
   TokenProfileId,
-} from './tokens'
+} from '@localizationhub/core'
 
 import {
   isFullyProtectedText,
-} from './tokens/protection'
+} from '@localizationhub/core'
 
 type ProtectionCacheEntry = {
   source: string
