@@ -7,6 +7,15 @@ import {
   saveCloudProject,
 } from './cloud-projects.mjs'
 
+import {
+  AuthError,
+  authenticateToken,
+  getBearerToken,
+  loginUser,
+  logoutUser,
+  registerUser,
+} from './auth.mjs'
+
 import { randomUUID, randomInt } from 'node:crypto'
 
 import {
@@ -1607,6 +1616,90 @@ function sendJson(
   )
 }
 
+function sendAuthError(
+  response,
+  error,
+) {
+  if (
+    !(error instanceof AuthError)
+  ) {
+    console.error(
+      'Authentication request failed:',
+      error,
+    )
+
+    sendJson(
+      response,
+      500,
+      {
+        error:
+          'internal-error',
+
+        message:
+          'Authentication service encountered an internal error.',
+      },
+    )
+
+    return
+  }
+
+  let statusCode =
+    400
+
+  if (
+    error.code ===
+      'username-taken'
+  ) {
+    statusCode =
+      409
+  } else if (
+    error.code ===
+      'invalid-credentials'
+  ) {
+    statusCode =
+      401
+  }
+
+  sendJson(
+    response,
+    statusCode,
+    {
+      error:
+        error.code,
+
+      message:
+        error.message,
+    },
+  )
+}
+
+function getAuthenticatedRequest(
+  request,
+) {
+  const token =
+    getBearerToken(
+      request.headers.authorization,
+    )
+
+  if (!token) {
+    return null
+  }
+
+  const user =
+    authenticateToken(
+      token,
+    )
+
+  if (!user) {
+    return null
+  }
+
+  return {
+    token,
+    user,
+  }
+}
+
 async function readJsonBody(
   request,
 ) {
@@ -1711,6 +1804,27 @@ const httpServer =
       }
 
       if (
+        request.url?.startsWith(
+          '/api/auth'
+        ) &&
+        !ENABLE_EXPERIMENTAL_CLOUD_API
+      ) {
+        sendJson(
+          response,
+          404,
+          {
+            error:
+              'not-found',
+
+            message:
+              'Authentication API is disabled.',
+          },
+        )
+
+        return
+      }
+
+      if (
         request.method ===
           'GET' &&
         request.url ===
@@ -1728,6 +1842,186 @@ const httpServer =
 
             protocolVersion:
               PROTOCOL_VERSION,
+          },
+        )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/auth/register'
+      ) {
+        try {
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object'
+          ) {
+            throw new AuthError(
+              'invalid-request',
+              'Invalid registration request.',
+            )
+          }
+
+          const result =
+            await registerUser({
+              username:
+                body.username,
+
+              password:
+                body.password,
+            })
+
+          sendJson(
+            response,
+            201,
+            result,
+          )
+        } catch (
+          error
+        ) {
+          sendAuthError(
+            response,
+            error,
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/auth/login'
+      ) {
+        try {
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object'
+          ) {
+            throw new AuthError(
+              'invalid-credentials',
+              'Username or password is incorrect.',
+            )
+          }
+
+          const result =
+            await loginUser({
+              username:
+                body.username,
+
+              password:
+                body.password,
+            })
+
+          sendJson(
+            response,
+            200,
+            result,
+          )
+        } catch (
+          error
+        ) {
+          sendAuthError(
+            response,
+            error,
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'GET' &&
+        request.url ===
+          '/api/auth/me'
+      ) {
+        const authenticated =
+          getAuthenticatedRequest(
+            request,
+          )
+
+        if (!authenticated) {
+          sendJson(
+            response,
+            401,
+            {
+              error:
+                'unauthorized',
+
+              message:
+                'Authentication is required.',
+            },
+          )
+
+          return
+        }
+
+        sendJson(
+          response,
+          200,
+          {
+            user:
+              authenticated.user,
+          },
+        )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/auth/logout'
+      ) {
+        const authenticated =
+          getAuthenticatedRequest(
+            request,
+          )
+
+        if (!authenticated) {
+          sendJson(
+            response,
+            401,
+            {
+              error:
+                'unauthorized',
+
+              message:
+                'Authentication is required.',
+            },
+          )
+
+          return
+        }
+
+        logoutUser(
+          authenticated.token,
+        )
+
+        sendJson(
+          response,
+          200,
+          {
+            ok:
+              true,
           },
         )
 
