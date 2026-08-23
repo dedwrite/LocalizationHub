@@ -2028,6 +2028,36 @@ const httpServer =
         return
       }
 
+      const cloudAuthentication =
+        request.url?.startsWith(
+          '/api/projects'
+        )
+          ? getAuthenticatedRequest(
+              request,
+            )
+          : null
+
+      if (
+        request.url?.startsWith(
+          '/api/projects'
+        ) &&
+        !cloudAuthentication
+      ) {
+        sendJson(
+          response,
+          401,
+          {
+            error:
+              'unauthorized',
+
+            message:
+              'Authentication is required.',
+          },
+        )
+
+        return
+      }
+
       if (
         request.method ===
           'GET' &&
@@ -2039,7 +2069,9 @@ const httpServer =
           200,
           {
             projects:
-              listCloudProjects(),
+              listCloudProjects(
+                cloudAuthentication.user.id,
+              ),
           },
         )
 
@@ -2065,6 +2097,7 @@ const httpServer =
           const project =
             getCloudProject(
               projectId,
+              cloudAuthentication.user.id,
             )
 
           sendJson(
@@ -2159,6 +2192,9 @@ const httpServer =
             saveCloudProject(
               projectId,
               {
+                userId:
+                  cloudAuthentication.user.id,
+
                 project:
                   body.project,
 
@@ -2272,6 +2308,9 @@ const httpServer =
 
           const project =
             createCloudProject({
+              ownerUserId:
+                cloudAuthentication.user.id,
+
               name:
                 body.name.trim(),
 
