@@ -1,0 +1,183 @@
+.welcome-drop-zone {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    0.75rem;
+
+  width:
+    100%;
+
+  max-width:
+    440px;
+
+  margin:
+    1rem auto 0;
+
+  padding:
+    0.85rem 1rem;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px dashed
+    rgba(
+      255,
+      255,
+      255,
+      0.13
+    );
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.018
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.55
+    );
+
+  transition:
+    border-color
+      160ms ease,
+    background-color
+      160ms ease,
+    color
+      160ms ease,
+    transform
+      160ms ease;
+}
+
+.welcome-drop-zone:hover {
+  border-color:
+    rgba(
+      124,
+      108,
+      255,
+      0.34
+    );
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.045
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.75
+    );
+}
+
+.welcome-drop-zone-icon {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  width:
+    32px;
+
+  height:
+    32px;
+
+  flex-shrink:
+    0;
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.08
+    );
+
+  color:
+    rgba(
+      170,
+      160,
+      255,
+      0.8
+    );
+
+  font-size:
+    1.05rem;
+
+  font-weight:
+    700;
+}
+
+.welcome-drop-zone-content {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    flex-start;
+
+  gap:
+    0.15rem;
+}
+
+.welcome-drop-zone-content strong {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.78
+    );
+
+  font-size:
+    0.8rem;
+
+  font-weight:
+    600;
+}
+
+.welcome-drop-zone-content span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.38
+    );
+
+  font-size:
+    0.7rem;
+
+  letter-spacing:
+    0.04em;
+}

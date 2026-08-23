@@ -69,6 +69,11 @@ import {
   useSaveAsShortcut,
 } from './useSaveAsShortcut'
 
+
+
+import {
+  useFileDrop,
+} from './useFileDrop'
 import {
   clearRecentProjects,
   getRecentProjects,
@@ -82,6 +87,7 @@ import TranslationEditor from './TranslationEditor'
 import EntryListItem from './EntryListItem'
 import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
+import WelcomeDropZone from './WelcomeDropZone'
 
 import Toast, {
   type ToastMessage,
@@ -1260,6 +1266,172 @@ function App() {
     )
   }
 
+  async function handleDroppedJsonFile(
+    selected:
+      string,
+  ) {
+    try {
+      const content =
+        await readTextFile(
+          selected,
+        )
+
+      const normalizedPath =
+        selected.replace(
+          /\\/g,
+          '/',
+        )
+
+      const name =
+        normalizedPath
+          .split('/')
+          .pop() ??
+        selected
+
+      const result =
+        parseLocalizationFile(
+          content,
+          name,
+        )
+
+      if (
+        !result.ok
+      ) {
+        showToast(
+          'error',
+          result.reason,
+        )
+
+        return
+      }
+
+      const document =
+        result.document
+
+      if (
+        document.entries
+          .length === 0
+      ) {
+        showToast(
+          'warning',
+          '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0646\u0635\u0648\u0635 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062a\u0631\u062c\u0645\u0629.',
+        )
+
+        return
+      }
+
+      setEntries(
+        document.entries,
+      )
+
+      setDocumentInfo({
+        parser:
+          document.parser,
+
+        format:
+          document.format,
+
+        sourceText:
+          document.sourceText,
+
+        schema:
+          document.schema,
+
+        language:
+          document.language,
+      })
+
+      setFileName(
+        name,
+      )
+
+      setProjectPath(
+        null,
+      )
+
+      setSelectedEntryId(
+        document.entries[0].id,
+      )
+
+      setSearchQuery(
+        '',
+      )
+
+      setEntryFilter(
+        'all',
+      )
+
+      setTokenProfile(
+        'generic',
+      )
+
+      setIsDirty(
+        false,
+      )
+
+      showToast(
+        'success',
+        `\u062a\u0645 \u0641\u062a\u062d ${name} \u0628\u0646\u062c\u0627\u062d.`,
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        '\u062a\u0639\u0630\u0631 \u0641\u062a\u062d \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0645\u0633\u062d\u0648\u0628.',
+      )
+    }
+  }
+
+  async function handleDroppedProjectFile(
+    path:
+      string,
+  ) {
+    await loadProjectFromPath(
+      path,
+    )
+  }
+
+  function handleUnsupportedDroppedFile(
+    path:
+      string,
+  ) {
+    const normalizedPath =
+      path.replace(
+        /\\/g,
+        '/',
+      )
+
+    const name =
+      normalizedPath
+        .split('/')
+        .pop() ??
+      path
+
+    showToast(
+      'warning',
+      `Unsupported file: ${name}. Use .json or .lhproj.`,
+    )
+  }
+
+  useFileDrop({
+    enabled:
+      entries.length === 0,
+
+    onJsonFile:
+      handleDroppedJsonFile,
+
+    onProjectFile:
+      handleDroppedProjectFile,
+
+    onUnsupportedFile:
+      handleUnsupportedDroppedFile,
+  })
+
   async function handleExportFile() {
     if (
       !currentDocument
@@ -1523,6 +1695,9 @@ function App() {
                 Join Project
               </button>
             </div>
+
+            <WelcomeDropZone />
+
 
             <RecentProjects
               projects={
