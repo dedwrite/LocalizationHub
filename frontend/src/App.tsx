@@ -99,6 +99,7 @@ import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
 import WelcomeDropZone from './WelcomeDropZone'
 import LastSessionCard from './LastSessionCard'
+import MachineTranslationPanel from './MachineTranslationPanel'
 
 import Toast, {
   type ToastMessage,
@@ -2295,6 +2296,18 @@ function App() {
                       }
                     </div>
                   </div>
+
+                  <MachineTranslationPanel
+                    sourceLocale={
+                      sourceLocale
+                    }
+
+                    targetLocale={
+                      translationLocale
+                    }
+                  />
+
+
 
                   {
                     selectedValidation

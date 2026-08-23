@@ -1,0 +1,876 @@
+.machine-translation-panel {
+  margin-top:
+    1rem;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  border-radius:
+    12px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.018
+    );
+
+  overflow:
+    hidden;
+
+  transition:
+    border-color
+      160ms ease,
+    background-color
+      160ms ease;
+}
+
+.machine-translation-panel:hover {
+  border-color:
+    rgba(
+      122,
+      108,
+      255,
+      0.16
+    );
+}
+
+.machine-translation-panel.open {
+  border-color:
+    rgba(
+      122,
+      108,
+      255,
+      0.14
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.022
+    );
+}
+
+/*
+ * Collapsed header
+ */
+
+.machine-translation-toggle {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    1rem;
+
+  width:
+    100%;
+
+  padding:
+    0.8rem 0.9rem;
+
+  border:
+    0;
+
+  outline:
+    none;
+
+  background:
+    transparent;
+
+  color:
+    inherit;
+
+  text-align:
+    left;
+
+  cursor:
+    pointer;
+}
+
+.machine-translation-toggle:hover {
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.035
+    );
+}
+
+.machine-translation-toggle:focus-visible {
+  box-shadow:
+    inset
+    0 0 0 2px
+    rgba(
+      109,
+      93,
+      252,
+      0.28
+    );
+}
+
+.machine-translation-toggle-title {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    0.7rem;
+
+  min-width:
+    0;
+}
+
+.machine-translation-toggle-title > div {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    0.15rem;
+
+  min-width:
+    0;
+}
+
+.machine-translation-toggle-title strong {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.82
+    );
+
+  font-size:
+    0.76rem;
+
+  font-weight:
+    600;
+}
+
+.machine-translation-toggle-title
+span:not(.machine-translation-toggle-icon) {
+  overflow:
+    hidden;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.35
+    );
+
+  font-size:
+    0.64rem;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.machine-translation-toggle-icon {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  width:
+    30px;
+
+  height:
+    30px;
+
+  flex-shrink:
+    0;
+
+  border:
+    1px solid
+    rgba(
+      125,
+      110,
+      255,
+      0.13
+    );
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.07
+    );
+
+  color:
+    rgba(
+      176,
+      166,
+      255,
+      0.8
+    );
+
+  font-size:
+    0.6rem;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.04em;
+}
+
+.machine-translation-chevron {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.36
+    );
+
+  font-size:
+    0.85rem;
+
+  transition:
+    transform
+      160ms ease,
+    color
+      160ms ease;
+}
+
+.machine-translation-toggle:hover
+.machine-translation-chevron {
+  color:
+    rgba(
+      180,
+      170,
+      255,
+      0.78
+    );
+}
+
+.machine-translation-chevron.open {
+  transform:
+    rotate(180deg);
+}
+
+/*
+ * Expanded content
+ */
+
+.machine-translation-body {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    0.85rem;
+
+  padding:
+    0 1rem 1rem;
+
+  border-top:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.05
+    );
+}
+
+.machine-translation-heading {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    1rem;
+
+  padding-top:
+    0.9rem;
+}
+
+.machine-translation-heading h3 {
+  margin:
+    0.15rem 0 0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.9
+    );
+
+  font-size:
+    0.86rem;
+
+  font-weight:
+    600;
+}
+
+.machine-translation-eyebrow {
+  color:
+    rgba(
+      167,
+      155,
+      255,
+      0.72
+    );
+
+  font-size:
+    0.6rem;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.1em;
+
+  text-transform:
+    uppercase;
+}
+
+.machine-translation-badge {
+  padding:
+    0.23rem 0.5rem;
+
+  border:
+    1px solid
+    rgba(
+      128,
+      112,
+      255,
+      0.18
+    );
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.08
+    );
+
+  color:
+    rgba(
+      190,
+      182,
+      255,
+      0.82
+    );
+
+  font-size:
+    0.6rem;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.05em;
+}
+
+.machine-translation-controls {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      150px,
+      0.7fr
+    )
+    minmax(
+      220px,
+      1.3fr
+    );
+
+  gap:
+    0.75rem;
+}
+
+.machine-translation-controls label,
+.machine-translation-input {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    0.4rem;
+}
+
+.machine-translation-controls label > span,
+.machine-translation-input > span,
+.machine-translation-result > span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.48
+    );
+
+  font-size:
+    0.66rem;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.04em;
+}
+
+.machine-translation-controls select,
+.machine-translation-controls input,
+.machine-translation-input textarea {
+  width:
+    100%;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.08
+    );
+
+  border-radius:
+    8px;
+
+  outline:
+    none;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.18
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.88
+    );
+
+  font:
+    inherit;
+
+  transition:
+    border-color
+      150ms ease,
+    background-color
+      150ms ease,
+    box-shadow
+      150ms ease;
+}
+
+.machine-translation-controls select,
+.machine-translation-controls input {
+  height:
+    38px;
+
+  padding:
+    0 0.7rem;
+}
+
+.machine-translation-input textarea {
+  min-height:
+    84px;
+
+  padding:
+    0.75rem;
+
+  resize:
+    vertical;
+
+  line-height:
+    1.5;
+}
+
+.machine-translation-controls select:focus,
+.machine-translation-controls input:focus,
+.machine-translation-input textarea:focus {
+  border-color:
+    rgba(
+      122,
+      108,
+      255,
+      0.42
+    );
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.25
+    );
+
+  box-shadow:
+    0 0 0 2px
+    rgba(
+      109,
+      93,
+      252,
+      0.08
+    );
+}
+
+.machine-translation-languages {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    0.65rem;
+}
+
+.machine-translation-languages div {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    0.35rem;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.52
+    );
+
+  font-size:
+    0.7rem;
+}
+
+.machine-translation-languages strong {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.78
+    );
+
+  font-weight:
+    600;
+}
+
+.machine-translation-arrow {
+  color:
+    rgba(
+      155,
+      143,
+      255,
+      0.6
+    );
+}
+
+.machine-translation-actions {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    1rem;
+}
+
+.machine-translation-actions span {
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.35
+    );
+
+  font-size:
+    0.66rem;
+}
+
+.machine-translation-actions button {
+  padding:
+    0.45rem 0.8rem;
+
+  border:
+    1px solid
+    rgba(
+      120,
+      105,
+      255,
+      0.15
+    );
+
+  border-radius:
+    7px;
+
+  background:
+    rgba(
+      109,
+      93,
+      252,
+      0.12
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.42
+    );
+
+  font-size:
+    0.72rem;
+
+  font-weight:
+    600;
+
+  cursor:
+    not-allowed;
+
+  opacity:
+    0.65;
+}
+
+.machine-translation-result {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    0.4rem;
+}
+
+.machine-translation-result-box {
+  min-height:
+    48px;
+
+  padding:
+    0.7rem;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.12
+    );
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.32
+    );
+
+  font-size:
+    0.78rem;
+
+  line-height:
+    1.55;
+}
+
+.machine-translation-notice {
+  padding:
+    0.65rem 0.75rem;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      190,
+      90,
+      0.1
+    );
+
+  border-radius:
+    8px;
+
+  background:
+    rgba(
+      255,
+      180,
+      70,
+      0.025
+    );
+}
+
+.machine-translation-notice strong {
+  display:
+    block;
+
+  margin-bottom:
+    0.25rem;
+
+  color:
+    rgba(
+      255,
+      205,
+      125,
+      0.78
+    );
+
+  font-size:
+    0.68rem;
+
+  font-weight:
+    700;
+}
+
+.machine-translation-notice p {
+  margin:
+    0;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.46
+    );
+
+  font-size:
+    0.65rem;
+
+  line-height:
+    1.5;
+}
+
+.machine-translation-notice small {
+  display:
+    block;
+
+  margin-top:
+    0.4rem;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      0.28
+    );
+
+  font-size:
+    0.6rem;
+
+  line-height:
+    1.45;
+}
+
+@media (
+  max-width: 1100px
+) {
+  .machine-translation-controls {
+    grid-template-columns:
+      1fr;
+  }
+}
+.machine-translation-actions button:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    #6f5cff,
+    #8b6cff
+  );
+
+  border-color: rgba(139, 108, 255, 0.8);
+  color: white;
+
+  box-shadow:
+    0 0 12px rgba(111, 92, 255, 0.45),
+    0 0 28px rgba(111, 92, 255, 0.22);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.machine-translation-actions button:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+
+  box-shadow:
+    0 0 16px rgba(111, 92, 255, 0.65),
+    0 0 34px rgba(111, 92, 255, 0.32);
+}
+
+.machine-translation-actions button:not(:disabled):active {
+  transform: translateY(0);
+}

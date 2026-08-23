@@ -1,3 +1,5 @@
+mod translation;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -5,6 +7,12 @@ pub fn run() {
         .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(
+            tauri::generate_handler![
+                translation::translate_with_google,
+                translation::translate_with_gemini,
+            ],
+        )
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

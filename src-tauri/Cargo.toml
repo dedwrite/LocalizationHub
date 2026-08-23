@@ -23,3 +23,4 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-opener = "2.5.4"
 tauri-plugin-persisted-scope = "2.3.7"
+reqwest = { version = "=0.13.3", default-features = false, features = ["json", "rustls"] }
