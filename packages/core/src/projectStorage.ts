@@ -25,6 +25,19 @@ export type LoadedProject = {
 
   migratedFromVersion:
     1 | null
+
+  revision:
+    number | null
+}
+
+export type SavedProject = {
+  revision:
+    number | null
+}
+
+export type ProjectSaveOptions = {
+  baseRevision?:
+    number | null
 }
 
 export type ProjectDecodeFailureReason =
@@ -67,7 +80,11 @@ export interface ProjectStorage {
   save(
     location:
       ProjectLocation,
+
     project:
       LocalizationProjectV2,
-  ): Promise<void>
+
+    options?:
+      ProjectSaveOptions,
+  ): Promise<SavedProject>
 }

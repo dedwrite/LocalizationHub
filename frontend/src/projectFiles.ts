@@ -10,6 +10,7 @@ import {
   type LocalizationProjectV2,
   type ProjectLocation,
   type ProjectStorage,
+  type SavedProject,
 } from '@localizationhub/core'
 
 function getLocalProjectPath(
@@ -71,6 +72,9 @@ export const desktopProjectStorage:
 
         migratedFromVersion:
           decoded.migratedFromVersion,
+
+        revision:
+          null,
       }
     },
 
@@ -80,7 +84,7 @@ export const desktopProjectStorage:
 
       project:
         LocalizationProjectV2,
-    ): Promise<void> {
+    ): Promise<SavedProject> {
       const path =
         getLocalProjectPath(
           location,
@@ -103,6 +107,11 @@ export const desktopProjectStorage:
           'write-failed',
           'Failed to write the local project file.',
         )
+      }
+
+      return {
+        revision:
+          null,
       }
     },
   }

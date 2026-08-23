@@ -21,6 +21,11 @@ import {
 const PROTOCOL_VERSION =
   2
 
+
+const ENABLE_EXPERIMENTAL_CLOUD_API =
+  process.env.ENABLE_EXPERIMENTAL_CLOUD_API ===
+  '1'
+
 const HOST =
   process.env.HOST ??
   '0.0.0.0'
@@ -1593,6 +1598,27 @@ const httpServer =
       request,
       response,
     ) => {
+      if (
+        request.url?.startsWith(
+          '/api/projects'
+        ) &&
+        !ENABLE_EXPERIMENTAL_CLOUD_API
+      ) {
+        sendJson(
+          response,
+          404,
+          {
+            error:
+              'not-found',
+
+            message:
+              'Cloud project API is disabled.',
+          },
+        )
+
+        return
+      }
+
       if (
         request.method ===
           'GET' &&

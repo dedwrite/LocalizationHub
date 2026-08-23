@@ -72,3 +72,13 @@ export type SaveCloudProjectResponse = {
   project:
     CloudProjectSnapshot
 }
+
+export type ListCloudProjectsResponse = {
+  projects:
+    CloudProjectSummary[]
+}
+
+export type GetCloudProjectResponse = {
+  project:
+    CloudProjectSnapshot
+}
