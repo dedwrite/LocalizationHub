@@ -48,6 +48,54 @@ function nowIso() {
     .toISOString()
 }
 
+function requireUserId(
+  userId,
+) {
+  if (
+    typeof userId !==
+      'string' ||
+    userId.length === 0
+  ) {
+    throw new TypeError(
+      'Cloud Project user ID is required.',
+    )
+  }
+
+  return userId
+}
+
+function getOwnedRecord(
+  projectId,
+  userId,
+) {
+  requireUserId(
+    userId,
+  )
+
+  const record =
+    projects.get(
+      projectId,
+    )
+
+  /*
+   * Intentionally return the same error for:
+   * - missing project
+   * - project owned by another user
+   *
+   * This prevents leaking whether a Cloud Project
+   * UUID exists to an unauthorized account.
+   */
+  if (
+    !record ||
+    record.ownerUserId !==
+      userId
+  ) {
+    throw new CloudProjectNotFoundError()
+  }
+
+  return record
+}
+
 function toSnapshot(
   record,
 ) {
@@ -73,14 +121,21 @@ function toSnapshot(
 }
 
 export function createCloudProject({
+  ownerUserId,
   name,
   project,
 }) {
+  requireUserId(
+    ownerUserId,
+  )
+
   const id =
     randomUUID()
 
   const record = {
     id,
+
+    ownerUserId,
 
     name,
 
@@ -103,10 +158,21 @@ export function createCloudProject({
   )
 }
 
-export function listCloudProjects() {
+export function listCloudProjects(
+  userId,
+) {
+  requireUserId(
+    userId,
+  )
+
   return Array.from(
     projects.values(),
   )
+    .filter(
+      (record) =>
+        record.ownerUserId ===
+        userId,
+    )
     .map(
       (record) => ({
         id:
@@ -139,15 +205,13 @@ export function listCloudProjects() {
 
 export function getCloudProject(
   projectId,
+  userId,
 ) {
   const record =
-    projects.get(
+    getOwnedRecord(
       projectId,
+      userId,
     )
-
-  if (!record) {
-    throw new CloudProjectNotFoundError()
-  }
 
   return toSnapshot(
     record,
@@ -157,18 +221,16 @@ export function getCloudProject(
 export function saveCloudProject(
   projectId,
   {
+    userId,
     project,
     baseRevision,
   },
 ) {
   const record =
-    projects.get(
+    getOwnedRecord(
       projectId,
+      userId,
     )
-
-  if (!record) {
-    throw new CloudProjectNotFoundError()
-  }
 
   if (
     baseRevision !==
