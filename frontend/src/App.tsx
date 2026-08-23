@@ -2764,6 +2764,43 @@ try {
               }
             />
 
+            <div
+              className={`project-location-badge ${
+                projectLocation?.kind ??
+                'unsaved'
+              }`}
+              title={
+                projectLocation?.kind ===
+                'cloud'
+                  ? `Cloud Project \u00B7 Revision ${
+                      cloudRevision ??
+                      '?'
+                    }`
+                  : projectLocation?.kind ===
+                      'local'
+                    ? 'Local Project'
+                    : 'Project has not been saved yet'
+              }
+            >
+              <span
+                className="project-location-dot"
+                aria-hidden="true"
+              />
+
+              {
+                projectLocation?.kind ===
+                  'cloud'
+                  ? `Cloud \u00B7 r${
+                      cloudRevision ??
+                      '?'
+                    }`
+                  : projectLocation?.kind ===
+                      'local'
+                    ? 'Local'
+                    : 'Unsaved'
+              }
+            </div>
+
             <div className="progress-info">
               <span>
                 {
