@@ -1,0 +1,395 @@
+.auth-panel {
+  width:
+    100%;
+
+  margin-top:
+    18px;
+
+  padding:
+    14px;
+
+  display:
+    grid;
+
+  gap:
+    12px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  border-radius:
+    14px;
+
+  background:
+    rgba(
+      10,
+      12,
+      18,
+      0.62
+    );
+
+  text-align:
+    left;
+}
+
+.auth-panel-heading {
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    14px;
+}
+
+.auth-panel-heading > div:first-child,
+.auth-panel-status > div {
+  display:
+    grid;
+
+  gap:
+    3px;
+}
+
+.auth-panel-heading strong,
+.auth-panel-status strong {
+  color:
+    #f0f2f7;
+}
+
+.auth-panel-heading span,
+.auth-panel-status span {
+  color:
+    #7d8494;
+
+  font-size:
+    12px;
+}
+
+.auth-mode-switch {
+  display:
+    inline-flex;
+
+  padding:
+    3px;
+
+  gap:
+    2px;
+
+  border:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.06
+    );
+
+  border-radius:
+    9px;
+
+  background:
+    rgba(
+      0,
+      0,
+      0,
+      0.18
+    );
+}
+
+.auth-mode-button {
+  padding:
+    6px
+    9px;
+
+  border:
+    0;
+
+  border-radius:
+    7px;
+
+  background:
+    transparent;
+
+  color:
+    #7f8797;
+
+  font:
+    inherit;
+
+  font-size:
+    12px;
+
+  cursor:
+    pointer;
+}
+
+.auth-mode-button:hover:not(:disabled) {
+  color:
+    #d2d5de;
+}
+
+.auth-mode-button.active {
+  background:
+    rgba(
+      132,
+      112,
+      255,
+      0.16
+    );
+
+  color:
+    #c9c4ff;
+}
+
+.auth-mode-button:disabled {
+  cursor:
+    default;
+
+  opacity:
+    0.55;
+}
+
+.auth-form {
+  display:
+    grid;
+
+  grid-template-columns:
+    minmax(
+      0,
+      1fr
+    )
+    minmax(
+      0,
+      1fr
+    )
+    auto;
+
+  gap:
+    8px;
+}
+
+.auth-input {
+  min-width:
+    0;
+
+  padding:
+    9px
+    10px;
+
+  border:
+    1px solid
+    #292e39;
+
+  border-radius:
+    9px;
+
+  outline:
+    none;
+
+  background:
+    #101219;
+
+  color:
+    #eef0f5;
+
+  font:
+    inherit;
+
+  font-size:
+    13px;
+}
+
+.auth-input::placeholder {
+  color:
+    #626978;
+}
+
+.auth-input:focus {
+  border-color:
+    #6f62c7;
+
+  box-shadow:
+    0
+    0
+    0
+    2px
+    rgba(
+      111,
+      98,
+      199,
+      0.12
+    );
+}
+
+.auth-input:disabled {
+  opacity:
+    0.58;
+}
+
+.auth-submit-button {
+  white-space:
+    nowrap;
+}
+
+.auth-register-hint {
+  color:
+    #686f7e;
+
+  font-size:
+    11px;
+}
+
+.auth-panel-signed-in {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+.auth-account-info {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  min-width:
+    0;
+
+  gap:
+    10px;
+}
+
+.auth-account-info > div:last-child {
+  display:
+    grid;
+
+  min-width:
+    0;
+
+  gap:
+    2px;
+}
+
+.auth-account-info span {
+  color:
+    #727989;
+
+  font-size:
+    11px;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.05em;
+}
+
+.auth-account-info strong {
+  overflow:
+    hidden;
+
+  color:
+    #f1f2f6;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+}
+
+.auth-account-avatar {
+  width:
+    34px;
+
+  height:
+    34px;
+
+  display:
+    grid;
+
+  flex:
+    0 0 auto;
+
+  place-items:
+    center;
+
+  border:
+    1px solid
+    rgba(
+      152,
+      136,
+      255,
+      0.28
+    );
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(
+      132,
+      112,
+      255,
+      0.12
+    );
+
+  color:
+    #c9c4ff;
+
+  font-weight:
+    700;
+}
+
+@media (
+  max-width:
+    620px
+) {
+  .auth-panel-heading,
+  .auth-panel-signed-in {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+  .auth-mode-switch {
+    width:
+      100%;
+  }
+
+  .auth-mode-button {
+    flex:
+      1;
+  }
+
+  .auth-form {
+    grid-template-columns:
+      1fr;
+  }
+
+  .auth-panel-signed-in .secondary-button {
+    width:
+      100%;
+  }
+}

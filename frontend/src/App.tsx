@@ -113,6 +113,20 @@ import {
   rememberLastSession,
 } from './lastSession'
 
+import {
+  getAuthErrorMessage,
+  loginAccount,
+  logoutAccount,
+  registerAccount,
+  restoreAuthSession,
+} from './authApi'
+
+import {
+  getAuthSession,
+  type AuthSession,
+} from './authSession'
+
+import AuthPanel from './AuthPanel'
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
 import EntryListItem from './EntryListItem'
@@ -469,6 +483,31 @@ function App() {
             )
           }
         },    })
+
+  const [
+    authSession,
+    setAuthSession,
+  ] =
+    useState<AuthSession | null>(
+      () =>
+        getAuthSession(),
+    )
+
+  const [
+    authRestoring,
+    setAuthRestoring,
+  ] =
+    useState(
+      true,
+    )
+
+  const [
+    authActionLoading,
+    setAuthActionLoading,
+  ] =
+    useState(
+      false,
+    )
 
   const [
     lastSession,
@@ -1778,6 +1817,209 @@ try {
     )
   }
 
+  useEffect(
+    () => {
+      let cancelled =
+        false
+
+      void restoreAuthSession()
+        .then(
+          (
+            restored,
+          ) => {
+            if (
+              cancelled
+            ) {
+              return
+            }
+
+            setAuthSession(
+              restored,
+            )
+          },
+        )
+        .catch(
+          (
+            error,
+          ) => {
+            console.error(
+              'Failed to restore authentication session.',
+              error,
+            )
+          },
+        )
+        .finally(
+          () => {
+            if (
+              !cancelled
+            ) {
+              setAuthRestoring(
+                false,
+              )
+            }
+          },
+        )
+
+      return () => {
+        cancelled =
+          true
+      }
+    },
+    [],
+  )
+
+  async function handleLoginAccount(
+    username:
+      string,
+
+    password:
+      string,
+  ): Promise<boolean> {
+    setAuthActionLoading(
+      true,
+    )
+
+    try {
+      const session =
+        await loginAccount(
+          username,
+          password,
+        )
+
+      setAuthSession(
+        session,
+      )
+
+      showToast(
+        'success',
+        `Signed in as @${session.user.username}.`,
+      )
+
+      return true
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        getAuthErrorMessage(
+          error,
+          'Could not sign in.',
+        ),
+      )
+
+      return false
+    } finally {
+      setAuthActionLoading(
+        false,
+      )
+    }
+  }
+
+  async function handleRegisterAccount(
+    username:
+      string,
+
+    password:
+      string,
+  ): Promise<boolean> {
+    setAuthActionLoading(
+      true,
+    )
+
+    try {
+      const session =
+        await registerAccount(
+          username,
+          password,
+        )
+
+      setAuthSession(
+        session,
+      )
+
+      showToast(
+        'success',
+        `Created account @${session.user.username}.`,
+      )
+
+      return true
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        getAuthErrorMessage(
+          error,
+          'Could not create account.',
+        ),
+      )
+
+      return false
+    } finally {
+      setAuthActionLoading(
+        false,
+      )
+    }
+  }
+
+  async function handleLogoutAccount():
+    Promise<void> {
+    setAuthActionLoading(
+      true,
+    )
+
+    try {
+      await logoutAccount()
+
+      showToast(
+        'success',
+        'Signed out.',
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        getAuthErrorMessage(
+          error,
+          'Signed out locally, but the server could not be reached.',
+        ),
+      )
+    } finally {
+      setAuthSession(
+        null,
+      )
+
+      setCloudProjects(
+        [],
+      )
+
+      if (
+        lastSession
+          ?.location.kind ===
+          'cloud'
+      ) {
+        forgetSession()
+      }
+
+      setAuthActionLoading(
+        false,
+      )
+    }
+  }
+
   async function handleRefreshCloudProjects() {
     setCloudProjectsLoading(
       true,
@@ -1819,6 +2061,22 @@ try {
    */
   useEffect(
     () => {
+      if (
+        authRestoring
+      ) {
+        return
+      }
+
+      if (
+        !authSession
+      ) {
+        setCloudProjects(
+          [],
+        )
+
+        return
+      }
+
       const cloudApiAvailable =
         import.meta.env.DEV ||
         Boolean(
@@ -1835,7 +2093,10 @@ try {
 
       void handleRefreshCloudProjects()
     },
-    [],
+    [
+      authRestoring,
+      authSession,
+    ],
   )
 
   async function handleOpenCloudProject() {
@@ -2471,6 +2732,32 @@ try {
               </button>
             </div>
 
+            <AuthPanel
+              session={
+                authSession
+              }
+
+              restoring={
+                authRestoring
+              }
+
+              actionLoading={
+                authActionLoading
+              }
+
+              onLogin={
+                handleLoginAccount
+              }
+
+              onRegister={
+                handleRegisterAccount
+              }
+
+              onLogout={
+                handleLogoutAccount
+              }
+            />
+
             <details className="cloud-project-advanced">
               <summary>
                 Advanced {'\u00B7'} Open by Project ID
@@ -2480,6 +2767,10 @@ try {
                 <input
                   className="cloud-project-input"
                   type="text"
+                  disabled={
+                    !authSession ||
+                    authRestoring
+                  }
                   value={
                     cloudProjectId
                   }
@@ -2508,6 +2799,8 @@ try {
                   className="secondary-button"
                   type="button"
                   disabled={
+                    !authSession ||
+                    authRestoring ||
                     cloudProjectId
                       .trim()
                       .length === 0
@@ -2537,6 +2830,8 @@ try {
                   className="secondary-button"
                   type="button"
                   disabled={
+                    !authSession ||
+                    authRestoring ||
                     cloudProjectsLoading
                   }
                   onClick={() => {
@@ -2552,6 +2847,7 @@ try {
               </div>
 
               {
+                authSession &&
                 cloudProjects.length >
                   0 ? (
                   <div className="cloud-projects-list">
@@ -2617,9 +2913,11 @@ try {
                 ) : (
                   <p className="cloud-projects-empty">
                     {
-                      cloudProjectsLoading
-                        ? 'Loading Cloud Projects...'
-                        : 'No Cloud Projects yet.'
+                      !authSession
+                        ? 'Sign in to view your Cloud Projects.'
+                        : cloudProjectsLoading
+                          ? 'Loading Cloud Projects...'
+                          : 'No Cloud Projects yet.'
                     }
                   </p>
                 )
