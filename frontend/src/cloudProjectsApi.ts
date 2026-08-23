@@ -133,6 +133,9 @@ async function requestJson<T>(
         error?:
           unknown
 
+        message?:
+          unknown
+
         currentRevision?:
           unknown
       }
@@ -142,6 +145,24 @@ async function requestJson<T>(
         'string'
         ? errorBody.error
         : 'invalid-response'
+
+    const serverMessage =
+      typeof errorBody.message ===
+        'string'
+        ? errorBody.message
+        : null
+
+    if (
+      code ===
+        'not-found' &&
+      serverMessage ===
+        'Cloud project API is disabled.'
+    ) {
+      throw new CloudProjectsApiError(
+        'disabled',
+        'Cloud Projects are disabled on this server.',
+      )
+    }
 
     if (
       code ===
@@ -165,20 +186,66 @@ async function requestJson<T>(
         'internal-error',
       ]
 
-    throw new CloudProjectsApiError(
+    const normalizedCode =
       knownCodes.includes(
         code as
           CloudProjectsApiErrorCode,
       )
         ? code as
             CloudProjectsApiErrorCode
-        : 'invalid-response',
+        : 'invalid-response'
 
-      `Cloud Projects API request failed with HTTP ${response.status}.`,
+    const fallbackMessages:
+      Partial<
+        Record<
+          CloudProjectsApiErrorCode,
+          string
+        >
+      > = {
+        'invalid-request':
+          'The Cloud Project request was rejected.',
+
+        'project-not-found':
+          'The Cloud Project could not be found.',
+
+        'not-found':
+          'The Cloud Projects API endpoint could not be found.',
+
+        'internal-error':
+          'The Cloud Projects service encountered an internal error.',
+
+        'invalid-response':
+          'The Cloud Projects service returned an invalid response.',
+      }
+
+    throw new CloudProjectsApiError(
+      normalizedCode,
+      serverMessage ??
+        fallbackMessages[
+          normalizedCode
+        ] ??
+        `Cloud Projects API request failed with HTTP ${response.status}.`,
     )
   }
 
   return body as T
+}
+
+export function getCloudProjectsErrorMessage(
+  error:
+    unknown,
+
+  fallback:
+    string,
+): string {
+  if (
+    error instanceof
+      CloudProjectsApiError
+  ) {
+    return error.message
+  }
+
+  return fallback
 }
 
 export async function createCloudProject(

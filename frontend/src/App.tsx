@@ -70,6 +70,7 @@ import {
 import {
   CloudProjectsApiError,
   createCloudProject,
+  getCloudProjectsErrorMessage,
   listCloudProjects,
 } from './cloudProjectsApi'
 
@@ -1352,7 +1353,10 @@ function App() {
 
       showToast(
         'error',
-        'Could not create Cloud Project.',
+        getCloudProjectsErrorMessage(
+          error,
+          'Could not create Cloud Project.',
+        ),
       )
     }
   }
@@ -1795,7 +1799,10 @@ try {
 
       showToast(
         'error',
-        'Could not load Cloud Projects.',
+        getCloudProjectsErrorMessage(
+          error,
+          'Could not load Cloud Projects.',
+        ),
       )
     } finally {
       setCloudProjectsLoading(
