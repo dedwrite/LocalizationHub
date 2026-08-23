@@ -41,6 +41,7 @@ import {
 
 import type {
   LocalizationProjectV2,
+  ProjectLocation,
   StoredDocumentInfo,
 } from '@localizationhub/core'
 
@@ -60,6 +61,14 @@ import {
 import {
   desktopProjectStorage,
 } from './projectFiles'
+
+import {
+  cloudProjectStorage,
+} from './cloudProjectStorage'
+
+import {
+  CloudProjectsApiError,
+} from './cloudProjectsApi'
 
 import {
   chooseProjectSavePath,
@@ -401,7 +410,7 @@ function App() {
              * Never Quick Save it over
              * an unrelated local project.
              */
-            setProjectPath(
+            setProjectLocation(
               null,
             )
 
@@ -481,12 +490,26 @@ function App() {
     useState('')
 
   const [
-    projectPath,
-    setProjectPath,
+    projectLocation,
+    setProjectLocation,
   ] =
-    useState<string | null>(
+    useState<ProjectLocation | null>(
       null,
     )
+
+  const [
+    cloudRevision,
+    setCloudRevision,
+  ] =
+    useState<number | null>(
+      null,
+    )
+
+  const [
+    cloudProjectId,
+    setCloudProjectId,
+  ] =
+    useState('')
 
   const [
     isDirty,
@@ -943,7 +966,12 @@ function App() {
 
     setLastSession(
       rememberLastSession(
-        path,
+        {
+          kind:
+            'local',
+
+          path,
+        },
         sourceFileName,
       ),
     )
@@ -990,7 +1018,7 @@ function App() {
       '',
     )
 
-    setProjectPath(
+    setProjectLocation(
       null,
     )
 
@@ -1134,7 +1162,7 @@ function App() {
         name,
       )
 
-      setProjectPath(
+      setProjectLocation(
         null,
       )
 
@@ -1243,9 +1271,13 @@ function App() {
         project,
       )
 
-      setProjectPath(
-        selectedPath,
-      )
+      setProjectLocation({
+        kind:
+          'local',
+
+        path:
+          selectedPath,
+      })
 
       setIsDirty(
         false,
@@ -1292,25 +1324,49 @@ function App() {
     }
 
     if (
-      !projectPath
+      !projectLocation
     ) {
       await handleSaveProjectAs()
 
       return
     }
 
-    try {
-      await desktopProjectStorage.save(
-        {
-          kind:
-            'local',
+try {
+      if (
+        projectLocation.kind ===
+          'local'
+      ) {
+        await desktopProjectStorage.save(
+          projectLocation,
 
-          path:
-            projectPath,
-        },
+          project,
+        )
+      } else {
+        if (
+          cloudRevision ===
+            null
+        ) {
+          throw new Error(
+            'Cloud project revision is missing.',
+          )
+        }
 
-        project,
-      )
+        const saved =
+          await cloudProjectStorage.save(
+            projectLocation,
+
+            project,
+
+            {
+              baseRevision:
+                cloudRevision,
+            },
+          )
+
+        setCloudRevision(
+          saved.revision,
+        )
+      }
 
       setIsDirty(
         false,
@@ -1327,6 +1383,46 @@ function App() {
         error,
       )
 
+      if (
+        error instanceof
+          CloudProjectsApiError &&
+        error.code ===
+          'revision-conflict'
+      ) {
+        showToast(
+          'warning',
+          'تعذر الحفظ: المشروع تغيّر على السحابة.',
+        )
+
+        if (
+          projectLocation.kind ===
+            'cloud'
+        ) {
+          const shouldReload =
+            await confirm(
+              'توجد نسخة أحدث على السحابة.\n\nهل تريد إعادة تحميلها الآن؟\n\nملاحظة: سيتم استبدال التعديلات المحلية غير المحفوظة.',
+
+              {
+                title:
+                  'Cloud Project Conflict',
+
+                kind:
+                  'warning',
+              },
+            )
+
+          if (
+            shouldReload
+          ) {
+            await loadProjectFromLocation(
+              projectLocation,
+            )
+          }
+        }
+
+        return
+      }
+
       showToast(
         'error',
         'فشل حفظ المشروع.',
@@ -1334,23 +1430,29 @@ function App() {
     }
   }
 
-  async function loadProjectFromPath(
-    selected:
-      string,
+  async function loadProjectFromLocation(
+    location:
+      ProjectLocation,
 
     openedFromRecent =
       false,
   ) {
-    try {
-      const loaded =
-        await desktopProjectStorage.load(
-          {
-            kind:
-              'local',
+    const selected =
+      location.kind ===
+        'local'
+        ? location.path
+        : null
 
-            path:
-              selected,
-          },
+    try {
+      const storage =
+        location.kind ===
+          'local'
+          ? desktopProjectStorage
+          : cloudProjectStorage
+
+      const loaded =
+        await storage.load(
+          location,
         )
 
       const project =
@@ -1372,10 +1474,17 @@ function App() {
        * Legacy v1 projects must use Save As
        * so they are written back as v2.
        */
-      setProjectPath(
+      setProjectLocation(
         loaded.migratedFromVersion === 1
           ? null
-          : selected,
+          : location,
+      )
+
+      setCloudRevision(
+        location.kind ===
+          'cloud'
+          ? loaded.revision
+          : null,
       )
 
       const selectedExists =
@@ -1407,10 +1516,22 @@ function App() {
         false,
       )
 
-      rememberProject(
-        selected,
-        project.sourceFileName,
-      )
+      if (
+        location.kind ===
+          'local'
+      ) {
+        rememberProject(
+          location.path,
+          project.sourceFileName,
+        )
+      } else {
+        setLastSession(
+          rememberLastSession(
+            location,
+            project.sourceFileName,
+          ),
+        )
+      }
 
       showToast(
         loaded.migratedFromVersion === 1
@@ -1437,8 +1558,12 @@ function App() {
           'read-failed'
         ) {
           if (
-            lastSession?.projectPath ===
-            selected
+            selected !==
+              null &&
+            lastSession?.location.kind ===
+              'local' &&
+            lastSession.location.path ===
+              selected
           ) {
             forgetSession()
           }
@@ -1448,7 +1573,7 @@ function App() {
           ) {
             setRecentProjects(
               removeRecentProject(
-                selected,
+                selected!,
               ),
             )
 
@@ -1504,6 +1629,42 @@ function App() {
         'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
       )
     }
+  }
+
+  async function loadProjectFromPath(
+    selected:
+      string,
+
+    openedFromRecent =
+      false,
+  ) {
+    await loadProjectFromLocation(
+      {
+        kind:
+          'local',
+
+        path:
+          selected,
+      },
+
+      openedFromRecent,
+    )
+  }
+
+  async function handleOpenCloudProject() {
+    const projectId =
+      cloudProjectId.trim()
+
+    if (!projectId) {
+      return
+    }
+
+    await loadProjectFromLocation({
+      kind:
+        'cloud',
+
+      projectId,
+    })
   }
 
   async function handleOpenProject() {
@@ -1649,7 +1810,7 @@ function App() {
         name,
       )
 
-      setProjectPath(
+      setProjectLocation(
         null,
       )
 
@@ -2123,6 +2284,50 @@ function App() {
               </button>
             </div>
 
+            <div className="cloud-project-open">
+              <input
+                className="cloud-project-input"
+                type="text"
+                value={
+                  cloudProjectId
+                }
+                placeholder="Cloud Project ID"
+                aria-label="Cloud Project ID"
+                onChange={(
+                  event,
+                ) => {
+                  setCloudProjectId(
+                    event.target.value,
+                  )
+                }}
+                onKeyDown={(
+                  event,
+                ) => {
+                  if (
+                    event.key ===
+                      'Enter'
+                  ) {
+                    void handleOpenCloudProject()
+                  }
+                }}
+              />
+
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={
+                  cloudProjectId
+                    .trim()
+                    .length === 0
+                }
+                onClick={() => {
+                  void handleOpenCloudProject()
+                }}
+              >
+                Open Cloud
+              </button>
+            </div>
+
             <WelcomeDropZone />
 
             {
@@ -2143,9 +2348,11 @@ function App() {
                   }
 
                   onResume={() => {
-                    void loadProjectFromPath(
-                      lastSession.projectPath,
-                      true,
+                    void loadProjectFromLocation(
+                      lastSession.location,
+
+                      lastSession.location.kind ===
+                        'local',
                     )
                   }}
 

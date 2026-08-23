@@ -26,6 +26,23 @@ const ENABLE_EXPERIMENTAL_CLOUD_API =
   process.env.ENABLE_EXPERIMENTAL_CLOUD_API ===
   '1'
 
+const CORS_ALLOWED_ORIGINS =
+  new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+
+    ...(
+      process.env.CORS_ALLOWED_ORIGINS ??
+      ''
+    )
+      .split(',')
+      .map(
+        (origin) =>
+          origin.trim(),
+      )
+      .filter(Boolean),
+  ])
+
 const HOST =
   process.env.HOST ??
   '0.0.0.0'
@@ -1520,6 +1537,45 @@ function handleMessage(
   }
 }
 
+function applyCorsHeaders(
+  request,
+  response,
+) {
+  const origin =
+    request.headers.origin
+
+  if (
+    !origin ||
+    !CORS_ALLOWED_ORIGINS.has(
+      origin,
+    )
+  ) {
+    return false
+  }
+
+  response.setHeader(
+    'Access-Control-Allow-Origin',
+    origin,
+  )
+
+  response.setHeader(
+    'Vary',
+    'Origin',
+  )
+
+  response.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, OPTIONS',
+  )
+
+  response.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization',
+  )
+
+  return true
+}
+
 function sendJson(
   response,
   statusCode,
@@ -1598,6 +1654,41 @@ const httpServer =
       request,
       response,
     ) => {
+      const corsAllowed =
+        applyCorsHeaders(
+          request,
+          response,
+        )
+
+      if (
+        request.method ===
+          'OPTIONS'
+      ) {
+        if (
+          request.headers.origin &&
+          !corsAllowed
+        ) {
+          sendJson(
+            response,
+            403,
+            {
+              error:
+                'cors-origin-not-allowed',
+            },
+          )
+
+          return
+        }
+
+        response.writeHead(
+          204,
+        )
+
+        response.end()
+
+        return
+      }
+
       if (
         request.url?.startsWith(
           '/api/projects'

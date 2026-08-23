@@ -304,6 +304,97 @@ button {
   gap: 10px;
 }
 
+.cloud-project-open {
+  display:
+    flex;
+
+  width:
+    100%;
+
+  gap:
+    10px;
+
+  margin-top:
+    16px;
+}
+
+.cloud-project-input {
+  flex:
+    1;
+
+  min-width:
+    0;
+
+  height:
+    44px;
+
+  padding:
+    0
+    13px;
+
+  border:
+    1px solid
+    #343846;
+
+  border-radius:
+    9px;
+
+  outline:
+    none;
+
+  background:
+    rgba(
+      15,
+      18,
+      25,
+      0.96
+    );
+
+  color:
+    #e8eaf0;
+
+  font-size:
+    14px;
+
+  transition:
+    border-color
+      130ms ease,
+    box-shadow
+      130ms ease,
+    background-color
+      130ms ease;
+}
+
+.cloud-project-input::placeholder {
+  color:
+    #626979;
+}
+
+.cloud-project-input:hover {
+  border-color:
+    #464b5c;
+}
+
+.cloud-project-input:focus {
+  border-color:
+    #6d5dfc;
+
+  background:
+    #11141d;
+
+  box-shadow:
+    0
+    0
+    0
+    3px
+    rgba(
+      109,
+      93,
+      252,
+      0.18
+    );
+}
+
 .primary-button,
 .secondary-button {
   min-width: 120px;
@@ -2017,5 +2108,21 @@ body::-webkit-scrollbar-thumb:hover {
   .workspace-collaboration-role,
   .workspace-collaboration-participants {
     display: none;
+  }
+}
+
+
+@media (
+  max-width:
+    620px
+) {
+  .cloud-project-open {
+    flex-direction:
+      column;
+  }
+
+  .cloud-project-open .secondary-button {
+    width:
+      100%;
   }
 }
