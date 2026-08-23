@@ -342,6 +342,117 @@ button {
   gap: 10px;
 }
 
+.cloud-project-advanced {
+  width:
+    100%;
+
+  margin-top:
+    14px;
+}
+
+.cloud-project-advanced summary {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  width:
+    fit-content;
+
+  padding:
+    3px
+    0;
+
+  color:
+    #858c9c;
+
+  font-size:
+    12px;
+
+  cursor:
+    pointer;
+
+  user-select:
+    none;
+
+  list-style:
+    none;
+
+  outline:
+    none;
+
+  transition:
+    color
+    140ms
+    ease;
+}
+
+.cloud-project-advanced summary::-webkit-details-marker {
+  display:
+    none;
+}
+
+.cloud-project-advanced summary::before {
+  content:
+    '?';
+
+  display:
+    inline-block;
+
+  color:
+    #6f7687;
+
+  font-size:
+    15px;
+
+  line-height:
+    1;
+
+  transform:
+    rotate(0deg);
+
+  transition:
+    transform
+    140ms
+    ease,
+    color
+    140ms
+    ease;
+}
+
+.cloud-project-advanced[open] summary::before {
+  transform:
+    rotate(90deg);
+
+  color:
+    #9d90ff;
+}
+
+.cloud-project-advanced summary:hover {
+  color:
+    #c9c4ff;
+}
+
+.cloud-project-advanced summary:focus-visible {
+  color:
+    #c9c4ff;
+
+  text-decoration:
+    underline;
+
+  text-underline-offset:
+    3px;
+}
+
+.cloud-project-advanced[open] summary {
+  color:
+    #aeb4c2;
+}
+
 .cloud-project-open {
   display:
     flex;

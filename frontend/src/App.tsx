@@ -2464,49 +2464,55 @@ try {
               </button>
             </div>
 
-            <div className="cloud-project-open">
-              <input
-                className="cloud-project-input"
-                type="text"
-                value={
-                  cloudProjectId
-                }
-                placeholder="Cloud Project ID"
-                aria-label="Cloud Project ID"
-                onChange={(
-                  event,
-                ) => {
-                  setCloudProjectId(
-                    event.target.value,
-                  )
-                }}
-                onKeyDown={(
-                  event,
-                ) => {
-                  if (
-                    event.key ===
-                      'Enter'
-                  ) {
-                    void handleOpenCloudProject()
-                  }
-                }}
-              />
+            <details className="cloud-project-advanced">
+              <summary>
+                Advanced {'\u00B7'} Open by Project ID
+              </summary>
 
-              <button
-                className="secondary-button"
-                type="button"
-                disabled={
-                  cloudProjectId
-                    .trim()
-                    .length === 0
-                }
-                onClick={() => {
-                  void handleOpenCloudProject()
-                }}
-              >
-                Open Cloud
-              </button>
-            </div>
+              <div className="cloud-project-open">
+                <input
+                  className="cloud-project-input"
+                  type="text"
+                  value={
+                    cloudProjectId
+                  }
+                  placeholder="Cloud Project ID"
+                  aria-label="Cloud Project ID"
+                  onChange={(
+                    event,
+                  ) => {
+                    setCloudProjectId(
+                      event.target.value,
+                    )
+                  }}
+                  onKeyDown={(
+                    event,
+                  ) => {
+                    if (
+                      event.key ===
+                        'Enter'
+                    ) {
+                      void handleOpenCloudProject()
+                    }
+                  }}
+                />
+
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={
+                    cloudProjectId
+                      .trim()
+                      .length === 0
+                  }
+                  onClick={() => {
+                    void handleOpenCloudProject()
+                  }}
+                >
+                  Open Cloud
+                </button>
+              </div>
+            </details>
 
             <section className="cloud-projects-panel">
               <div className="cloud-projects-header">
