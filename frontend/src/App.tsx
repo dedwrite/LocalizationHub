@@ -569,6 +569,59 @@ function App() {
     )
   }
 
+  async function handleGoHome() {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
+    setEntries(
+      [],
+    )
+
+    setFileName(
+      '',
+    )
+
+    setProjectPath(
+      null,
+    )
+
+    setSelectedEntryId(
+      null,
+    )
+
+    setDocumentInfo(
+      null,
+    )
+
+    setSearchQuery(
+      '',
+    )
+
+    setEntryFilter(
+      'all',
+    )
+
+    setTokenProfile(
+      'generic',
+    )
+
+    setIsDirty(
+      false,
+    )
+
+    setToast(
+      null,
+    )
+  }
+
   async function handleOpenFile() {
     const canContinue =
       await confirmUnsavedChanges(
@@ -1544,6 +1597,17 @@ function App() {
           </div>
 
           <div className="topbar-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                void handleGoHome()
+              }}
+              title="Close Project ? Return Home"
+            >
+              Home
+            </button>
+
             <TokenProfileSelect
               value={
                 tokenProfile
