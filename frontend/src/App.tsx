@@ -2603,7 +2603,11 @@ try {
                   </div>
                 ) : (
                   <p className="cloud-projects-empty">
-                    No Cloud Projects yet.
+                    {
+                      cloudProjectsLoading
+                        ? 'Loading Cloud Projects...'
+                        : 'No Cloud Projects yet.'
+                    }
                   </p>
                 )
               }
