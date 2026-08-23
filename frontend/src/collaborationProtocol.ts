@@ -9,6 +9,9 @@ export type CollaborationParticipantPayload = {
   role:
     | 'host'
     | 'guest'
+
+  selectedEntryId?:
+    string
 }
 
 export type CollaborationProjectSnapshot = {
@@ -39,14 +42,6 @@ export type CollaborationTranslationUpdatePayload = {
   updatedAt: number
 }
 
-/*
- * Returned when a participant tries
- * to edit an older revision.
- *
- * The client can restore the latest
- * accepted translation instead of
- * overwriting somebody else's work.
- */
 export type CollaborationTranslationConflict = {
   entryId: string
 
@@ -59,6 +54,17 @@ export type CollaborationTranslationConflict = {
   participantId: string
 
   updatedAt: number
+}
+
+/*
+ * A participant tells the relay which
+ * entry they are currently viewing.
+ *
+ * null means no entry is selected.
+ */
+export type CollaborationEntrySelection = {
+  entryId:
+    string | null
 }
 
 export type CollaborationClientMessage =
@@ -106,6 +112,13 @@ export type CollaborationClientMessage =
 
       update:
         CollaborationTranslationUpdate
+    }
+  | {
+      type:
+        'entry-selection'
+
+      selection:
+        CollaborationEntrySelection
     }
   | {
       type:
@@ -181,6 +194,16 @@ export type CollaborationServerMessage =
 
       conflict:
         CollaborationTranslationConflict
+    }
+  | {
+      type:
+        'entry-selection'
+
+      participantId:
+        string
+
+      entryId:
+        string | null
     }
   | {
       type:

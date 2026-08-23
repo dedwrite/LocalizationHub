@@ -2,6 +2,7 @@ import { parse as losslessParse } from 'lossless-json'
 import { stringify as losslessStringify } from 'lossless-json'
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from 'react'
@@ -665,6 +666,40 @@ function App() {
             translatableCount
           ) * 100,
         )
+
+  useEffect(
+    () => {
+      if (
+        collaboration.status !==
+          'connected' ||
+        !collaboration.session
+      ) {
+        return
+      }
+
+      void collaboration
+        .sendEntrySelection({
+          entryId:
+            selectedEntryId,
+        })
+        .catch(
+          (error) => {
+            console.error(
+              'Failed to sync entry selection.',
+              error,
+            )
+          },
+        )
+    },
+    [
+      selectedEntryId,
+      collaboration.status,
+      collaboration.session
+        ?.sessionId,
+      collaboration
+        .sendEntrySelection,
+    ],
+  )
 
   const selectedEntry =
     entries.find(
@@ -2658,6 +2693,24 @@ function App() {
                           isSelected={
                             entry.id ===
                             selectedEntryId
+                          }
+
+                          presenceNames={
+                            collaboration
+                              .session
+                              ?.participants
+                              .filter(
+                                (participant) =>
+                                  participant
+                                    .selectedEntryId ===
+                                  entry.id,
+                              )
+                              .map(
+                                (participant) =>
+                                  participant
+                                    .displayName,
+                              ) ??
+                            []
                           }
 
                           onSelect={

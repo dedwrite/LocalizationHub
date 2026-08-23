@@ -206,6 +206,10 @@ function getParticipantPayload(
 
     role:
       state.role,
+
+    selectedEntryId:
+      state.selectedEntryId ??
+      undefined,
   }
 }
 
@@ -290,6 +294,9 @@ function clearClientSession(
     null
 
   state.role =
+    null
+
+  state.selectedEntryId =
     null
 }
 
@@ -965,6 +972,67 @@ function handleTranslationUpdate(
   )
 }
 
+function handleEntrySelection(
+  socket,
+  message,
+) {
+  const context =
+    requireSession(
+      socket,
+    )
+
+  if (!context) {
+    return
+  }
+
+  const {
+    state,
+    session,
+  } =
+    context
+
+  const selection =
+    message.selection
+
+  if (
+    !selection ||
+    typeof selection !==
+      'object' ||
+    (
+      selection.entryId !==
+        null &&
+      typeof selection.entryId !==
+        'string'
+    )
+  ) {
+    sendError(
+      socket,
+      'invalid-message',
+      'Invalid entry selection.',
+    )
+
+    return
+  }
+
+  state.selectedEntryId =
+    selection.entryId
+
+  broadcast(
+    session,
+    {
+      type:
+        'entry-selection',
+
+      participantId:
+        state.participantId,
+
+      entryId:
+        state.selectedEntryId,
+    },
+  )
+}
+
+
 function handleMessage(
   socket,
   rawData,
@@ -1050,6 +1118,14 @@ function handleMessage(
       )
 
       break
+    case 'entry-selection':
+      handleEntrySelection(
+        socket,
+        message,
+      )
+
+      break
+
 
     case 'ping':
       send(
@@ -1099,6 +1175,9 @@ server.on(
           null,
 
         sessionId:
+          null,
+
+        selectedEntryId:
           null,
       },
     )

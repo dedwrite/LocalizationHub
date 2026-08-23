@@ -24,6 +24,9 @@ type EntryListItemProps = {
   isSelected:
     boolean
 
+  presenceNames?:
+    string[]
+
   onSelect:
     (
       id: string,
@@ -36,6 +39,7 @@ function EntryListItem({
   hasError,
   hasWarning,
   isSelected,
+  presenceNames = [],
   onSelect,
 }: EntryListItemProps) {
   const isTranslated =
@@ -76,6 +80,30 @@ function EntryListItem({
       `Untranslated · ${entryTitle}`
   }
 
+  if (
+    presenceNames.length > 0
+  ) {
+    title +=
+      ` · Viewing: ${
+        presenceNames.join(
+          ', ',
+        )
+      }`
+  }
+
+  const visiblePresence =
+    presenceNames.slice(
+      0,
+      3,
+    )
+
+  const hiddenPresenceCount =
+    Math.max(
+      0,
+      presenceNames.length -
+        visiblePresence.length,
+    )
+
   return (
     <button
       type="button"
@@ -115,6 +143,75 @@ function EntryListItem({
           entry.key
         }
       </span>
+
+      {
+        presenceNames.length >
+          0 && (
+          <span
+            className="entry-presence"
+            aria-label={
+              `Viewing: ${
+                presenceNames.join(
+                  ', ',
+                )
+              }`
+            }
+          >
+            {
+              visiblePresence.map(
+                (
+                  displayName,
+                  index,
+                ) => (
+                  <span
+                    className="entry-presence-avatar"
+                    key={
+                      `${displayName}-${index}`
+                    }
+                    title={
+                      displayName
+                    }
+                  >
+                    {
+                      displayName
+                        .trim()
+                        .slice(
+                          0,
+                          1,
+                        )
+                        .toUpperCase() ||
+                      '?'
+                    }
+                  </span>
+                ),
+              )
+            }
+
+            {
+              hiddenPresenceCount >
+                0 && (
+                <span
+                  className="entry-presence-more"
+                  title={
+                    presenceNames
+                      .slice(
+                        3,
+                      )
+                      .join(
+                        ', ',
+                      )
+                  }
+                >
+                  +
+                  {
+                    hiddenPresenceCount
+                  }
+                </span>
+              )
+            }
+          </span>
+        )
+      }
     </button>
   )
 }

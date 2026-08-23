@@ -205,11 +205,6 @@ export function useCollaborationSession(
               null,
             )
 
-            /*
-             * Guest successfully joined.
-             * Ask the host for the current
-             * project automatically.
-             */
             window.setTimeout(
               () => {
                 void requestProjectRef
@@ -301,6 +296,40 @@ export function useCollaborationSession(
             break
           }
 
+          case 'entry-selection': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants:
+                    current.participants.map(
+                      (
+                        participant:
+                          CollaborationParticipant,
+                      ) =>
+                        participant.id ===
+                        message.participantId
+                          ? {
+                              ...participant,
+
+                              selectedEntryId:
+                                message.entryId ??
+                                undefined,
+                            }
+                          : participant,
+                    ),
+                }
+              },
+            )
+
+            break
+          }
+
           case 'project-requested': {
             void onProjectRequestedRef
               .current?.(
@@ -383,6 +412,7 @@ export function useCollaborationSession(
     requestProject,
     sendProjectSnapshot,
     sendTranslationUpdate,
+    sendEntrySelection,
   } =
     useCollaborationSocket({
       onMessage:
@@ -555,6 +585,7 @@ export function useCollaborationSession(
     requestProject,
     sendProjectSnapshot,
     sendTranslationUpdate,
+    sendEntrySelection,
   }
 }
 

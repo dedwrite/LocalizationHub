@@ -8,6 +8,7 @@ import {
 import {
   COLLABORATION_PROTOCOL_VERSION,
   type CollaborationClientMessage,
+  type CollaborationEntrySelection,
   type CollaborationProjectSnapshot,
   type CollaborationServerMessage,
   type CollaborationTranslationUpdate,
@@ -19,9 +20,6 @@ import {
  * A different server can be supplied with:
  *
  * VITE_COLLABORATION_SERVER_URL
- *
- * Example:
- * ws://192.168.1.119:8787
  *
  * Production will eventually use
  * a public secure wss:// relay.
@@ -337,8 +335,6 @@ export function useCollaborationSocket(
   /*
    * Host sends a serialized project
    * snapshot through the relay.
-   *
-   * The relay forwards it unchanged.
    */
   const sendProjectSnapshot =
     useCallback(
@@ -359,12 +355,8 @@ export function useCollaborationSocket(
     )
 
   /*
-   * Send one translation edit to
-   * everyone in the collaboration
-   * session through the relay.
-   *
-   * baseRevision will be used for
-   * conflict protection later.
+   * Send one translation edit through
+   * the collaboration relay.
    */
   const sendTranslationUpdate =
     useCallback(
@@ -377,6 +369,28 @@ export function useCollaborationSocket(
             'translation-update',
 
           update,
+        })
+      },
+      [
+        send,
+      ],
+    )
+
+  /*
+   * Tell the relay which entry this
+   * participant is currently viewing.
+   */
+  const sendEntrySelection =
+    useCallback(
+      async (
+        selection:
+          CollaborationEntrySelection,
+      ) => {
+        await send({
+          type:
+            'entry-selection',
+
+          selection,
         })
       },
       [
@@ -441,5 +455,6 @@ export function useCollaborationSocket(
     requestProject,
     sendProjectSnapshot,
     sendTranslationUpdate,
+    sendEntrySelection,
   }
 }
