@@ -1964,3 +1964,58 @@ body::-webkit-scrollbar-thumb:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+/* Workspace collaboration status */
+
+.workspace-collaboration-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted, #8f96a8);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.workspace-collaboration-status.connected {
+  border-color: rgba(99, 102, 241, 0.24);
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.workspace-collaboration-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #64748b;
+}
+
+.workspace-collaboration-status.connected
+.workspace-collaboration-dot {
+  background: #34d399;
+  box-shadow:
+    0 0 0 3px rgba(52, 211, 153, 0.08);
+}
+
+.workspace-collaboration-session {
+  color: var(--text-primary, #e5e7eb);
+  font-weight: 700;
+}
+
+.workspace-collaboration-role,
+.workspace-collaboration-participants {
+  padding-left: 7px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 1100px) {
+  .workspace-collaboration-role,
+  .workspace-collaboration-participants {
+    display: none;
+  }
+}

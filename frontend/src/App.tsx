@@ -103,6 +103,7 @@ import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
 import WelcomeDropZone from './WelcomeDropZone'
 import CollaborationPanel from './CollaborationPanel'
+import WorkspaceCollaborationStatus from './WorkspaceCollaborationStatus'
 import { useCollaborationSession, type CollaborationController } from './useCollaborationSession'
 import LastSessionCard from './LastSessionCard'
 import MachineTranslationPanel from './MachineTranslationPanel'
@@ -2367,6 +2368,28 @@ function App() {
             >
               Home
             </button>
+
+            {
+              collaboration.session && (
+                <WorkspaceCollaborationStatus
+                  session={
+                    collaboration.session
+                  }
+
+                  status={
+                    collaboration.status
+                  }
+
+                  entries={
+                    entries
+                  }
+
+                  onLeave={
+                    collaboration.leaveSession
+                  }
+                />
+              )
+            }
 
             <TokenProfileSelect
               value={

@@ -1,0 +1,217 @@
+.workspace-collaboration {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.workspace-collaboration-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted, #8f96a8);
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.workspace-collaboration-status:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.workspace-collaboration-status.connected {
+  border-color: rgba(99, 102, 241, 0.24);
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.workspace-collaboration-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #64748b;
+}
+
+.workspace-collaboration-status.connected
+.workspace-collaboration-dot {
+  background: #34d399;
+  box-shadow:
+    0 0 0 3px rgba(52, 211, 153, 0.08);
+}
+
+.workspace-collaboration-session {
+  color: var(--text-primary, #e5e7eb);
+  font-weight: 700;
+}
+
+.workspace-collaboration-role,
+.workspace-collaboration-participants {
+  padding-left: 7px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workspace-collaboration-popover {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(18, 20, 27, 0.98);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(16px);
+}
+
+.workspace-collaboration-popover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.workspace-collaboration-popover-header > div {
+  min-width: 0;
+}
+
+.workspace-collaboration-popover-header
+> div
+> span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-muted, #8f96a8);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.workspace-collaboration-popover-header strong {
+  color: var(--text-primary, #e5e7eb);
+  font-size: 14px;
+}
+
+.workspace-collaboration-connection {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.12);
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.workspace-collaboration-connection.connected {
+  background: rgba(52, 211, 153, 0.1);
+  color: #6ee7b7;
+}
+
+.workspace-collaboration-people {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 280px;
+  margin-top: 12px;
+  overflow-y: auto;
+}
+
+.workspace-collaboration-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.workspace-collaboration-person-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.14);
+  color: #c7d2fe;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.workspace-collaboration-person-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.workspace-collaboration-person-info > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.workspace-collaboration-person-info strong {
+  overflow: hidden;
+  color: var(--text-primary, #e5e7eb);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-collaboration-person-info
+> div
+> span {
+  flex: 0 0 auto;
+  color: var(--text-muted, #8f96a8);
+  font-size: 10px;
+}
+
+.workspace-collaboration-person-info small {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-muted, #8f96a8);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-collaboration-leave {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.24);
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.06);
+  color: #fca5a5;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.workspace-collaboration-leave:hover {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 1100px) {
+  .workspace-collaboration-role,
+  .workspace-collaboration-participants {
+    display: none;
+  }
+
+  .workspace-collaboration-popover {
+    width: 290px;
+  }
+}
