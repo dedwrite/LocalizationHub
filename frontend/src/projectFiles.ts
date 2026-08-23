@@ -3,54 +3,8 @@ import {
 } from '@tauri-apps/plugin-fs'
 
 import type {
-  TokenProfileId,
+  LocalizationProjectV2,
 } from '@localizationhub/core'
-
-import type {
-  LocalizationFileFormat,
-  LocalizationLanguageInfo,
-  ParsedLocalizationEntry,
-  RecordArraySchema,
-} from '@localizationhub/core'
-
-export type StoredDocumentInfo = {
-  parser: 'json'
-
-  format:
-    LocalizationFileFormat
-
-  sourceText:
-    string
-
-  schema?:
-    RecordArraySchema
-
-  language?:
-    LocalizationLanguageInfo
-}
-
-export type LocalizationProjectV2 = {
-  format:
-    'LocalizationHubProject'
-
-  version:
-    2
-
-  sourceFileName:
-    string
-
-  selectedEntryId:
-    string | null
-
-  tokenProfile:
-    TokenProfileId
-
-  document:
-    StoredDocumentInfo
-
-  entries:
-    ParsedLocalizationEntry[]
-}
 
 export async function writeLocalizationProject(
   path: string,

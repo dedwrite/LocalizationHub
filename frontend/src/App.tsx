@@ -38,6 +38,11 @@ import {
   analyzeExportValidation,
 } from '@localizationhub/core'
 
+import type {
+  LocalizationProjectV2,
+  StoredDocumentInfo,
+} from '@localizationhub/core'
+
 import {
   useProtectedEntryIds,
 } from './useProtectedEntryIds'
@@ -53,8 +58,6 @@ import {
 
 import {
   writeLocalizationProject,
-  type LocalizationProjectV2,
-  type StoredDocumentInfo,
 } from './projectFiles'
 
 import {
