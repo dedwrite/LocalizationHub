@@ -22,37 +22,110 @@ type LanguageOption = {
 }
 
 const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { value: 'ar', label: 'Arabic' },
-  { value: 'en', label: 'English' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'zh-CN', label: 'Chinese (Simplified)' },
-  { value: 'zh-TW', label: 'Chinese (Traditional)' },
-  { value: 'fr', label: 'French' },
-  { value: 'de', label: 'German' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'it', label: 'Italian' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'ru', label: 'Russian' },
-  { value: 'uk', label: 'Ukrainian' },
-  { value: 'pl', label: 'Polish' },
-  { value: 'tr', label: 'Turkish' },
-  { value: 'nl', label: 'Dutch' },
-  { value: 'sv', label: 'Swedish' },
-  { value: 'no', label: 'Norwegian' },
-  { value: 'da', label: 'Danish' },
-  { value: 'fi', label: 'Finnish' },
-  { value: 'cs', label: 'Czech' },
-  { value: 'id', label: 'Indonesian' },
-  { value: 'th', label: 'Thai' },
-  { value: 'vi', label: 'Vietnamese' },
+  {
+    value: 'ar',
+    label: 'Arabic',
+  },
+  {
+    value: 'en',
+    label: 'English',
+  },
+  {
+    value: 'ja',
+    label: 'Japanese',
+  },
+  {
+    value: 'ko',
+    label: 'Korean',
+  },
+  {
+    value: 'zh-CN',
+    label: 'Chinese (Simplified)',
+  },
+  {
+    value: 'zh-TW',
+    label: 'Chinese (Traditional)',
+  },
+  {
+    value: 'fr',
+    label: 'French',
+  },
+  {
+    value: 'de',
+    label: 'German',
+  },
+  {
+    value: 'es',
+    label: 'Spanish',
+  },
+  {
+    value: 'it',
+    label: 'Italian',
+  },
+  {
+    value: 'pt',
+    label: 'Portuguese',
+  },
+  {
+    value: 'ru',
+    label: 'Russian',
+  },
+  {
+    value: 'uk',
+    label: 'Ukrainian',
+  },
+  {
+    value: 'pl',
+    label: 'Polish',
+  },
+  {
+    value: 'tr',
+    label: 'Turkish',
+  },
+  {
+    value: 'nl',
+    label: 'Dutch',
+  },
+  {
+    value: 'sv',
+    label: 'Swedish',
+  },
+  {
+    value: 'no',
+    label: 'Norwegian',
+  },
+  {
+    value: 'da',
+    label: 'Danish',
+  },
+  {
+    value: 'fi',
+    label: 'Finnish',
+  },
+  {
+    value: 'cs',
+    label: 'Czech',
+  },
+  {
+    value: 'id',
+    label: 'Indonesian',
+  },
+  {
+    value: 'th',
+    label: 'Thai',
+  },
+  {
+    value: 'vi',
+    label: 'Vietnamese',
+  },
 ]
 
 function normalizeInitialLanguage(
   locale: string | undefined,
   fallback: string,
 ) {
-  const trimmed = locale?.trim()
+  const trimmed =
+    locale?.trim()
 
   if (!trimmed) {
     return fallback
@@ -68,19 +141,21 @@ function MachineTranslationPanel({
   const [
     isOpen,
     setIsOpen,
-  ] = useState(false)
+  ] =
+    useState(false)
 
   const [
     provider,
     setProvider,
-  ] = useState<TranslationProviderId>(
-    'gemini',
-  )
+  ] =
+    useState<TranslationProviderId>(
+      'gemini',
+    )
 
   /*
-   * API keys live in React memory only.
+   * API keys live in memory only.
    *
-   * They are intentionally never written to:
+   * Never save them to:
    * - localStorage
    * - project files
    * - config files
@@ -89,90 +164,100 @@ function MachineTranslationPanel({
   const [
     apiKey,
     setApiKey,
-  ] = useState('')
+  ] =
+    useState('')
 
   const [
     inputText,
     setInputText,
-  ] = useState('')
+  ] =
+    useState('')
 
   const [
     result,
     setResult,
-  ] = useState('')
+  ] =
+    useState('')
 
   const [
     detectedLanguage,
     setDetectedLanguage,
-  ] = useState<string | null>(
-    null,
-  )
+  ] =
+    useState<string | null>(
+      null,
+    )
 
   const [
     errorMessage,
     setErrorMessage,
-  ] = useState<string | null>(
-    null,
-  )
+  ] =
+    useState<string | null>(
+      null,
+    )
 
   const [
     isTranslating,
     setIsTranslating,
-  ] = useState(false)
+  ] =
+    useState(false)
 
   /*
-   * Project languages are only defaults.
+   * Project languages are defaults only.
    *
-   * The user may override them inside
-   * this reference tool without changing
-   * the project itself.
+   * Changing these values inside the
+   * MT panel never modifies the project.
    */
   const [
     sourceLanguage,
     setSourceLanguage,
-  ] = useState(
-    normalizeInitialLanguage(
-      sourceLocale,
-      'auto',
-    ),
-  )
-
-  const [
-    targetLanguage,
-    setTargetLanguage,
-  ] = useState(
-    normalizeInitialLanguage(
-      targetLocale,
-      'ar',
-    ),
-  )
-
-  /*
-   * If a different project is opened,
-   * update the MT defaults to match it.
-   */
-  useEffect(() => {
-    setSourceLanguage(
+  ] =
+    useState(
       normalizeInitialLanguage(
         sourceLocale,
         'auto',
       ),
     )
 
-    setTargetLanguage(
+  const [
+    targetLanguage,
+    setTargetLanguage,
+  ] =
+    useState(
       normalizeInitialLanguage(
         targetLocale,
         'ar',
       ),
     )
 
-    setResult('')
-    setDetectedLanguage(null)
-    setErrorMessage(null)
-  }, [
-    sourceLocale,
-    targetLocale,
-  ])
+  /*
+   * When another project is opened,
+   * update the MT defaults.
+   */
+  useEffect(
+    () => {
+      setSourceLanguage(
+        normalizeInitialLanguage(
+          sourceLocale,
+          'auto',
+        ),
+      )
+
+      setTargetLanguage(
+        normalizeInitialLanguage(
+          targetLocale,
+          'ar',
+        ),
+      )
+
+      setResult('')
+      setDetectedLanguage(null)
+      setErrorMessage(null)
+    },
+    [
+      sourceLocale,
+      targetLocale,
+    ],
+  )
 
   const providerLabel =
     provider === 'gemini'
@@ -221,8 +306,8 @@ function MachineTranslationPanel({
     )
 
     /*
-     * Never carry one provider's key
-     * into another provider.
+     * Never carry one provider's
+     * API key into another provider.
      */
     setApiKey('')
 
@@ -230,7 +315,8 @@ function MachineTranslationPanel({
   }
 
   function handleSourceLanguageChange(
-    nextLanguage: string,
+    nextLanguage:
+      string,
   ) {
     setSourceLanguage(
       nextLanguage,
@@ -240,10 +326,37 @@ function MachineTranslationPanel({
   }
 
   function handleTargetLanguageChange(
-    nextLanguage: string,
+    nextLanguage:
+      string,
   ) {
     setTargetLanguage(
       nextLanguage,
+    )
+
+    clearResult()
+  }
+
+  function handleSwapLanguages() {
+    if (
+      sourceLanguage
+        .toLowerCase() ===
+      'auto'
+    ) {
+      return
+    }
+
+    const previousSource =
+      sourceLanguage
+
+    const previousTarget =
+      targetLanguage
+
+    setSourceLanguage(
+      previousTarget,
+    )
+
+    setTargetLanguage(
+      previousSource,
     )
 
     clearResult()
@@ -328,7 +441,8 @@ function MachineTranslationPanel({
       )
 
       setDetectedLanguage(
-        response.detectedSourceLanguage ??
+        response
+          .detectedSourceLanguage ??
           null,
       )
     } catch (
@@ -353,7 +467,8 @@ function MachineTranslationPanel({
   }
 
   function renderLanguageOptions(
-    currentValue: string,
+    currentValue:
+      string,
   ) {
     const known =
       LANGUAGE_OPTIONS.some(
@@ -366,7 +481,8 @@ function MachineTranslationPanel({
       <>
         {
           !known &&
-          currentValue !== 'auto' && (
+          currentValue !==
+            'auto' && (
             <option
               value={
                 currentValue
@@ -487,9 +603,9 @@ function MachineTranslationPanel({
                   onChange={
                     (event) =>
                       handleProviderChange(
-                        event.target
-                          .value as
-                          TranslationProviderId,
+                        event
+                          .target
+                          .value as TranslationProviderId,
                       )
                   }
                 >
@@ -519,12 +635,15 @@ function MachineTranslationPanel({
                   }
                   disabled={
                     isTranslating ||
-                    provider === 'deepl'
+                    provider ===
+                      'deepl'
                   }
                   onChange={
                     (event) => {
                       setApiKey(
-                        event.target.value,
+                        event
+                          .target
+                          .value,
                       )
 
                       setErrorMessage(
@@ -559,7 +678,9 @@ function MachineTranslationPanel({
                   onChange={
                     (event) =>
                       handleSourceLanguageChange(
-                        event.target.value,
+                        event
+                          .target
+                          .value,
                       )
                   }
                 >
@@ -575,12 +696,29 @@ function MachineTranslationPanel({
                 </select>
               </label>
 
-              <span
-                className="machine-translation-arrow"
-                aria-hidden="true"
+              <button
+                type="button"
+                className="machine-translation-swap-button"
+                disabled={
+                  isTranslating ||
+                  sourceLanguage
+                    .toLowerCase() ===
+                    'auto'
+                }
+                onClick={
+                  handleSwapLanguages
+                }
+                title={
+                  sourceLanguage
+                    .toLowerCase() ===
+                  'auto'
+                    ? 'Choose a source language before swapping'
+                    : 'Swap languages'
+                }
+                aria-label="Swap source and target languages"
               >
-                →
-              </span>
+                ⇄
+              </button>
 
               <label>
                 <span>
@@ -597,7 +735,9 @@ function MachineTranslationPanel({
                   onChange={
                     (event) =>
                       handleTargetLanguageChange(
-                        event.target.value,
+                        event
+                          .target
+                          .value,
                       )
                   }
                 >
@@ -639,7 +779,9 @@ function MachineTranslationPanel({
                 onChange={
                   (event) => {
                     setInputText(
-                      event.target.value,
+                      event
+                        .target
+                        .value,
                     )
 
                     setErrorMessage(
@@ -658,9 +800,11 @@ function MachineTranslationPanel({
             <div className="machine-translation-actions">
               <span>
                 {
-                  provider === 'gemini'
+                  provider ===
+                  'gemini'
                     ? 'Sent to Gemini only when you press Translate.'
-                    : provider === 'google'
+                    : provider ===
+                        'google'
                       ? 'Sent to Google Cloud only when you press Translate.'
                       : 'DeepL support will be connected next.'
                 }
@@ -675,11 +819,14 @@ function MachineTranslationPanel({
                   void handleTranslate()
                 }}
                 title={
-                  provider === 'deepl'
+                  provider ===
+                  'deepl'
                     ? 'DeepL support is not connected yet'
-                    : apiKey.trim() === ''
+                    : apiKey.trim() ===
+                        ''
                       ? 'Enter an API key'
-                      : inputText.trim() === ''
+                      : inputText.trim() ===
+                          ''
                         ? 'Paste some text first'
                         : `Translate with ${providerLabel}`
                 }

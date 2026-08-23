@@ -948,3 +948,70 @@ span:not(.machine-translation-toggle-icon) {
   text-shadow:
     0 0 10px rgba(124, 92, 255, 0.45);
 }
+
+/* =========================================================
+   Machine Translation - Swap Languages
+   ========================================================= */
+
+.machine-translation-swap-button {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid rgba(124, 92, 255, 0.32);
+  border-radius: 9px;
+
+  background: rgba(124, 92, 255, 0.08);
+  color: #927fff;
+
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease;
+}
+
+.machine-translation-swap-button:hover:not(:disabled) {
+  transform: rotate(180deg);
+
+  border-color: rgba(139, 108, 255, 0.82);
+  background: rgba(124, 92, 255, 0.15);
+  color: #b4a9ff;
+
+  box-shadow:
+    0 0 16px rgba(124, 92, 255, 0.22);
+}
+
+.machine-translation-swap-button:active:not(:disabled) {
+  transform: rotate(180deg) scale(0.92);
+}
+
+.machine-translation-swap-button:focus-visible {
+  outline: none;
+
+  box-shadow:
+    0 0 0 3px rgba(124, 92, 255, 0.18),
+    0 0 18px rgba(124, 92, 255, 0.16);
+}
+
+.machine-translation-swap-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: rgba(255, 255, 255, 0.28);
+}
