@@ -29,6 +29,9 @@ import {
   EmailDeliveryError,
   sendVerificationEmail,
 } from './email-delivery.mjs'
+import {
+  EMAIL_VERIFICATION_PAGE,
+} from './email-verification-page.mjs'
 
 import { randomUUID, randomInt } from 'node:crypto'
 
@@ -1957,6 +1960,45 @@ const httpServer =
             message:
               'Authentication API is disabled.',
           },
+        )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'GET' &&
+        /^\/verify-email(?:\?|$)/.test(
+          request.url ?? ''
+        )
+      ) {
+        response.writeHead(
+          200,
+          {
+            'Content-Type':
+              'text/html; charset=utf-8',
+
+            'Content-Length':
+              Buffer.byteLength(
+                EMAIL_VERIFICATION_PAGE,
+              ),
+
+            'Cache-Control':
+              'no-store',
+
+            'Referrer-Policy':
+              'no-referrer',
+
+            'X-Content-Type-Options':
+              'nosniff',
+
+            'Content-Security-Policy':
+              "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+          },
+        )
+
+        response.end(
+          EMAIL_VERIFICATION_PAGE,
         )
 
         return
