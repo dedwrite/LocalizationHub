@@ -1,5 +1,5 @@
 export const COLLABORATION_PROTOCOL_VERSION =
-  1
+  2
 
 export type CollaborationParticipantPayload = {
   id: string
@@ -103,6 +103,9 @@ export type CollaborationClientMessage =
       sessionId:
         string
 
+      inviteToken:
+        string
+
       displayName:
         string
     }
@@ -168,6 +171,9 @@ export type CollaborationServerMessage =
         string
 
       reconnectToken:
+        string
+
+      inviteToken:
         string
     }
   | {

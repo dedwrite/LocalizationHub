@@ -947,6 +947,9 @@ export function useCollaborationSocket(
         sessionId:
           string,
 
+        inviteToken:
+          string,
+
         displayName:
           string,
       ) => {
@@ -969,6 +972,8 @@ export function useCollaborationSocket(
             COLLABORATION_PROTOCOL_VERSION,
 
           sessionId,
+
+          inviteToken,
 
           displayName,
         })

@@ -44,6 +44,12 @@ function CollaborationPanel({
   ] =
     useState('')
 
+  const [
+    inviteToken,
+    setInviteToken,
+  ] =
+    useState('')
+
   const {
     session,
 
@@ -68,6 +74,11 @@ function CollaborationPanel({
       .trim()
       .toUpperCase()
 
+  const trimmedInviteToken =
+    inviteToken
+      .trim()
+      .toUpperCase()
+
   const canHost =
     trimmedName !== '' &&
     !isSubmitting
@@ -75,6 +86,7 @@ function CollaborationPanel({
   const canJoin =
     trimmedName !== '' &&
     trimmedSessionId !== '' &&
+    trimmedInviteToken !== '' &&
     !isSubmitting
 
   async function handleHost() {
@@ -97,6 +109,9 @@ function CollaborationPanel({
       sessionId:
         trimmedSessionId,
 
+      inviteToken:
+        trimmedInviteToken,
+
       displayName:
         trimmedName,
     })
@@ -115,6 +130,39 @@ function CollaborationPanel({
       status ===
       'connected'
 
+    const statusHeading =
+      status === 'connected'
+        ? 'Session Connected'
+        : status === 'reconnecting'
+          ? 'Session Reconnecting?'
+          : status === 'connecting'
+            ? 'Session Connecting?'
+            : status === 'error'
+              ? 'Connection Error'
+              : 'Session Disconnected'
+
+    const statusDescription =
+      status === 'connected'
+        ? 'Connected to the LocalizationHub collaboration relay.'
+        : status === 'reconnecting'
+          ? 'Connection lost. Reconnecting to the collaboration relay?'
+          : status === 'connecting'
+            ? 'Connecting to the LocalizationHub collaboration relay?'
+            : status === 'error'
+              ? 'Could not connect to the collaboration relay.'
+              : 'The collaboration connection is currently unavailable.'
+
+    const statusLabel =
+      status === 'connected'
+        ? 'Connected'
+        : status === 'reconnecting'
+          ? 'Reconnecting?'
+          : status === 'connecting'
+            ? 'Connecting?'
+            : status === 'error'
+              ? 'Connection Error'
+              : 'Disconnected'
+
     return (
       <section className="collaboration-panel">
         <div className="collaboration-panel-header">
@@ -124,19 +172,11 @@ function CollaborationPanel({
             </span>
 
             <h2>
-              {
-                isConnected
-                  ? 'Session Connected'
-                  : 'Session Disconnected'
-              }
+              {statusHeading}
             </h2>
 
             <p>
-              {
-                isConnected
-                  ? 'Connected to the LocalizationHub collaboration relay.'
-                  : 'The collaboration connection is currently unavailable.'
-              }
+              {statusDescription}
             </p>
           </div>
 
@@ -159,6 +199,21 @@ function CollaborationPanel({
               {session.sessionId}
             </strong>
           </div>
+
+          {
+            isHost &&
+            session.inviteToken && (
+              <div className="collaboration-session-row">
+                <span>
+                  Invite Code
+                </span>
+
+                <strong>
+                  {session.inviteToken}
+                </strong>
+              </div>
+            )
+          }
 
           <div className="collaboration-session-row">
             <span>
@@ -266,9 +321,7 @@ function CollaborationPanel({
           <div>
             <strong>
               {
-                isConnected
-                  ? 'Connected'
-                  : 'Disconnected'
+                statusLabel
               }
             </strong>
 
@@ -408,33 +461,63 @@ function CollaborationPanel({
 
         {
           mode === 'join' && (
-            <label>
-              <span>
-                Session ID
-              </span>
+            <>
+              <label>
+                <span>
+                  Session ID
+                </span>
 
-              <input
-                type="text"
-                value={
-                  sessionId
-                }
-                disabled={
-                  isSubmitting
-                }
-                onChange={
-                  (event) => {
-                    setSessionId(
-                      event.target.value,
-                    )
+                <input
+                  type="text"
+                  value={
+                    sessionId
                   }
-                }
-                placeholder="LH-ABC123"
-                autoComplete="off"
-                spellCheck={
-                  false
-                }
-              />
-            </label>
+                  disabled={
+                    isSubmitting
+                  }
+                  onChange={
+                    (event) => {
+                      setSessionId(
+                        event.target.value,
+                      )
+                    }
+                  }
+                  placeholder="LH-ABC123"
+                  autoComplete="off"
+                  spellCheck={
+                    false
+                  }
+                />
+              </label>
+
+              <label>
+                <span>
+                  Invite Code
+                </span>
+
+                <input
+                  type="text"
+                  value={
+                    inviteToken
+                  }
+                  disabled={
+                    isSubmitting
+                  }
+                  onChange={
+                    (event) => {
+                      setInviteToken(
+                        event.target.value,
+                      )
+                    }
+                  }
+                  placeholder="ABCD-EFGH-JKLM-NPQR"
+                  autoComplete="off"
+                  spellCheck={
+                    false
+                  }
+                />
+              </label>
+            </>
           )
         }
 
@@ -448,7 +531,8 @@ function CollaborationPanel({
               <span>
                 The relay server will
                 generate a session ID
-                when you connect.
+                and invite code when
+                you connect.
               </span>
             </div>
           )

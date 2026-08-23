@@ -1,6 +1,4 @@
-import {
-  randomUUID,
-} from 'node:crypto'
+import { randomUUID, randomInt } from 'node:crypto'
 
 import {
   createServer,
@@ -12,7 +10,7 @@ import {
 } from 'ws'
 
 const PROTOCOL_VERSION =
-  1
+  2
 
 const HOST =
   process.env.HOST ??
@@ -120,6 +118,43 @@ function createSessionId() {
 
   throw new Error(
     'Could not allocate session ID.',
+  )
+}
+
+function createInviteToken() {
+  const groups = []
+
+  for (
+    let groupIndex = 0;
+    groupIndex < 4;
+    groupIndex += 1
+  ) {
+    let group = ''
+
+    for (
+      let characterIndex = 0;
+      characterIndex < 4;
+      characterIndex += 1
+    ) {
+      const randomIndex =
+        randomInt(
+          0,
+          SESSION_ID_ALPHABET.length,
+        )
+
+      group +=
+        SESSION_ID_ALPHABET[
+          randomIndex
+        ]
+    }
+
+    groups.push(
+      group,
+    )
+  }
+
+  return groups.join(
+    '-',
   )
 }
 
@@ -701,6 +736,9 @@ function handleHostSession(
   const sessionId =
     createSessionId()
 
+  const inviteToken =
+    createInviteToken()
+
   const state =
     getClientState(
       socket,
@@ -726,6 +764,8 @@ function handleHostSession(
 
   const session = {
     sessionId,
+
+    inviteToken,
 
     hostSocket:
       socket,
@@ -766,6 +806,8 @@ function handleHostSession(
 
       reconnectToken:
         state.reconnectToken,
+
+      inviteToken,
     },
   )
 
@@ -830,11 +872,24 @@ function handleJoinSession(
       sessionId,
     )
 
-  if (!session) {
+  const inviteToken =
+    typeof message.inviteToken ===
+      'string'
+      ? message.inviteToken
+          .trim()
+          .toUpperCase()
+      : ''
+
+  if (
+    !session ||
+    !inviteToken ||
+    inviteToken !==
+      session.inviteToken
+  ) {
     sendError(
       socket,
       'session-not-found',
-      'Collaboration session was not found.',
+      'Session ID or invite code is invalid.',
     )
 
     return

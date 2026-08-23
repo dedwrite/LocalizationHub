@@ -18,6 +18,7 @@ export type CollaborationParticipant = {
 
 export type CollaborationSession = {
   sessionId: string
+  inviteToken?: string
   role: CollaborationRole
   displayName: string
   connectionStatus: CollaborationConnectionStatus
@@ -26,6 +27,7 @@ export type CollaborationSession = {
 
 export type JoinProjectRequest = {
   sessionId: string
+  inviteToken: string
   displayName: string
 }
 

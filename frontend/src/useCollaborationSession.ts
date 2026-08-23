@@ -155,6 +155,9 @@ export function useCollaborationSession(
               sessionId:
                 message.sessionId,
 
+              inviteToken:
+                message.inviteToken,
+
               role:
                 'host',
 
@@ -561,9 +564,15 @@ export function useCollaborationSession(
             .trim()
             .toUpperCase()
 
+        const inviteToken =
+          request.inviteToken
+            .trim()
+            .toUpperCase()
+
         if (
           !displayName ||
-          !sessionId
+          !sessionId ||
+          !inviteToken
         ) {
           return
         }
@@ -582,6 +591,7 @@ export function useCollaborationSession(
         try {
           await joinSession(
             sessionId,
+            inviteToken,
             displayName,
           )
         } catch (
