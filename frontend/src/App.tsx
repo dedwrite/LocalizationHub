@@ -2603,7 +2603,7 @@ try {
                   </div>
                 ) : (
                   <p className="cloud-projects-empty">
-                    Refresh to load available Cloud Projects.
+                    No Cloud Projects yet.
                   </p>
                 )
               }
