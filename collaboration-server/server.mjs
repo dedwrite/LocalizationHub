@@ -1648,7 +1648,9 @@ function sendAuthError(
 
   if (
     error.code ===
-      'username-taken'
+      'username-taken' ||
+    error.code ===
+      'email-taken'
   ) {
     statusCode =
       409
@@ -1673,7 +1675,7 @@ function sendAuthError(
   )
 }
 
-function getAuthenticatedRequest(
+async function getAuthenticatedRequest(
   request,
 ) {
   const token =
@@ -1686,7 +1688,7 @@ function getAuthenticatedRequest(
   }
 
   const user =
-    authenticateToken(
+    await authenticateToken(
       token,
     )
 
@@ -1876,6 +1878,9 @@ const httpServer =
               username:
                 body.username,
 
+              email:
+                body.email,
+
               password:
                 body.password,
             })
@@ -1953,7 +1958,7 @@ const httpServer =
           '/api/auth/me'
       ) {
         const authenticated =
-          getAuthenticatedRequest(
+          await getAuthenticatedRequest(
             request,
           )
 
@@ -1992,7 +1997,7 @@ const httpServer =
           '/api/auth/logout'
       ) {
         const authenticated =
-          getAuthenticatedRequest(
+          await getAuthenticatedRequest(
             request,
           )
 
@@ -2012,7 +2017,7 @@ const httpServer =
           return
         }
 
-        logoutUser(
+        await logoutUser(
           authenticated.token,
         )
 
@@ -2032,7 +2037,7 @@ const httpServer =
         request.url?.startsWith(
           '/api/projects'
         )
-          ? getAuthenticatedRequest(
+          ? await getAuthenticatedRequest(
               request,
             )
           : null

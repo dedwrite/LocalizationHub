@@ -1,4 +1,5 @@
 import {
+  createHash,
   randomBytes,
   randomUUID,
   scrypt as scryptCallback,
@@ -8,6 +9,10 @@ import {
 import {
   promisify,
 } from 'node:util'
+
+import {
+  getDatabasePool,
+} from './database.mjs'
 
 const scrypt =
   promisify(
@@ -23,15 +28,6 @@ const SESSION_TTL_MS =
       7 * 24 * 60 * 60 * 1000,
   )
 
-const usersById =
-  new Map()
-
-const usersByUsername =
-  new Map()
-
-const sessions =
-  new Map()
-
 export class AuthError
   extends Error {
   constructor(
@@ -46,11 +42,6 @@ export class AuthError
     this.code =
       code
   }
-}
-
-function nowIso() {
-  return new Date()
-    .toISOString()
 }
 
 function normalizeUsername(
@@ -81,6 +72,34 @@ function normalizeUsername(
   return normalized
 }
 
+function normalizeEmail(
+  value,
+) {
+  if (
+    typeof value !==
+      'string'
+  ) {
+    return null
+  }
+
+  const normalized =
+    value
+      .trim()
+      .toLowerCase()
+
+  if (
+    normalized.length < 3 ||
+    normalized.length > 254 ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      normalized,
+    )
+  ) {
+    return null
+  }
+
+  return normalized
+}
+
 function validatePassword(
   value,
 ) {
@@ -93,17 +112,26 @@ function validatePassword(
 }
 
 function toPublicUser(
-  user,
+  row,
 ) {
   return {
     id:
-      user.id,
+      row.id,
 
     username:
-      user.username,
+      row.username,
+
+    email:
+      row.email,
+
+    emailVerified:
+      row.email_verified_at !==
+      null,
 
     createdAt:
-      user.createdAt,
+      new Date(
+        row.created_at,
+      ).toISOString(),
   }
 }
 
@@ -130,12 +158,12 @@ async function verifyPassword(
   const attemptedHash =
     await hashPassword(
       password,
-      user.passwordSalt,
+      user.password_salt,
     )
 
   const storedHash =
     Buffer.from(
-      user.passwordHash,
+      user.password_hash,
       'base64',
     )
 
@@ -152,7 +180,23 @@ async function verifyPassword(
   )
 }
 
-function createSession(
+function hashSessionToken(
+  token,
+) {
+  return createHash(
+    'sha256',
+  )
+    .update(
+      token,
+      'utf8',
+    )
+    .digest(
+      'hex',
+    )
+}
+
+async function createSession(
+  database,
   userId,
 ) {
   const token =
@@ -162,72 +206,90 @@ function createSession(
       'base64url',
     )
 
-  const createdAt =
-    Date.now()
+  const tokenHash =
+    hashSessionToken(
+      token,
+    )
 
-  const session = {
-    token,
+  const expiresAt =
+    new Date(
+      Date.now() +
+        SESSION_TTL_MS,
+    )
 
-    userId,
-
-    createdAt,
-
-    expiresAt:
-      createdAt +
-      SESSION_TTL_MS,
-  }
-
-  sessions.set(
-    token,
-    session,
+  await database.query(
+    `INSERT INTO sessions (
+       token_hash,
+       user_id,
+       expires_at
+     )
+     VALUES (
+       $1,
+       $2,
+       $3
+     )`,
+    [
+      tokenHash,
+      userId,
+      expiresAt,
+    ],
   )
 
   return {
     token,
 
     expiresAt:
-      new Date(
-        session.expiresAt,
-      ).toISOString(),
+      expiresAt
+        .toISOString(),
   }
 }
 
-function getActiveSession(
-  token,
+function mapDatabaseError(
+  error,
 ) {
   if (
-    typeof token !==
-      'string' ||
-    token.length === 0
+    !error ||
+    typeof error !==
+      'object'
   ) {
-    return null
-  }
-
-  const session =
-    sessions.get(
-      token,
-    )
-
-  if (!session) {
     return null
   }
 
   if (
-    session.expiresAt <=
-      Date.now()
+    error.code !==
+      '23505'
   ) {
-    sessions.delete(
-      token,
-    )
-
     return null
   }
 
-  return session
+  if (
+    error.constraint ===
+      'users_username_unique'
+  ) {
+    return new AuthError(
+      'username-taken',
+      'That username is already in use.',
+    )
+  }
+
+  if (
+    error.constraint ===
+      'users_email_lower_unique' ||
+    error.constraint ===
+      'users_email_lower_unique_idx'
+  ) {
+    return new AuthError(
+      'email-taken',
+      'That email address is already in use.',
+    )
+  }
+
+  return null
 }
 
 export async function registerUser({
   username,
+  email,
   password,
 }) {
   const normalizedUsername =
@@ -242,6 +304,18 @@ export async function registerUser({
     )
   }
 
+  const normalizedEmail =
+    normalizeEmail(
+      email,
+    )
+
+  if (!normalizedEmail) {
+    throw new AuthError(
+      'email-invalid',
+      'Enter a valid email address.',
+    )
+  }
+
   if (
     !validatePassword(
       password,
@@ -253,70 +327,107 @@ export async function registerUser({
     )
   }
 
-  if (
-    usersByUsername.has(
-      normalizedUsername,
-    )
-  ) {
-    throw new AuthError(
-      'username-taken',
-      'That username is already in use.',
-    )
-  }
+  const database =
+    getDatabasePool()
 
-  const passwordSalt =
-    randomBytes(
-      16,
-    ).toString(
-      'base64',
+  const client =
+    await database.connect()
+
+  try {
+    await client.query(
+      'BEGIN',
     )
 
-  const passwordHash =
-    await hashPassword(
-      password,
-      passwordSalt,
-    )
-
-  const user = {
-    id:
-      randomUUID(),
-
-    username:
-      normalizedUsername,
-
-    passwordSalt,
-
-    passwordHash:
-      passwordHash.toString(
+    const passwordSalt =
+      randomBytes(
+        16,
+      ).toString(
         'base64',
-      ),
+      )
 
-    createdAt:
-      nowIso(),
-  }
+    const passwordHash =
+      await hashPassword(
+        password,
+        passwordSalt,
+      )
 
-  usersById.set(
-    user.id,
-    user,
-  )
+    const userResult =
+      await client.query(
+        `INSERT INTO users (
+           id,
+           username,
+           email,
+           password_salt,
+           password_hash
+         )
+         VALUES (
+           $1,
+           $2,
+           $3,
+           $4,
+           $5
+         )
+         RETURNING
+           id,
+           username,
+           email,
+           email_verified_at,
+           created_at`,
+        [
+          randomUUID(),
+          normalizedUsername,
+          normalizedEmail,
+          passwordSalt,
+          passwordHash.toString(
+            'base64',
+          ),
+        ],
+      )
 
-  usersByUsername.set(
-    user.username,
-    user,
-  )
+    const user =
+      userResult.rows[0]
 
-  const session =
-    createSession(
-      user.id,
+    const session =
+      await createSession(
+        client,
+        user.id,
+      )
+
+    await client.query(
+      'COMMIT',
     )
 
-  return {
-    user:
-      toPublicUser(
-        user,
-      ),
+    return {
+      user:
+        toPublicUser(
+          user,
+        ),
 
-    ...session,
+      ...session,
+    }
+  } catch (
+    error
+  ) {
+    try {
+      await client.query(
+        'ROLLBACK',
+      )
+    } catch {
+      // Preserve the original error.
+    }
+
+    const mapped =
+      mapDatabaseError(
+        error,
+      )
+
+    if (mapped) {
+      throw mapped
+    }
+
+    throw error
+  } finally {
+    client.release()
   }
 }
 
@@ -340,10 +451,29 @@ export async function loginUser({
     )
   }
 
-  const user =
-    usersByUsername.get(
-      normalizedUsername,
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `SELECT
+         id,
+         username,
+         email,
+         password_salt,
+         password_hash,
+         email_verified_at,
+         created_at
+       FROM users
+       WHERE username = $1
+       LIMIT 1`,
+      [
+        normalizedUsername,
+      ],
     )
+
+  const user =
+    result.rows[0]
 
   if (
     !user ||
@@ -359,7 +489,8 @@ export async function loginUser({
   }
 
   const session =
-    createSession(
+    await createSession(
+      database,
       user.id,
     )
 
@@ -373,37 +504,74 @@ export async function loginUser({
   }
 }
 
-export function authenticateToken(
+export async function authenticateToken(
   token,
 ) {
-  const session =
-    getActiveSession(
-      token,
-    )
-
-  if (!session) {
+  if (
+    typeof token !==
+      'string' ||
+    token.length === 0
+  ) {
     return null
   }
 
-  const user =
-    usersById.get(
-      session.userId,
+  const tokenHash =
+    hashSessionToken(
+      token,
     )
 
-  if (!user) {
-    sessions.delete(
-      token,
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `SELECT
+         u.id,
+         u.username,
+         u.email,
+         u.email_verified_at,
+         u.created_at,
+         s.expires_at
+       FROM sessions s
+       INNER JOIN users u
+         ON u.id = s.user_id
+       WHERE s.token_hash = $1
+       LIMIT 1`,
+      [
+        tokenHash,
+      ],
+    )
+
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    return null
+  }
+
+  if (
+    new Date(
+      row.expires_at,
+    ).getTime() <=
+      Date.now()
+  ) {
+    await database.query(
+      `DELETE FROM sessions
+       WHERE token_hash = $1`,
+      [
+        tokenHash,
+      ],
     )
 
     return null
   }
 
   return toPublicUser(
-    user,
+    row,
   )
 }
 
-export function logoutUser(
+export async function logoutUser(
   token,
 ) {
   if (
@@ -413,8 +581,23 @@ export function logoutUser(
     return false
   }
 
-  return sessions.delete(
-    token,
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `DELETE FROM sessions
+       WHERE token_hash = $1`,
+    [
+      hashSessionToken(
+        token,
+      ),
+    ],
+  )
+
+  return (
+    result.rowCount >
+    0
   )
 }
 

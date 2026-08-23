@@ -12,8 +12,10 @@ type AuthApiErrorCode =
   | 'invalid-response'
   | 'invalid-request'
   | 'username-invalid'
+  | 'email-invalid'
   | 'password-invalid'
   | 'username-taken'
+  | 'email-taken'
   | 'invalid-credentials'
   | 'unauthorized'
   | 'not-found'
@@ -157,8 +159,10 @@ async function requestJson<T>(
       AuthApiErrorCode[] = [
         'invalid-request',
         'username-invalid',
+        'email-invalid',
         'password-invalid',
         'username-taken',
+        'email-taken',
         'invalid-credentials',
         'unauthorized',
         'not-found',
@@ -204,6 +208,9 @@ export async function registerAccount(
   username:
     string,
 
+  email:
+    string,
+
   password:
     string,
 ): Promise<AuthSession> {
@@ -219,6 +226,7 @@ export async function registerAccount(
         body:
           JSON.stringify({
             username,
+            email,
             password,
           }),
       },

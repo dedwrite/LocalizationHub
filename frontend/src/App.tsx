@@ -1923,6 +1923,9 @@ try {
     username:
       string,
 
+    email:
+      string,
+
     password:
       string,
   ): Promise<boolean> {
@@ -1934,6 +1937,7 @@ try {
       const session =
         await registerAccount(
           username,
+          email,
           password,
         )
 

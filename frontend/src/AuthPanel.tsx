@@ -33,6 +33,9 @@ type AuthPanelProps = {
       username:
         string,
 
+      email:
+        string,
+
       password:
         string,
     ) => Promise<boolean>
@@ -63,6 +66,12 @@ function AuthPanel({
   const [
     username,
     setUsername,
+  ] =
+    useState('')
+
+  const [
+    email,
+    setEmail,
   ] =
     useState('')
 
@@ -106,6 +115,7 @@ function AuthPanel({
           )
         : await onRegister(
             cleanUsername,
+            email.trim(),
             password,
           )
 
@@ -246,7 +256,12 @@ function AuthPanel({
       </div>
 
       <form
-        className="auth-form"
+        className={
+          mode ===
+            'register'
+            ? 'auth-form auth-form-register'
+            : 'auth-form'
+        }
         onSubmit={
           handleSubmit
         }
@@ -277,6 +292,35 @@ function AuthPanel({
             )
           }}
         />
+
+        {
+          mode ===
+            'register' && (
+            <input
+              className="auth-input"
+              type="email"
+              value={
+                email
+              }
+              maxLength={
+                254
+              }
+              autoComplete="email"
+              placeholder="Email"
+              aria-label="Email"
+              disabled={
+                actionLoading
+              }
+              onChange={(
+                event,
+              ) => {
+                setEmail(
+                  event.target.value,
+                )
+              }}
+            />
+          )
+        }
 
         <input
           className="auth-input"
@@ -319,6 +363,14 @@ function AuthPanel({
               .trim()
               .length ===
               0 ||
+            (
+              mode ===
+                'register' &&
+              email
+                .trim()
+                .length ===
+                0
+            ) ||
             password.length ===
               0
           }
@@ -338,7 +390,7 @@ function AuthPanel({
         mode ===
           'register' && (
           <small className="auth-register-hint">
-            Username: 3-32 characters. Password: at least 8 characters.
+            Use a valid email. Username: 3-32 characters. Password: at least 8 characters.
           </small>
         )
       }

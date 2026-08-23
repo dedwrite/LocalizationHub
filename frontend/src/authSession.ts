@@ -5,6 +5,12 @@ export type AuthUser = {
   username:
     string
 
+  email:
+    string
+
+  emailVerified:
+    boolean
+
   createdAt:
     string
 }
@@ -47,6 +53,11 @@ function isAuthUser(
     typeof candidate.username ===
       'string' &&
     candidate.username.length > 0 &&
+    typeof candidate.email ===
+      'string' &&
+    candidate.email.length > 0 &&
+    typeof candidate.emailVerified ===
+      'boolean' &&
     typeof candidate.createdAt ===
       'string'
   )
