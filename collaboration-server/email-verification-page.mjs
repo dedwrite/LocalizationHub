@@ -9,6 +9,12 @@ export const EMAIL_VERIFICATION_PAGE =
   >
   <title>Verify email - LocalizationHub</title>
 
+  <link
+    rel="icon"
+    href="/favicon.ico"
+    type="image/x-icon"
+  >
+
   <style>
     * {
       box-sizing: border-box;

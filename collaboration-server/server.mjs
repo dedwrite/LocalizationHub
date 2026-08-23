@@ -34,6 +34,7 @@ import {
 } from './email-verification-page.mjs'
 
 import { randomUUID, randomInt } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 import {
   createServer,
@@ -72,6 +73,14 @@ const CORS_ALLOWED_ORIGINS =
 const HOST =
   process.env.HOST ??
   '0.0.0.0'
+
+const FAVICON_ICO =
+  readFileSync(
+    new URL(
+      './favicon.ico',
+      import.meta.url,
+    ),
+  )
 
 const PORT =
   Number(
@@ -1968,6 +1977,36 @@ const httpServer =
       if (
         request.method ===
           'GET' &&
+        request.url ===
+          '/favicon.ico'
+      ) {
+        response.writeHead(
+          200,
+          {
+            'Content-Type':
+              'image/x-icon',
+
+            'Content-Length':
+              FAVICON_ICO.length,
+
+            'Cache-Control':
+              'public, max-age=86400',
+
+            'X-Content-Type-Options':
+              'nosniff',
+          },
+        )
+
+        response.end(
+          FAVICON_ICO,
+        )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'GET' &&
         /^\/verify-email(?:\?|$)/.test(
           request.url ?? ''
         )
@@ -1993,7 +2032,7 @@ const httpServer =
               'nosniff',
 
             'Content-Security-Policy':
-              "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+              "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
           },
         )
 
