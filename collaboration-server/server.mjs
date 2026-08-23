@@ -1,3 +1,12 @@
+import {
+  CloudProjectConflictError,
+  CloudProjectNotFoundError,
+  createCloudProject,
+  getCloudProject,
+  listCloudProjects,
+  saveCloudProject,
+} from './cloud-projects.mjs'
+
 import { randomUUID, randomInt } from 'node:crypto'
 
 import {
@@ -1506,9 +1515,81 @@ function handleMessage(
   }
 }
 
+function sendJson(
+  response,
+  statusCode,
+  value,
+) {
+  const body =
+    JSON.stringify(
+      value,
+    )
+
+  response.writeHead(
+    statusCode,
+    {
+      'Content-Type':
+        'application/json; charset=utf-8',
+
+      'Content-Length':
+        Buffer.byteLength(
+          body,
+        ),
+
+      'Cache-Control':
+        'no-store',
+    },
+  )
+
+  response.end(
+    body,
+  )
+}
+
+async function readJsonBody(
+  request,
+) {
+  const chunks = []
+
+  let totalBytes =
+    0
+
+  for await (
+    const chunk
+    of request
+  ) {
+    totalBytes +=
+      chunk.length
+
+    if (
+      totalBytes >
+      MAX_PAYLOAD
+    ) {
+      throw new Error(
+        'request-too-large',
+      )
+    }
+
+    chunks.push(
+      chunk,
+    )
+  }
+
+  const text =
+    Buffer.concat(
+      chunks,
+    ).toString(
+      'utf8',
+    )
+
+  return JSON.parse(
+    text,
+  )
+}
+
 const httpServer =
   createServer(
-    (
+    async (
       request,
       response,
     ) => {
@@ -1518,8 +1599,10 @@ const httpServer =
         request.url ===
           '/health'
       ) {
-        const body =
-          JSON.stringify({
+        sendJson(
+          response,
+          200,
+          {
             status:
               'ok',
 
@@ -1528,44 +1611,298 @@ const httpServer =
 
             protocolVersion:
               PROTOCOL_VERSION,
-          })
-
-        response.writeHead(
-          200,
-          {
-            'Content-Type':
-              'application/json; charset=utf-8',
-
-            'Content-Length':
-              Buffer.byteLength(
-                body,
-              ),
-
-            'Cache-Control':
-              'no-store',
           },
-        )
-
-        response.end(
-          body,
         )
 
         return
       }
 
-      response.writeHead(
+      if (
+        request.method ===
+          'GET' &&
+        request.url ===
+          '/api/projects'
+      ) {
+        sendJson(
+          response,
+          200,
+          {
+            projects:
+              listCloudProjects(),
+          },
+        )
+
+        return
+      }
+
+      const projectMatch =
+        request.url?.match(
+          /^\/api\/projects\/([^/?#]+)$/
+        )
+
+      if (
+        request.method ===
+          'GET' &&
+        projectMatch
+      ) {
+        try {
+          const projectId =
+            decodeURIComponent(
+              projectMatch[1],
+            )
+
+          const project =
+            getCloudProject(
+              projectId,
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              project,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            error instanceof
+            CloudProjectNotFoundError
+          ) {
+            sendJson(
+              response,
+              404,
+              {
+                error:
+                  'project-not-found',
+              },
+            )
+
+            return
+          }
+
+          console.error(
+            'Cloud project load request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            500,
+            {
+              error:
+                'internal-error',
+            },
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'PUT' &&
+        projectMatch
+      ) {
+        try {
+          const projectId =
+            decodeURIComponent(
+              projectMatch[1],
+            )
+
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object' ||
+            !Number.isInteger(
+              body.baseRevision,
+            ) ||
+            body.baseRevision < 1 ||
+            !body.project ||
+            typeof body.project !==
+              'object' ||
+            body.project.format !==
+              'LocalizationHubProject' ||
+            body.project.version !==
+              2
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-request',
+              },
+            )
+
+            return
+          }
+
+          const project =
+            saveCloudProject(
+              projectId,
+              {
+                project:
+                  body.project,
+
+                baseRevision:
+                  body.baseRevision,
+              },
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              project,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            error instanceof
+            CloudProjectNotFoundError
+          ) {
+            sendJson(
+              response,
+              404,
+              {
+                error:
+                  'project-not-found',
+              },
+            )
+
+            return
+          }
+
+          if (
+            error instanceof
+            CloudProjectConflictError
+          ) {
+            sendJson(
+              response,
+              409,
+              {
+                error:
+                  'revision-conflict',
+
+                currentRevision:
+                  error.currentRevision,
+              },
+            )
+
+            return
+          }
+
+          console.error(
+            'Cloud project save request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            400,
+            {
+              error:
+                'invalid-request',
+            },
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/projects'
+      ) {
+        try {
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object' ||
+            typeof body.name !==
+              'string' ||
+            body.name.trim()
+              .length === 0 ||
+            !body.project ||
+            typeof body.project !==
+              'object' ||
+            body.project.format !==
+              'LocalizationHubProject' ||
+            body.project.version !==
+              2
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-request',
+              },
+            )
+
+            return
+          }
+
+          const project =
+            createCloudProject({
+              name:
+                body.name.trim(),
+
+              project:
+                body.project,
+            })
+
+          sendJson(
+            response,
+            201,
+            {
+              project,
+            },
+          )
+        } catch (
+          error
+        ) {
+          console.error(
+            'Cloud project create request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            400,
+            {
+              error:
+                'invalid-request',
+            },
+          )
+        }
+
+        return
+      }
+
+      sendJson(
+        response,
         404,
         {
-          'Content-Type':
-            'text/plain; charset=utf-8',
-
-          'Cache-Control':
-            'no-store',
+          error:
+            'not-found',
         },
-      )
-
-      response.end(
-        'Not Found',
       )
     },
   )
