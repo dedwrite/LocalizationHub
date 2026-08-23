@@ -3,6 +3,10 @@ import {
 } from 'node:crypto'
 
 import {
+  createServer,
+} from 'node:http'
+
+import {
   WebSocket,
   WebSocketServer,
 } from 'ws'
@@ -12,7 +16,7 @@ const PROTOCOL_VERSION =
 
 const HOST =
   process.env.HOST ??
-  '127.0.0.1'
+  '0.0.0.0'
 
 const PORT =
   Number(
@@ -1447,17 +1451,83 @@ function handleMessage(
   }
 }
 
+const httpServer =
+  createServer(
+    (
+      request,
+      response,
+    ) => {
+      if (
+        request.method ===
+          'GET' &&
+        request.url ===
+          '/health'
+      ) {
+        const body =
+          JSON.stringify({
+            status:
+              'ok',
+
+            service:
+              'localizationhub-collaboration-relay',
+
+            protocolVersion:
+              PROTOCOL_VERSION,
+          })
+
+        response.writeHead(
+          200,
+          {
+            'Content-Type':
+              'application/json; charset=utf-8',
+
+            'Content-Length':
+              Buffer.byteLength(
+                body,
+              ),
+
+            'Cache-Control':
+              'no-store',
+          },
+        )
+
+        response.end(
+          body,
+        )
+
+        return
+      }
+
+      response.writeHead(
+        404,
+        {
+          'Content-Type':
+            'text/plain; charset=utf-8',
+
+          'Cache-Control':
+            'no-store',
+        },
+      )
+
+      response.end(
+        'Not Found',
+      )
+    },
+  )
+
 const server =
   new WebSocketServer({
-    host:
-      HOST,
-
-    port:
-      PORT,
+    server:
+      httpServer,
 
     maxPayload:
       MAX_PAYLOAD,
   })
+
+httpServer.listen(
+  PORT,
+  HOST,
+)
 
 server.on(
   'connection',
@@ -1594,11 +1664,15 @@ server.on(
     )
 
     console.log(
-      `ws://${HOST}:${PORT}`,
+      `Listening on ${HOST}:${PORT}`,
     )
 
     console.log(
-      'Waiting for clients...',
+      `Health: http://127.0.0.1:${PORT}/health`,
+    )
+
+    console.log(
+      'Waiting for WebSocket clients...',
     )
 
     console.log('')

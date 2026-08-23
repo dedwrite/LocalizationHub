@@ -1,11 +1,16 @@
 {
   "name": "localizationhub-collaboration-server",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
+  "description": "WebSocket collaboration relay for LocalizationHub.",
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "check": "node --check server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "ws": "^8.18.0"
