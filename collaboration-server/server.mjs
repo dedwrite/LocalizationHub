@@ -7,14 +7,26 @@ import {
   WebSocketServer,
 } from 'ws'
 
-const PROTOCOL_VERSION = 1
+const PROTOCOL_VERSION =
+  1
 
-const HOST = '127.0.0.1'
-const PORT = 8787
+const HOST =
+  process.env.HOST ??
+  '127.0.0.1'
 
-const SESSION_CODE_LENGTH = 6
+const PORT =
+  Number(
+    process.env.PORT ??
+      8787,
+  )
 
-const SESSION_ALPHABET =
+const MAX_PAYLOAD =
+  32 * 1024 * 1024
+
+const MAX_SESSION_PARTICIPANTS =
+  16
+
+const SESSION_ID_ALPHABET =
   'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 const sessions =
@@ -49,40 +61,43 @@ function sendError(
   send(
     socket,
     {
-      type: 'error',
+      type:
+        'error',
+
       code,
+
       message,
     },
   )
 }
 
-function generateSessionId() {
+function createSessionId() {
   for (
     let attempt = 0;
     attempt < 100;
     attempt += 1
   ) {
-    let code = ''
+    let suffix = ''
 
     for (
       let index = 0;
-      index < SESSION_CODE_LENGTH;
+      index < 6;
       index += 1
     ) {
       const randomIndex =
         Math.floor(
           Math.random() *
-            SESSION_ALPHABET.length,
+            SESSION_ID_ALPHABET.length,
         )
 
-      code +=
-        SESSION_ALPHABET[
+      suffix +=
+        SESSION_ID_ALPHABET[
           randomIndex
         ]
     }
 
     const sessionId =
-      `LH-${code}`
+      `LH-${suffix}`
 
     if (
       !sessions.has(
@@ -94,23 +109,8 @@ function generateSessionId() {
   }
 
   throw new Error(
-    'Could not generate a unique session ID.',
+    'Could not allocate session ID.',
   )
-}
-
-function normalizeSessionId(
-  value,
-) {
-  if (
-    typeof value !==
-    'string'
-  ) {
-    return ''
-  }
-
-  return value
-    .trim()
-    .toUpperCase()
 }
 
 function normalizeDisplayName(
@@ -120,40 +120,118 @@ function normalizeDisplayName(
     typeof value !==
     'string'
   ) {
-    return ''
+    return null
   }
 
-  return value
-    .trim()
-    .slice(
-      0,
-      32,
-    )
+  const normalized =
+    value
+      .trim()
+      .replace(
+        /\s+/g,
+        ' ',
+      )
+
+  if (
+    normalized.length <
+      1 ||
+    normalized.length >
+      32
+  ) {
+    return null
+  }
+
+  return normalized
 }
 
-function publicParticipant(
-  participant,
+function normalizeSessionId(
+  value,
 ) {
+  if (
+    typeof value !==
+    'string'
+  ) {
+    return null
+  }
+
+  const normalized =
+    value
+      .trim()
+      .toUpperCase()
+
+  if (
+    !/^LH-[A-Z0-9]{6}$/.test(
+      normalized,
+    )
+  ) {
+    return null
+  }
+
+  return normalized
+}
+
+function getClientState(
+  socket,
+) {
+  return (
+    clients.get(
+      socket,
+    ) ??
+    null
+  )
+}
+
+function getParticipantPayload(
+  socket,
+) {
+  const state =
+    getClientState(
+      socket,
+    )
+
+  if (
+    !state ||
+    !state.participantId ||
+    !state.displayName ||
+    !state.role
+  ) {
+    return null
+  }
+
   return {
     id:
-      participant.id,
+      state.participantId,
 
     displayName:
-      participant.displayName,
+      state.displayName,
 
     role:
-      participant.role,
+      state.role,
   }
 }
 
 function getParticipants(
   session,
 ) {
-  return Array.from(
-    session.participants.values(),
-  ).map(
-    publicParticipant,
-  )
+  const participants =
+    []
+
+  for (
+    const socket of
+      session.sockets
+  ) {
+    const participant =
+      getParticipantPayload(
+        socket,
+      )
+
+    if (participant) {
+      participants.push(
+        participant,
+      )
+    }
+  }
+
+  return participants
 }
 
 function broadcast(
@@ -162,18 +240,18 @@ function broadcast(
   exceptSocket = null,
 ) {
   for (
-    const participant
-    of session.participants.values()
+    const socket of
+      session.sockets
   ) {
     if (
-      participant.socket ===
+      socket ===
       exceptSocket
     ) {
       continue
     }
 
     send(
-      participant.socket,
+      socket,
       message,
     )
   }
@@ -185,7 +263,8 @@ function broadcastParticipants(
   broadcast(
     session,
     {
-      type: 'participants',
+      type:
+        'participants',
 
       participants:
         getParticipants(
@@ -195,121 +274,116 @@ function broadcastParticipants(
   )
 }
 
-function clearClient(
+function clearClientSession(
   socket,
 ) {
-  clients.set(
-    socket,
-    {
-      participantId:
-        null,
+  const state =
+    getClientState(
+      socket,
+    )
 
-      sessionId:
-        null,
+  if (!state) {
+    return
+  }
 
-      role:
-        null,
+  state.sessionId =
+    null
 
-      displayName:
-        null,
-    },
-  )
+  state.role =
+    null
 }
 
 function leaveSession(
   socket,
 ) {
-  const client =
-    clients.get(
+  const state =
+    getClientState(
       socket,
     )
 
   if (
-    !client?.sessionId ||
-    !client.participantId
+    !state ||
+    !state.sessionId
   ) {
-    clearClient(
-      socket,
-    )
-
     return
   }
 
   const session =
     sessions.get(
-      client.sessionId,
+      state.sessionId,
     )
 
   if (!session) {
-    clearClient(
+    clearClientSession(
       socket,
     )
 
     return
   }
 
-  const participantId =
-    client.participantId
+  const leavingParticipantId =
+    state.participantId
 
-  const participant =
-    session.participants.get(
-      participantId,
-    )
+  const wasHost =
+    session.hostSocket ===
+    socket
 
-  session.participants.delete(
-    participantId,
-  )
-
-  clearClient(
+  session.sockets.delete(
     socket,
   )
 
-  if (
-    participant?.role ===
-    'host'
-  ) {
+  clearClientSession(
+    socket,
+  )
+
+  if (wasHost) {
+    sessions.delete(
+      session.sessionId,
+    )
+
     for (
-      const remainingParticipant
-      of session.participants.values()
+      const guestSocket of
+        session.sockets
     ) {
-      sendError(
-        remainingParticipant.socket,
-        'session-not-found',
-        'The host left the collaboration session.',
+      clearClientSession(
+        guestSocket,
       )
 
-      clearClient(
-        remainingParticipant.socket,
+      sendError(
+        guestSocket,
+        'session-not-found',
+        'The host ended the collaboration session.',
       )
     }
 
-    sessions.delete(
-      session.id,
-    )
-
     console.log(
-      `[session] ended ${session.id}`,
+      `[session] ended ${session.sessionId}`,
     )
 
     return
   }
 
-  broadcast(
-    session,
-    {
-      type:
-        'participant-left',
+  if (
+    leavingParticipantId
+  ) {
+    broadcast(
+      session,
+      {
+        type:
+          'participant-left',
 
-      participantId,
-    },
-  )
+        participantId:
+          leavingParticipantId,
+      },
+    )
+  }
 
   broadcastParticipants(
     session,
   )
 }
 
-function validateProtocol(
+function handleHostSession(
   socket,
   message,
 ) {
@@ -323,22 +397,6 @@ function validateProtocol(
       'Unsupported collaboration protocol version.',
     )
 
-    return false
-  }
-
-  return true
-}
-
-function handleHostSession(
-  socket,
-  message,
-) {
-  if (
-    !validateProtocol(
-      socket,
-      message,
-    )
-  ) {
     return
   }
 
@@ -351,7 +409,7 @@ function handleHostSession(
     sendError(
       socket,
       'name-invalid',
-      'Enter a valid display name.',
+      'Display name must be between 1 and 32 characters.',
     )
 
     return
@@ -361,66 +419,47 @@ function handleHostSession(
     socket,
   )
 
-  let sessionId
+  const sessionId =
+    createSessionId()
 
-  try {
-    sessionId =
-      generateSessionId()
-  } catch {
-    sendError(
+  const state =
+    getClientState(
       socket,
-      'server-error',
-      'Could not create a collaboration session.',
     )
 
-    return
-  }
+  state.displayName =
+    displayName
 
-  const participantId =
-    randomUUID()
+  state.role =
+    'host'
 
-  const participant = {
-    id:
-      participantId,
-
-    displayName,
-
-    role:
-      'host',
-
-    socket,
-  }
+  state.sessionId =
+    sessionId
 
   const session = {
-    id:
-      sessionId,
+    sessionId,
 
-    hostParticipantId:
-      participantId,
+    hostSocket:
+      socket,
 
-    participants:
-      new Map([
-        [
-          participantId,
-          participant,
-        ],
+    sockets:
+      new Set([
+        socket,
       ]),
+
+    /*
+     * Server-authoritative revision
+     * counter for each translation.
+     *
+     * Conflict enforcement comes later.
+     */
+    translationRevisions:
+      new Map(),
   }
 
   sessions.set(
     sessionId,
     session,
-  )
-
-  clients.set(
-    socket,
-    {
-      participantId,
-      sessionId,
-      role:
-        'host',
-      displayName,
-    },
   )
 
   send(
@@ -430,7 +469,9 @@ function handleHostSession(
         'session-hosted',
 
       sessionId,
-      participantId,
+
+      participantId:
+        state.participantId,
     },
   )
 
@@ -448,11 +489,15 @@ function handleJoinSession(
   message,
 ) {
   if (
-    !validateProtocol(
-      socket,
-      message,
-    )
+    message.protocolVersion !==
+    PROTOCOL_VERSION
   ) {
+    sendError(
+      socket,
+      'unsupported-version',
+      'Unsupported collaboration protocol version.',
+    )
+
     return
   }
 
@@ -465,7 +510,7 @@ function handleJoinSession(
     sendError(
       socket,
       'name-invalid',
-      'Enter a valid display name.',
+      'Display name must be between 1 and 32 characters.',
     )
 
     return
@@ -476,6 +521,16 @@ function handleJoinSession(
       message.sessionId,
     )
 
+  if (!sessionId) {
+    sendError(
+      socket,
+      'session-not-found',
+      'Collaboration session was not found.',
+    )
+
+    return
+  }
+
   const session =
     sessions.get(
       sessionId,
@@ -485,7 +540,20 @@ function handleJoinSession(
     sendError(
       socket,
       'session-not-found',
-      'That collaboration session does not exist.',
+      'Collaboration session was not found.',
+    )
+
+    return
+  }
+
+  if (
+    session.sockets.size >=
+    MAX_SESSION_PARTICIPANTS
+  ) {
+    sendError(
+      socket,
+      'session-full',
+      'The collaboration session is full.',
     )
 
     return
@@ -495,35 +563,22 @@ function handleJoinSession(
     socket,
   )
 
-  const participantId =
-    randomUUID()
+  const state =
+    getClientState(
+      socket,
+    )
 
-  const participant = {
-    id:
-      participantId,
+  state.displayName =
+    displayName
 
-    displayName,
+  state.role =
+    'guest'
 
-    role:
-      'guest',
+  state.sessionId =
+    sessionId
 
+  session.sockets.add(
     socket,
-  }
-
-  session.participants.set(
-    participantId,
-    participant,
-  )
-
-  clients.set(
-    socket,
-    {
-      participantId,
-      sessionId,
-      role:
-        'guest',
-      displayName,
-    },
   )
 
   send(
@@ -533,23 +588,29 @@ function handleJoinSession(
         'session-joined',
 
       sessionId,
-      participantId,
+
+      participantId:
+        state.participantId,
     },
   )
 
-  broadcast(
-    session,
-    {
-      type:
-        'participant-joined',
+  const participant =
+    getParticipantPayload(
+      socket,
+    )
 
-      participant:
-        publicParticipant(
-          participant,
-        ),
-    },
-    socket,
-  )
+  if (participant) {
+    broadcast(
+      session,
+      {
+        type:
+          'participant-joined',
+
+        participant,
+      },
+      socket,
+    )
+  }
 
   broadcastParticipants(
     session,
@@ -557,6 +618,282 @@ function handleJoinSession(
 
   console.log(
     `[session] ${displayName} joined ${sessionId}`,
+  )
+}
+
+function requireSession(
+  socket,
+) {
+  const state =
+    getClientState(
+      socket,
+    )
+
+  if (
+    !state ||
+    !state.sessionId
+  ) {
+    sendError(
+      socket,
+      'not-in-session',
+      'You are not in a collaboration session.',
+    )
+
+    return null
+  }
+
+  const session =
+    sessions.get(
+      state.sessionId,
+    )
+
+  if (!session) {
+    clearClientSession(
+      socket,
+    )
+
+    sendError(
+      socket,
+      'session-not-found',
+      'Collaboration session was not found.',
+    )
+
+    return null
+  }
+
+  return {
+    state,
+    session,
+  }
+}
+
+function handleProjectRequest(
+  socket,
+) {
+  const context =
+    requireSession(
+      socket,
+    )
+
+  if (!context) {
+    return
+  }
+
+  const {
+    state,
+    session,
+  } =
+    context
+
+  if (
+    state.role !==
+    'guest'
+  ) {
+    sendError(
+      socket,
+      'invalid-message',
+      'Only guests can request the project.',
+    )
+
+    return
+  }
+
+  const hostState =
+    getClientState(
+      session.hostSocket,
+    )
+
+  if (!hostState) {
+    sendError(
+      socket,
+      'session-not-found',
+      'The collaboration host is unavailable.',
+    )
+
+    return
+  }
+
+  send(
+    session.hostSocket,
+    {
+      type:
+        'project-requested',
+
+      participantId:
+        state.participantId,
+    },
+  )
+}
+
+function handleProjectSnapshot(
+  socket,
+  message,
+) {
+  const context =
+    requireSession(
+      socket,
+    )
+
+  if (!context) {
+    return
+  }
+
+  const {
+    state,
+    session,
+  } =
+    context
+
+  if (
+    state.role !==
+    'host'
+  ) {
+    sendError(
+      socket,
+      'host-only',
+      'Only the host can send a project snapshot.',
+    )
+
+    return
+  }
+
+  const snapshot =
+    message.snapshot
+
+  if (
+    !snapshot ||
+    typeof snapshot !==
+      'object' ||
+    typeof snapshot.projectJson !==
+      'string' ||
+    typeof snapshot.sourceFileName !==
+      'string' ||
+    typeof snapshot.sentAt !==
+      'number'
+  ) {
+    sendError(
+      socket,
+      'invalid-message',
+      'Invalid project snapshot.',
+    )
+
+    return
+  }
+
+  /*
+   * The relay does not parse, store,
+   * or log project contents.
+   */
+  broadcast(
+    session,
+    {
+      type:
+        'project-snapshot',
+
+      snapshot,
+    },
+    socket,
+  )
+}
+
+function handleTranslationUpdate(
+  socket,
+  message,
+) {
+  const context =
+    requireSession(
+      socket,
+    )
+
+  if (!context) {
+    return
+  }
+
+  const {
+    state,
+    session,
+  } =
+    context
+
+  const update =
+    message.update
+
+  if (
+    !update ||
+    typeof update !==
+      'object' ||
+    typeof update.entryId !==
+      'string' ||
+    update.entryId.length ===
+      0 ||
+    typeof update.translation !==
+      'string' ||
+    !Number.isInteger(
+      update.baseRevision,
+    ) ||
+    update.baseRevision <
+      0
+  ) {
+    sendError(
+      socket,
+      'invalid-message',
+      'Invalid translation update.',
+    )
+
+    return
+  }
+
+  const currentRevision =
+    session
+      .translationRevisions
+      .get(
+        update.entryId,
+      ) ??
+    0
+
+  /*
+   * For the first Live Sync pass we
+   * accept updates in arrival order.
+   *
+   * baseRevision is already carried by
+   * the protocol, but stale-update
+   * rejection is intentionally added
+   * later with conflict handling.
+   */
+  const nextRevision =
+    currentRevision +
+    1
+
+  session
+    .translationRevisions
+    .set(
+      update.entryId,
+      nextRevision,
+    )
+
+  broadcast(
+    session,
+    {
+      type:
+        'translation-update',
+
+      update: {
+        entryId:
+          update.entryId,
+
+        translation:
+          update.translation,
+
+        revision:
+          nextRevision,
+
+        participantId:
+          state.participantId,
+
+        updatedAt:
+          Date.now(),
+      },
+    },
   )
 }
 
@@ -575,7 +912,7 @@ function handleMessage(
     sendError(
       socket,
       'invalid-message',
-      'Invalid JSON message.',
+      'Invalid collaboration message.',
     )
 
     return
@@ -600,50 +937,69 @@ function handleMessage(
   switch (
     message.type
   ) {
-    case 'host-session': {
+    case 'host-session':
       handleHostSession(
         socket,
         message,
       )
 
       break
-    }
 
-    case 'join-session': {
+    case 'join-session':
       handleJoinSession(
         socket,
         message,
       )
 
       break
-    }
 
-    case 'leave-session': {
+    case 'leave-session':
       leaveSession(
         socket,
       )
 
       break
-    }
 
-    case 'ping': {
+    case 'request-project':
+      handleProjectRequest(
+        socket,
+      )
+
+      break
+
+    case 'project-snapshot':
+      handleProjectSnapshot(
+        socket,
+        message,
+      )
+
+      break
+
+    case 'translation-update':
+      handleTranslationUpdate(
+        socket,
+        message,
+      )
+
+      break
+
+    case 'ping':
       send(
         socket,
         {
-          type: 'pong',
+          type:
+            'pong',
         },
       )
 
       break
-    }
 
-    default: {
+    default:
       sendError(
         socket,
         'invalid-message',
-        'Unknown collaboration message type.',
+        'Unknown collaboration message.',
       )
-    }
   }
 }
 
@@ -656,14 +1012,27 @@ const server =
       PORT,
 
     maxPayload:
-      64 * 1024,
+      MAX_PAYLOAD,
   })
 
 server.on(
   'connection',
   (socket) => {
-    clearClient(
+    clients.set(
       socket,
+      {
+        participantId:
+          randomUUID(),
+
+        displayName:
+          null,
+
+        role:
+          null,
+
+        sessionId:
+          null,
+      },
     )
 
     console.log(
@@ -672,11 +1041,24 @@ server.on(
 
     socket.on(
       'message',
-      (data) => {
-        handleMessage(
-          socket,
-          data,
-        )
+      (rawData) => {
+        try {
+          handleMessage(
+            socket,
+            rawData,
+          )
+        } catch (error) {
+          console.error(
+            '[server] message handling failed',
+            error,
+          )
+
+          sendError(
+            socket,
+            'server-error',
+            'The collaboration server could not process the request.',
+          )
+        }
       },
     )
 
@@ -700,7 +1082,10 @@ server.on(
     socket.on(
       'error',
       () => {
-        // Keep socket errors quiet for now.
+        /*
+         * Do not log message contents,
+         * project data, or translations.
+         */
       },
     )
   },
@@ -718,10 +1103,10 @@ server.on(
       `ws://${HOST}:${PORT}`,
     )
 
-    console.log('')
     console.log(
       'Waiting for clients...',
     )
+
     console.log('')
   },
 )
@@ -730,7 +1115,8 @@ server.on(
   'error',
   (error) => {
     console.error(
-      `[server] ${error.message}`,
+      '[server] failed',
+      error,
     )
   },
 )

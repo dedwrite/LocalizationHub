@@ -1,52 +1,47 @@
 import {
+  useCallback,
+  useEffect,
+  useRef,
   useState,
 } from 'react'
 
 import type {
+  CollaborationParticipant,
   CollaborationSession,
   HostProjectRequest,
   JoinProjectRequest,
 } from './collaborationTypes'
 
-function generateSessionId() {
-  const alphabet =
-    'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+import type {
+  CollaborationProjectSnapshot,
+  CollaborationServerMessage,
+  CollaborationTranslationUpdatePayload,
+} from './collaborationProtocol'
 
-  let code = ''
+import {
+  useCollaborationSocket,
+} from './useCollaborationSocket'
 
-  for (
-    let index = 0;
-    index < 6;
-    index += 1
-  ) {
-    const randomIndex =
-      Math.floor(
-        Math.random() *
-          alphabet.length,
-      )
+type UseCollaborationSessionOptions = {
+  onProjectRequested?: (
+    participantId: string,
+  ) => void | Promise<void>
 
-    code +=
-      alphabet[randomIndex]
-  }
+  onProjectSnapshot?: (
+    snapshot:
+      CollaborationProjectSnapshot,
+  ) => void | Promise<void>
 
-  return `LH-${code}`
+  onTranslationUpdate?: (
+    update:
+      CollaborationTranslationUpdatePayload,
+  ) => void | Promise<void>
 }
 
-function generateParticipantId() {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID ===
-      'function'
-  ) {
-    return crypto.randomUUID()
-  }
-
-  return `participant-${Date.now()}-${Math.random()
-    .toString(16)
-    .slice(2)}`
-}
-
-export function useCollaborationSession() {
+export function useCollaborationSession(
+  options:
+    UseCollaborationSessionOptions = {},
+) {
   const [
     session,
     setSession,
@@ -55,100 +50,485 @@ export function useCollaborationSession() {
       null,
     )
 
-  function hostProject(
-    request:
-      HostProjectRequest,
-  ) {
-    const participantId =
-      generateParticipantId()
-
-    const nextSession:
-      CollaborationSession = {
-      sessionId:
-        generateSessionId(),
-
-      role:
-        'host',
-
-      displayName:
-        request.displayName,
-
-      connectionStatus:
-        'connected',
-
-      participants: [
-        {
-          id:
-            participantId,
-
-          displayName:
-            request.displayName,
-
-          role:
-            'host',
-        },
-      ],
-    }
-
-    setSession(
-      nextSession,
-    )
-
-    return nextSession
-  }
-
-  function joinProject(
-    request:
-      JoinProjectRequest,
-  ) {
-    const participantId =
-      generateParticipantId()
-
-    const nextSession:
-      CollaborationSession = {
-      sessionId:
-        request.sessionId,
-
-      role:
-        'guest',
-
-      displayName:
-        request.displayName,
-
-      connectionStatus:
-        'connected',
-
-      participants: [
-        {
-          id:
-            participantId,
-
-          displayName:
-            request.displayName,
-
-          role:
-            'guest',
-        },
-      ],
-    }
-
-    setSession(
-      nextSession,
-    )
-
-    return nextSession
-  }
-
-  function leaveSession() {
-    setSession(
+  const [
+    actionError,
+    setActionError,
+  ] =
+    useState<string | null>(
       null,
     )
-  }
+
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] =
+    useState(false)
+
+  const pendingDisplayNameRef =
+    useRef('')
+
+  const onProjectRequestedRef =
+    useRef(
+      options.onProjectRequested,
+    )
+
+  const onProjectSnapshotRef =
+    useRef(
+      options.onProjectSnapshot,
+    )
+
+  const onTranslationUpdateRef =
+    useRef(
+      options.onTranslationUpdate,
+    )
+
+  const requestProjectRef =
+    useRef<
+      (() => Promise<void>) |
+      null
+    >(
+      null,
+    )
+
+  useEffect(
+    () => {
+      onProjectRequestedRef.current =
+        options.onProjectRequested
+    },
+    [
+      options.onProjectRequested,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onProjectSnapshotRef.current =
+        options.onProjectSnapshot
+    },
+    [
+      options.onProjectSnapshot,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onTranslationUpdateRef.current =
+        options.onTranslationUpdate
+    },
+    [
+      options.onTranslationUpdate,
+    ],
+  )
+
+  const handleServerMessage =
+    useCallback(
+      (
+        message:
+          CollaborationServerMessage,
+      ) => {
+        switch (
+          message.type
+        ) {
+          case 'session-hosted': {
+            setSession({
+              sessionId:
+                message.sessionId,
+
+              role:
+                'host',
+
+              displayName:
+                pendingDisplayNameRef.current,
+
+              connectionStatus:
+                'connected',
+
+              participants:
+                [],
+            })
+
+            setIsSubmitting(
+              false,
+            )
+
+            setActionError(
+              null,
+            )
+
+            break
+          }
+
+          case 'session-joined': {
+            setSession({
+              sessionId:
+                message.sessionId,
+
+              role:
+                'guest',
+
+              displayName:
+                pendingDisplayNameRef.current,
+
+              connectionStatus:
+                'connected',
+
+              participants:
+                [],
+            })
+
+            setIsSubmitting(
+              false,
+            )
+
+            setActionError(
+              null,
+            )
+
+            /*
+             * Guest successfully joined.
+             * Ask the host for the current
+             * project automatically.
+             */
+            window.setTimeout(
+              () => {
+                void requestProjectRef
+                  .current?.()
+              },
+              0,
+            )
+
+            break
+          }
+
+          case 'participants': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants:
+                    message.participants,
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'participant-joined': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                const exists =
+                  current.participants.some(
+                    (
+                      participant:
+                        CollaborationParticipant,
+                    ) =>
+                      participant.id ===
+                      message.participant.id,
+                  )
+
+                if (exists) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants: [
+                    ...current.participants,
+                    message.participant,
+                  ],
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'participant-left': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants:
+                    current.participants.filter(
+                      (
+                        participant:
+                          CollaborationParticipant,
+                      ) =>
+                        participant.id !==
+                        message.participantId,
+                    ),
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'project-requested': {
+            void onProjectRequestedRef
+              .current?.(
+                message.participantId,
+              )
+
+            break
+          }
+
+          case 'project-snapshot': {
+            void onProjectSnapshotRef
+              .current?.(
+                message.snapshot,
+              )
+
+            break
+          }
+
+          case 'translation-update': {
+            void onTranslationUpdateRef
+              .current?.(
+                message.update,
+              )
+
+            break
+          }
+
+          case 'error': {
+            setActionError(
+              message.message,
+            )
+
+            setIsSubmitting(
+              false,
+            )
+
+            if (
+              message.code ===
+              'session-not-found'
+            ) {
+              setSession(
+                null,
+              )
+            }
+
+            break
+          }
+
+          case 'pong': {
+            break
+          }
+        }
+      },
+      [],
+    )
+
+  const {
+    status,
+
+    errorMessage:
+      socketErrorMessage,
+
+    serverUrl,
+
+    hostSession,
+    joinSession,
+
+    leaveSession:
+      leaveSocketSession,
+
+    requestProject,
+    sendProjectSnapshot,
+    sendTranslationUpdate,
+  } =
+    useCollaborationSocket({
+      onMessage:
+        handleServerMessage,
+    })
+
+  useEffect(
+    () => {
+      requestProjectRef.current =
+        requestProject
+
+      return () => {
+        requestProjectRef.current =
+          null
+      }
+    },
+    [
+      requestProject,
+    ],
+  )
+
+  const hostProject =
+    useCallback(
+      async (
+        request:
+          HostProjectRequest,
+      ) => {
+        const displayName =
+          request.displayName.trim()
+
+        if (!displayName) {
+          return
+        }
+
+        pendingDisplayNameRef.current =
+          displayName
+
+        setActionError(
+          null,
+        )
+
+        setIsSubmitting(
+          true,
+        )
+
+        try {
+          await hostSession(
+            displayName,
+          )
+        } catch (
+          error
+        ) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Could not connect to the collaboration server.'
+
+          setActionError(
+            message,
+          )
+
+          setIsSubmitting(
+            false,
+          )
+        }
+      },
+      [
+        hostSession,
+      ],
+    )
+
+  const joinProject =
+    useCallback(
+      async (
+        request:
+          JoinProjectRequest,
+      ) => {
+        const displayName =
+          request.displayName.trim()
+
+        const sessionId =
+          request.sessionId
+            .trim()
+            .toUpperCase()
+
+        if (
+          !displayName ||
+          !sessionId
+        ) {
+          return
+        }
+
+        pendingDisplayNameRef.current =
+          displayName
+
+        setActionError(
+          null,
+        )
+
+        setIsSubmitting(
+          true,
+        )
+
+        try {
+          await joinSession(
+            sessionId,
+            displayName,
+          )
+        } catch (
+          error
+        ) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Could not connect to the collaboration server.'
+
+          setActionError(
+            message,
+          )
+
+          setIsSubmitting(
+            false,
+          )
+        }
+      },
+      [
+        joinSession,
+      ],
+    )
+
+  const leaveSession =
+    useCallback(
+      async () => {
+        await leaveSocketSession()
+
+        setSession(
+          null,
+        )
+
+        setActionError(
+          null,
+        )
+
+        setIsSubmitting(
+          false,
+        )
+
+        pendingDisplayNameRef.current =
+          ''
+      },
+      [
+        leaveSocketSession,
+      ],
+    )
 
   return {
     session,
+
+    status,
+    serverUrl,
+
+    actionError,
+    socketErrorMessage,
+    isSubmitting,
+
     hostProject,
     joinProject,
     leaveSession,
+
+    requestProject,
+    sendProjectSnapshot,
+    sendTranslationUpdate,
   }
 }
+
+export type CollaborationController =
+  ReturnType<
+    typeof useCollaborationSession
+  >

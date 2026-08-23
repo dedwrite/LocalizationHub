@@ -8,10 +8,28 @@ import {
 import {
   COLLABORATION_PROTOCOL_VERSION,
   type CollaborationClientMessage,
+  type CollaborationProjectSnapshot,
   type CollaborationServerMessage,
+  type CollaborationTranslationUpdate,
 } from './collaborationProtocol'
 
+/*
+ * Default development relay.
+ *
+ * A different server can be supplied with:
+ *
+ * VITE_COLLABORATION_SERVER_URL
+ *
+ * Example:
+ * ws://192.168.1.119:8787
+ *
+ * Production will eventually use
+ * a public secure wss:// relay.
+ */
 const COLLABORATION_SERVER_URL =
+  import.meta.env
+    .VITE_COLLABORATION_SERVER_URL
+    ?.trim() ||
   'ws://127.0.0.1:8787'
 
 export type CollaborationSocketStatus =
@@ -143,6 +161,10 @@ export function useCollaborationSocket(
               () => {
                 setStatus(
                   'connected',
+                )
+
+                setErrorMessage(
+                  null,
                 )
 
                 resolve(
@@ -295,6 +317,73 @@ export function useCollaborationSocket(
       ],
     )
 
+  /*
+   * Guest asks the host for the
+   * currently opened project.
+   */
+  const requestProject =
+    useCallback(
+      async () => {
+        await send({
+          type:
+            'request-project',
+        })
+      },
+      [
+        send,
+      ],
+    )
+
+  /*
+   * Host sends a serialized project
+   * snapshot through the relay.
+   *
+   * The relay forwards it unchanged.
+   */
+  const sendProjectSnapshot =
+    useCallback(
+      async (
+        snapshot:
+          CollaborationProjectSnapshot,
+      ) => {
+        await send({
+          type:
+            'project-snapshot',
+
+          snapshot,
+        })
+      },
+      [
+        send,
+      ],
+    )
+
+  /*
+   * Send one translation edit to
+   * everyone in the collaboration
+   * session through the relay.
+   *
+   * baseRevision will be used for
+   * conflict protection later.
+   */
+  const sendTranslationUpdate =
+    useCallback(
+      async (
+        update:
+          CollaborationTranslationUpdate,
+      ) => {
+        await send({
+          type:
+            'translation-update',
+
+          update,
+        })
+      },
+      [
+        send,
+      ],
+    )
+
   const leaveSession =
     useCallback(
       async () => {
@@ -339,11 +428,18 @@ export function useCollaborationSocket(
     status,
     errorMessage,
 
+    serverUrl:
+      COLLABORATION_SERVER_URL,
+
     connect,
     disconnect,
 
     hostSession,
     joinSession,
     leaveSession,
+
+    requestProject,
+    sendProjectSnapshot,
+    sendTranslationUpdate,
   }
 }

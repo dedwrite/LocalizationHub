@@ -1,5 +1,8 @@
+import { parse as losslessParse } from 'lossless-json'
+import { stringify as losslessStringify } from 'lossless-json'
 import {
   useCallback,
+  useRef,
   useState,
 } from 'react'
 
@@ -99,6 +102,7 @@ import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
 import WelcomeDropZone from './WelcomeDropZone'
 import CollaborationPanel from './CollaborationPanel'
+import { useCollaborationSession, type CollaborationController } from './useCollaborationSession'
 import LastSessionCard from './LastSessionCard'
 import MachineTranslationPanel from './MachineTranslationPanel'
 
@@ -148,6 +152,204 @@ function App() {
     showCollaborationPanel,
     setShowCollaborationPanel,
   ] = useState(false)
+
+  const collaborationRevisionsRef =
+    useRef(
+      new Map<string, number>(),
+    )
+
+  const collaboration:
+    CollaborationController =
+    useCollaborationSession({
+      onProjectRequested:
+        async () => {
+          const project =
+            createCurrentProject()
+
+          /*
+           * Host may create the collaboration
+           * session before opening a project.
+           *
+           * In that case there is simply
+           * nothing to send yet.
+           */
+          if (!project) {
+            return
+          }
+
+          const projectJson =
+            losslessStringify(
+              project,
+            )
+
+          if (!projectJson) {
+            return
+          }
+
+          await collaboration
+            .sendProjectSnapshot({
+              projectJson,
+
+              sourceFileName:
+                project.sourceFileName,
+
+              sentAt:
+                Date.now(),
+            })
+        },
+
+
+      onTranslationUpdate:
+        async (update) => {
+          collaborationRevisionsRef
+            .current
+            .set(
+              update.entryId,
+              update.revision,
+            )
+
+          setEntries(
+            (currentEntries) =>
+              currentEntries.map(
+                (entry) =>
+                  entry.id ===
+                  update.entryId
+                    ? {
+                        ...entry,
+
+                        translation:
+                          update.translation,
+                      }
+                    : entry,
+              ),
+          )
+
+          setIsDirty(
+            true,
+          )
+        },
+
+      onProjectSnapshot:
+        async (snapshot) => {
+          try {
+            const parsed =
+              losslessParse(
+                snapshot.projectJson,
+              )
+
+            if (
+              typeof parsed !== 'object' ||
+              parsed === null ||
+              Array.isArray(parsed)
+            ) {
+              throw new Error(
+                'Invalid collaboration project.'
+              )
+            }
+
+            const project =
+              parsed as unknown as
+                LocalizationProjectV2
+
+            const projectVersion =
+              Number(
+                String(
+                  project.version,
+                ),
+              )
+
+            if (
+              project.format !==
+                'LocalizationHubProject' ||
+              projectVersion !== 2 ||
+              !Array.isArray(
+                project.entries,
+              ) ||
+              project.entries.length === 0 ||
+              !project.document ||
+              typeof project.sourceFileName !==
+                'string'
+            ) {
+              throw new Error(
+                'Unsupported collaboration project.'
+              )
+            }
+
+            collaborationRevisionsRef
+              .current
+              .clear()
+
+            setEntries(
+              project.entries,
+            )
+
+            setFileName(
+              project.sourceFileName ||
+                snapshot.sourceFileName,
+            )
+
+            /*
+             * A collaboration snapshot
+             * is not a local .lhproj file.
+             *
+             * Never Quick Save it over
+             * an unrelated local project.
+             */
+            setProjectPath(
+              null,
+            )
+
+            setDocumentInfo(
+              project.document,
+            )
+
+            const selectedExists =
+              project.selectedEntryId &&
+              project.entries.some(
+                (entry) =>
+                  entry.id ===
+                  project.selectedEntryId,
+              )
+
+            setSelectedEntryId(
+              selectedExists
+                ? project.selectedEntryId
+                : project.entries[0].id,
+            )
+
+            setTokenProfile(
+              project.tokenProfile ??
+                'generic',
+            )
+
+            setSearchQuery('')
+            setEntryFilter('all')
+
+            /*
+             * The received snapshot is
+             * our clean collaboration
+             * baseline.
+             */
+            setIsDirty(
+              false,
+            )
+
+            showToast(
+              'success',
+              `Received ${project.sourceFileName} from the collaboration host.`,
+            )
+          } catch (error) {
+            console.error(
+              'Failed to apply collaboration project snapshot.',
+              error,
+            )
+
+            showToast(
+              'error',
+              'Could not open the project received from the host.',
+            )
+          }
+        },    })
 
   const [
     lastSession,
@@ -309,6 +511,7 @@ function App() {
       needsReviewEntryIds,
       searchQuery,
       entryFilter,
+
     })
 
   const protectedCount =
@@ -1712,6 +1915,39 @@ function App() {
     setIsDirty(
       true,
     )
+
+    if (
+      collaboration.session &&
+      collaboration.status ===
+        'connected'
+    ) {
+      const baseRevision =
+        collaborationRevisionsRef
+          .current
+          .get(
+            id,
+          ) ??
+        0
+
+      void collaboration
+        .sendTranslationUpdate({
+          entryId:
+            id,
+
+          translation:
+            value,
+
+          baseRevision,
+        })
+        .catch(
+          (error) => {
+            console.error(
+              'Failed to sync translation update.',
+              error,
+            )
+          },
+        )
+    }
   }
 
   if (
@@ -1782,7 +2018,11 @@ function App() {
 
             {
               showCollaborationPanel && (
-                <CollaborationPanel />
+                <CollaborationPanel
+                  collaboration={
+                    collaboration
+                  }
+                />
               )
             }
 
