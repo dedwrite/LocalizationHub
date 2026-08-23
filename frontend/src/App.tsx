@@ -86,12 +86,19 @@ import {
   type RecentProject,
 } from './recentProjects'
 
+import {
+  clearLastSession,
+  getLastSession,
+  rememberLastSession,
+} from './lastSession'
+
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
 import EntryListItem from './EntryListItem'
 import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
 import WelcomeDropZone from './WelcomeDropZone'
+import LastSessionCard from './LastSessionCard'
 
 import Toast, {
   type ToastMessage,
@@ -135,6 +142,15 @@ type LocalizationProjectV1 = {
 }
 
 function App() {
+  const [
+    lastSession,
+    setLastSession,
+  ] =
+    useState(
+      () =>
+        getLastSession(),
+    )
+
   const [
     entries,
     setEntries,
@@ -548,12 +564,27 @@ function App() {
     )
   }
 
+  function forgetSession() {
+    clearLastSession()
+
+    setLastSession(
+      null,
+    )
+  }
+
   function rememberProject(
     path: string,
     sourceFileName: string,
   ) {
     setRecentProjects(
       rememberRecentProject(
+        path,
+        sourceFileName,
+      ),
+    )
+
+    setLastSession(
+      rememberLastSession(
         path,
         sourceFileName,
       ),
@@ -590,6 +621,8 @@ function App() {
     ) {
       return
     }
+
+    forgetSession()
 
     setEntries(
       [],
@@ -746,6 +779,8 @@ function App() {
       setProjectPath(
         null,
       )
+
+      forgetSession()
 
       setSelectedEntryId(
         document.entries[0].id,
@@ -948,6 +983,14 @@ function App() {
       console.error(
         error,
       )
+
+      if (
+        lastSession?.projectPath ===
+        selected
+      ) {
+        forgetSession()
+      }
+
 
       if (
         openedFromRecent
@@ -1353,6 +1396,8 @@ function App() {
         null,
       )
 
+      forgetSession()
+
       setSelectedEntryId(
         document.entries[0].id,
       )
@@ -1717,6 +1762,27 @@ function App() {
             </div>
 
             <WelcomeDropZone />
+
+            {
+              lastSession && (
+                <LastSessionCard
+                  session={
+                    lastSession
+                  }
+
+                  onResume={() => {
+                    void loadProjectFromPath(
+                      lastSession.projectPath,
+                      true,
+                    )
+                  }}
+
+                  onDismiss={
+                    forgetSession
+                  }
+                />
+              )
+            }
 
 
             <RecentProjects
