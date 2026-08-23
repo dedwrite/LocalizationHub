@@ -1,10 +1,21 @@
 import {
+  useCallback,
+  useRef,
   useState,
 } from 'react'
 
+import type {
+  CollaborationParticipant,
+  CollaborationSession,
+} from './collaborationTypes'
+
+import type {
+  CollaborationServerMessage,
+} from './collaborationProtocol'
+
 import {
-  useCollaborationSession,
-} from './useCollaborationSession'
+  useCollaborationSocket,
+} from './useCollaborationSocket'
 
 import './CollaborationPanel.css'
 
@@ -33,62 +44,361 @@ function CollaborationPanel() {
   ] =
     useState('')
 
-  const {
+  const [
     session,
-    hostProject,
-    joinProject,
+    setSession,
+  ] =
+    useState<CollaborationSession | null>(
+      null,
+    )
+
+  const [
+    actionError,
+    setActionError,
+  ] =
+    useState<string | null>(
+      null,
+    )
+
+  const [
+    isSubmitting,
+    setIsSubmitting,
+  ] =
+    useState(false)
+
+  /*
+   * These refs remember what we were
+   * trying to do while waiting for the
+   * server response.
+   */
+  const pendingDisplayNameRef =
+    useRef('')
+
+  const pendingRoleRef =
+    useRef<
+      'host' |
+      'guest' |
+      null
+    >(
+      null,
+    )
+
+  const handleServerMessage =
+    useCallback(
+      (
+        message:
+          CollaborationServerMessage,
+      ) => {
+        switch (
+          message.type
+        ) {
+          case 'session-hosted': {
+            setSession({
+              sessionId:
+                message.sessionId,
+
+              role:
+                'host',
+
+              displayName:
+                pendingDisplayNameRef.current,
+
+              connectionStatus:
+                'connected',
+
+              participants:
+                [],
+            })
+
+            setIsSubmitting(
+              false,
+            )
+
+            setActionError(
+              null,
+            )
+
+            break
+          }
+
+          case 'session-joined': {
+            setSession({
+              sessionId:
+                message.sessionId,
+
+              role:
+                'guest',
+
+              displayName:
+                pendingDisplayNameRef.current,
+
+              connectionStatus:
+                'connected',
+
+              participants:
+                [],
+            })
+
+            setIsSubmitting(
+              false,
+            )
+
+            setActionError(
+              null,
+            )
+
+            break
+          }
+
+          case 'participants': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants:
+                    message.participants,
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'participant-joined': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                const alreadyExists =
+                  current.participants.some(
+                    (participant) =>
+                      participant.id ===
+                      message.participant.id,
+                  )
+
+                if (alreadyExists) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants: [
+                    ...current.participants,
+                    message.participant,
+                  ],
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'participant-left': {
+            setSession(
+              (current) => {
+                if (!current) {
+                  return current
+                }
+
+                return {
+                  ...current,
+
+                  participants:
+                    current.participants.filter(
+                      (participant) =>
+                        participant.id !==
+                        message.participantId,
+                    ),
+                }
+              },
+            )
+
+            break
+          }
+
+          case 'error': {
+            setActionError(
+              message.message,
+            )
+
+            setIsSubmitting(
+              false,
+            )
+
+            /*
+             * If the host ended the room,
+             * return the guest to the form.
+             */
+            if (
+              message.code ===
+              'session-not-found' &&
+              session
+            ) {
+              setSession(
+                null,
+              )
+            }
+
+            break
+          }
+
+          case 'pong': {
+            break
+          }
+        }
+      },
+      [
+        session,
+      ],
+    )
+
+  const {
+    status,
+    errorMessage:
+      socketErrorMessage,
+    hostSession,
+    joinSession,
     leaveSession,
   } =
-    useCollaborationSession()
+    useCollaborationSocket({
+      onMessage:
+        handleServerMessage,
+    })
 
   const trimmedName =
     displayName.trim()
 
   const trimmedSessionId =
-    sessionId.trim()
+    sessionId
+      .trim()
+      .toUpperCase()
 
   const canHost =
-    trimmedName !== ''
+    trimmedName !== '' &&
+    !isSubmitting
 
   const canJoin =
     trimmedName !== '' &&
-    trimmedSessionId !== ''
+    trimmedSessionId !== '' &&
+    !isSubmitting
 
-  function handleHost() {
+  async function handleHost() {
     if (!canHost) {
       return
     }
 
-    hostProject({
-      displayName:
+    pendingDisplayNameRef.current =
+      trimmedName
+
+    pendingRoleRef.current =
+      'host'
+
+    setActionError(
+      null,
+    )
+
+    setIsSubmitting(
+      true,
+    )
+
+    try {
+      await hostSession(
         trimmedName,
-    })
+      )
+    } catch (
+      error
+    ) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not connect to the collaboration server.'
+
+      setActionError(
+        message,
+      )
+
+      setIsSubmitting(
+        false,
+      )
+    }
   }
 
-  function handleJoin() {
+  async function handleJoin() {
     if (!canJoin) {
       return
     }
 
-    joinProject({
-      sessionId:
-        trimmedSessionId,
+    pendingDisplayNameRef.current =
+      trimmedName
 
-      displayName:
+    pendingRoleRef.current =
+      'guest'
+
+    setActionError(
+      null,
+    )
+
+    setIsSubmitting(
+      true,
+    )
+
+    try {
+      await joinSession(
+        trimmedSessionId,
         trimmedName,
-    })
+      )
+    } catch (
+      error
+    ) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not connect to the collaboration server.'
+
+      setActionError(
+        message,
+      )
+
+      setIsSubmitting(
+        false,
+      )
+    }
   }
 
-  /*
-   * Once a local collaboration session
-   * exists, show the session view instead
-   * of the Host / Join form.
-   *
-   * Networking is NOT connected yet.
-   */
+  async function handleLeave() {
+    await leaveSession()
+
+    setSession(
+      null,
+    )
+
+    setActionError(
+      null,
+    )
+
+    setIsSubmitting(
+      false,
+    )
+
+    pendingDisplayNameRef.current =
+      ''
+
+    pendingRoleRef.current =
+      null
+  }
+
   if (session) {
     const isHost =
-      session.role === 'host'
+      session.role ===
+      'host'
 
     return (
       <section className="collaboration-panel">
@@ -99,20 +409,22 @@ function CollaborationPanel() {
             </span>
 
             <h2>
-              Session Ready
+              Session Connected
             </h2>
 
             <p>
-              Local session preview.
-              Networking will be connected
-              next.
+              Connected to the
+              LocalizationHub collaboration
+              relay.
             </p>
           </div>
 
           <span className="collaboration-panel-badge">
-            {isHost
-              ? 'HOST'
-              : 'GUEST'}
+            {
+              isHost
+                ? 'HOST'
+                : 'GUEST'
+            }
           </span>
         </div>
 
@@ -143,9 +455,11 @@ function CollaborationPanel() {
             </span>
 
             <strong>
-              {isHost
-                ? 'Host'
-                : 'Guest'}
+              {
+                isHost
+                  ? 'Host'
+                  : 'Guest'
+              }
             </strong>
           </div>
 
@@ -167,7 +481,10 @@ function CollaborationPanel() {
 
           {
             session.participants.map(
-              (participant) => (
+              (
+                participant:
+                  CollaborationParticipant,
+              ) => (
                 <div
                   className="collaboration-participant"
                   key={
@@ -176,15 +493,21 @@ function CollaborationPanel() {
                 >
                   <span className="collaboration-participant-avatar">
                     {
-                      participant.displayName
-                        .slice(0, 1)
+                      participant
+                        .displayName
+                        .slice(
+                          0,
+                          1,
+                        )
                         .toUpperCase()
                     }
                   </span>
 
                   <div>
                     <strong>
-                      {participant.displayName}
+                      {
+                        participant.displayName
+                      }
                     </strong>
 
                     <span>
@@ -207,22 +530,49 @@ function CollaborationPanel() {
 
           <div>
             <strong>
-              Local Preview
+              Connected
             </strong>
 
             <span>
-              No network connection has
-              been created yet.
+              {
+                status ===
+                'connected'
+                  ? 'Connected to ws://127.0.0.1:8787'
+                  : 'Connection closed'
+              }
             </span>
           </div>
         </div>
 
+        {
+          (
+            actionError ||
+            socketErrorMessage
+          ) && (
+            <div
+              className="collaboration-host-note"
+              role="alert"
+            >
+              <strong>
+                Connection Error
+              </strong>
+
+              <span>
+                {
+                  actionError ??
+                  socketErrorMessage
+                }
+              </span>
+            </div>
+          )
+        }
+
         <button
           type="button"
           className="collaboration-leave-button"
-          onClick={
-            leaveSession
-          }
+          onClick={() => {
+            void handleLeave()
+          }}
         >
           Leave Session
         </button>
@@ -261,9 +611,16 @@ function CollaborationPanel() {
               ? 'active'
               : ''
           }
+          disabled={
+            isSubmitting
+          }
           onClick={() => {
             setMode(
               'join',
+            )
+
+            setActionError(
+              null,
             )
           }}
         >
@@ -277,9 +634,16 @@ function CollaborationPanel() {
               ? 'active'
               : ''
           }
+          disabled={
+            isSubmitting
+          }
           onClick={() => {
             setMode(
               'host',
+            )
+
+            setActionError(
+              null,
             )
           }}
         >
@@ -298,10 +662,17 @@ function CollaborationPanel() {
             value={
               displayName
             }
+            disabled={
+              isSubmitting
+            }
             onChange={
               (event) => {
                 setDisplayName(
                   event.target.value,
+                )
+
+                setActionError(
+                  null,
                 )
               }
             }
@@ -325,14 +696,21 @@ function CollaborationPanel() {
                 value={
                   sessionId
                 }
+                disabled={
+                  isSubmitting
+                }
                 onChange={
                   (event) => {
                     setSessionId(
                       event.target.value,
                     )
+
+                    setActionError(
+                      null,
+                    )
                   }
                 }
-                placeholder="Enter session code"
+                placeholder="LH-ABC123"
                 autoComplete="off"
                 spellCheck={
                   false
@@ -350,9 +728,32 @@ function CollaborationPanel() {
               </strong>
 
               <span>
-                A temporary session ID
-                will be generated locally
-                for the preview.
+                The relay server will
+                generate a session ID
+                when you connect.
+              </span>
+            </div>
+          )
+        }
+
+        {
+          (
+            actionError ||
+            socketErrorMessage
+          ) && (
+            <div
+              className="collaboration-host-note"
+              role="alert"
+            >
+              <strong>
+                Connection Error
+              </strong>
+
+              <span>
+                {
+                  actionError ??
+                  socketErrorMessage
+                }
               </span>
             </div>
           )
@@ -366,16 +767,23 @@ function CollaborationPanel() {
               ? !canHost
               : !canJoin
           }
-          onClick={
-            mode === 'host'
-              ? handleHost
-              : handleJoin
-          }
+          onClick={() => {
+            if (
+              mode ===
+              'host'
+            ) {
+              void handleHost()
+            } else {
+              void handleJoin()
+            }
+          }}
         >
           {
-            mode === 'host'
-              ? 'Host Project'
-              : 'Join Project'
+            isSubmitting
+              ? 'Connecting...'
+              : mode === 'host'
+                ? 'Host Project'
+                : 'Join Project'
           }
         </button>
       </div>
@@ -385,12 +793,18 @@ function CollaborationPanel() {
 
         <div>
           <strong>
-            Offline
+            {
+              status ===
+              'connecting'
+                ? 'Connecting'
+                : 'Offline'
+            }
           </strong>
 
           <span>
-            Collaboration networking
-            will be connected next.
+            Local collaboration relay:
+            {' '}
+            ws://127.0.0.1:8787
           </span>
         </div>
       </div>
