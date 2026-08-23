@@ -19,7 +19,11 @@ const COLLABORATION_SERVER_URL =
   import.meta.env
     .VITE_COLLABORATION_SERVER_URL
     ?.trim() ||
-  'ws://127.0.0.1:8787'
+  (
+    import.meta.env.PROD
+      ? 'wss://localizationhub-relay.onrender.com'
+      : 'ws://127.0.0.1:8787'
+  )
 
 const RECONNECT_DELAY_MS =
   750
