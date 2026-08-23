@@ -1804,6 +1804,33 @@ try {
     }
   }
 
+  /*
+   * Auto-load Cloud Projects when the Cloud API is available.
+   *
+   * Development uses the local API automatically.
+   * Production waits until VITE_CLOUD_API_URL is configured.
+   */
+  useEffect(
+    () => {
+      const cloudApiAvailable =
+        import.meta.env.DEV ||
+        Boolean(
+          import.meta.env
+            .VITE_CLOUD_API_URL
+            ?.trim(),
+        )
+
+      if (
+        !cloudApiAvailable
+      ) {
+        return
+      }
+
+      void handleRefreshCloudProjects()
+    },
+    [],
+  )
+
   async function handleOpenCloudProject() {
     const projectId =
       cloudProjectId.trim()

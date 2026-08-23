@@ -5,7 +5,7 @@
   "description": "WebSocket collaboration relay for LocalizationHub.",
   "type": "module",
   "scripts": {
-    "dev": "node server.mjs",
+    "dev": "node dev.mjs",
     "start": "node server.mjs",
     "check": "node --check server.mjs"
   },
