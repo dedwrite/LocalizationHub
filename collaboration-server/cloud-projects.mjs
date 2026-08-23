@@ -2,6 +2,10 @@ import {
   randomUUID,
 } from 'node:crypto'
 
+import {
+  getDatabasePool,
+} from './database.mjs'
+
 export class CloudProjectConflictError
   extends Error {
   constructor(
@@ -31,23 +35,6 @@ export class CloudProjectNotFoundError
   }
 }
 
-/*
- * Temporary development store.
- *
- * This intentionally lives behind a small API
- * so it can be replaced with PostgreSQL later
- * without changing the HTTP contract.
- *
- * Data is lost whenever the relay restarts.
- */
-const projects =
-  new Map()
-
-function nowIso() {
-  return new Date()
-    .toISOString()
-}
-
 function requireUserId(
   userId,
 ) {
@@ -64,63 +51,33 @@ function requireUserId(
   return userId
 }
 
-function getOwnedRecord(
-  projectId,
-  userId,
-) {
-  requireUserId(
-    userId,
-  )
-
-  const record =
-    projects.get(
-      projectId,
-    )
-
-  /*
-   * Intentionally return the same error for:
-   * - missing project
-   * - project owned by another user
-   *
-   * This prevents leaking whether a Cloud Project
-   * UUID exists to an unauthorized account.
-   */
-  if (
-    !record ||
-    record.ownerUserId !==
-      userId
-  ) {
-    throw new CloudProjectNotFoundError()
-  }
-
-  return record
-}
-
 function toSnapshot(
-  record,
+  row,
 ) {
   return {
     id:
-      record.id,
+      row.id,
 
     name:
-      record.name,
+      row.name,
 
     role:
       'owner',
 
     revision:
-      record.revision,
+      row.revision,
 
     updatedAt:
-      record.updatedAt,
+      new Date(
+        row.updated_at,
+      ).toISOString(),
 
     project:
-      record.project,
+      row.project,
   }
 }
 
-export function createCloudProject({
+export async function createCloudProject({
   ownerUserId,
   name,
   project,
@@ -129,96 +86,142 @@ export function createCloudProject({
     ownerUserId,
   )
 
-  const id =
-    randomUUID()
+  const database =
+    getDatabasePool()
 
-  const record = {
-    id,
-
-    ownerUserId,
-
-    name,
-
-    revision:
-      1,
-
-    updatedAt:
-      nowIso(),
-
-    project,
-  }
-
-  projects.set(
-    id,
-    record,
-  )
+  const result =
+    await database.query(
+      `INSERT INTO projects (
+         id,
+         owner_user_id,
+         name,
+         revision,
+         project
+       )
+       VALUES (
+         $1,
+         $2,
+         $3,
+         1,
+         $4::jsonb
+       )
+       RETURNING
+         id,
+         name,
+         revision,
+         updated_at,
+         project`,
+      [
+        randomUUID(),
+        ownerUserId,
+        name,
+        JSON.stringify(
+          project,
+        ),
+      ],
+    )
 
   return toSnapshot(
-    record,
+    result.rows[0],
   )
 }
 
-export function listCloudProjects(
+export async function listCloudProjects(
   userId,
 ) {
   requireUserId(
     userId,
   )
 
-  return Array.from(
-    projects.values(),
-  )
-    .filter(
-      (record) =>
-        record.ownerUserId ===
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `SELECT
+         id,
+         name,
+         project ->> 'sourceFileName'
+           AS source_file_name,
+         revision,
+         updated_at
+       FROM projects
+       WHERE owner_user_id = $1
+       ORDER BY updated_at DESC`,
+      [
         userId,
+      ],
     )
-    .map(
-      (record) => ({
-        id:
-          record.id,
 
-        name:
-          record.name,
+  return result.rows.map(
+    (
+      row,
+    ) => ({
+      id:
+        row.id,
 
-        sourceFileName:
-          record.project
-            .sourceFileName,
+      name:
+        row.name,
 
-        role:
-          'owner',
+      sourceFileName:
+        row.source_file_name,
 
-        revision:
-          record.revision,
+      role:
+        'owner',
 
-        updatedAt:
-          record.updatedAt,
-      }),
-    )
-    .sort(
-      (a, b) =>
-        b.updatedAt.localeCompare(
-          a.updatedAt,
-        ),
-    )
+      revision:
+        row.revision,
+
+      updatedAt:
+        new Date(
+          row.updated_at,
+        ).toISOString(),
+    }),
+  )
 }
 
-export function getCloudProject(
+export async function getCloudProject(
   projectId,
   userId,
 ) {
-  const record =
-    getOwnedRecord(
-      projectId,
-      userId,
+  requireUserId(
+    userId,
+  )
+
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `SELECT
+         id,
+         name,
+         revision,
+         updated_at,
+         project
+       FROM projects
+       WHERE id = $1
+         AND owner_user_id = $2
+       LIMIT 1`,
+      [
+        projectId,
+        userId,
+      ],
     )
 
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    throw new CloudProjectNotFoundError()
+  }
+
   return toSnapshot(
-    record,
+    row,
   )
 }
 
-export function saveCloudProject(
+export async function saveCloudProject(
   projectId,
   {
     userId,
@@ -226,31 +229,69 @@ export function saveCloudProject(
     baseRevision,
   },
 ) {
-  const record =
-    getOwnedRecord(
-      projectId,
-      userId,
+  requireUserId(
+    userId,
+  )
+
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `UPDATE projects
+       SET
+         project = $3::jsonb,
+         revision = revision + 1,
+         updated_at = NOW()
+       WHERE id = $1
+         AND owner_user_id = $2
+         AND revision = $4
+       RETURNING
+         id,
+         name,
+         revision,
+         updated_at,
+         project`,
+      [
+        projectId,
+        userId,
+        JSON.stringify(
+          project,
+        ),
+        baseRevision,
+      ],
     )
 
   if (
-    baseRevision !==
-    record.revision
+    result.rowCount ===
+      1
   ) {
-    throw new CloudProjectConflictError(
-      record.revision,
+    return toSnapshot(
+      result.rows[0],
     )
   }
 
-  record.project =
-    project
+  const current =
+    await database.query(
+      `SELECT revision
+       FROM projects
+       WHERE id = $1
+         AND owner_user_id = $2
+       LIMIT 1`,
+      [
+        projectId,
+        userId,
+      ],
+    )
 
-  record.revision +=
-    1
+  const row =
+    current.rows[0]
 
-  record.updatedAt =
-    nowIso()
+  if (!row) {
+    throw new CloudProjectNotFoundError()
+  }
 
-  return toSnapshot(
-    record,
+  throw new CloudProjectConflictError(
+    row.revision,
   )
 }

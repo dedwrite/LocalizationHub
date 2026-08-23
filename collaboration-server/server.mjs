@@ -2074,7 +2074,7 @@ const httpServer =
           200,
           {
             projects:
-              listCloudProjects(
+              await listCloudProjects(
                 cloudAuthentication.user.id,
               ),
           },
@@ -2100,7 +2100,7 @@ const httpServer =
             )
 
           const project =
-            getCloudProject(
+            await getCloudProject(
               projectId,
               cloudAuthentication.user.id,
             )
@@ -2194,7 +2194,7 @@ const httpServer =
           }
 
           const project =
-            saveCloudProject(
+            await saveCloudProject(
               projectId,
               {
                 userId:
@@ -2312,7 +2312,7 @@ const httpServer =
           }
 
           const project =
-            createCloudProject({
+            await createCloudProject({
               ownerUserId:
                 cloudAuthentication.user.id,
 
