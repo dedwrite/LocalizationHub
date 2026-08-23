@@ -98,6 +98,7 @@ import EntryListItem from './EntryListItem'
 import DedwriteMark from './DedwriteMark'
 import RecentProjects from './RecentProjectsPanel'
 import WelcomeDropZone from './WelcomeDropZone'
+import CollaborationPanel from './CollaborationPanel'
 import LastSessionCard from './LastSessionCard'
 import MachineTranslationPanel from './MachineTranslationPanel'
 
@@ -143,6 +144,11 @@ type LocalizationProjectV1 = {
 }
 
 function App() {
+  const [
+    showCollaborationPanel,
+    setShowCollaborationPanel,
+  ] = useState(false)
+
   const [
     lastSession,
     setLastSession,
@@ -1757,12 +1763,28 @@ function App() {
               <button
                 className="secondary-button"
                 type="button"
+                onClick={() => {
+                  setShowCollaborationPanel(
+                    (current) =>
+                      !current,
+                  )
+                }}
               >
-                Join Project
+                {
+                  showCollaborationPanel
+                    ? 'Close Collaboration'
+                    : 'Join Project'
+                }
               </button>
             </div>
 
             <WelcomeDropZone />
+
+            {
+              showCollaborationPanel && (
+                <CollaborationPanel />
+              )
+            }
 
             {
               lastSession && (
