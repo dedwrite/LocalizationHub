@@ -74,6 +74,10 @@ import {
 import {
   useFileDrop,
 } from './useFileDrop'
+
+import {
+  useWorkspaceShortcuts,
+} from './useWorkspaceShortcuts'
 import {
   clearRecentProjects,
   getRecentProjects,
@@ -1418,6 +1422,20 @@ function App() {
     )
   }
 
+  useWorkspaceShortcuts({
+    onOpenFile:
+      handleOpenFile,
+
+    onOpenProject:
+      handleOpenProject,
+
+    onHome:
+      handleGoHome,
+
+    hasOpenWorkspace:
+      entries.length > 0,
+  })
+
   useFileDrop({
     enabled:
       entries.length === 0,
@@ -1671,6 +1689,7 @@ function App() {
               <button
                 className="primary-button"
                 type="button"
+                title="Open File ? Ctrl+O"
                 onClick={
                   handleOpenFile
                 }
@@ -1681,6 +1700,7 @@ function App() {
               <button
                 className="secondary-button"
                 type="button"
+                title="Open Project ? Ctrl+Shift+O"
                 onClick={
                   handleOpenProject
                 }
@@ -1778,7 +1798,7 @@ function App() {
               onClick={() => {
                 void handleGoHome()
               }}
-              title="Close Project ? Return Home"
+              title="Home ? Ctrl+H"
             >
               Home
             </button>
@@ -1850,6 +1870,7 @@ function App() {
               onClick={
                 handleOpenFile
               }
+              title="Open File ? Ctrl+O"
             >
               Open File
             </button>
