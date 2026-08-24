@@ -1,6 +1,7 @@
 import {
   CloudProjectConflictError,
   CloudProjectNotFoundError,
+  CloudProjectPermissionError,
   createCloudProject,
   getCloudProject,
   listCloudProjects,
@@ -2690,6 +2691,25 @@ const httpServer =
               {
                 error:
                   'project-not-found',
+              },
+            )
+
+            return
+          }
+
+          if (
+            error instanceof
+            CloudProjectPermissionError
+          ) {
+            sendJson(
+              response,
+              403,
+              {
+                error:
+                  'project-read-only',
+
+                message:
+                  'This Cloud Project is read-only for your account.',
               },
             )
 

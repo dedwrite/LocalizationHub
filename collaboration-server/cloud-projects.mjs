@@ -35,6 +35,18 @@ export class CloudProjectNotFoundError
   }
 }
 
+export class CloudProjectPermissionError
+  extends Error {
+  constructor() {
+    super(
+      'Cloud project is read-only for this user.',
+    )
+
+    this.name =
+      'CloudProjectPermissionError'
+  }
+}
+
 function requireUserId(
   userId,
 ) {
@@ -62,7 +74,7 @@ function toSnapshot(
       row.name,
 
     role:
-      'owner',
+      row.role,
 
     revision:
       row.revision,
@@ -110,7 +122,8 @@ export async function createCloudProject({
          name,
          revision,
          updated_at,
-         project`,
+         project,
+         'owner'::text AS role`,
       [
         randomUUID(),
         ownerUserId,
@@ -139,15 +152,28 @@ export async function listCloudProjects(
   const result =
     await database.query(
       `SELECT
-         id,
-         name,
-         project ->> 'sourceFileName'
+         projects.id,
+         projects.name,
+         projects.project ->> 'sourceFileName'
            AS source_file_name,
-         revision,
-         updated_at
+         projects.revision,
+         projects.updated_at,
+         CASE
+           WHEN projects.owner_user_id = $1
+             THEN 'owner'
+           ELSE memberships.role
+         END AS role
        FROM projects
-       WHERE owner_user_id = $1
-       ORDER BY updated_at DESC`,
+       LEFT JOIN project_memberships
+         AS memberships
+         ON memberships.project_id =
+              projects.id
+        AND memberships.user_id = $1
+       WHERE
+         projects.owner_user_id = $1
+         OR memberships.user_id IS NOT NULL
+       ORDER BY
+         projects.updated_at DESC`,
       [
         userId,
       ],
@@ -167,7 +193,7 @@ export async function listCloudProjects(
         row.source_file_name,
 
       role:
-        'owner',
+        row.role,
 
       revision:
         row.revision,
@@ -194,14 +220,28 @@ export async function getCloudProject(
   const result =
     await database.query(
       `SELECT
-         id,
-         name,
-         revision,
-         updated_at,
-         project
+         projects.id,
+         projects.name,
+         projects.revision,
+         projects.updated_at,
+         projects.project,
+         CASE
+           WHEN projects.owner_user_id = $2
+             THEN 'owner'
+           ELSE memberships.role
+         END AS role
        FROM projects
-       WHERE id = $1
-         AND owner_user_id = $2
+       LEFT JOIN project_memberships
+         AS memberships
+         ON memberships.project_id =
+              projects.id
+        AND memberships.user_id = $2
+       WHERE
+         projects.id = $1
+         AND (
+           projects.owner_user_id = $2
+           OR memberships.user_id IS NOT NULL
+         )
        LIMIT 1`,
       [
         projectId,
@@ -243,15 +283,33 @@ export async function saveCloudProject(
          project = $3::jsonb,
          revision = revision + 1,
          updated_at = NOW()
-       WHERE id = $1
-         AND owner_user_id = $2
+       WHERE
+         id = $1
          AND revision = $4
+         AND (
+           owner_user_id = $2
+           OR EXISTS (
+             SELECT 1
+             FROM project_memberships
+             WHERE
+               project_memberships.project_id =
+                 projects.id
+               AND project_memberships.user_id = $2
+               AND project_memberships.role =
+                 'editor'
+           )
+         )
        RETURNING
          id,
          name,
          revision,
          updated_at,
-         project`,
+         project,
+         CASE
+           WHEN owner_user_id = $2
+             THEN 'owner'
+           ELSE 'editor'
+         END AS role`,
       [
         projectId,
         userId,
@@ -273,10 +331,25 @@ export async function saveCloudProject(
 
   const current =
     await database.query(
-      `SELECT revision
+      `SELECT
+         projects.revision,
+         CASE
+           WHEN projects.owner_user_id = $2
+             THEN 'owner'
+           ELSE memberships.role
+         END AS role
        FROM projects
-       WHERE id = $1
-         AND owner_user_id = $2
+       LEFT JOIN project_memberships
+         AS memberships
+         ON memberships.project_id =
+              projects.id
+        AND memberships.user_id = $2
+       WHERE
+         projects.id = $1
+         AND (
+           projects.owner_user_id = $2
+           OR memberships.user_id IS NOT NULL
+         )
        LIMIT 1`,
       [
         projectId,
@@ -289,6 +362,13 @@ export async function saveCloudProject(
 
   if (!row) {
     throw new CloudProjectNotFoundError()
+  }
+
+  if (
+    row.role ===
+      'viewer'
+  ) {
+    throw new CloudProjectPermissionError()
   }
 
   throw new CloudProjectConflictError(
