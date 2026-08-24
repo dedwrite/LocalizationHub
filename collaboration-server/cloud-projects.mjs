@@ -242,6 +242,81 @@ async function getProjectAccess(
   }
 }
 
+/*
+ * Returns the caller's effective role for a
+ * Cloud Project without throwing when the
+ * user is not a member.
+ *
+ * Used by the WebSocket layer to authorize
+ * live collaboration edits and to decide
+ * whether a participant may still write.
+ */
+export async function getCloudProjectRoleForUser(
+  projectId,
+  userId,
+) {
+  requireUserId(
+    userId,
+  )
+
+  const database =
+    getDatabasePool()
+
+  const result =
+    await database.query(
+      `SELECT
+         projects.owner_user_id,
+         CASE
+           WHEN projects.owner_user_id = $2
+             THEN 'owner'
+           ELSE memberships.role
+         END AS role
+       FROM projects
+       LEFT JOIN project_memberships
+         AS memberships
+         ON memberships.project_id =
+              projects.id
+        AND memberships.user_id = $2
+       WHERE
+         projects.id = $1
+       LIMIT 1`,
+      [
+        projectId,
+        userId,
+      ],
+    )
+
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    return null
+  }
+
+  if (
+    row.owner_user_id ===
+      userId
+  ) {
+    return 'owner'
+  }
+
+  return (
+    row.role ??
+    null
+  )
+}
+
+export function canEditCloudProject(
+  role,
+) {
+  return (
+    role ===
+      'owner' ||
+    role ===
+      'editor'
+  )
+}
+
 async function requireProjectAccess(
   database,
   projectId,

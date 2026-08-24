@@ -42,6 +42,17 @@ type UseCollaborationSessionOptions = {
     conflict:
       CollaborationTranslationConflict,
   ) => void | Promise<void>
+
+  onMembershipChanged?: (
+    role:
+      | 'owner'
+      | 'editor'
+      | 'viewer',
+  ) => void | Promise<void>
+
+  onMembershipRevoked?: (
+    projectId: string,
+  ) => void | Promise<void>
 }
 
 export function useCollaborationSession(
@@ -93,6 +104,16 @@ export function useCollaborationSession(
       options.onTranslationConflict,
     )
 
+  const onMembershipChangedRef =
+    useRef(
+      options.onMembershipChanged,
+    )
+
+  const onMembershipRevokedRef =
+    useRef(
+      options.onMembershipRevoked,
+    )
+
   const requestProjectRef =
     useRef<
       (() => Promise<void>) |
@@ -138,6 +159,26 @@ export function useCollaborationSession(
     },
     [
       options.onTranslationConflict,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onMembershipChangedRef.current =
+        options.onMembershipChanged
+    },
+    [
+      options.onMembershipChanged,
+    ],
+  )
+
+  useEffect(
+    () => {
+      onMembershipRevokedRef.current =
+        options.onMembershipRevoked
+    },
+    [
+      options.onMembershipRevoked,
     ],
   )
 
@@ -412,12 +453,32 @@ export function useCollaborationSession(
               message.code ===
                 'session-not-found' ||
               message.code ===
-                'resume-invalid'
+                'resume-invalid' ||
+              message.code ===
+                'membership-required'
             ) {
               setSession(
                 null,
               )
             }
+
+            break
+          }
+
+          case 'membership-changed': {
+            void onMembershipChangedRef
+              .current?.(message.role)
+
+            break
+          }
+
+          case 'membership-revoked': {
+            setSession(
+              null,
+            )
+
+            void onMembershipRevokedRef
+              .current?.(message.projectId)
 
             break
           }
@@ -527,6 +588,8 @@ export function useCollaborationSession(
         try {
           await hostSession(
             displayName,
+
+            request.cloudProjectId,
           )
         } catch (
           error

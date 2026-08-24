@@ -70,6 +70,7 @@ import {
 import {
   CloudProjectsApiError,
   createCloudProject,
+  getCloudProject,
   getCloudProjectsErrorMessage,
   listCloudProjects,
 } from './cloudProjectsApi'
@@ -522,7 +523,35 @@ function App() {
               'Could not open the project received from the host.',
             )
           }
-        },    })
+        },
+
+      onMembershipChanged:
+        async (role) => {
+          setWorkspaceCloudRole(
+            role,
+          )
+
+          showToast(
+            role === 'viewer'
+              ? 'info'
+              : 'success',
+
+            role === 'viewer'
+              ? 'تم تحويلك إلى Viewer. أصبح الوصول للقراءة فقط.'
+              : `تم تحديث صلاحيتك إلى ${formatCloudProjectRole(role)}.`,
+          )
+        },
+
+      onMembershipRevoked:
+        async () => {
+          showToast(
+            'error',
+            'تم سحب عضويتك من هذا المشروع.',
+          )
+
+          resetToHome()
+        },
+    })
 
   const [
     authSession,
@@ -1135,17 +1164,16 @@ function App() {
     )
   }
 
-  async function handleGoHome() {
-    const canContinue =
-      await confirmUnsavedChanges(
-        isDirty,
-      )
-
-    if (
-      !canContinue
-    ) {
-      return
-    }
+  /*
+   * Leaves any collaboration session and
+   * resets the workspace to the home view
+   * without prompting for unsaved changes.
+   *
+   * Used for clean, forced exits such as
+   * membership revocation.
+   */
+  function resetToHome() {
+    void collaboration.leaveSession()
 
     forgetSession()
 
@@ -1193,6 +1221,171 @@ function App() {
       null,
     )
   }
+
+  async function handleGoHome() {
+    const canContinue =
+      await confirmUnsavedChanges(
+        isDirty,
+      )
+
+    if (
+      !canContinue
+    ) {
+      return
+    }
+
+    resetToHome()
+  }
+
+  /*
+   * Hosts a collaboration session from the
+   * open editor.
+   *
+   * When the current project is Cloud, the
+   * session is bound to its Cloud Project ID,
+   * so the server enforces Cloud membership
+   * and live role semantics.
+   *
+   * Local projects keep the plain
+   * collaboration flow without Cloud checks.
+   */
+  async function handleHostCollaboration() {
+    const displayName =
+      authSession?.user.username ??
+      'LocalizationHub User'
+
+    await collaboration.hostProject({
+      displayName,
+
+      cloudProjectId:
+        projectLocation?.kind ===
+          'cloud'
+          ? projectLocation.projectId
+          : undefined,
+    })
+  }
+
+  /*
+   * Re-fetches the current Cloud Project role
+   * so the editor locks/unlocks immediately
+   * after an owner changes membership while
+   * this project is open.
+   */
+  async function refreshCloudRole() {
+    if (
+      projectLocation?.kind !==
+      'cloud'
+    ) {
+      return
+    }
+
+    try {
+      const snapshot =
+        await getCloudProject(
+          projectLocation.projectId,
+        )
+
+      setWorkspaceCloudRole(
+        snapshot.role,
+      )
+
+      setCloudRevision(
+        snapshot.revision,
+      )
+    } catch (
+      error
+    ) {
+      if (
+        error instanceof
+          CloudProjectsApiError &&
+        error.code ===
+          'project-not-found'
+      ) {
+        showToast(
+          'error',
+          'تم سحب عضويتك من هذا المشروع.',
+        )
+
+        resetToHome()
+
+        return
+      }
+
+      console.error(
+        'Failed to refresh Cloud Project role.',
+        error,
+      )
+    }
+  }
+
+  const refreshCloudRoleRef =
+    useRef(
+      refreshCloudRole,
+    )
+
+  useEffect(
+    () => {
+      refreshCloudRoleRef.current =
+        refreshCloudRole
+    },
+  )
+
+  /*
+   * Refresh the Cloud Project role whenever
+   * the window regains focus, becomes visible
+   * again, or regains network, so membership
+   * changes made by the owner on another
+   * device apply without polling.
+   */
+  useEffect(
+    () => {
+      function refreshFromEvent() {
+        void refreshCloudRoleRef.current()
+      }
+
+      function handleVisibilityChange() {
+        if (
+          document.visibilityState ===
+          'visible'
+        ) {
+          refreshFromEvent()
+        }
+      }
+
+      window.addEventListener(
+        'focus',
+        refreshFromEvent,
+      )
+
+      window.addEventListener(
+        'online',
+        refreshFromEvent,
+      )
+
+      document.addEventListener(
+        'visibilitychange',
+        handleVisibilityChange,
+      )
+
+      return () => {
+        window.removeEventListener(
+          'focus',
+          refreshFromEvent,
+        )
+
+        window.removeEventListener(
+          'online',
+          refreshFromEvent,
+        )
+
+        document.removeEventListener(
+          'visibilitychange',
+          handleVisibilityChange,
+        )
+      }
+    },
+    [],
+  )
 
   async function handleOpenFile() {
     const canContinue =
@@ -1679,6 +1872,22 @@ try {
       console.error(
         error,
       )
+
+      if (
+        error instanceof
+          CloudProjectsApiError &&
+        error.code ===
+          'project-read-only'
+      ) {
+        showToast(
+          'info',
+          'تم تحويلك إلى Viewer. أصبح الوصول للقراءة فقط.',
+        )
+
+        await refreshCloudRole()
+
+        return
+      }
 
       if (
         error instanceof
@@ -3609,6 +3818,31 @@ try {
                     collaboration.leaveSession
                   }
                 />
+              )
+            }
+
+            {
+              !collaboration.session && (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    void handleHostCollaboration()
+                  }}
+                  disabled={
+                    workspaceReadOnly
+                  }
+                  title={
+                    workspaceReadOnly
+                      ? 'Viewer access is read-only.'
+                      : projectLocation?.kind ===
+                          'cloud'
+                        ? 'Host a collaboration session for this Cloud Project.'
+                        : 'Host a collaboration session.'
+                  }
+                >
+                  Host Collaboration
+                </button>
               )
             }
 

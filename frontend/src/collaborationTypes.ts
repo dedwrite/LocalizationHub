@@ -33,4 +33,7 @@ export type JoinProjectRequest = {
 
 export type HostProjectRequest = {
   displayName: string
+
+  cloudProjectId?:
+    string
 }

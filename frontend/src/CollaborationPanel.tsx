@@ -19,10 +19,15 @@ type CollaborationMode =
 type CollaborationPanelProps = {
   collaboration:
     CollaborationController
+
+  cloudProjectId?:
+    string
 }
 
 function CollaborationPanel({
   collaboration,
+
+  cloudProjectId,
 }: CollaborationPanelProps) {
   const [
     mode,
@@ -97,6 +102,8 @@ function CollaborationPanel({
     await hostProject({
       displayName:
         trimmedName,
+
+      cloudProjectId,
     })
   }
 

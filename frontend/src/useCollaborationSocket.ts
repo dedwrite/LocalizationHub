@@ -15,6 +15,10 @@ import {
   type CollaborationTranslationUpdate,
 } from './collaborationProtocol'
 
+import {
+  getAuthToken,
+} from './authSession'
+
 const COLLABORATION_SERVER_URL =
   import.meta.env
     .VITE_COLLABORATION_SERVER_URL
@@ -24,6 +28,108 @@ const COLLABORATION_SERVER_URL =
       ? 'wss://localizationhub-relay.onrender.com'
       : 'ws://127.0.0.1:8787'
   )
+
+/*
+ * Browsers cannot attach custom headers to a
+ * WebSocket handshake, so a short-lived,
+ * one-time ticket is passed as a query
+ * parameter instead of the real session token.
+ */
+function getCollaborationWebSocketUrl(
+  ticket:
+    string | null,
+):
+  string {
+  if (!ticket) {
+    return COLLABORATION_SERVER_URL
+  }
+
+  const separator =
+    COLLABORATION_SERVER_URL.includes('?')
+      ? '&'
+      : '?'
+
+  return (
+    `${COLLABORATION_SERVER_URL}${separator}ticket=${encodeURIComponent(ticket)}`
+  )
+}
+
+/*
+ * Derives the HTTP(S) base URL for the
+ * collaboration relay from the WebSocket
+ * URL so the ticket endpoint is always
+ * reached on the same service.
+ */
+function getCollaborationHttpUrl():
+  string {
+  return COLLABORATION_SERVER_URL
+    .replace(
+      /^wss:/,
+      'https:',
+    )
+    .replace(
+      /^ws:/,
+      'http:',
+    )
+}
+
+/*
+ * Exchanges the stored session token over
+ * HTTPS for a one-time WebSocket ticket.
+ *
+ * Returns null when the user is not signed
+ * in or the request fails, in which case the
+ * connection proceeds anonymously (local
+ * collaboration keeps working).
+ */
+async function fetchCollaborationTicket():
+  Promise<string | null> {
+  const token =
+    getAuthToken()
+
+  if (!token) {
+    return null
+  }
+
+  try {
+    const response =
+      await fetch(
+        `${getCollaborationHttpUrl()}/api/collaboration/ticket`,
+        {
+          method:
+            'POST',
+
+          headers: {
+            Accept:
+              'application/json',
+
+            Authorization:
+              `Bearer ${token}`,
+          },
+        },
+      )
+
+    if (!response.ok) {
+      return null
+    }
+
+    const body =
+      await response.json() as {
+        ticket?:
+          unknown
+      }
+
+    return (
+      typeof body.ticket ===
+        'string' &&
+      body.ticket.length > 0
+        ? body.ticket
+        : null
+    )
+  } catch {
+    return null
+  }
+}
 
 const RECONNECT_DELAY_MS =
   750
@@ -307,7 +413,7 @@ export function useCollaborationSocket(
           | 'reconnect',
       ) => {
         return new Promise<WebSocket>(
-          (
+          async (
             resolve,
             reject,
           ) => {
@@ -360,9 +466,14 @@ export function useCollaborationSocket(
               null,
             )
 
+            const ticket =
+              await fetchCollaborationTicket()
+
             const socket =
               new WebSocket(
-                COLLABORATION_SERVER_URL,
+                getCollaborationWebSocketUrl(
+                  ticket,
+                ),
               )
 
             socketRef.current =
@@ -914,6 +1025,9 @@ export function useCollaborationSocket(
       async (
         displayName:
           string,
+
+        cloudProjectId?:
+          string,
       ) => {
         reconnectCredentialsRef.current =
           null
@@ -934,6 +1048,8 @@ export function useCollaborationSocket(
             COLLABORATION_PROTOCOL_VERSION,
 
           displayName,
+
+          cloudProjectId,
         })
       },
       [

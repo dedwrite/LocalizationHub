@@ -9,8 +9,10 @@ import {
   CloudProjectOwnerRequiredError,
   CloudProjectPermissionError,
   addCloudProjectMember,
+  canEditCloudProject,
   createCloudProject,
   getCloudProject,
+  getCloudProjectRoleForUser,
   listCloudProjectMembers,
   listCloudProjects,
   removeCloudProjectMember,
@@ -44,7 +46,12 @@ import {
   EMAIL_VERIFICATION_PAGE,
 } from './email-verification-page.mjs'
 
-import { randomUUID, randomInt } from 'node:crypto'
+import {
+  randomUUID,
+  randomInt,
+  randomBytes,
+} from 'node:crypto'
+
 import { readFileSync } from 'node:fs'
 
 import {
@@ -122,11 +129,93 @@ const HEARTBEAT_INTERVAL_MS =
 const SESSION_ID_ALPHABET =
   'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
+const COLLABORATION_TICKET_TTL_MS =
+  60_000
+
 const sessions =
   new Map()
 
 const clients =
   new Map()
+
+/*
+ * Short-lived, one-time WebSocket tickets.
+ *
+ * The real session token is never sent to
+ * the WebSocket. A client exchanges it over
+ * HTTPS for a ticket that expires in 60s and
+ * can only be consumed once.
+ */
+const collaborationTickets =
+  new Map()
+
+function createCollaborationTicket(
+  userId,
+  emailVerified,
+) {
+  const ticket =
+    randomBytes(32)
+      .toString(
+        'base64url',
+      )
+
+  collaborationTickets.set(
+    ticket,
+    {
+      userId,
+
+      emailVerified:
+        Boolean(
+          emailVerified,
+        ),
+
+      expiresAt:
+        Date.now() +
+        COLLABORATION_TICKET_TTL_MS,
+    },
+  )
+
+  return ticket
+}
+
+function consumeCollaborationTicket(
+  ticket,
+) {
+  if (
+    typeof ticket !==
+      'string' ||
+    ticket.length === 0
+  ) {
+    return null
+  }
+
+  const record =
+    collaborationTickets.get(
+      ticket,
+    )
+
+  if (!record) {
+    return null
+  }
+
+  /*
+   * One-time use: remove before any
+   * early return so a ticket can never
+   * be replayed.
+   */
+  collaborationTickets.delete(
+    ticket,
+  )
+
+  if (
+    record.expiresAt <=
+    Date.now()
+  ) {
+    return null
+  }
+
+  return record
+}
 
 function send(
   socket,
@@ -299,6 +388,172 @@ function normalizeSessionId(
   return normalized
 }
 
+function normalizeCloudProjectId(
+  value,
+) {
+  if (
+    typeof value !==
+    'string'
+  ) {
+    return null
+  }
+
+  const normalized =
+    value
+      .trim()
+      .toLowerCase()
+
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      normalized,
+    )
+  ) {
+    return null
+  }
+
+  return normalized
+}
+
+/*
+ * WebSocket connections cannot carry
+ * custom headers from the browser, so the
+ * short-lived one-time ticket travels as a
+ * query parameter.
+ *
+ * The real session token is never sent here.
+ */
+function getWebSocketTicket(
+  url,
+) {
+  if (
+    typeof url !==
+      'string'
+  ) {
+    return null
+  }
+
+  const queryIndex =
+    url.indexOf('?')
+
+  if (
+    queryIndex ===
+      -1
+  ) {
+    return null
+  }
+
+  const query =
+    url.slice(
+      queryIndex +
+        1,
+    )
+
+  const ticket = query
+    .split('&')
+    .map(
+      (part) =>
+        part.split('='),
+    )
+    .find(
+      ([
+        key,
+      ]) =>
+        key ===
+        'ticket',
+    )
+
+  if (
+    !ticket ||
+    ticket.length < 2
+  ) {
+    return null
+  }
+
+  try {
+    return decodeURIComponent(
+      ticket[1],
+    )
+  } catch {
+    return null
+  }
+}
+
+/*
+ * Authorizes a live collaboration mutation.
+ *
+ * When a session is bound to a Cloud Project,
+ * only members with editor or owner access may
+ * push translation updates or snapshots.
+ *
+ * The check is re-evaluated on every mutation
+ * so live role changes take effect immediately.
+ */
+async function requireCloudEditAccess(
+  socket,
+  session,
+) {
+  const state =
+    getClientState(
+      socket,
+    )
+
+  if (
+    !state ||
+    !session.cloudProjectId
+  ) {
+    return {
+      allowed:
+        true,
+    }
+  }
+
+  if (!state.userId) {
+    return {
+      allowed:
+        false,
+
+      code:
+        'authentication-required',
+
+      message:
+        'Sign in to edit this Cloud Project.',
+    }
+  }
+
+  const role =
+    await getCloudProjectRoleForUser(
+      session.cloudProjectId,
+      state.userId,
+    )
+
+  if (
+    !canEditCloudProject(
+      role,
+    )
+  ) {
+    return {
+      allowed:
+        false,
+
+      code:
+        'permission-denied',
+
+      message:
+        role ===
+        null
+          ? 'Your access to this Cloud Project was revoked.'
+          : 'Viewer access is read-only for this Cloud Project.',
+    }
+  }
+
+  return {
+    allowed:
+      true,
+
+    role,
+  }
+}
+
 function getClientState(
   socket,
 ) {
@@ -408,6 +663,136 @@ function broadcastParticipants(
   )
 }
 
+/*
+ * Notifies every connected client of a Cloud
+ * Project that a membership changed.
+ *
+ * - `newRole === null` means the member was
+ *   removed; the affected client is told to
+ *   leave the Cloud workspace immediately.
+ * - Otherwise the affected client receives
+ *   its updated role so the UI can lock or
+ *   unlock editing without reopening.
+ */
+function notifyCloudMembershipChanged(
+  projectId,
+  affectedUserId,
+  newRole,
+) {
+  for (
+    const session of
+      sessions.values()
+  ) {
+    if (
+      session.cloudProjectId !==
+      projectId
+    ) {
+      continue
+    }
+
+    for (
+      const socket of
+        session.sockets
+    ) {
+      const state =
+        getClientState(
+          socket,
+        )
+
+      if (
+        !state ||
+        state.userId !==
+          affectedUserId
+      ) {
+        continue
+      }
+
+      if (
+        newRole ===
+        null
+      ) {
+        send(
+          socket,
+          {
+            type:
+              'membership-revoked',
+
+            projectId,
+          },
+        )
+
+        clearClientSession(
+          socket,
+        )
+
+        session.sockets.delete(
+          socket,
+        )
+      } else {
+        state.cloudRole =
+          newRole
+
+        send(
+          socket,
+          {
+            type:
+              'membership-changed',
+
+            projectId,
+
+            role:
+              newRole,
+          },
+        )
+      }
+    }
+
+    /*
+     * If the removed member was the host,
+     * end the session cleanly for the
+     * remaining guests.
+     */
+    if (
+      session.hostSocket &&
+      !session.sockets.has(
+        session.hostSocket,
+      )
+    ) {
+      for (
+        const guestSocket of
+          session.sockets
+      ) {
+        clearClientSession(
+          guestSocket,
+        )
+
+        sendError(
+          guestSocket,
+          'session-not-found',
+          'The host left the collaboration session.',
+        )
+      }
+
+      session.sockets.clear()
+
+      sessions.delete(
+        session.sessionId,
+      )
+
+      continue
+    }
+
+    if (
+      session.sockets.size ===
+      0
+    ) {
+      sessions.delete(
+        session.sessionId,
+      )
+    }
+  }
+}
+
 function clearClientSession(
   socket,
 ) {
@@ -444,6 +829,12 @@ function clearClientSession(
     null
 
   state.selectedEntryId =
+    null
+
+  state.cloudProjectId =
+    null
+
+  state.cloudRole =
     null
 }
 
@@ -600,7 +991,7 @@ function scheduleClientDisconnect(
     )
 }
 
-function handleResumeSession(
+async function handleResumeSession(
   socket,
   message,
 ) {
@@ -708,6 +1099,75 @@ function handleResumeSession(
     return
   }
 
+  /*
+   * A Cloud reconnect must belong to the
+   * same authenticated account that owned
+   * the previous participant connection.
+   *
+   * The current Cloud role is fetched again
+   * from PostgreSQL so role changes and
+   * removals apply during reconnect.
+   */
+  let resumedCloudState =
+    null
+
+  if (session.cloudProjectId) {
+    const currentState =
+      getClientState(
+        socket,
+      )
+
+    if (!currentState?.userId) {
+      sendError(
+        socket,
+        'authentication-required',
+        'Sign in to resume this Cloud Project collaboration session.',
+      )
+
+      return
+    }
+
+    if (
+      !previousState.userId ||
+      currentState.userId !==
+        previousState.userId
+    ) {
+      sendError(
+        socket,
+        'resume-invalid',
+        'The collaboration participant could not be resumed.',
+      )
+
+      return
+    }
+
+    const cloudRole =
+      await getCloudProjectRoleForUser(
+        session.cloudProjectId,
+        currentState.userId,
+      )
+
+    if (!cloudRole) {
+      sendError(
+        socket,
+        'membership-required',
+        'You are no longer a member of this Cloud Project.',
+      )
+
+      return
+    }
+
+    resumedCloudState = {
+      userId:
+        currentState.userId,
+      emailVerified:
+        currentState.emailVerified,
+      cloudProjectId:
+        session.cloudProjectId,
+      cloudRole,
+    }
+  }
+
   if (
     previousSocket.readyState ===
     WebSocket.OPEN
@@ -719,6 +1179,20 @@ function handleResumeSession(
     )
 
     return
+  }
+
+  if (resumedCloudState) {
+    previousState.userId =
+      resumedCloudState.userId
+
+    previousState.emailVerified =
+      resumedCloudState.emailVerified
+
+    previousState.cloudProjectId =
+      resumedCloudState.cloudProjectId
+
+    previousState.cloudRole =
+      resumedCloudState.cloudRole
   }
 
   if (
@@ -782,7 +1256,7 @@ function handleResumeSession(
   )
 }
 
-function handleHostSession(
+async function handleHostSession(
   socket,
   message,
 ) {
@@ -812,6 +1286,66 @@ function handleHostSession(
     )
 
     return
+  }
+
+  const cloudProjectId =
+    message.cloudProjectId
+      ? normalizeCloudProjectId(
+          message.cloudProjectId,
+        )
+      : null
+
+  if (
+    message.cloudProjectId &&
+    !cloudProjectId
+  ) {
+    sendError(
+      socket,
+      'invalid-message',
+      'The Cloud Project ID is invalid.',
+    )
+
+    return
+  }
+
+  let cloudRole =
+    null
+
+  if (cloudProjectId) {
+    const stateBefore =
+      getClientState(
+        socket,
+      )
+
+    if (!stateBefore?.userId) {
+      sendError(
+        socket,
+        'authentication-required',
+        'Sign in to host a Cloud Project collaboration session.',
+      )
+
+      return
+    }
+
+    cloudRole =
+      await getCloudProjectRoleForUser(
+        cloudProjectId,
+        stateBefore.userId,
+      )
+
+    if (
+      !canEditCloudProject(
+        cloudRole,
+      )
+    ) {
+      sendError(
+        socket,
+        'permission-denied',
+        'Only editors and the owner can host a Cloud Project collaboration session.',
+      )
+
+      return
+    }
   }
 
   leaveSession(
@@ -847,10 +1381,18 @@ function handleHostSession(
   state.disconnectedAt =
     null
 
+  state.cloudProjectId =
+    cloudProjectId
+
+  state.cloudRole =
+    cloudRole
+
   const session = {
     sessionId,
 
     inviteToken,
+
+    cloudProjectId,
 
     hostSocket:
       socket,
@@ -905,7 +1447,7 @@ function handleHostSession(
   )
 }
 
-function handleJoinSession(
+async function handleJoinSession(
   socket,
   message,
 ) {
@@ -980,6 +1522,42 @@ function handleJoinSession(
     return
   }
 
+  let cloudRole =
+    null
+
+  if (session.cloudProjectId) {
+    const joinerState =
+      getClientState(
+        socket,
+      )
+
+    if (!joinerState?.userId) {
+      sendError(
+        socket,
+        'authentication-required',
+        'Sign in to join this Cloud Project collaboration session.',
+      )
+
+      return
+    }
+
+    cloudRole =
+      await getCloudProjectRoleForUser(
+        session.cloudProjectId,
+        joinerState.userId,
+      )
+
+    if (!cloudRole) {
+      sendError(
+        socket,
+        'membership-required',
+        'You are not a member of this Cloud Project.',
+      )
+
+      return
+    }
+  }
+
   if (
     session.sockets.size >=
     MAX_SESSION_PARTICIPANTS
@@ -1019,6 +1597,13 @@ function handleJoinSession(
 
   state.disconnectedAt =
     null
+
+  state.cloudProjectId =
+    session.cloudProjectId ??
+    null
+
+  state.cloudRole =
+    cloudRole
 
   session.sockets.add(
     socket,
@@ -1171,7 +1756,7 @@ function handleProjectRequest(
   )
 }
 
-function handleProjectSnapshot(
+async function handleProjectSnapshot(
   socket,
   message,
 ) {
@@ -1198,6 +1783,22 @@ function handleProjectSnapshot(
       socket,
       'host-only',
       'Only the host can send a project snapshot.',
+    )
+
+    return
+  }
+
+  const access =
+    await requireCloudEditAccess(
+      socket,
+      session,
+    )
+
+  if (!access.allowed) {
+    sendError(
+      socket,
+      access.code,
+      access.message,
     )
 
     return
@@ -1242,7 +1843,7 @@ function handleProjectSnapshot(
   )
 }
 
-function handleTranslationUpdate(
+async function handleTranslationUpdate(
   socket,
   message,
 ) {
@@ -1260,6 +1861,22 @@ function handleTranslationUpdate(
     session,
   } =
     context
+
+  const access =
+    await requireCloudEditAccess(
+      socket,
+      session,
+    )
+
+  if (!access.allowed) {
+    sendError(
+      socket,
+      access.code,
+      access.message,
+    )
+
+    return
+  }
 
   const update =
     message.update
@@ -1469,7 +2086,7 @@ function handleEntrySelection(
 }
 
 
-function handleMessage(
+async function handleMessage(
   socket,
   rawData,
 ) {
@@ -1510,7 +2127,7 @@ function handleMessage(
     message.type
   ) {
     case 'host-session':
-      handleHostSession(
+      await handleHostSession(
         socket,
         message,
       )
@@ -1518,14 +2135,14 @@ function handleMessage(
       break
 
     case 'join-session':
-      handleJoinSession(
+      await handleJoinSession(
         socket,
         message,
       )
 
       break
     case 'resume-session':
-      handleResumeSession(
+      await handleResumeSession(
         socket,
         message,
       )
@@ -1548,7 +2165,7 @@ function handleMessage(
       break
 
     case 'project-snapshot':
-      handleProjectSnapshot(
+      await handleProjectSnapshot(
         socket,
         message,
       )
@@ -1556,7 +2173,7 @@ function handleMessage(
       break
 
     case 'translation-update':
-      handleTranslationUpdate(
+      await handleTranslationUpdate(
         socket,
         message,
       )
@@ -2250,6 +2867,59 @@ const httpServer =
         return
       }
 
+      /*
+       * Issues a short-lived, one-time WebSocket
+       * ticket in exchange for a valid bearer
+       * token.
+       *
+       * The real session token never enters the
+       * WebSocket URL; only this ephemeral ticket
+       * does. It is consumed once on connection.
+       */
+      if (
+        request.method ===
+          'POST' &&
+        request.url ===
+          '/api/collaboration/ticket'
+      ) {
+        const authentication =
+          await getAuthenticatedRequest(
+            request,
+          )
+
+        if (!authentication) {
+          sendJson(
+            response,
+            401,
+            {
+              error:
+                'unauthorized',
+
+              message:
+                'Authentication is required.',
+            },
+          )
+
+          return
+        }
+
+        const ticket =
+          createCollaborationTicket(
+            authentication.user.id,
+            authentication.user.emailVerified,
+          )
+
+        sendJson(
+          response,
+          200,
+          {
+            ticket,
+          },
+        )
+
+        return
+      }
+
       if (
         request.method ===
           'POST' &&
@@ -2902,6 +3572,12 @@ const httpServer =
               },
             )
 
+          notifyCloudMembershipChanged(
+            projectId,
+            memberUserId,
+            member.role,
+          )
+
           sendJson(
             response,
             200,
@@ -2959,6 +3635,12 @@ const httpServer =
               memberUserId,
               cloudAuthentication.user.id,
             )
+
+          notifyCloudMembershipChanged(
+            projectId,
+            memberUserId,
+            null,
+          )
 
           sendJson(
             response,
@@ -3310,7 +3992,7 @@ httpServer.listen(
 
 server.on(
   'connection',
-  (socket) => {
+  (socket, request) => {
     socket.isAlive =
       true
 
@@ -3348,8 +4030,47 @@ server.on(
 
         disconnectedAt:
           null,
+
+        userId:
+          null,
+
+        emailVerified:
+          false,
+
+        cloudProjectId:
+          null,
+
+        cloudRole:
+          null,
       },
     )
+
+    const connectionTicket =
+      getWebSocketTicket(
+        request?.url,
+      )
+
+    if (connectionTicket) {
+      const ticketRecord =
+        consumeCollaborationTicket(
+          connectionTicket,
+        )
+
+      if (ticketRecord) {
+        const state =
+          getClientState(
+            socket,
+          )
+
+        if (state) {
+          state.userId =
+            ticketRecord.userId
+
+          state.emailVerified =
+            ticketRecord.emailVerified
+        }
+      }
+    }
 
     console.log(
       '[client] connected',
@@ -3358,23 +4079,23 @@ server.on(
     socket.on(
       'message',
       (rawData) => {
-        try {
-          handleMessage(
-            socket,
-            rawData,
-          )
-        } catch (error) {
-          console.error(
-            '[server] message handling failed',
-            error,
-          )
+        handleMessage(
+          socket,
+          rawData,
+        ).catch(
+          (error) => {
+            console.error(
+              '[server] message handling failed',
+              error,
+            )
 
-          sendError(
-            socket,
-            'server-error',
-            'The collaboration server could not process the request.',
-          )
-        }
+            sendError(
+              socket,
+              'server-error',
+              'The collaboration server could not process the request.',
+            )
+          },
+        )
       },
     )
 

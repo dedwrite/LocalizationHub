@@ -92,6 +92,9 @@ export type CollaborationClientMessage =
 
       displayName:
         string
+
+      cloudProjectId?:
+        string
     }
   | {
       type:
@@ -264,6 +267,25 @@ export type CollaborationServerMessage =
     }
   | {
       type:
+        'membership-changed'
+
+      projectId:
+        string
+
+      role:
+        | 'owner'
+        | 'editor'
+        | 'viewer'
+    }
+  | {
+      type:
+        'membership-revoked'
+
+      projectId:
+        string
+    }
+  | {
+      type:
         'error'
 
       code:
@@ -277,6 +299,9 @@ export type CollaborationServerMessage =
         | 'revision-conflict'
         | 'resume-invalid'
         | 'server-error'
+        | 'authentication-required'
+        | 'membership-required'
+        | 'permission-denied'
 
       message:
         string
