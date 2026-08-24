@@ -1,11 +1,21 @@
 import {
   CloudProjectConflictError,
+  CloudProjectMemberAlreadyExistsError,
+  CloudProjectMemberNotFoundError,
+  CloudProjectMemberUserNotFoundError,
+  CloudProjectMemberValidationError,
   CloudProjectNotFoundError,
+  CloudProjectOwnerImmutableError,
+  CloudProjectOwnerRequiredError,
   CloudProjectPermissionError,
+  addCloudProjectMember,
   createCloudProject,
   getCloudProject,
+  listCloudProjectMembers,
   listCloudProjects,
+  removeCloudProjectMember,
   saveCloudProject,
+  updateCloudProjectMember,
 } from './cloud-projects.mjs'
 
 import {
@@ -1832,6 +1842,140 @@ function sendEmailVerificationError(
 }
 
 
+function sendCloudProjectMembershipError(
+  response,
+  error,
+) {
+  if (
+    error instanceof
+      CloudProjectNotFoundError
+  ) {
+    sendJson(
+      response,
+      404,
+      {
+        error:
+          'project-not-found',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectOwnerRequiredError
+  ) {
+    sendJson(
+      response,
+      403,
+      {
+        error:
+          'project-owner-required',
+
+        message:
+          'Only the Cloud Project owner can manage members.',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectOwnerImmutableError
+  ) {
+    sendJson(
+      response,
+      409,
+      {
+        error:
+          'project-owner-immutable',
+
+        message:
+          'The Cloud Project owner cannot be modified or removed.',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectMemberNotFoundError
+  ) {
+    sendJson(
+      response,
+      404,
+      {
+        error:
+          'project-member-not-found',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectMemberUserNotFoundError
+  ) {
+    sendJson(
+      response,
+      404,
+      {
+        error:
+          'project-member-user-not-found',
+
+        message:
+          'No account exists with that username.',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectMemberAlreadyExistsError
+  ) {
+    sendJson(
+      response,
+      409,
+      {
+        error:
+          'project-member-already-exists',
+
+        message:
+          'This user is already part of the Cloud Project.',
+      },
+    )
+
+    return true
+  }
+
+  if (
+    error instanceof
+      CloudProjectMemberValidationError
+  ) {
+    sendJson(
+      response,
+      400,
+      {
+        error:
+          'invalid-request',
+
+        message:
+          error.message,
+      },
+    )
+
+    return true
+  }
+
+  return false
+}
+
 async function getAuthenticatedRequest(
   request,
 ) {
@@ -2546,9 +2690,317 @@ const httpServer =
         return
       }
 
+      const projectMembersMatch =
+        request.url?.match(
+          /^\/api\/projects\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\/members$/
+        )
+
+      const projectMemberMatch =
+        request.url?.match(
+          /^\/api\/projects\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\/members\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
+        )
+
+      if (
+        request.method ===
+          'GET' &&
+        projectMembersMatch
+      ) {
+        try {
+          const projectId =
+            projectMembersMatch[1]
+              .toLowerCase()
+
+          const members =
+            await listCloudProjectMembers(
+              projectId,
+              cloudAuthentication.user.id,
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              members,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            sendCloudProjectMembershipError(
+              response,
+              error,
+            )
+          ) {
+            return
+          }
+
+          console.error(
+            'Cloud project member list request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            500,
+            {
+              error:
+                'internal-error',
+            },
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'POST' &&
+        projectMembersMatch
+      ) {
+        try {
+          const projectId =
+            projectMembersMatch[1]
+              .toLowerCase()
+
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object' ||
+            typeof body.username !==
+              'string' ||
+            body.username.trim()
+              .length === 0 ||
+            (
+              body.role !==
+                'editor' &&
+              body.role !==
+                'viewer'
+            )
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-request',
+              },
+            )
+
+            return
+          }
+
+          const member =
+            await addCloudProjectMember(
+              projectId,
+              {
+                userId:
+                  cloudAuthentication.user.id,
+
+                username:
+                  body.username.trim(),
+
+                role:
+                  body.role,
+              },
+            )
+
+          sendJson(
+            response,
+            201,
+            {
+              member,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            sendCloudProjectMembershipError(
+              response,
+              error,
+            )
+          ) {
+            return
+          }
+
+          console.error(
+            'Cloud project member add request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            500,
+            {
+              error:
+                'internal-error',
+            },
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'PATCH' &&
+        projectMemberMatch
+      ) {
+        try {
+          const projectId =
+            projectMemberMatch[1]
+              .toLowerCase()
+
+          const memberUserId =
+            projectMemberMatch[2]
+              .toLowerCase()
+
+          const body =
+            await readJsonBody(
+              request,
+            )
+
+          if (
+            !body ||
+            typeof body !==
+              'object' ||
+            (
+              body.role !==
+                'editor' &&
+              body.role !==
+                'viewer'
+            )
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-request',
+              },
+            )
+
+            return
+          }
+
+          const member =
+            await updateCloudProjectMember(
+              projectId,
+              memberUserId,
+              {
+                userId:
+                  cloudAuthentication.user.id,
+
+                role:
+                  body.role,
+              },
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              member,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            sendCloudProjectMembershipError(
+              response,
+              error,
+            )
+          ) {
+            return
+          }
+
+          console.error(
+            'Cloud project member update request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            500,
+            {
+              error:
+                'internal-error',
+            },
+          )
+        }
+
+        return
+      }
+
+      if (
+        request.method ===
+          'DELETE' &&
+        projectMemberMatch
+      ) {
+        try {
+          const projectId =
+            projectMemberMatch[1]
+              .toLowerCase()
+
+          const memberUserId =
+            projectMemberMatch[2]
+              .toLowerCase()
+
+          const removed =
+            await removeCloudProjectMember(
+              projectId,
+              memberUserId,
+              cloudAuthentication.user.id,
+            )
+
+          sendJson(
+            response,
+            200,
+            {
+              removedUserId:
+                removed.userId,
+            },
+          )
+        } catch (
+          error
+        ) {
+          if (
+            sendCloudProjectMembershipError(
+              response,
+              error,
+            )
+          ) {
+            return
+          }
+
+          console.error(
+            'Cloud project member remove request failed:',
+            error,
+          )
+
+          sendJson(
+            response,
+            500,
+            {
+              error:
+                'internal-error',
+            },
+          )
+        }
+
+        return
+      }
+
       const projectMatch =
         request.url?.match(
-          /^\/api\/projects\/([^/?#]+)$/
+          /^\/api\/projects\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
         )
 
       if (
@@ -2558,9 +3010,8 @@ const httpServer =
       ) {
         try {
           const projectId =
-            decodeURIComponent(
-              projectMatch[1],
-            )
+            projectMatch[1]
+              .toLowerCase()
 
           const project =
             await getCloudProject(
@@ -2619,9 +3070,8 @@ const httpServer =
       ) {
         try {
           const projectId =
-            decodeURIComponent(
-              projectMatch[1],
-            )
+            projectMatch[1]
+              .toLowerCase()
 
           const body =
             await readJsonBody(

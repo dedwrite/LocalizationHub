@@ -47,6 +47,81 @@ export class CloudProjectPermissionError
   }
 }
 
+export class CloudProjectOwnerRequiredError
+  extends Error {
+  constructor() {
+    super(
+      'Cloud Project owner access is required.',
+    )
+
+    this.name =
+      'CloudProjectOwnerRequiredError'
+  }
+}
+
+export class CloudProjectOwnerImmutableError
+  extends Error {
+  constructor() {
+    super(
+      'Cloud Project owner membership cannot be modified.',
+    )
+
+    this.name =
+      'CloudProjectOwnerImmutableError'
+  }
+}
+
+export class CloudProjectMemberValidationError
+  extends Error {
+  constructor(
+    message =
+      'Cloud Project membership request is invalid.',
+  ) {
+    super(
+      message,
+    )
+
+    this.name =
+      'CloudProjectMemberValidationError'
+  }
+}
+
+export class CloudProjectMemberNotFoundError
+  extends Error {
+  constructor() {
+    super(
+      'Cloud Project member was not found.',
+    )
+
+    this.name =
+      'CloudProjectMemberNotFoundError'
+  }
+}
+
+export class CloudProjectMemberAlreadyExistsError
+  extends Error {
+  constructor() {
+    super(
+      'User is already part of this Cloud Project.',
+    )
+
+    this.name =
+      'CloudProjectMemberAlreadyExistsError'
+  }
+}
+
+export class CloudProjectMemberUserNotFoundError
+  extends Error {
+  constructor() {
+    super(
+      'Cloud Project member user was not found.',
+    )
+
+    this.name =
+      'CloudProjectMemberUserNotFoundError'
+  }
+}
+
 function requireUserId(
   userId,
 ) {
@@ -61,6 +136,147 @@ function requireUserId(
   }
 
   return userId
+}
+
+function requireMemberRole(
+  role,
+) {
+  if (
+    role !==
+      'editor' &&
+    role !==
+      'viewer'
+  ) {
+    throw new CloudProjectMemberValidationError(
+      'Cloud Project member role must be editor or viewer.',
+    )
+  }
+
+  return role
+}
+
+function requireMemberUsername(
+  username,
+) {
+  if (
+    typeof username !==
+      'string'
+  ) {
+    throw new CloudProjectMemberValidationError(
+      'Cloud Project member username is required.',
+    )
+  }
+
+  const normalized =
+    username
+      .trim()
+      .toLowerCase()
+
+  if (
+    normalized.length <
+      3 ||
+    normalized.length >
+      32 ||
+    !/^[a-z0-9._-]+$/.test(
+      normalized,
+    )
+  ) {
+    throw new CloudProjectMemberValidationError(
+      'Cloud Project member username is invalid.',
+    )
+  }
+
+  return normalized
+}
+
+async function getProjectAccess(
+  database,
+  projectId,
+  userId,
+) {
+  requireUserId(
+    userId,
+  )
+
+  const result =
+    await database.query(
+      `SELECT
+         projects.owner_user_id,
+         CASE
+           WHEN projects.owner_user_id = $2
+             THEN 'owner'
+           ELSE memberships.role
+         END AS role
+       FROM projects
+       LEFT JOIN project_memberships
+         AS memberships
+         ON memberships.project_id =
+              projects.id
+        AND memberships.user_id = $2
+       WHERE
+         projects.id = $1
+         AND (
+           projects.owner_user_id = $2
+           OR memberships.user_id IS NOT NULL
+         )
+       LIMIT 1`,
+      [
+        projectId,
+        userId,
+      ],
+    )
+
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    throw new CloudProjectNotFoundError()
+  }
+
+  return {
+    ownerUserId:
+      row.owner_user_id,
+
+    role:
+      row.role,
+  }
+}
+
+async function requireProjectAccess(
+  database,
+  projectId,
+  userId,
+) {
+  const access =
+    await getProjectAccess(
+      database,
+      projectId,
+      userId,
+    )
+
+  return access.role
+}
+
+async function requireProjectOwner(
+  database,
+  projectId,
+  userId,
+) {
+  const access =
+    await getProjectAccess(
+      database,
+      projectId,
+      userId,
+    )
+
+  if (
+    access.role !==
+      'owner'
+  ) {
+    throw new CloudProjectOwnerRequiredError()
+  }
+
+  return access.ownerUserId
 }
 
 function toSnapshot(
@@ -374,4 +590,337 @@ export async function saveCloudProject(
   throw new CloudProjectConflictError(
     row.revision,
   )
+}
+
+
+export async function listCloudProjectMembers(
+  projectId,
+  userId,
+) {
+  const database =
+    getDatabasePool()
+
+  await requireProjectAccess(
+    database,
+    projectId,
+    userId,
+  )
+
+  const ownerResult =
+    await database.query(
+      `SELECT
+         users.id AS user_id,
+         users.username,
+         projects.created_at
+       FROM projects
+       INNER JOIN users
+         ON users.id =
+              projects.owner_user_id
+       WHERE projects.id = $1
+       LIMIT 1`,
+      [
+        projectId,
+      ],
+    )
+
+  const owner =
+    ownerResult.rows[0]
+
+  if (!owner) {
+    throw new CloudProjectNotFoundError()
+  }
+
+  const membersResult =
+    await database.query(
+      `SELECT
+         memberships.user_id,
+         users.username,
+         memberships.role,
+         memberships.created_at
+       FROM project_memberships
+         AS memberships
+       INNER JOIN users
+         ON users.id =
+              memberships.user_id
+       WHERE
+         memberships.project_id = $1
+       ORDER BY
+         memberships.created_at ASC,
+         users.username ASC`,
+      [
+        projectId,
+      ],
+    )
+
+  return [
+    {
+      userId:
+        owner.user_id,
+
+      username:
+        owner.username,
+
+      role:
+        'owner',
+
+      joinedAt:
+        new Date(
+          owner.created_at,
+        ).toISOString(),
+    },
+
+    ...membersResult.rows.map(
+      (
+        row,
+      ) => ({
+        userId:
+          row.user_id,
+
+        username:
+          row.username,
+
+        role:
+          row.role,
+
+        joinedAt:
+          new Date(
+            row.created_at,
+          ).toISOString(),
+      }),
+    ),
+  ]
+}
+
+export async function addCloudProjectMember(
+  projectId,
+  {
+    userId,
+    username,
+    role,
+  },
+) {
+  requireMemberRole(
+    role,
+  )
+
+  const normalizedUsername =
+    requireMemberUsername(
+      username,
+    )
+
+  const database =
+    getDatabasePool()
+
+  const ownerUserId =
+    await requireProjectOwner(
+      database,
+      projectId,
+      userId,
+    )
+
+  const targetResult =
+    await database.query(
+      `SELECT
+         id,
+         username
+       FROM users
+       WHERE
+         username = $1
+       LIMIT 1`,
+      [
+        normalizedUsername,
+      ],
+    )
+
+  const target =
+    targetResult.rows[0]
+
+  if (!target) {
+    throw new CloudProjectMemberUserNotFoundError()
+  }
+
+  if (
+    target.id ===
+      ownerUserId
+  ) {
+    throw new CloudProjectMemberAlreadyExistsError()
+  }
+
+  const result =
+    await database.query(
+      `INSERT INTO project_memberships (
+         project_id,
+         user_id,
+         role
+       )
+       VALUES (
+         $1,
+         $2,
+         $3
+       )
+       ON CONFLICT (
+         project_id,
+         user_id
+       )
+       DO NOTHING
+       RETURNING
+         user_id,
+         role,
+         created_at`,
+      [
+        projectId,
+        target.id,
+        role,
+      ],
+    )
+
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    throw new CloudProjectMemberAlreadyExistsError()
+  }
+
+  return {
+    userId:
+      row.user_id,
+
+    username:
+      target.username,
+
+    role:
+      row.role,
+
+    joinedAt:
+      new Date(
+        row.created_at,
+      ).toISOString(),
+  }
+}
+
+export async function updateCloudProjectMember(
+  projectId,
+  memberUserId,
+  {
+    userId,
+    role,
+  },
+) {
+  requireMemberRole(
+    role,
+  )
+
+  const database =
+    getDatabasePool()
+
+  const ownerUserId =
+    await requireProjectOwner(
+      database,
+      projectId,
+      userId,
+    )
+
+  if (
+    memberUserId ===
+      ownerUserId
+  ) {
+    throw new CloudProjectOwnerImmutableError()
+  }
+
+  const result =
+    await database.query(
+      `UPDATE project_memberships
+         AS memberships
+       SET
+         role = $3,
+         updated_at = NOW()
+       FROM users
+       WHERE
+         memberships.project_id = $1
+         AND memberships.user_id = $2
+         AND users.id =
+               memberships.user_id
+       RETURNING
+         memberships.user_id,
+         users.username,
+         memberships.role,
+         memberships.created_at`,
+      [
+        projectId,
+        memberUserId,
+        role,
+      ],
+    )
+
+  const row =
+    result.rows[0]
+
+  if (!row) {
+    throw new CloudProjectMemberNotFoundError()
+  }
+
+  return {
+    userId:
+      row.user_id,
+
+    username:
+      row.username,
+
+    role:
+      row.role,
+
+    joinedAt:
+      new Date(
+        row.created_at,
+      ).toISOString(),
+  }
+}
+
+export async function removeCloudProjectMember(
+  projectId,
+  memberUserId,
+  userId,
+) {
+  const database =
+    getDatabasePool()
+
+  const ownerUserId =
+    await requireProjectOwner(
+      database,
+      projectId,
+      userId,
+    )
+
+  if (
+    memberUserId ===
+      ownerUserId
+  ) {
+    throw new CloudProjectOwnerImmutableError()
+  }
+
+  const result =
+    await database.query(
+      `DELETE FROM project_memberships
+       WHERE
+         project_id = $1
+         AND user_id = $2
+       RETURNING user_id`,
+      [
+        projectId,
+        memberUserId,
+      ],
+    )
+
+  if (
+    result.rowCount !==
+      1
+  ) {
+    throw new CloudProjectMemberNotFoundError()
+  }
+
+  return {
+    userId:
+      result.rows[0]
+        .user_id,
+  }
 }

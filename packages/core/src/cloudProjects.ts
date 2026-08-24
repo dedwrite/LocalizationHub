@@ -82,3 +82,54 @@ export type GetCloudProjectResponse = {
   project:
     CloudProjectSnapshot
 }
+
+export type CloudProjectMemberRole =
+  | 'editor'
+  | 'viewer'
+
+export type CloudProjectMember = {
+  userId:
+    string
+
+  username:
+    string
+
+  role:
+    CloudProjectRole
+
+  joinedAt:
+    string
+}
+
+export type ListCloudProjectMembersResponse = {
+  members:
+    CloudProjectMember[]
+}
+
+export type AddCloudProjectMemberRequest = {
+  username:
+    string
+
+  role:
+    CloudProjectMemberRole
+}
+
+export type AddCloudProjectMemberResponse = {
+  member:
+    CloudProjectMember
+}
+
+export type UpdateCloudProjectMemberRequest = {
+  role:
+    CloudProjectMemberRole
+}
+
+export type UpdateCloudProjectMemberResponse = {
+  member:
+    CloudProjectMember
+}
+
+export type RemoveCloudProjectMemberResponse = {
+  removedUserId:
+    string
+}
