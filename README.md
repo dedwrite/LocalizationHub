@@ -1,28 +1,27 @@
 # LocalizationHub
 
-LocalizationHub is a local-first desktop localization workspace designed for game translation projects and collaborative translation teams.
+LocalizationHub is a local-first localization workspace for game translation projects and collaborative translation teams.
 
-It provides a structured environment for importing localization files, editing translations safely, preserving game-specific metadata, validating protected tokens, and collaborating with other translators in real time.
+It combines a structured desktop editor with optional Cloud Projects, account-based collaboration, protected-token validation, lossless localization workflows, and machine translation reference tools.
 
 ## Current Release
 
-**LocalizationHub v0.2.0**
+**LocalizationHub v0.3.0 - Cloud Foundation & Secure Collaboration**
 
-The current release focuses on a stable desktop localization workflow with optional real-time collaboration and machine translation reference tools.
+Version 0.3 establishes the account, cloud storage, project membership, and production collaboration foundation while preserving the local-first workflow introduced in earlier releases.
 
-## Goals
+## Core Principles
 
-LocalizationHub aims to make working with localization files easier, safer, and more collaborative.
-
-The project is designed around several principles:
+LocalizationHub is built around a few rules:
 
 - Preserve the original structure of localization files.
 - Protect IDs, variables, placeholders, tags, and metadata.
 - Keep translators focused on translatable text.
 - Support both left-to-right and right-to-left languages.
-- Keep local projects usable without requiring cloud services.
-- Make collaboration optional rather than mandatory.
-- Provide machine translation as a reference, not as an automatic replacement for human translation.
+- Keep local projects usable without requiring an account or cloud connection.
+- Make Cloud Projects and collaboration optional.
+- Keep machine translation advisory rather than authoritative.
+- Prefer safe, explicit project operations over hidden automation.
 
 ## Localization Editor
 
@@ -31,7 +30,7 @@ LocalizationHub currently supports:
 - Opening JSON localization files.
 - Automatically analyzing supported JSON structures.
 - Detecting translatable source and translation fields.
-- Editing source and translation entries in a structured workspace.
+- Editing entries in a structured workspace.
 - Preserving keys, IDs, metadata, and source structure.
 - Preserving large numeric values without precision loss.
 - Search and filtering.
@@ -46,6 +45,103 @@ LocalizationHub currently supports:
 - Quick Save and Save As workflows.
 - Safe export back into the original localization structure.
 
+## Local-First Projects
+
+Local projects remain fully usable without an account or cloud connection.
+
+LocalizationHub does not require translators to upload ordinary local projects to a server.
+
+A project only uses cloud infrastructure when the user explicitly chooses a Cloud Project or an online collaboration feature.
+
+## Accounts and Email Verification
+
+Version 0.3 adds persistent accounts backed by PostgreSQL.
+
+Current account functionality includes:
+
+- Username and password authentication.
+- Persistent server-side sessions.
+- Secure password hashing.
+- Hashed session-token storage.
+- Email verification.
+- Branded verification emails.
+- Verification UI and verification links.
+- Cloud features gated behind verified accounts where appropriate.
+
+## Cloud Projects
+
+LocalizationHub v0.3 introduces persistent Cloud Projects.
+
+Cloud Projects provide:
+
+- PostgreSQL-backed project storage.
+- Project ownership.
+- Cloud project creation and loading.
+- Server-side revision handling.
+- Conflict-aware saves.
+- Account-based access control.
+- Automatic loading in supported development and production workflows.
+
+Cloud Projects are separate from local `.lhproj` projects. Local editing remains available independently.
+
+## Project Roles and Team Management
+
+Cloud Projects support three roles:
+
+- **Owner** - full project ownership, editing, and membership management.
+- **Editor** - can read and modify the project.
+- **Viewer** - read-only access.
+
+Owners can:
+
+- Add members by username.
+- Change Editor and Viewer roles.
+- Remove members.
+
+Viewer restrictions are enforced in both the desktop workspace and the server-side collaboration layer.
+
+Role changes and membership removals can also propagate live to active collaboration sessions.
+
+## Secure Real-Time Collaboration
+
+LocalizationHub includes real-time collaborative translation sessions.
+
+Version 0.3 moves collaboration from a development-oriented relay toward an authenticated production architecture.
+
+Current collaboration features include:
+
+- Local anonymous collaboration sessions.
+- Cloud collaboration tied to project permissions.
+- Host and participant sessions.
+- Automatic project synchronization.
+- Real-time translation synchronization.
+- Server-authoritative translation revisions.
+- Conflict detection for simultaneous edits.
+- Conflict review with **Keep Mine** and **Keep Theirs** resolution.
+- Participant presence.
+- Current-entry indicators.
+- Jump-to-entry participant navigation.
+- Collaboration status and participant controls.
+- Heartbeat handling.
+- Automatic reconnect and session resume.
+
+### Collaboration Security
+
+Production Cloud collaboration now includes:
+
+- Short-lived one-time WebSocket authentication tickets.
+- No account session token placed in the WebSocket URL.
+- Cloud sessions bound to authenticated users.
+- Project role checks before hosting or joining.
+- Server-side permission checks before Cloud mutations.
+- Live membership and role enforcement.
+- Cross-account reconnect protection.
+- Membership revalidation during reconnect.
+- Secure same-account session resume.
+- Stale WebSocket replacement for real-world proxy and network disconnect behavior.
+
+Cloud collaboration permissions are enforced by the server rather than trusted to the client alone.
+
 ## Machine Translation Reference
 
 LocalizationHub includes an optional Machine Translation Reference panel.
@@ -56,9 +152,7 @@ Supported providers currently include:
 - Google Cloud Translation
 - DeepL
 
-Machine translation is intentionally separated from the actual translation editor.
-
-LocalizationHub does **not** automatically overwrite or fill translation entries with machine-generated text.
+Machine translation is intentionally separated from the translation editor and does not automatically overwrite human translations.
 
 API keys are kept in application memory only and are not stored in:
 
@@ -68,64 +162,75 @@ API keys are kept in application memory only and are not stored in:
 - Local storage
 - Logs
 
-This keeps machine translation optional while leaving the human translator fully in control.
+## Shared Localization Core
 
-## Real-Time Collaboration
+Version 0.3 begins separating reusable localization logic from the desktop UI through the `@localizationhub/core` package.
 
-LocalizationHub v0.2 introduces real-time collaborative translation sessions.
+The shared core currently includes project models, project storage abstractions, parsers, exporters, protected-token logic, and related validation functionality.
 
-A user can host a collaboration session and other translators can join using a session ID.
-
-Current collaboration features include:
-
-- Host and Guest sessions.
-- Automatic project synchronization when a Guest joins.
-- Real-time translation synchronization.
-- Server-authoritative translation revisions.
-- Conflict detection for simultaneous edits.
-- Conflict review with **Keep Mine** and **Keep Theirs** resolution.
-- Participant presence.
-- Current-entry indicators.
-- Jump-to-entry navigation by clicking another participant.
-- Collaboration participant and status popover.
-- Automatic reconnection after temporary connection loss.
-- Session resume using in-memory reconnect credentials.
-- Relay heartbeat handling for stale WebSocket connections.
-
-Collaboration is optional. Local editing continues to work independently of the collaboration system.
-
-### Collaboration Relay
-
-Real-time collaboration currently uses the LocalizationHub Collaboration Relay.
-
-During local development the default relay address is:
-
-    ws://127.0.0.1:8787
-
-The relay is currently intended for development and controlled environments.
-
-Public Internet collaboration will require production deployment using secure WebSockets (`wss://`) and additional authentication and security work.
+This architecture prepares LocalizationHub for additional clients and workflows without duplicating core localization behavior.
 
 ## Supported Localization Structures
 
-The parser currently supports JSON-based localization structures including:
+The parser currently focuses on JSON-based localization structures including:
 
 - Flat localization objects.
 - Record-array localization files.
 - Configurable source and translation paths.
 - Structured metadata that must survive round-trip export.
 
-LocalizationHub projects store parser information so saved projects can reopen with the same localization structure.
+LocalizationHub projects preserve parser information so projects can reopen using the same localization structure.
 
-Additional localization formats are planned for future releases.
+## Version History
 
-## Local-First Design
+### Version 0.3
 
-LocalizationHub is designed to remain useful without an account or cloud connection.
+Version 0.3 establishes the Cloud Foundation & Secure Collaboration milestone.
 
-Core project files and translations remain on the user's machine unless the user explicitly chooses to participate in a collaboration session or use an external machine translation provider.
+Major additions include:
 
-## Version 0.1
+- Shared localization core extraction.
+- Project storage abstraction.
+- Production-hosted collaboration relay support.
+- Collaboration invite security improvements.
+- PostgreSQL database foundation and migrations.
+- Persistent account authentication.
+- Email verification.
+- Persistent Cloud Projects.
+- Cloud project ownership.
+- Owner, Editor, and Viewer membership roles.
+- Cloud team management UI.
+- Custom confirmation dialogs.
+- Viewer read-only enforcement.
+- One-time WebSocket authentication tickets.
+- Live Cloud membership and role changes.
+- Server-side Cloud collaboration permissions.
+- Secure collaboration reconnect identity checks.
+- Production-safe stale-socket session resume.
+- Automated Cloud collaboration security smoke testing.
+
+### Version 0.2
+
+Version 0.2 expanded LocalizationHub from a local editor into a collaborative localization workspace.
+
+Major additions included:
+
+- Machine Translation Reference.
+- Gemini integration.
+- Google Cloud Translation integration.
+- DeepL integration.
+- Real-time collaboration sessions.
+- Project synchronization.
+- Live translation synchronization.
+- Translation conflict detection and resolution.
+- Participant presence.
+- Workspace collaboration status.
+- Participant entry navigation.
+- Automatic collaboration reconnect.
+- WebSocket heartbeat handling.
+- Additional workspace and workflow polish.
+
+### Version 0.1
 
 Version 0.1 established the local editor foundation.
 
@@ -141,46 +246,27 @@ Major work included:
 - Save and export workflows.
 - Windows desktop packaging.
 
-## Version 0.2
+## Roadmap - v0.4 and Beyond
 
-Version 0.2 expanded LocalizationHub from a local editor into a collaborative localization workspace.
+Work deferred from the v0.3 milestone moves forward into v0.4 and later releases.
 
-Major additions include:
+Potential areas include:
 
-- Machine Translation Reference.
-- Gemini integration.
-- Google Cloud Translation integration.
-- DeepL integration.
-- Real-time collaboration sessions.
-- Project synchronization.
-- Live translation synchronization.
-- Translation conflict detection and resolution.
-- Participant presence.
-- Workspace collaboration status.
-- Participant entry navigation.
-- Automatic collaboration reconnect and session resume.
-- WebSocket heartbeat handling.
-- Additional workspace and workflow polish.
-
-## Roadmap
-
-Future development may include:
-
-- Production-hosted secure collaboration using `wss://`.
-- Collaboration authentication and invitations.
-- Session permissions and host controls.
 - Translation Memory.
 - Glossaries and terminology management.
 - Comments and review workflows.
 - Translation history and revision inspection.
 - Project statistics and reporting.
 - Additional localization file formats.
-- Additional Godot localization support.
+- Expanded Godot localization workflows.
 - Unreal Engine localization workflows.
+- Game extraction and injection tooling.
 - Git integration.
-- Web or mobile companion clients.
+- Expanded Cloud project management.
+- Web client development and eventual desktop/web feature parity.
+- Additional collaboration administration and moderation tools.
 
-Game extraction and injection features may be explored separately, but they are not part of the current core localization workflow.
+Roadmap items may move between releases as the project evolves.
 
 ## Development Philosophy
 
@@ -188,25 +274,29 @@ Build the localization core first.
 
 Preserve user data and file structure before adding automation.
 
+Keep local workflows independent from cloud services.
+
 Keep machine-generated translation advisory rather than authoritative.
 
-Make collaboration useful without making cloud services mandatory.
+Enforce Cloud permissions on the server.
 
 Add game-specific tooling only when the underlying localization workflow is stable.
 
 ## Platform
 
-LocalizationHub is currently developed and released primarily as a Windows desktop application using:
+LocalizationHub is currently developed primarily as a Windows desktop application using:
 
 - Tauri
 - Rust
 - React
 - TypeScript
+- Node.js
+- PostgreSQL
 
 ## Release
 
 The latest release is:
 
-**LocalizationHub v0.2.0**
+**LocalizationHub v0.3.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
