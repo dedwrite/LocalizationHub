@@ -222,36 +222,157 @@ export async function sendVerificationEmail({
         ).toISOString()
       : null
 
+  const displayExpiryText =
+    expiryText
+      ? new Intl.DateTimeFormat(
+          'en',
+          {
+            dateStyle:
+              'medium',
+
+            timeStyle:
+              'short',
+
+            timeZone:
+              'UTC',
+          },
+        ).format(
+          new Date(
+            expiresAt,
+          ),
+        ) + ' UTC'
+      : null
+
   const text =
     [
+      'LocalizationHub',
+      '',
       `Hello ${username},`,
       '',
-      'Verify your LocalizationHub email address:',
+      'Verify your email',
+      '',
+      'Confirm your email address to finish setting up and securing your LocalizationHub account.',
+      '',
       verificationUrl,
       '',
-      expiryText
-        ? `This link expires at ${expiryText}.`
+      displayExpiryText
+        ? `This verification link expires ${displayExpiryText}.`
         : 'This verification link will expire.',
       '',
-      'If you did not create this account, you can ignore this email.',
+      'If you did not create this account, you can safely ignore this email.',
+      '',
+      'A DEDWRITE Project',
     ].join(
       '\n',
     )
 
   const html =
     [
-      '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">',
-      '<h2>Verify your LocalizationHub email</h2>',
-      `<p>Hello ${safeUsername},</p>`,
-      '<p>Confirm your email address to finish setting up your LocalizationHub account.</p>',
-      '<p>',
-      `<a href="${safeUrl}" style="display:inline-block;padding:12px 18px;background:#111827;color:#ffffff;text-decoration:none;border-radius:8px">Verify email</a>`,
-      '</p>',
-      expiryText
-        ? `<p style="color:#6b7280;font-size:13px">This link expires at ${escapeHtml(expiryText)}.</p>`
-        : '',
-      '<p style="color:#6b7280;font-size:13px">If you did not create this account, you can ignore this email.</p>',
+      '<!doctype html>',
+      '<html>',
+      '<head>',
+      '<meta charset="utf-8">',
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<meta name="color-scheme" content="dark">',
+      '<meta name="supported-color-schemes" content="dark">',
+      '<title>Verify your LocalizationHub email</title>',
+      '</head>',
+
+      '<body style="margin:0;padding:0;background:#07090d;color:#f3f4f7;font-family:Arial,Helvetica,sans-serif;">',
+
+      '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">',
+      'Confirm your email address to finish setting up your LocalizationHub account.',
       '</div>',
+
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#07090d" style="width:100%;background:#07090d;">',
+      '<tr>',
+      '<td align="center" style="padding:44px 16px;">',
+
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px;background:#0e1117;border:1px solid #242936;border-radius:18px;">',
+
+      '<tr>',
+      '<td style="padding:36px 36px 0 36px;">',
+
+      '<table role="presentation" cellspacing="0" cellpadding="0" border="0">',
+      '<tr>',
+
+      '<td valign="middle" style="padding-right:12px;">',
+      '<div style="width:46px;height:46px;line-height:46px;text-align:center;background:#6d5dfc;border:1px solid #8175ff;border-radius:12px;color:#ffffff;font-size:15px;font-weight:800;letter-spacing:-0.02em;">',
+      'LH',
+      '</div>',
+      '</td>',
+
+      '<td valign="middle">',
+      '<div style="color:#f5f6f8;font-size:18px;font-weight:700;line-height:1.2;">LocalizationHub</div>',
+      '<div style="margin-top:4px;color:#7e8595;font-size:11px;letter-spacing:0.04em;">GAME LOCALIZATION WORKSPACE</div>',
+      '</td>',
+
+      '</tr>',
+      '</table>',
+
+      '</td>',
+      '</tr>',
+
+      '<tr>',
+      '<td style="padding:32px 36px 36px 36px;">',
+
+      '<h1 style="margin:0 0 14px 0;color:#f6f7f9;font-size:28px;line-height:1.2;font-weight:750;letter-spacing:-0.03em;">',
+      'Verify your email',
+      '</h1>',
+
+      `<p style="margin:0 0 10px 0;color:#c8ccd5;font-size:15px;line-height:1.7;">Hello <strong style="color:#ffffff;">${safeUsername}</strong>,</p>`,
+
+      '<p style="margin:0;color:#9da4b3;font-size:15px;line-height:1.7;">',
+      'Confirm your email address to finish setting up and securing your LocalizationHub account.',
+      '</p>',
+
+      '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:26px;">',
+      '<tr>',
+      '<td bgcolor="#6d5dfc" style="border-radius:10px;">',
+      `<a href="${safeUrl}" style="display:inline-block;padding:13px 22px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;background:#6d5dfc;">Verify Email</a>`,
+      '</td>',
+      '</tr>',
+      '</table>',
+
+      displayExpiryText
+        ? `<div style="margin-top:22px;padding:11px 13px;background:#121620;border:1px solid #252b38;border-radius:9px;color:#7f8797;font-size:12px;line-height:1.6;">This verification link expires <strong style="color:#aeb4c0;">${escapeHtml(displayExpiryText)}</strong>.</div>`
+        : '',
+
+      '<div style="margin-top:26px;border-top:1px solid #202530;padding-top:22px;">',
+
+      '<p style="margin:0 0 8px 0;color:#777f8f;font-size:12px;line-height:1.6;">',
+      'If the button does not work, copy and paste this link into your browser:',
+      '</p>',
+
+      `<p style="margin:0;word-break:break-all;color:#8e84ff;font-size:11px;line-height:1.6;"><a href="${safeUrl}" style="color:#8e84ff;text-decoration:none;">${safeUrl}</a></p>`,
+
+      '<p style="margin:18px 0 0 0;color:#6f7685;font-size:11px;line-height:1.6;">',
+      'If you did not create this account, you can safely ignore this email.',
+      '</p>',
+
+      '</div>',
+
+      '</td>',
+      '</tr>',
+
+      '<tr>',
+      '<td align="center" style="padding:19px 24px;border-top:1px solid #202530;background:#0b0e14;border-radius:0 0 18px 18px;">',
+
+      '<span style="color:#5f6675;font-size:9px;letter-spacing:0.18em;">A </span>',
+      '<span style="color:#9ba1ad;font-size:10px;font-weight:800;letter-spacing:0.16em;">DEDWRITE</span>',
+      '<span style="color:#5f6675;font-size:9px;letter-spacing:0.12em;"> PROJECT</span>',
+
+      '</td>',
+      '</tr>',
+
+      '</table>',
+
+      '</td>',
+      '</tr>',
+      '</table>',
+
+      '</body>',
+      '</html>',
     ].join(
       '',
     )
