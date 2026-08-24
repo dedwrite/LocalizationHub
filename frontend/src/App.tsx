@@ -8,7 +8,6 @@ import {
 } from 'react'
 
 import {
-  confirm,
   open,
   save,
 } from '@tauri-apps/plugin-dialog'
@@ -130,6 +129,7 @@ import {
 } from './authSession'
 
 import AuthPanel from './AuthPanel'
+import CloudProjectMembersPanel from './CloudProjectMembersPanel'
 import TokenProfileSelect from './TokenProfileSelect'
 import TranslationEditor from './TranslationEditor'
 import EntryListItem from './EntryListItem'
@@ -146,6 +146,11 @@ import Toast, {
   type ToastMessage,
   type ToastType,
 } from './Toast'
+
+import ConfirmationModal from './ConfirmationModal'
+import {
+  showConfirmation,
+} from './confirmation'
 
 import './App.css'
 
@@ -1604,17 +1609,17 @@ try {
             'cloud'
         ) {
           const shouldReload =
-            await confirm(
-              'توجد نسخة أحدث على السحابة.\n\nهل تريد إعادة تحميلها الآن؟\n\nملاحظة: سيتم استبدال التعديلات المحلية غير المحفوظة.',
-
-              {
-                title:
-                  'Cloud Project Conflict',
-
-                kind:
-                  'warning',
-              },
-            )
+            await showConfirmation({
+              title:
+                'Cloud Project Conflict',
+              message:
+                'توجد نسخة أحدث على السحابة.\n\nهل تريد إعادة تحميلها الآن؟\n\nملاحظة: سيتم استبدال التعديلات المحلية غير المحفوظة.',
+              confirmLabel:
+                'Reload',
+              cancelLabel:
+                'Cancel',
+              destructive: false,
+            })
 
           if (
             shouldReload
@@ -2760,22 +2765,17 @@ try {
       0
     ) {
       const continueExport =
-        await confirm(
-          `${exportValidation.warningCount.toLocaleString()} translated entries contain token warnings. You can continue exporting, but reviewing them first is recommended.`,
-          {
-            title:
-              'Token Warnings',
-
-            kind:
-              'warning',
-
-            okLabel:
-              'Continue Export',
-
-            cancelLabel:
-              'Review First',
-          },
-        )
+        await showConfirmation({
+          title:
+            'Token Warnings',
+          message:
+            `${exportValidation.warningCount.toLocaleString()} translated entries contain token warnings. You can continue exporting, but reviewing them first is recommended.`,
+          confirmLabel:
+            'Continue Export',
+          cancelLabel:
+            'Review First',
+          destructive: false,
+        })
 
       if (
         !continueExport
@@ -3289,9 +3289,19 @@ try {
                                 Revision {
                                   project.revision
                                 }
-                                {'\u00B7'}
+                                {' \u00B7 '}
                                 {
                                   project.role
+                                    .charAt(
+                                      0,
+                                    )
+                                    .toUpperCase()
+                                }
+                                {
+                                  project.role
+                                    .slice(
+                                      1,
+                                    )
                                 }
                               </small>
                             </div>
@@ -3315,6 +3325,16 @@ try {
                             >
                               Open
                             </button>
+
+                            <CloudProjectMembersPanel
+                              projectId={
+                                project.id
+                              }
+
+                              projectRole={
+                                project.role
+                              }
+                            />
                           </div>
                         ),
                       )
@@ -3412,6 +3432,8 @@ try {
             dismissToast
           }
         />
+
+        <ConfirmationModal />
       </>
     )
   }
@@ -4633,6 +4655,8 @@ try {
           dismissToast
         }
       />
+
+      <ConfirmationModal />
     </>
   )
 }

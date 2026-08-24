@@ -1,6 +1,6 @@
 import {
-  confirm,
-} from '@tauri-apps/plugin-dialog'
+  showConfirmation,
+} from './confirmation'
 
 /*
  * يرجع true إذا نقدر نكمل العملية.
@@ -20,20 +20,15 @@ export async function confirmUnsavedChanges(
     return true
   }
 
-  return confirm(
-    'لديك تغييرات غير محفوظة. إذا تابعت، ستفقد هذه التغييرات.',
-    {
-      title:
-        'Unsaved Changes',
-
-      kind:
-        'warning',
-
-      okLabel:
-        'Discard Changes',
-
-      cancelLabel:
-        'Cancel',
-    },
-  )
+  return showConfirmation({
+    title:
+      'Unsaved Changes',
+    message:
+      'لديك تغييرات غير محفوظة. إذا تابعت، ستفقد هذه التغييرات.',
+    confirmLabel:
+      'Discard Changes',
+    cancelLabel:
+      'Cancel',
+    destructive: true,
+  })
 }
