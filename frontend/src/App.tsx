@@ -115,14 +115,17 @@ import {
 
 import {
   getAuthErrorMessage,
+  getCurrentAuthUser,
   loginAccount,
   logoutAccount,
   registerAccount,
   restoreAuthSession,
+  sendEmailVerification,
 } from './authApi'
 
 import {
   getAuthSession,
+  rememberAuthSession,
   type AuthSession,
 } from './authSession'
 
@@ -507,6 +510,14 @@ function App() {
   ] =
     useState(
       false,
+    )
+
+  const [
+    verificationWatchUntil,
+    setVerificationWatchUntil,
+  ] =
+    useState<number | null>(
+      null,
     )
 
   const [
@@ -1868,6 +1879,171 @@ try {
     [],
   )
 
+  useEffect(
+    () => {
+      if (
+        !authSession ||
+        authSession.user.emailVerified
+      ) {
+        return
+      }
+
+      let cancelled =
+        false
+
+      let checking =
+        false
+
+      async function refreshVerificationStatus() {
+        if (
+          checking ||
+          cancelled ||
+          !authSession
+        ) {
+          return
+        }
+
+        checking =
+          true
+
+        try {
+          const user =
+            await getCurrentAuthUser(
+              authSession.token,
+            )
+
+          if (
+            cancelled ||
+            !user.emailVerified
+          ) {
+            return
+          }
+
+          const updatedSession =
+            rememberAuthSession({
+              ...authSession,
+              user,
+            })
+
+          setAuthSession(
+            updatedSession,
+          )
+
+          setVerificationWatchUntil(
+            null,
+          )
+
+          showToast(
+            'success',
+            'Email verified successfully.',
+          )
+
+          console.info(
+            'Email verification status refreshed.',
+          )
+        } catch (
+          error
+        ) {
+          console.error(
+            'Could not refresh email verification status.',
+            error,
+          )
+        } finally {
+          checking =
+            false
+        }
+      }
+
+      function handleFocus() {
+        void refreshVerificationStatus()
+      }
+
+      function handleVisibilityChange() {
+        if (
+          document.visibilityState ===
+            'visible'
+        ) {
+          void refreshVerificationStatus()
+        }
+      }
+
+      window.addEventListener(
+        'focus',
+        handleFocus,
+      )
+
+      document.addEventListener(
+        'visibilitychange',
+        handleVisibilityChange,
+      )
+
+      let pollingTimer:
+        ReturnType<typeof setInterval> |
+        null =
+          null
+
+      if (
+        verificationWatchUntil &&
+        verificationWatchUntil >
+          Date.now()
+      ) {
+        pollingTimer =
+          setInterval(
+            () => {
+              if (
+                Date.now() >=
+                  verificationWatchUntil
+              ) {
+                setVerificationWatchUntil(
+                  null,
+                )
+
+                if (
+                  pollingTimer
+                ) {
+                  clearInterval(
+                    pollingTimer,
+                  )
+                }
+
+                return
+              }
+
+              void refreshVerificationStatus()
+            },
+            2000,
+          )
+      }
+
+      return () => {
+        cancelled =
+          true
+
+        window.removeEventListener(
+          'focus',
+          handleFocus,
+        )
+
+        document.removeEventListener(
+          'visibilitychange',
+          handleVisibilityChange,
+        )
+
+        if (
+          pollingTimer
+        ) {
+          clearInterval(
+            pollingTimer,
+          )
+        }
+      }
+    },
+    [
+      authSession,
+      verificationWatchUntil,
+    ],
+  )
+
   async function handleLoginAccount(
     username:
       string,
@@ -1967,6 +2143,82 @@ try {
       )
 
       return false
+    } finally {
+      setAuthActionLoading(
+        false,
+      )
+    }
+  }
+
+  async function handleSendEmailVerification():
+    Promise<void> {
+    if (
+      !authSession ||
+      authSession.user.emailVerified
+    ) {
+      return
+    }
+
+    setAuthActionLoading(
+      true,
+    )
+
+    try {
+      const result =
+        await sendEmailVerification(
+          authSession.token,
+        )
+
+      if (
+        result.alreadyVerified
+      ) {
+        const updatedSession =
+          rememberAuthSession({
+            ...authSession,
+
+            user: {
+              ...authSession.user,
+
+              emailVerified:
+                true,
+            },
+          })
+
+        setAuthSession(
+          updatedSession,
+        )
+
+        showToast(
+          'success',
+          'Email is already verified.',
+        )
+
+        return
+      }
+
+      setVerificationWatchUntil(
+        Date.now() +
+          10 * 60 * 1000,
+      )
+
+      showToast(
+        'success',
+        `Verification email sent to ${authSession.user.email}.`,
+      )
+    } catch (
+      error
+    ) {
+      console.error(
+        error,
+      )
+
+      showToast(
+        'error',
+        getAuthErrorMessage(
+          error,
+          'Could not send verification email.',
+        ),
+      )
     } finally {
       setAuthActionLoading(
         false,
@@ -2755,6 +3007,10 @@ try {
 
               onRegister={
                 handleRegisterAccount
+              }
+
+              onSendVerification={
+                handleSendEmailVerification
               }
 
               onLogout={

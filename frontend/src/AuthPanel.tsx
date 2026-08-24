@@ -40,6 +40,9 @@ type AuthPanelProps = {
         string,
     ) => Promise<boolean>
 
+  onSendVerification:
+    () => Promise<void>
+
   onLogout:
     () => Promise<void>
 }
@@ -50,6 +53,7 @@ function AuthPanel({
   actionLoading,
   onLogin,
   onRegister,
+  onSendVerification,
   onLogout,
 }: AuthPanelProps) {
   const [
@@ -150,45 +154,96 @@ function AuthPanel({
         className="auth-panel auth-panel-signed-in"
         aria-label="Cloud account"
       >
-        <div className="auth-account-info">
-          <div className="auth-account-avatar">
-            {
-              session.user.username
-                .slice(
-                  0,
-                  1,
-                )
-                .toUpperCase()
+        <div className="auth-account-top">
+          <div className="auth-account-info">
+            <div className="auth-account-avatar">
+              {
+                session.user.username
+                  .slice(
+                    0,
+                    1,
+                  )
+                  .toUpperCase()
+              }
+            </div>
+
+            <div className="auth-account-details">
+              <span className="auth-account-label">
+                Cloud Account
+              </span>
+
+              <div className="auth-account-name-row">
+                <strong>
+                  @{session.user.username}
+                </strong>
+
+                <span
+                  className={
+                    session.user.emailVerified
+                      ? 'auth-verification-badge verified'
+                      : 'auth-verification-badge unverified'
+                  }
+                >
+                  {
+                    session.user.emailVerified
+                      ? 'Verified'
+                      : 'Not Verified'
+                  }
+                </span>
+              </div>
+
+              <small className="auth-account-email">
+                {session.user.email}
+              </small>
+            </div>
+          </div>
+
+          <button
+            className="secondary-button auth-sign-out-button"
+            type="button"
+            disabled={
+              actionLoading
             }
-          </div>
-
-          <div>
-            <span>
-              Cloud Account
-            </span>
-
-            <strong>
-              @{session.user.username}
-            </strong>
-          </div>
+            onClick={() => {
+              void onLogout()
+            }}
+          >
+            Sign Out
+          </button>
         </div>
 
-        <button
-          className="secondary-button"
-          type="button"
-          disabled={
-            actionLoading
-          }
-          onClick={() => {
-            void onLogout()
-          }}
-        >
-          {
-            actionLoading
-              ? 'Signing Out...'
-              : 'Sign Out'
-          }
-        </button>
+        {
+          !session.user.emailVerified && (
+            <div className="auth-verification-notice">
+              <div>
+                <strong>
+                  Verify your email
+                </strong>
+
+                <span>
+                  Confirm your email address to secure your Cloud account.
+                </span>
+              </div>
+
+              <button
+                className="secondary-button auth-verify-button"
+                type="button"
+                disabled={
+                  actionLoading
+                }
+                onClick={() => {
+                  void onSendVerification()
+                }}
+              >
+                {
+                  actionLoading
+                    ? 'Sending...'
+                    : 'Send Verification Email'
+                }
+              </button>
+            </div>
+          )
+        }
       </section>
     )
   }

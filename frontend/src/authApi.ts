@@ -204,6 +204,34 @@ type CurrentUserResponse = {
     AuthUser
 }
 
+export type EmailVerificationSendResponse = {
+  ok:
+    boolean
+
+  alreadyVerified:
+    boolean
+
+  expiresAt?:
+    string
+}
+
+export async function sendEmailVerification(
+  token:
+    string,
+): Promise<EmailVerificationSendResponse> {
+  return requestJson<
+    EmailVerificationSendResponse
+  >(
+    '/api/auth/verification/send',
+    {
+      method:
+        'POST',
+
+      token,
+    },
+  )
+}
+
 export async function registerAccount(
   username:
     string,
