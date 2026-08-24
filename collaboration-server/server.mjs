@@ -1619,7 +1619,7 @@ function applyCorsHeaders(
 
   response.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, PUT, OPTIONS',
+    'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   )
 
   response.setHeader(
