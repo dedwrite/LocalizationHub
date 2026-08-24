@@ -82,6 +82,14 @@ const FAVICON_ICO =
     ),
   )
 
+const APPLE_TOUCH_ICON =
+  readFileSync(
+    new URL(
+      './apple-touch-icon.png',
+      import.meta.url,
+    ),
+  )
+
 const PORT =
   Number(
     process.env.PORT ??
@@ -1969,6 +1977,36 @@ const httpServer =
             message:
               'Authentication API is disabled.',
           },
+        )
+
+        return
+      }
+
+      if (
+        request.method ===
+          'GET' &&
+        request.url ===
+          '/apple-touch-icon.png'
+      ) {
+        response.writeHead(
+          200,
+          {
+            'Content-Type':
+              'image/png',
+
+            'Content-Length':
+              APPLE_TOUCH_ICON.length,
+
+            'Cache-Control':
+              'public, max-age=86400',
+
+            'X-Content-Type-Options':
+              'nosniff',
+          },
+        )
+
+        response.end(
+          APPLE_TOUCH_ICON,
         )
 
         return

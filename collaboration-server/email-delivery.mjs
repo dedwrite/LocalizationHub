@@ -297,9 +297,7 @@ export async function sendVerificationEmail({
       '<tr>',
 
       '<td valign="middle" style="padding-right:12px;">',
-      '<div style="width:46px;height:46px;line-height:46px;text-align:center;background:#6d5dfc;border:1px solid #8175ff;border-radius:12px;color:#ffffff;font-size:15px;font-weight:800;letter-spacing:-0.02em;">',
-      'LH',
-      '</div>',
+      '<img src="https://localizationhub.app/apple-touch-icon.png" alt="LocalizationHub" width="46" height="46" style="display:block;width:46px;height:46px;border:0;border-radius:12px;outline:none;text-decoration:none;">',
       '</td>',
 
       '<td valign="middle">',
@@ -358,9 +356,11 @@ export async function sendVerificationEmail({
       '<tr>',
       '<td align="center" style="padding:19px 24px;border-top:1px solid #202530;background:#0b0e14;border-radius:0 0 18px 18px;">',
 
+      '<a href="https://dedwrite.xyz/" target="_blank" style="text-decoration:none;">',
       '<span style="color:#5f6675;font-size:9px;letter-spacing:0.18em;">A </span>',
       '<span style="color:#9ba1ad;font-size:10px;font-weight:800;letter-spacing:0.16em;">DEDWRITE</span>',
       '<span style="color:#5f6675;font-size:9px;letter-spacing:0.12em;"> PROJECT</span>',
+      '</a>',
 
       '</td>',
       '</tr>',
