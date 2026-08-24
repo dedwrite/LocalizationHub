@@ -1,12 +1,19 @@
 import type {
+  AddCloudProjectMemberRequest,
+  AddCloudProjectMemberResponse,
+  CloudProjectMember,
   CloudProjectSnapshot,
   CloudProjectSummary,
   CreateCloudProjectRequest,
   CreateCloudProjectResponse,
   GetCloudProjectResponse,
+  ListCloudProjectMembersResponse,
   ListCloudProjectsResponse,
+  RemoveCloudProjectMemberResponse,
   SaveCloudProjectRequest,
   SaveCloudProjectResponse,
+  UpdateCloudProjectMemberRequest,
+  UpdateCloudProjectMemberResponse,
 } from '@localizationhub/core'
 
 import {
@@ -21,6 +28,12 @@ type CloudProjectsApiErrorCode =
   | 'unauthorized'
   | 'email-verification-required'
   | 'project-not-found'
+  | 'project-read-only'
+  | 'project-owner-required'
+  | 'project-owner-immutable'
+  | 'project-member-not-found'
+  | 'project-member-user-not-found'
+  | 'project-member-already-exists'
   | 'revision-conflict'
   | 'not-found'
   | 'internal-error'
@@ -200,6 +213,12 @@ async function requestJson<T>(
         'unauthorized',
         'email-verification-required',
         'project-not-found',
+        'project-read-only',
+        'project-owner-required',
+        'project-owner-immutable',
+        'project-member-not-found',
+        'project-member-user-not-found',
+        'project-member-already-exists',
         'not-found',
         'internal-error',
       ]
@@ -228,6 +247,24 @@ async function requestJson<T>(
 
         'project-not-found':
           'The Cloud Project could not be found.',
+
+        'project-read-only':
+          'This Cloud Project is read-only for your account.',
+
+        'project-owner-required':
+          'Only the Cloud Project owner can manage members.',
+
+        'project-owner-immutable':
+          'The Cloud Project owner cannot be modified or removed.',
+
+        'project-member-not-found':
+          'The Cloud Project member could not be found.',
+
+        'project-member-user-not-found':
+          'No account exists with that username.',
+
+        'project-member-already-exists':
+          'This user is already part of the Cloud Project.',
 
         'not-found':
           'The Cloud Projects API endpoint could not be found.',
@@ -342,4 +379,94 @@ export async function saveCloudProject(
     )
 
   return response.project
+}
+
+export async function listCloudProjectMembers(
+  projectId:
+    string,
+): Promise<CloudProjectMember[]> {
+  const response =
+    await requestJson<
+      ListCloudProjectMembersResponse
+    >(
+      `/api/projects/${encodeURIComponent(projectId)}/members`,
+    )
+
+  return response.members
+}
+
+export async function addCloudProjectMember(
+  projectId:
+    string,
+
+  request:
+    AddCloudProjectMemberRequest,
+): Promise<CloudProjectMember> {
+  const response =
+    await requestJson<
+      AddCloudProjectMemberResponse
+    >(
+      `/api/projects/${encodeURIComponent(projectId)}/members`,
+      {
+        method:
+          'POST',
+
+        body:
+          JSON.stringify(
+            request,
+          ),
+      },
+    )
+
+  return response.member
+}
+
+export async function updateCloudProjectMember(
+  projectId:
+    string,
+
+  memberUserId:
+    string,
+
+  request:
+    UpdateCloudProjectMemberRequest,
+): Promise<CloudProjectMember> {
+  const response =
+    await requestJson<
+      UpdateCloudProjectMemberResponse
+    >(
+      `/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(memberUserId)}`,
+      {
+        method:
+          'PATCH',
+
+        body:
+          JSON.stringify(
+            request,
+          ),
+      },
+    )
+
+  return response.member
+}
+
+export async function removeCloudProjectMember(
+  projectId:
+    string,
+
+  memberUserId:
+    string,
+): Promise<string> {
+  const response =
+    await requestJson<
+      RemoveCloudProjectMemberResponse
+    >(
+      `/api/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(memberUserId)}`,
+      {
+        method:
+          'DELETE',
+      },
+    )
+
+  return response.removedUserId
 }
