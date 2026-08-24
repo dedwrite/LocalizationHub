@@ -3,6 +3,10 @@ import type {
   LocalizationProjectV2,
 } from './projectModel'
 
+import type {
+  CloudProjectRole,
+} from './cloudProjects'
+
 export type ProjectLocation =
   | {
       kind:
@@ -28,6 +32,9 @@ export type LoadedProject = {
 
   revision:
     number | null
+
+  cloudRole:
+    CloudProjectRole | null
 }
 
 export type SavedProject = {

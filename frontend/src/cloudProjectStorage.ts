@@ -75,6 +75,9 @@ export const cloudProjectStorage:
 
         revision:
           snapshot.revision,
+
+        cloudRole:
+          snapshot.role,
       }
     },
 

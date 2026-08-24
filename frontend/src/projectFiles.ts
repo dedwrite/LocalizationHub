@@ -75,6 +75,9 @@ export const desktopProjectStorage:
 
         revision:
           null,
+
+        cloudRole:
+          null,
       }
     },
 

@@ -49,6 +49,9 @@ type TranslationEditorProps = {
   placeholderText?:
     string
 
+  readOnly?:
+    boolean
+
   onChange:
     (value: string) => void
 
@@ -148,6 +151,9 @@ function TranslationEditor({
 
   placeholderText =
     'Enter translation...',
+
+  readOnly =
+    false,
 
   onChange,
 
@@ -306,6 +312,18 @@ function TranslationEditor({
           extensions: [
             history(),
 
+            EditorState
+              .readOnly
+              .of(
+                readOnly,
+              ),
+
+            EditorView
+              .editable
+              .of(
+                !readOnly,
+              ),
+
             keymap.of([
               /*
                * Save Project
@@ -319,9 +337,13 @@ function TranslationEditor({
 
                 run:
                   () => {
-                    onSaveRef
-                      .current
-                      ?.()
+                    if (
+                      !readOnly
+                    ) {
+                      onSaveRef
+                        .current
+                        ?.()
+                    }
 
                     return true
                   },
@@ -534,6 +556,7 @@ function TranslationEditor({
       direction,
       locale,
       placeholderText,
+      readOnly,
     ],
   )
 

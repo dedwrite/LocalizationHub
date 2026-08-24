@@ -39,6 +39,7 @@ import {
 } from '@localizationhub/core'
 
 import type {
+  CloudProjectRole,
   CloudProjectSummary,
   LocalizationProjectV2,
   ProjectLocation,
@@ -157,6 +158,25 @@ import './App.css'
 type TranslationEntry =
   ParsedLocalizationEntry
 
+function formatCloudProjectRole(
+  role:
+    CloudProjectRole | null,
+): string {
+  switch (role) {
+    case 'owner':
+      return 'Owner'
+
+    case 'editor':
+      return 'Editor'
+
+    case 'viewer':
+      return 'Viewer'
+
+    default:
+      return 'Unknown'
+  }
+}
+
 function App() {
   const [
     showCollaborationPanel,
@@ -213,6 +233,9 @@ function App() {
         }
       >(),
     )
+
+  const workspaceReadOnlyRef =
+    useRef(false)
 
   const collaboration:
     CollaborationController =
@@ -280,9 +303,14 @@ function App() {
               ),
           )
 
-          setIsDirty(
-            true,
-          )
+          if (
+            !workspaceReadOnlyRef
+              .current
+          ) {
+            setIsDirty(
+              true,
+            )
+          }
         },
 
       onTranslationConflict:
@@ -440,6 +468,10 @@ function App() {
               null,
             )
 
+            setWorkspaceCloudRole(
+              null,
+            )
+
             setDocumentInfo(
               project.document,
             )
@@ -569,6 +601,23 @@ function App() {
     useState<number | null>(
       null,
     )
+
+  const [
+    workspaceCloudRole,
+    setWorkspaceCloudRole,
+  ] =
+    useState<CloudProjectRole | null>(
+      null,
+    )
+
+  const workspaceReadOnly =
+    projectLocation?.kind ===
+      'cloud' &&
+    workspaceCloudRole ===
+      'viewer'
+
+  workspaceReadOnlyRef.current =
+    workspaceReadOnly
 
   const [
     cloudProjectId,
@@ -1009,6 +1058,17 @@ function App() {
       TokenProfileId,
   ) {
     if (
+      workspaceReadOnly
+    ) {
+      showToast(
+        'info',
+        'Viewer access is read-only.',
+      )
+
+      return
+    }
+
+    if (
       nextProfile ===
       tokenProfile
     ) {
@@ -1098,6 +1158,10 @@ function App() {
     )
 
     setProjectLocation(
+      null,
+    )
+
+    setWorkspaceCloudRole(
       null,
     )
 
@@ -1245,6 +1309,10 @@ function App() {
         null,
       )
 
+      setWorkspaceCloudRole(
+        null,
+      )
+
       forgetSession()
 
       setSelectedEntryId(
@@ -1378,6 +1446,10 @@ function App() {
         snapshot.revision,
       )
 
+      setWorkspaceCloudRole(
+        snapshot.role,
+      )
+
       setCloudProjectId(
         snapshot.id,
       )
@@ -1489,6 +1561,10 @@ function App() {
           selectedPath,
       })
 
+      setWorkspaceCloudRole(
+        null,
+      )
+
       setIsDirty(
         false,
       )
@@ -1521,6 +1597,17 @@ function App() {
   )
 
   async function handleSaveProject() {
+    if (
+      workspaceReadOnly
+    ) {
+      showToast(
+        'info',
+        'Viewer access is read-only. Use Save As to create a local copy.',
+      )
+
+      return
+    }
+
     const project =
       createCurrentProject()
 
@@ -1695,6 +1782,10 @@ try {
           'cloud'
           ? loaded.revision
           : null,
+      )
+
+      setWorkspaceCloudRole(
+        loaded.cloudRole,
       )
 
       const selectedExists =
@@ -2593,6 +2684,10 @@ try {
         null,
       )
 
+      setWorkspaceCloudRole(
+        null,
+      )
+
       forgetSession()
 
       setSelectedEntryId(
@@ -2863,6 +2958,12 @@ try {
     id: string,
     value: string,
   ) {
+    if (
+      workspaceReadOnly
+    ) {
+      return
+    }
+
     const currentEntry =
       entries.find(
         (entry) =>
@@ -2954,6 +3055,13 @@ try {
               .delete(
                 id,
               )
+
+            if (
+              workspaceReadOnlyRef
+                .current
+            ) {
+              return
+            }
 
             void collaboration
               .sendTranslationUpdate({
@@ -3508,6 +3616,14 @@ try {
               value={
                 tokenProfile
               }
+              disabled={
+                workspaceReadOnly
+              }
+              title={
+                workspaceReadOnly
+                  ? 'Viewer access is read-only.'
+                  : undefined
+              }
               onChange={
                 handleTokenProfileChange
               }
@@ -3521,7 +3637,11 @@ try {
               title={
                 projectLocation?.kind ===
                 'cloud'
-                  ? `Cloud Project \u00B7 Revision ${
+                  ? `Cloud Project \u00B7 ${
+                      formatCloudProjectRole(
+                        workspaceCloudRole,
+                      )
+                    } \u00B7 Revision ${
                       cloudRevision ??
                       '?'
                     }`
@@ -3539,7 +3659,11 @@ try {
               {
                 projectLocation?.kind ===
                   'cloud'
-                  ? `Cloud \u00B7 r${
+                  ? `Cloud \u00B7 ${
+                      formatCloudProjectRole(
+                        workspaceCloudRole,
+                      )
+                    } \u00B7 r${
                       cloudRevision ??
                       '?'
                     }`
@@ -3575,6 +3699,9 @@ try {
               type="button"
               onClick={
                 handleSaveProject
+              }
+              disabled={
+                workspaceReadOnly
               }
               title="Save Project · Ctrl+S"
             >
@@ -4160,6 +4287,14 @@ try {
                                   <button
                                     className="secondary-button"
                                     type="button"
+                                    disabled={
+                                      workspaceReadOnly
+                                    }
+                                    title={
+                                      workspaceReadOnly
+                                        ? 'Viewer access is read-only.'
+                                        : undefined
+                                    }
                                     onClick={() =>
                                       handleTranslationChange(
                                         selectedEntry.id,
@@ -4201,6 +4336,10 @@ try {
 
                             placeholderText={
                               translationPlaceholder
+                            }
+
+                            readOnly={
+                              workspaceReadOnly
                             }
 
                             onChange={
@@ -4316,8 +4455,22 @@ try {
 
                                   <button
                                     type="button"
+                                    disabled={
+                                      workspaceReadOnly
+                                    }
+                                    title={
+                                      workspaceReadOnly
+                                        ? 'Viewer access is read-only.'
+                                        : undefined
+                                    }
                                     className="primary-button"
                                     onClick={() => {
+                                      if (
+                                        workspaceReadOnly
+                                      ) {
+                                        return
+                                      }
+
                                       const conflict =
                                         selectedCollaborationConflict
 

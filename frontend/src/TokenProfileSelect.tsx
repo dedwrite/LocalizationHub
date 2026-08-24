@@ -6,6 +6,13 @@ import './TokenProfileSelect.css'
 
 type TokenProfileSelectProps = {
   value: TokenProfileId
+
+  disabled?:
+    boolean
+
+  title?:
+    string
+
   onChange: (
     profile: TokenProfileId,
   ) => void
@@ -13,6 +20,9 @@ type TokenProfileSelectProps = {
 
 function TokenProfileSelect({
   value,
+  disabled =
+    false,
+  title,
   onChange,
 }: TokenProfileSelectProps) {
   return (
@@ -23,6 +33,12 @@ function TokenProfileSelect({
 
       <select
         value={value}
+        disabled={
+          disabled
+        }
+        title={
+          title
+        }
         onChange={(event) =>
           onChange(
             event.target
