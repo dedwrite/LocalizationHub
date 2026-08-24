@@ -512,6 +512,12 @@ function App() {
       false,
     )
 
+  const cloudProjectsLocked =
+    Boolean(
+      authSession &&
+        !authSession.user.emailVerified,
+    )
+
   const [
     verificationWatchUntil,
     setVerificationWatchUntil,
@@ -1303,6 +1309,28 @@ function App() {
   }
 
   async function handleCreateCloudProject() {
+    if (
+      !authSession
+    ) {
+      showToast(
+        'error',
+        'Sign in to use Cloud Projects.',
+      )
+
+      return
+    }
+
+    if (
+      !authSession.user.emailVerified
+    ) {
+      showToast(
+        'error',
+        'Cloud Projects require a verified email.',
+      )
+
+      return
+    }
+
     const project =
       createCurrentProject()
 
@@ -2277,6 +2305,16 @@ try {
   }
 
   async function handleRefreshCloudProjects() {
+    if (
+      !authSession?.user.emailVerified
+    ) {
+      setCloudProjects(
+        [],
+      )
+
+      return
+    }
+
     setCloudProjectsLoading(
       true,
     )
@@ -2333,6 +2371,16 @@ try {
         return
       }
 
+      if (
+        !authSession.user.emailVerified
+      ) {
+        setCloudProjects(
+          [],
+        )
+
+        return
+      }
+
       const cloudApiAvailable =
         import.meta.env.DEV ||
         Boolean(
@@ -2356,6 +2404,28 @@ try {
   )
 
   async function handleOpenCloudProject() {
+    if (
+      !authSession
+    ) {
+      showToast(
+        'error',
+        'Sign in to open Cloud Projects.',
+      )
+
+      return
+    }
+
+    if (
+      !authSession.user.emailVerified
+    ) {
+      showToast(
+        'error',
+        'Verify your email before opening Cloud Projects.',
+      )
+
+      return
+    }
+
     const projectId =
       cloudProjectId.trim()
 
@@ -3018,23 +3088,45 @@ try {
               }
             />
 
-            <details className="cloud-project-advanced">
+            <details
+              className={`cloud-project-advanced ${
+                cloudProjectsLocked
+                  ? 'is-locked'
+                  : ''
+              }`}
+            >
               <summary>
                 Advanced {'\u00B7'} Open by Project ID
+                {
+                  cloudProjectsLocked && (
+                    <span className="cloud-lock-badge">
+                      Locked
+                    </span>
+                  )
+                }
               </summary>
 
               <div className="cloud-project-open">
                 <input
-                  className="cloud-project-input"
+                  className={`cloud-project-input ${
+                    cloudProjectsLocked
+                      ? 'is-locked'
+                      : ''
+                  }`}
                   type="text"
                   disabled={
                     !authSession ||
+                    !authSession.user.emailVerified ||
                     authRestoring
                   }
                   value={
                     cloudProjectId
                   }
-                  placeholder="Cloud Project ID"
+                  placeholder={
+                    cloudProjectsLocked
+                      ? 'Verify your email to unlock this'
+                      : 'Cloud Project ID'
+                  }
                   aria-label="Cloud Project ID"
                   onChange={(
                     event,
@@ -3056,10 +3148,15 @@ try {
                 />
 
                 <button
-                  className="secondary-button"
+                  className={`secondary-button ${
+                    cloudProjectsLocked
+                      ? 'is-locked'
+                      : ''
+                  }`}
                   type="button"
                   disabled={
                     !authSession ||
+                    !authSession.user.emailVerified ||
                     authRestoring ||
                     cloudProjectId
                       .trim()
@@ -3068,13 +3165,36 @@ try {
                   onClick={() => {
                     void handleOpenCloudProject()
                   }}
+                  title={
+                    cloudProjectsLocked
+                      ? 'Verify your email first'
+                      : 'Open Cloud Project'
+                  }
                 >
-                  Open Cloud
+                  {
+                    cloudProjectsLocked
+                      ? 'Open Cloud · Locked'
+                      : 'Open Cloud'
+                  }
                 </button>
               </div>
+
+              {
+                cloudProjectsLocked && (
+                  <p className="cloud-locked-note">
+                    Email verification is required before opening Cloud Projects by ID.
+                  </p>
+                )
+              }
             </details>
 
-            <section className="cloud-projects-panel">
+            <section
+              className={`cloud-projects-panel ${
+                cloudProjectsLocked
+                  ? 'is-locked'
+                  : ''
+              }`}
+            >
               <div className="cloud-projects-header">
                 <div>
                   <strong>
@@ -3082,29 +3202,59 @@ try {
                   </strong>
 
                   <span>
-                    Experimental
+                    {
+                      cloudProjectsLocked
+                        ? 'Locked'
+                        : 'Experimental'
+                    }
                   </span>
                 </div>
 
                 <button
-                  className="secondary-button"
+                  className={`secondary-button ${
+                    cloudProjectsLocked
+                      ? 'is-locked'
+                      : ''
+                  }`}
                   type="button"
                   disabled={
                     !authSession ||
+                    !authSession.user.emailVerified ||
                     authRestoring ||
                     cloudProjectsLoading
                   }
                   onClick={() => {
                     void handleRefreshCloudProjects()
                   }}
+                  title={
+                    cloudProjectsLocked
+                      ? 'Verify your email first'
+                      : 'Refresh Cloud Projects'
+                  }
                 >
                   {
-                    cloudProjectsLoading
-                      ? 'Loading...'
-                      : 'Refresh'
+                    cloudProjectsLocked
+                      ? 'Refresh · Locked'
+                      : cloudProjectsLoading
+                        ? 'Loading...'
+                        : 'Refresh'
                   }
                 </button>
               </div>
+
+              {
+                cloudProjectsLocked && (
+                  <div className="cloud-locked-banner">
+                    <strong>
+                      Cloud Projects are locked
+                    </strong>
+
+                    <span>
+                      Verify your email to unlock refresh, open by ID, and cloud saving.
+                    </span>
+                  </div>
+                )
+              }
 
               {
                 authSession &&
@@ -3175,9 +3325,11 @@ try {
                     {
                       !authSession
                         ? 'Sign in to view your Cloud Projects.'
-                        : cloudProjectsLoading
-                          ? 'Loading Cloud Projects...'
-                          : 'No Cloud Projects yet.'
+                        : !authSession.user.emailVerified
+                          ? 'Verify your email to unlock Cloud Projects.'
+                          : cloudProjectsLoading
+                            ? 'Loading Cloud Projects...'
+                            : 'No Cloud Projects yet.'
                     }
                   </p>
                 )
@@ -3411,14 +3563,33 @@ try {
               projectLocation?.kind !==
                 'cloud' && (
                 <button
-                  className="secondary-button"
+                  className={`secondary-button ${
+                    cloudProjectsLocked
+                      ? 'is-locked'
+                      : ''
+                  }`}
                   type="button"
+                  disabled={
+                    !authSession ||
+                    !authSession.user.emailVerified ||
+                    authRestoring
+                  }
                   onClick={() => {
                     void handleCreateCloudProject()
                   }}
-                  title="Create a Cloud copy of this project"
+                  title={
+                    !authSession
+                      ? 'Sign in to use Cloud Projects'
+                      : !authSession.user.emailVerified
+                        ? 'Verify your email to use Cloud Projects'
+                        : 'Create a Cloud copy of this project'
+                  }
                 >
-                  Save to Cloud
+                  {
+                    cloudProjectsLocked
+                      ? 'Save to Cloud · Locked'
+                      : 'Save to Cloud'
+                  }
                 </button>
               )
             }

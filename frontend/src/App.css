@@ -350,6 +350,67 @@ button {
     14px;
 }
 
+.cloud-project-advanced.is-locked,
+.cloud-projects-panel.is-locked {
+  border-color:
+    rgba(
+      224,
+      169,
+      83,
+      0.2
+    );
+}
+
+.cloud-lock-badge {
+  margin-left:
+    8px;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  padding:
+    2px
+    7px;
+
+  border:
+    1px solid
+    rgba(
+      224,
+      169,
+      83,
+      0.28
+    );
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      224,
+      169,
+      83,
+      0.1
+    );
+
+  color:
+    #e2b66f;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.04em;
+
+  text-transform:
+    uppercase;
+}
+
 .cloud-project-advanced summary {
   display:
     inline-flex;
@@ -467,6 +528,69 @@ button {
     16px;
 }
 
+.cloud-locked-banner {
+  margin-top:
+    10px;
+
+  margin-bottom:
+    10px;
+
+  padding:
+    10px
+    12px;
+
+  display:
+    grid;
+
+  gap:
+    4px;
+
+  border:
+    1px solid
+    rgba(
+      224,
+      169,
+      83,
+      0.18
+    );
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(
+      224,
+      169,
+      83,
+      0.05
+    );
+}
+
+.cloud-locked-banner strong {
+  color:
+    #f0e2be;
+
+  font-size:
+    12px;
+}
+
+.cloud-locked-banner span,
+.cloud-locked-note {
+  color:
+    #9f8c63;
+
+  font-size:
+    12px;
+
+  line-height:
+    1.5;
+}
+
+.cloud-locked-note {
+  margin-top:
+    8px;
+}
+
 .cloud-project-input {
   flex:
     1;
@@ -517,6 +641,44 @@ button {
 .cloud-project-input::placeholder {
   color:
     #626979;
+}
+
+.cloud-project-input:disabled,
+.secondary-button.is-locked:disabled {
+  opacity:
+    0.52;
+
+  cursor:
+    not-allowed;
+
+  border-color:
+    rgba(
+      224,
+      169,
+      83,
+      0.14
+    );
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.03
+    );
+
+  color:
+    #8d93a0;
+}
+
+.secondary-button.is-locked:disabled {
+  box-shadow:
+    none;
+}
+
+.cloud-project-input:disabled::placeholder {
+  color:
+    #7d725f;
 }
 
 .cloud-project-input:hover {

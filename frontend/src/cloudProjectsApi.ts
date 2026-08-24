@@ -19,6 +19,7 @@ type CloudProjectsApiErrorCode =
   | 'invalid-response'
   | 'invalid-request'
   | 'unauthorized'
+  | 'email-verification-required'
   | 'project-not-found'
   | 'revision-conflict'
   | 'not-found'
@@ -197,6 +198,7 @@ async function requestJson<T>(
       CloudProjectsApiErrorCode[] = [
         'invalid-request',
         'unauthorized',
+        'email-verification-required',
         'project-not-found',
         'not-found',
         'internal-error',
@@ -220,6 +222,9 @@ async function requestJson<T>(
       > = {
         'invalid-request':
           'The Cloud Project request was rejected.',
+
+        'email-verification-required':
+          'Verify your email before using Cloud Projects.',
 
         'project-not-found':
           'The Cloud Project could not be found.',
