@@ -2504,6 +2504,28 @@ const httpServer =
       }
 
       if (
+        request.url?.startsWith(
+          '/api/projects'
+        ) &&
+        cloudAuthentication &&
+        !cloudAuthentication.user.emailVerified
+      ) {
+        sendJson(
+          response,
+          403,
+          {
+            error:
+              'email-verification-required',
+
+            message:
+              'Verify your email before using Cloud Projects.',
+          },
+        )
+
+        return
+      }
+
+      if (
         request.method ===
           'GET' &&
         request.url ===
