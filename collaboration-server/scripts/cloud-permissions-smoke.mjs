@@ -1516,8 +1516,10 @@ async function main() {
       attackResult.type ===
         'error' &&
       attackResult.code ===
-        'resume-invalid',
-      'SECURITY FAILURE: another authenticated account resumed the Editor participant.',
+        'resume-invalid' &&
+      attackResult.message ===
+        'The collaboration participant could not be resumed.',
+      'SECURITY FAILURE: cross-account resume was not rejected by the account-identity check.',
     )
 
     await closeSocket(
@@ -1580,6 +1582,9 @@ async function main() {
       `Legitimate Editor resume failed: ${
         resumeResult.code ??
         'unknown error'
+      } - ${
+        resumeResult.message ??
+        'no server message'
       }`,
     )
 

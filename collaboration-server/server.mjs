@@ -1168,9 +1168,22 @@ async function handleResumeSession(
     }
   }
 
-  if (
+  const replacingConnectedSocket =
     previousSocket.readyState ===
     WebSocket.OPEN
+
+  /*
+   * Local anonymous reconnects cannot
+   * replace an actively connected client.
+   *
+   * Cloud reconnects may replace a stale
+   * OPEN socket only after the account,
+   * reconnect token, and current membership
+   * were authenticated above.
+   */
+  if (
+    replacingConnectedSocket &&
+    !resumedCloudState
   ) {
     sendError(
       socket,
@@ -1232,6 +1245,16 @@ async function handleResumeSession(
   ) {
     session.hostSocket =
       socket
+  }
+
+  if (replacingConnectedSocket) {
+    /*
+     * The old socket has already been
+     * detached from clients/session state,
+     * so its close handler cannot evict the
+     * newly resumed participant.
+     */
+    previousSocket.terminate()
   }
 
   send(
