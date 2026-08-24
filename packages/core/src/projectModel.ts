@@ -25,6 +25,54 @@ export type StoredDocumentInfo = {
     LocalizationLanguageInfo
 }
 
+export type EntryWorkflowStatus =
+  | 'draft'
+  | 'translated'
+  | 'needs-review'
+  | 'approved'
+
+export type EffectiveEntryWorkflowStatus =
+  | 'untranslated'
+  | EntryWorkflowStatus
+
+export type EntryWorkflowState = {
+  status:
+    EntryWorkflowStatus
+}
+
+export type EntryWorkflowMap =
+  Record<
+    string,
+    EntryWorkflowState
+  >
+
+export type LocalizationProjectWorkflow = {
+  entries:
+    EntryWorkflowMap
+}
+
+export function getEffectiveEntryWorkflowStatus(
+  entry:
+    Pick<
+      ParsedLocalizationEntry,
+      'translation'
+    >,
+  workflowState?:
+    EntryWorkflowState,
+): EffectiveEntryWorkflowStatus {
+  if (
+    entry.translation
+      .trim() === ''
+  ) {
+    return 'untranslated'
+  }
+
+  return (
+    workflowState?.status ??
+    'translated'
+  )
+}
+
 export type LocalizationProjectV2 = {
   format:
     'LocalizationHubProject'
