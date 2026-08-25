@@ -191,7 +191,7 @@ export async function resolveCloudComment(projectId, commentId, resolved, actorU
     const result = await client.query(
       `UPDATE project_comments
           SET resolved_at = CASE WHEN $2 THEN COALESCE(resolved_at, NOW()) ELSE NULL END,
-              resolved_by_user_id = CASE WHEN $2 THEN $3 ELSE NULL END
+              resolved_by_user_id = CASE WHEN $2 THEN $3::uuid ELSE NULL::uuid END
         WHERE id = $1 AND project_id = $4
         RETURNING id, entry_id`,
       [commentId, resolved, actorUserId, projectId],
