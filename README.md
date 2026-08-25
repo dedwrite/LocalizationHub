@@ -10,6 +10,21 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 Version 0.4 adds persistent translation workflow, review, terminology quality, collaboration activity, and expanded localization file-format support while preserving the local-first workflow.
 
+## What's New in v0.4.0
+
+LocalizationHub v0.4.0, **Translation Workflow & Quality**, turns the editor into a practical translation workspace for local and Cloud Projects.
+
+- Review-ready workflow statuses: **Draft**, **Translated**, **Needs Review**, and **Approved**.
+- Project V3 workflow metadata with migration support for older project files.
+- Project tags, advanced search and filtering, and efficient bulk operations.
+- Project glossaries with terminology guidance and Translation Memory suggestions.
+- Project statistics for translation progress, review progress, and word counts.
+- CSV and gettext PO import/export alongside existing JSON support.
+- Cloud assignments, entry comments, activity/history, translation restore, and manual conflict review.
+- Owner, Editor, and Viewer collaboration permissions with persistent Cloud workflow data.
+- Safer Cloud Projects with consistent assignment cleanup when members leave and stricter project validation.
+- A redesigned translation workspace with contextual Workflow, Quality, Comments, and History inspection.
+
 ## Core Principles
 
 LocalizationHub is built around a few rules:
@@ -28,12 +43,16 @@ LocalizationHub is built around a few rules:
 LocalizationHub currently supports:
 
 - Opening JSON localization files.
+- Opening CSV and gettext PO localization files.
 - Automatically analyzing supported JSON structures.
 - Detecting translatable source and translation fields.
 - Editing entries in a structured workspace.
 - Preserving keys, IDs, metadata, and source structure.
 - Preserving large numeric values without precision loss.
 - Search and filtering.
+- Workflow status, project tags, glossary guidance, and Translation Memory suggestions.
+- Bulk workflow operations and project statistics.
+- Entry comments, assignments, activity history, restore, and conflict review in Cloud Projects.
 - Translation progress tracking.
 - Protected token detection and validation.
 - Generic and Godot-oriented token profiles.
@@ -55,7 +74,7 @@ A project only uses cloud infrastructure when the user explicitly chooses a Clou
 
 ## Accounts and Email Verification
 
-Version 0.3 adds persistent accounts backed by PostgreSQL.
+Accounts are backed by PostgreSQL.
 
 Current account functionality includes:
 
@@ -70,7 +89,7 @@ Current account functionality includes:
 
 ## Cloud Projects
 
-LocalizationHub v0.3 introduces persistent Cloud Projects.
+LocalizationHub v0.4 continues persistent Cloud Projects with translation workflow and quality collaboration tools.
 
 Cloud Projects provide:
 
@@ -106,7 +125,7 @@ Role changes and membership removals can also propagate live to active collabora
 
 LocalizationHub includes real-time collaborative translation sessions.
 
-Version 0.3 moves collaboration from a development-oriented relay toward an authenticated production architecture.
+The current release builds on the authenticated production collaboration architecture introduced in v0.3.
 
 Current collaboration features include:
 
@@ -164,7 +183,7 @@ API keys are kept in application memory only and are not stored in:
 
 ## Shared Localization Core
 
-Version 0.3 begins separating reusable localization logic from the desktop UI through the `@localizationhub/core` package.
+LocalizationHub separates reusable localization logic from the desktop UI through the `@localizationhub/core` package.
 
 The shared core currently includes project models, project storage abstractions, parsers, exporters, protected-token logic, and related validation functionality.
 
@@ -182,6 +201,10 @@ The parser currently focuses on JSON-based localization structures including:
 LocalizationHub projects preserve parser information so projects can reopen using the same localization structure.
 
 ## Version History
+
+### Version 0.4.0 - Translation Workflow & Quality
+
+LocalizationHub v0.4.0 adds the complete translation workflow and quality layer: persistent V3 workflow metadata, review statuses, tags, advanced filtering, bulk operations, glossary and Translation Memory guidance, project statistics, CSV/PO support, Cloud assignments and comments, activity history, translation restore, manual conflict review, and the redesigned contextual inspector workspace.
 
 ### Version 0.3
 
@@ -293,3 +316,5 @@ The latest release is:
 **LocalizationHub v0.4.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
+
+Download the current release: [LocalizationHub v0.4.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.4.0).
