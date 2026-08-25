@@ -19,7 +19,7 @@ function WelcomeDropZone() {
         </strong>
 
         <span>
-          .json or .lhproj
+          JSON · CSV · PO · LH Project
         </span>
       </div>
     </div>

@@ -28,6 +28,12 @@ type EntryListItemProps = {
   isSelected:
     boolean
 
+  isBulkSelected:
+    boolean
+
+  onToggleBulkSelect:
+    (id: string) => void
+
   presenceNames?:
     string[]
 
@@ -44,6 +50,8 @@ function EntryListItem({
   hasWarning,
   workflowStatus,
   isSelected,
+  isBulkSelected,
+  onToggleBulkSelect,
   presenceNames = [],
   onSelect,
 }: EntryListItemProps) {
@@ -119,6 +127,15 @@ function EntryListItem({
         )
       }
     >
+      <span
+        role="checkbox"
+        aria-checked={isBulkSelected}
+        className={`entry-select ${isBulkSelected ? 'selected' : ''}`}
+        onClick={(event) => {
+          event.stopPropagation()
+          onToggleBulkSelect(entry.id)
+        }}
+      />
       <EntryStatusIndicator
         isProtected={
           isProtected
@@ -138,6 +155,14 @@ function EntryListItem({
       <span className="entry-key">
         {
           entry.key
+        }
+      </span>
+
+      <span className="entry-source-preview">
+        {
+          entry.source
+            .replace(/\s+/g, ' ')
+            .slice(0, 54)
         }
       </span>
 

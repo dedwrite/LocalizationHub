@@ -38,6 +38,7 @@ import {
   ProjectStorageError,
   getEffectiveEntryWorkflowStatus,
   emptyProjectMetadata,
+  calculateProjectStatistics,
 } from '@localizationhub/core'
 
 import type {
@@ -151,6 +152,9 @@ import ProjectWorkflowTools from './ProjectWorkflowTools'
 import EntryCommentsPanel from './EntryCommentsPanel'
 import EntryAssignmentPanel from './EntryAssignmentPanel'
 import EntryHistoryPanel from './EntryHistoryPanel'
+import EditorInspector from './EditorInspector'
+import BulkActionBar from './BulkActionBar'
+import ProjectOverview from './ProjectOverview'
 
 import Toast, {
   type ToastMessage,
@@ -635,6 +639,16 @@ function App() {
     useState<TranslationEntry[]>([])
 
   const [
+    selectedEntryIds,
+    setSelectedEntryIds,
+  ] = useState<Set<string>>(new Set())
+
+  const [
+    showProjectOverview,
+    setShowProjectOverview,
+  ] = useState(false)
+
+  const [
     workflowEntries,
     setWorkflowEntries,
   ] =
@@ -703,6 +717,11 @@ function App() {
     setCloudProjectsLoading,
   ] =
     useState(false)
+
+  const [
+    cloudProjectsLoadFailed,
+    setCloudProjectsLoadFailed,
+  ] = useState(false)
 
   const [
     isDirty,
@@ -850,6 +869,12 @@ function App() {
   const untranslatedCount =
     translatableCount -
     translatedCount
+
+  const projectStatistics =
+    calculateProjectStatistics(
+      entries,
+      workflowEntries,
+    )
 
   const progress =
     translatableCount === 0
@@ -2695,9 +2720,12 @@ try {
       setCloudProjects(
         projects,
       )
+
+      setCloudProjectsLoadFailed(false)
     } catch (
       error
     ) {
+      setCloudProjectsLoadFailed(true)
       console.error(
         error,
       )
@@ -3028,7 +3056,7 @@ try {
 
     showToast(
       'warning',
-      `Unsupported file: ${name}. Use .json or .lhproj.`,
+      `Unsupported file: ${name}. Use JSON, CSV, PO, or LH Project.`,
     )
   }
 
@@ -3766,6 +3794,8 @@ try {
                           ? 'Verify your email to unlock Cloud Projects.'
                           : cloudProjectsLoading
                             ? 'Loading Cloud Projects...'
+                            : cloudProjectsLoadFailed
+                              ? 'Cloud Projects unavailable.'
                             : 'No Cloud Projects yet.'
                     }
                   </p>
@@ -4392,6 +4422,19 @@ try {
                           onSelect={
                             setSelectedEntryId
                           }
+
+                          isBulkSelected={
+                            selectedEntryIds.has(entry.id)
+                          }
+
+                          onToggleBulkSelect={(id) => {
+                            setSelectedEntryIds((current) => {
+                              const next = new Set(current)
+                              if (next.has(id)) next.delete(id)
+                              else next.add(id)
+                              return next
+                            })
+                          }}
                         />
                       ),
                     )
@@ -4436,6 +4479,17 @@ try {
           </aside>
 
           <section className="editor-panel">
+            <BulkActionBar
+              entries={entries}
+              selectedIds={selectedEntryIds}
+              setSelectedIds={setSelectedEntryIds}
+              workflow={workflowEntries}
+              setWorkflow={setWorkflowEntries}
+              metadata={projectMetadata}
+              setMetadata={setProjectMetadata}
+              readOnly={workspaceReadOnly}
+              onTranslationChange={handleTranslationChange}
+            />
             {
               selectedEntry &&
               selectedValidation && (
@@ -4457,6 +4511,14 @@ try {
                       }
                     </h2>
 
+                    <button
+                      type="button"
+                      className="overview-action"
+                      onClick={() => setShowProjectOverview(true)}
+                    >
+                      Project Overview
+                    </button>
+
                     {
                       documentDescription && (
                         <span className="editor-label">
@@ -4467,6 +4529,13 @@ try {
                       )
                     }
                   </div>
+
+                  {showProjectOverview && (
+                    <ProjectOverview
+                      statistics={projectStatistics}
+                      onClose={() => setShowProjectOverview(false)}
+                    />
+                  )}
 
                   <div className="editor-section">
                     <label>
@@ -4498,52 +4567,6 @@ try {
                       translationLocale
                     }
                   />
-
-                  <ProjectWorkflowTools
-                    entries={entries}
-                    selectedEntry={selectedEntry}
-                    workflow={workflowEntries}
-                    setWorkflow={setWorkflowEntries}
-                    metadata={projectMetadata}
-                    setMetadata={setProjectMetadata}
-                    readOnly={workspaceReadOnly}
-                    errorIds={errorEntryIds}
-                    warningIds={warningEntryIds}
-                    onTranslationChange={handleTranslationChange}
-                  />
-
-                  <EntryCommentsPanel
-                    projectId={projectLocation?.kind === 'cloud' ? projectLocation.projectId : null}
-                    entryId={selectedEntry.id}
-                    readOnly={workspaceReadOnly}
-                    metadata={projectMetadata}
-                    setMetadata={setProjectMetadata}
-                  />
-
-                  {projectLocation?.kind === 'cloud' && (
-                    <>
-                      <EntryAssignmentPanel
-                        projectId={projectLocation.projectId}
-                        entryId={selectedEntry.id}
-                        metadata={projectMetadata}
-                        setMetadata={setProjectMetadata}
-                        readOnly={workspaceReadOnly}
-                      />
-                      <EntryHistoryPanel
-                        projectId={projectLocation.projectId}
-                        entryId={selectedEntry.id}
-                        revision={cloudRevision}
-                        readOnly={workspaceReadOnly}
-                        onRestored={(translation, revision) => {
-                          setEntries((current) => current.map((entry) => entry.id === selectedEntry.id ? { ...entry, translation } : entry))
-                          setCloudRevision(revision)
-                          setIsDirty(false)
-                        }}
-                      />
-                    </>
-                  )}
-
-
 
                   {
                     selectedValidation
@@ -4697,13 +4720,13 @@ try {
                       )
                       : (
                         <div className="editor-section translation-section">
-                          <label>
-                            Translation
-                          </label>
-
-                          <label>
-                            Workflow status
-                            <select
+                          <div className="translation-heading-row">
+                            <label>
+                              Translation
+                            </label>
+                            <label className="workflow-status-control">
+                              Workflow status
+                              <select
                               value={
                                 getEffectiveEntryWorkflowStatus(
                                   selectedEntry,
@@ -4727,8 +4750,9 @@ try {
                               <option value="translated">Translated</option>
                               <option value="needs-review">Needs Review</option>
                               <option value="approved">Approved</option>
-                            </select>
-                          </label>
+                              </select>
+                            </label>
+                          </div>
 
                           <TranslationEditor
                             value={
@@ -4785,6 +4809,61 @@ try {
                             onPrevious={
                               handlePreviousEntry
                             }
+                          />
+
+                          <EditorInspector
+                            render={(tab) => (
+                              <>
+                                {(tab === 'workflow' || tab === 'quality') && (
+                                  <ProjectWorkflowTools
+                                    entries={entries}
+                                    selectedEntry={selectedEntry}
+                                    workflow={workflowEntries}
+                                    setWorkflow={setWorkflowEntries}
+                                    metadata={projectMetadata}
+                                    setMetadata={setProjectMetadata}
+                                    readOnly={workspaceReadOnly}
+                                    errorIds={errorEntryIds}
+                                    warningIds={warningEntryIds}
+                                    onTranslationChange={handleTranslationChange}
+                                    selectedIds={selectedEntryIds}
+                                    setSelectedIds={setSelectedEntryIds}
+                                    inspectorTab={tab}
+                                  />
+                                )}
+                                {tab === 'workflow' && projectLocation?.kind === 'cloud' && (
+                                  <EntryAssignmentPanel
+                                    projectId={projectLocation.projectId}
+                                    entryId={selectedEntry.id}
+                                    metadata={projectMetadata}
+                                    setMetadata={setProjectMetadata}
+                                    readOnly={workspaceReadOnly}
+                                  />
+                                )}
+                                {tab === 'comments' && (
+                                  <EntryCommentsPanel
+                                    projectId={projectLocation?.kind === 'cloud' ? projectLocation.projectId : null}
+                                    entryId={selectedEntry.id}
+                                    readOnly={workspaceReadOnly}
+                                    metadata={projectMetadata}
+                                    setMetadata={setProjectMetadata}
+                                  />
+                                )}
+                                {tab === 'history' && projectLocation?.kind === 'cloud' && (
+                                  <EntryHistoryPanel
+                                    projectId={projectLocation.projectId}
+                                    entryId={selectedEntry.id}
+                                    revision={cloudRevision}
+                                    readOnly={workspaceReadOnly}
+                                    onRestored={(translation, revision) => {
+                                      setEntries((current) => current.map((entry) => entry.id === selectedEntry.id ? { ...entry, translation } : entry))
+                                      setCloudRevision(revision)
+                                      setIsDirty(false)
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
                           />
 
                           {

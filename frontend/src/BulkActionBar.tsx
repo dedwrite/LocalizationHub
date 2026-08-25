@@ -1,0 +1,11 @@
+import type { Dispatch, SetStateAction } from 'react'
+import type { EntryWorkflowMap, ParsedLocalizationEntry, ProjectMetadata } from '@localizationhub/core'
+import './BulkActionBar.css'
+
+type Props = { entries: ParsedLocalizationEntry[]; selectedIds: Set<string>; setSelectedIds: Dispatch<SetStateAction<Set<string>>>; workflow: EntryWorkflowMap; setWorkflow: Dispatch<SetStateAction<EntryWorkflowMap>>; metadata: ProjectMetadata; setMetadata: Dispatch<SetStateAction<ProjectMetadata>>; readOnly: boolean; onTranslationChange: (id: string, value: string) => void }
+export default function BulkActionBar({ entries, selectedIds, setSelectedIds, setWorkflow, metadata, setMetadata, readOnly, onTranslationChange }: Props) {
+  if (!selectedIds.size) return null
+  const apply = (action: (id: string) => void) => { if (readOnly) return; selectedIds.forEach(action); setSelectedIds(new Set()) }
+  const tagId = metadata.tags[0]?.id
+  return <div className="bulk-action-bar"><strong>{selectedIds.size} selected</strong><button type="button" disabled={readOnly} onClick={() => apply((id) => setWorkflow((current) => ({ ...current, [id]: { status: 'needs-review' } })))}>Needs Review</button><button type="button" disabled={readOnly} onClick={() => apply((id) => { const entry = entries.find((item) => item.id === id); if (entry?.translation.trim()) { setWorkflow((current) => ({ ...current, [id]: { status: 'approved' } })); setMetadata((current) => current.translationMemory.some((item) => item.source === entry.source && item.translation === entry.translation) ? current : { ...current, translationMemory: [...current.translationMemory, { source: entry.source, translation: entry.translation, approvedAt: new Date().toISOString() }] }) } })}>Approve</button><button type="button" disabled={readOnly || !tagId} onClick={() => apply((id) => setMetadata((current) => ({ ...current, entryTags: { ...current.entryTags, [id]: [...new Set([...(current.entryTags[id] ?? []), tagId])] } })))}>Add Tag</button><button type="button" disabled={readOnly} onClick={() => { if (window.confirm('Clear translations for selected entries?')) apply((id) => onTranslationChange(id, '')) }}>Clear</button><button type="button" onClick={() => setSelectedIds(new Set())}>Dismiss</button></div>
+}

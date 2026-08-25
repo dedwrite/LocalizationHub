@@ -1,0 +1,8 @@
+.overview-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 1.5rem; background: rgba(4, 5, 9, 0.72); }
+.project-overview { width: min(560px, 100%); border: 1px solid #343a4b; border-radius: 12px; background: #171b24; color: #e7e9f0; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42); }
+.project-overview header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.1rem; border-bottom: 1px solid #303646; }
+.project-overview header button { border: 0; background: transparent; color: #aaa3ff; }
+.overview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; padding: 1.1rem; }
+.overview-grid span { display: grid; gap: 0.25rem; color: #929bad; font-size: 0.76rem; }
+.overview-grid strong { color: #f2f1f8; font-size: 1.08rem; }
+@media (max-width: 560px) { .overview-grid { grid-template-columns: repeat(2, 1fr); } }
