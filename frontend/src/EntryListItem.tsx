@@ -3,6 +3,7 @@ import {
 } from 'react'
 
 import type {
+  EffectiveEntryWorkflowStatus,
   ParsedLocalizationEntry,
 } from '@localizationhub/core'
 
@@ -21,6 +22,9 @@ type EntryListItemProps = {
   hasWarning:
     boolean
 
+  workflowStatus:
+    EffectiveEntryWorkflowStatus
+
   isSelected:
     boolean
 
@@ -38,14 +42,11 @@ function EntryListItem({
   isProtected,
   hasError,
   hasWarning,
+  workflowStatus,
   isSelected,
   presenceNames = [],
   onSelect,
 }: EntryListItemProps) {
-  const isTranslated =
-    !isProtected &&
-    entry.translation
-      .trim() !== ''
 
   const entryTitle =
     entry.context
@@ -70,14 +71,9 @@ function EntryListItem({
   ) {
     title =
       `Token Warning · ${entryTitle}`
-  } else if (
-    isTranslated
-  ) {
-    title =
-      `Translated · ${entryTitle}`
   } else {
     title =
-      `Untranslated · ${entryTitle}`
+      `${workflowStatus} · ${entryTitle}`
   }
 
   if (
@@ -127,14 +123,15 @@ function EntryListItem({
         isProtected={
           isProtected
         }
-        isTranslated={
-          isTranslated
-        }
         hasError={
           hasError
         }
         hasWarning={
           hasWarning
+        }
+
+        workflowStatus={
+          workflowStatus
         }
       />
 

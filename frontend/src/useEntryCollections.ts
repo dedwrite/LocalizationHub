@@ -2,7 +2,15 @@ import {
   useMemo,
 } from 'react'
 
+import {
+  matchesSearch as matchesStructuredSearch,
+  parseSearchQuery,
+  getEffectiveEntryWorkflowStatus,
+} from '@localizationhub/core'
+
 import type {
+  EntryWorkflowMap,
+  EffectiveEntryWorkflowStatus,
   ParsedLocalizationEntry,
 } from '@localizationhub/core'
 
@@ -13,6 +21,8 @@ export type EntryFilter =
   | 'errors'
   | 'warnings'
   | 'needs-review'
+  | 'draft'
+  | 'approved'
 
 type UseEntryCollectionsOptions = {
   entries:
@@ -29,6 +39,15 @@ type UseEntryCollectionsOptions = {
 
   needsReviewEntryIds:
     Set<string>
+
+  workflowEntries:
+    EntryWorkflowMap
+
+  projectMetadata:
+    import('@localizationhub/core').ProjectMetadata
+
+  currentUserId?:
+    string
 
   searchQuery:
     string
@@ -50,6 +69,9 @@ type EntryCollections = {
   needsReviewCount:
     number
 
+  workflowCounts:
+    Record<EffectiveEntryWorkflowStatus, number>
+
   filteredEntries:
     ParsedLocalizationEntry[]
 
@@ -63,6 +85,9 @@ export function useEntryCollections({
   errorEntryIds,
   warningEntryIds,
   needsReviewEntryIds,
+  workflowEntries,
+  projectMetadata,
+  currentUserId,
   searchQuery,
   entryFilter,
 }: UseEntryCollectionsOptions): EntryCollections {
@@ -80,6 +105,14 @@ export function useEntryCollections({
       let needsReviewCount =
         0
 
+      const workflowCounts: Record<EffectiveEntryWorkflowStatus, number> = {
+        untranslated: 0,
+        draft: 0,
+        translated: 0,
+        'needs-review': 0,
+        approved: 0,
+      }
+
       const filteredEntries:
         ParsedLocalizationEntry[] =
           []
@@ -92,6 +125,8 @@ export function useEntryCollections({
         searchQuery
           .trim()
           .toLowerCase()
+
+          const structuredSearch = parseSearchQuery(searchQuery)
 
       for (
         const entry
@@ -107,6 +142,12 @@ export function useEntryCollections({
           entry.translation
             .trim() !== ''
 
+        const workflowStatus = getEffectiveEntryWorkflowStatus(
+          entry,
+          workflowEntries[entry.id],
+        )
+        workflowCounts[workflowStatus] += 1
+
         const hasError =
           errorEntryIds.has(
             entry.id,
@@ -121,6 +162,8 @@ export function useEntryCollections({
           needsReviewEntryIds.has(
             entry.id,
           )
+
+        if (!matchesStructuredSearch(entry, structuredSearch, workflowEntries, projectMetadata, errorEntryIds, warningEntryIds, currentUserId)) continue
 
         /*
          * كل Entry غير Protected
@@ -201,7 +244,11 @@ export function useEntryCollections({
           (
             entryFilter ===
               'needs-review' &&
-            needsReview
+            workflowStatus === 'needs-review'
+          ) ||
+          (
+            (entryFilter === 'draft' || entryFilter === 'approved') &&
+            workflowStatus === entryFilter
           )
 
         if (
@@ -277,6 +324,8 @@ export function useEntryCollections({
 
         needsReviewCount,
 
+        workflowCounts,
+
         filteredEntries,
 
         navigableEntries,
@@ -288,6 +337,9 @@ export function useEntryCollections({
       errorEntryIds,
       warningEntryIds,
       needsReviewEntryIds,
+      workflowEntries,
+      projectMetadata,
+      currentUserId,
       searchQuery,
       entryFilter,
     ],

@@ -9,8 +9,12 @@ import type {
   RecordArraySchema,
 } from './parsers'
 
+import type {
+  ProjectMetadata,
+} from './projectMetadata'
+
 export type StoredDocumentInfo = {
-  parser: 'json'
+  parser: 'json' | 'csv' | 'gettext-po'
 
   format:
     LocalizationFileFormat
@@ -96,6 +100,35 @@ export type LocalizationProjectV2 = {
     ParsedLocalizationEntry[]
 }
 
+export type LocalizationProjectV3 = {
+  format:
+    'LocalizationHubProject'
+
+  version:
+    3
+
+  sourceFileName:
+    string
+
+  selectedEntryId:
+    string | null
+
+  tokenProfile:
+    TokenProfileId
+
+  document:
+    StoredDocumentInfo
+
+  entries:
+    ParsedLocalizationEntry[]
+
+  workflow:
+    LocalizationProjectWorkflow
+
+  metadata?:
+    ProjectMetadata
+}
+
 export type LegacyTranslationEntry = {
   key:
     string
@@ -130,16 +163,11 @@ export type LocalizationProjectV1 = {
 export type DecodeLocalizationProjectResult =
   | {
       ok: true
-
-      project:
-        LocalizationProjectV2
-
-      migratedFromVersion:
-        1 | null
+      project: LocalizationProjectV3
+      migratedFromVersion: 1 | 2 | null
     }
   | {
       ok: false
-
       reason:
         | 'invalid-json'
         | 'invalid-format'
@@ -149,83 +177,70 @@ export type DecodeLocalizationProjectResult =
 
 function migrateProjectV1(
   legacy: LocalizationProjectV1,
-): LocalizationProjectV2 {
-  const entries:
-    ParsedLocalizationEntry[] =
-      legacy.entries.map(
-        (
-          entry,
-          index,
-        ) => ({
-          id:
-            `legacy:${index}:${entry.key}`,
+): LocalizationProjectV3 {
+  const entries: ParsedLocalizationEntry[] = legacy.entries.map(
+    (entry, index) => ({
+      id: `legacy:${index}:${entry.key}`,
+      key: entry.key,
+      source: entry.source,
+      translation: entry.translation,
+      keyPath: [entry.key],
+      sourcePath: [entry.key],
+    }),
+  )
 
-          key:
-            entry.key,
-
-          source:
-            entry.source,
-
-          translation:
-            entry.translation,
-
-          keyPath: [
-            entry.key,
-          ],
-
-          sourcePath: [
-            entry.key,
-          ],
-        }),
-      )
-
-  const restored =
-    entries.find(
-      (entry) =>
-        entry.key ===
-        legacy.selectedKey,
-    )
+  const restored = entries.find((entry) => entry.key === legacy.selectedKey)
 
   return {
-    format:
-      'LocalizationHubProject',
-
-    version:
-      2,
-
-    sourceFileName:
-      legacy.sourceFileName,
-
-    selectedEntryId:
-      restored?.id ??
-      entries[0]?.id ??
-      null,
-
-    tokenProfile:
-      legacy.tokenProfile ??
-      'generic',
-
+    format: 'LocalizationHubProject',
+    version: 3,
+    sourceFileName: legacy.sourceFileName,
+    selectedEntryId: restored?.id ?? entries[0]?.id ?? null,
+    tokenProfile: legacy.tokenProfile ?? 'generic',
     document: {
-      parser:
-        'json',
-
-      format:
-        'flat-json-object',
-
-      sourceText:
-        '',
-
+      parser: 'json',
+      format: 'flat-json-object',
+      sourceText: '',
       language: {
-        sourceDirection:
-          'auto',
-
-        translationDirection:
-          'auto',
+        sourceDirection: 'auto',
+        translationDirection: 'auto',
       },
     },
-
     entries,
+    workflow: { entries: {} },
+    metadata: undefined,
   }
+}
+
+function migrateProjectV2(
+  project: LocalizationProjectV2,
+): LocalizationProjectV3 {
+  return {
+    ...project,
+    version: 3,
+    workflow: { entries: {} },
+  }
+}
+
+function isValidWorkflow(
+  value: unknown,
+): value is LocalizationProjectWorkflow {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const entries = (value as { entries?: unknown }).entries
+  if (!entries || typeof entries !== 'object' || Array.isArray(entries)) {
+    return false
+  }
+
+  return Object.values(entries).every((state) => (
+    Boolean(state) &&
+    typeof state === 'object' &&
+    ['draft', 'translated', 'needs-review', 'approved'].includes(
+      (state as { status?: unknown }).status as string,
+    )
+  ))
 }
 
 export function decodeLocalizationProject(
@@ -292,35 +307,32 @@ export function decodeLocalizationProject(
     }
   }
 
-  if (
-    candidate.version === 2
-  ) {
+  if (candidate.version === 3) {
+    const project = parsed as Partial<LocalizationProjectV3>
+    if (!isValidWorkflow(project.workflow)) {
+      return { ok: false, reason: 'invalid-format' }
+    }
+
     return {
       ok: true,
-
-      project:
-        parsed as
-          LocalizationProjectV2,
-
-      migratedFromVersion:
-        null,
+      project: project as LocalizationProjectV3,
+      migratedFromVersion: null,
     }
   }
 
-  if (
-    candidate.version === 1
-  ) {
+  if (candidate.version === 2) {
     return {
       ok: true,
+      project: migrateProjectV2(parsed as LocalizationProjectV2),
+      migratedFromVersion: 2,
+    }
+  }
 
-      project:
-        migrateProjectV1(
-          parsed as
-            LocalizationProjectV1,
-        ),
-
-      migratedFromVersion:
-        1,
+  if (candidate.version === 1) {
+    return {
+      ok: true,
+      project: migrateProjectV1(parsed as LocalizationProjectV1),
+      migratedFromVersion: 1,
     }
   }
 

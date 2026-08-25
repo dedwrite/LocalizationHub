@@ -564,11 +564,33 @@ export async function saveCloudProject(
     userId,
   )
 
-  const database =
-    getDatabasePool()
+  const database = getDatabasePool()
+  const client = await database.connect()
 
-  const result =
-    await database.query(
+  try {
+    await client.query('BEGIN')
+
+    const previousResult = await client.query(
+      `SELECT project
+       FROM projects
+       WHERE id = $1
+         AND revision = $2
+         AND (
+           owner_user_id = $3
+           OR EXISTS (
+             SELECT 1 FROM project_memberships
+              WHERE project_memberships.project_id = projects.id
+                AND project_memberships.user_id = $3
+                AND project_memberships.role = 'editor'
+           )
+         )
+       FOR UPDATE`,
+      [projectId, baseRevision, userId],
+    )
+    const previousProject = previousResult.rows[0]?.project
+
+    const result =
+      await client.query(
       `UPDATE projects
        SET
          project = $3::jsonb,
@@ -601,27 +623,36 @@ export async function saveCloudProject(
              THEN 'owner'
            ELSE 'editor'
          END AS role`,
-      [
-        projectId,
-        userId,
-        JSON.stringify(
-          project,
-        ),
-        baseRevision,
-      ],
-    )
+        [projectId, userId, JSON.stringify(project), baseRevision],
+      )
 
-  if (
-    result.rowCount ===
-      1
-  ) {
-    return toSnapshot(
-      result.rows[0],
-    )
-  }
+    if (result.rowCount === 1) {
+      if (previousProject) {
+      const previousById = new Map(previousProject.entries.map((entry) => [entry.id, entry]))
+      for (const entry of project.entries) {
+        const previous = previousById.get(entry.id)
+        if (previous && previous.translation !== entry.translation) {
+          await client.query(
+            `INSERT INTO project_activity (project_id, entry_id, actor_user_id, kind, payload) VALUES ($1, $2, $3, 'translation-changed', $4::jsonb)`,
+            [projectId, entry.id, userId, JSON.stringify({ previousTranslation: previous.translation, newTranslation: entry.translation })],
+          )
+        }
+        const previousStatus = previousProject.workflow?.entries?.[entry.id]?.status ?? null
+        const nextStatus = project.workflow?.entries?.[entry.id]?.status ?? null
+        if (previousStatus !== nextStatus) {
+          await client.query(
+            `INSERT INTO project_activity (project_id, entry_id, actor_user_id, kind, payload) VALUES ($1, $2, $3, 'workflow-changed', $4::jsonb)`,
+            [projectId, entry.id, userId, JSON.stringify({ previousStatus, newStatus: nextStatus })],
+          )
+        }
+      }
+      }
+      await client.query('COMMIT')
+      return toSnapshot(result.rows[0])
+    }
 
-  const current =
-    await database.query(
+    const current =
+      await client.query(
       `SELECT
          projects.revision,
          CASE
@@ -648,23 +679,19 @@ export async function saveCloudProject(
       ],
     )
 
-  const row =
-    current.rows[0]
+    const row = current.rows[0]
 
-  if (!row) {
-    throw new CloudProjectNotFoundError()
+    if (!row) throw new CloudProjectNotFoundError()
+
+    if (row.role === 'viewer') throw new CloudProjectPermissionError()
+
+    throw new CloudProjectConflictError(row.revision)
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
   }
-
-  if (
-    row.role ===
-      'viewer'
-  ) {
-    throw new CloudProjectPermissionError()
-  }
-
-  throw new CloudProjectConflictError(
-    row.revision,
-  )
 }
 
 
@@ -956,15 +983,12 @@ export async function removeCloudProjectMember(
   memberUserId,
   userId,
 ) {
-  const database =
-    getDatabasePool()
+  const database = getDatabasePool()
+  const client = await database.connect()
 
-  const ownerUserId =
-    await requireProjectOwner(
-      database,
-      projectId,
-      userId,
-    )
+  try {
+    await client.query('BEGIN')
+    const ownerUserId = await requireProjectOwner(client, projectId, userId)
 
   if (
     memberUserId ===
@@ -973,8 +997,7 @@ export async function removeCloudProjectMember(
     throw new CloudProjectOwnerImmutableError()
   }
 
-  const result =
-    await database.query(
+    const result = await client.query(
       `DELETE FROM project_memberships
        WHERE
          project_id = $1
@@ -986,16 +1009,18 @@ export async function removeCloudProjectMember(
       ],
     )
 
-  if (
-    result.rowCount !==
-      1
-  ) {
-    throw new CloudProjectMemberNotFoundError()
-  }
+    if (result.rowCount !== 1) throw new CloudProjectMemberNotFoundError()
+    await client.query(
+      `DELETE FROM project_assignments WHERE project_id = $1 AND user_id = $2`,
+      [projectId, memberUserId],
+    )
+    await client.query('COMMIT')
 
-  return {
-    userId:
-      result.rows[0]
-        .user_id,
+    return { userId: result.rows[0].user_id }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
   }
 }

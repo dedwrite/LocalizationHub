@@ -1,6 +1,6 @@
 import type {
   DecodeLocalizationProjectResult,
-  LocalizationProjectV2,
+  LocalizationProjectV3,
 } from './projectModel'
 
 import type {
@@ -25,10 +25,10 @@ export type ProjectLocation =
 
 export type LoadedProject = {
   project:
-    LocalizationProjectV2
+    LocalizationProjectV3
 
   migratedFromVersion:
-    1 | null
+    1 | 2 | null
 
   revision:
     number | null
@@ -89,7 +89,7 @@ export interface ProjectStorage {
       ProjectLocation,
 
     project:
-      LocalizationProjectV2,
+      LocalizationProjectV3,
 
     options?:
       ProjectSaveOptions,

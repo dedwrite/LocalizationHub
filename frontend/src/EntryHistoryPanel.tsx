@@ -1,0 +1,8 @@
+import { useEffect, useState } from 'react'
+import { listProjectActivity, restoreActivity } from './cloudWorkflowApi'
+
+type Props = { projectId: string; entryId: string; revision: number | null; readOnly: boolean; onRestored: (translation: string, revision: number) => void }
+export default function EntryHistoryPanel({ projectId, entryId, revision, readOnly, onRestored }: Props) { const [items, setItems] = useState<{ id: string; actorUserId?: string; kind: string; payload: Record<string, unknown>; createdAt: string }[]>([]); const [error, setError] = useState('')
+  useEffect(() => { void listProjectActivity(projectId, entryId).then(setItems).catch((reason: Error) => setError(reason.message)) }, [projectId, entryId])
+  return <section className="token-panel"><div className="token-panel-header"><strong>History</strong><span>{items.length}</span></div>{error && <p>{error}</p>}{items.map((item) => <div className="workflow-suggestion" key={item.id}><span>{item.kind}: {String(item.payload.newTranslation ?? '')} <small>{item.actorUserId ?? 'Unknown actor'} · {new Date(item.createdAt).toLocaleString()}</small></span>{item.kind === 'translation-changed' && <button type="button" disabled={readOnly || revision === null} onClick={() => revision !== null && void restoreActivity(projectId, item.id, revision).then((result) => onRestored(result.translation, result.revision)).catch((reason: Error) => setError(reason.message))}>Restore</button>}</div>)}</section>
+}

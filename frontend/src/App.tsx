@@ -36,12 +36,16 @@ import {
 import {
   analyzeExportValidation,
   ProjectStorageError,
+  getEffectiveEntryWorkflowStatus,
+  emptyProjectMetadata,
 } from '@localizationhub/core'
 
 import type {
   CloudProjectRole,
   CloudProjectSummary,
-  LocalizationProjectV2,
+  LocalizationProjectV3,
+  EntryWorkflowMap,
+  ProjectMetadata,
   ProjectLocation,
   StoredDocumentInfo,
 } from '@localizationhub/core'
@@ -143,6 +147,10 @@ import WorkspaceCollaborationStatus from './WorkspaceCollaborationStatus'
 import { useCollaborationSession, type CollaborationController } from './useCollaborationSession'
 import LastSessionCard from './LastSessionCard'
 import MachineTranslationPanel from './MachineTranslationPanel'
+import ProjectWorkflowTools from './ProjectWorkflowTools'
+import EntryCommentsPanel from './EntryCommentsPanel'
+import EntryAssignmentPanel from './EntryAssignmentPanel'
+import EntryHistoryPanel from './EntryHistoryPanel'
 
 import Toast, {
   type ToastMessage,
@@ -234,6 +242,11 @@ function App() {
         }
       >(),
     )
+
+  const [
+    manualConflictValue,
+    setManualConflictValue,
+  ] = useState('')
 
   const workspaceReadOnlyRef =
     useRef(false)
@@ -337,6 +350,10 @@ function App() {
             },
           )
 
+          setManualConflictValue(
+            conflict.attemptedTranslation,
+          )
+
           /*
            * We now know the authoritative
            * revision held by the relay.
@@ -400,7 +417,7 @@ function App() {
 
             const project =
               parsed as unknown as
-                LocalizationProjectV2
+                LocalizationProjectV3
 
             const projectVersion =
               Number(
@@ -412,14 +429,16 @@ function App() {
             if (
               project.format !==
                 'LocalizationHubProject' ||
-              projectVersion !== 2 ||
+              projectVersion !== 3 ||
               !Array.isArray(
                 project.entries,
               ) ||
               project.entries.length === 0 ||
               !project.document ||
               typeof project.sourceFileName !==
-                'string'
+                'string' ||
+              !project.workflow ||
+              typeof project.workflow.entries !== 'object'
             ) {
               throw new Error(
                 'Unsupported collaboration project.'
@@ -451,6 +470,14 @@ function App() {
 
             setEntries(
               project.entries,
+            )
+
+            setWorkflowEntries(
+              project.workflow.entries,
+            )
+
+            setProjectMetadata(
+              project.metadata ?? emptyProjectMetadata(),
             )
 
             setFileName(
@@ -605,9 +632,18 @@ function App() {
     entries,
     setEntries,
   ] =
-    useState<TranslationEntry[]>(
-      [],
-    )
+    useState<TranslationEntry[]>([])
+
+  const [
+    workflowEntries,
+    setWorkflowEntries,
+  ] =
+    useState<EntryWorkflowMap>({})
+
+  const [
+    projectMetadata,
+    setProjectMetadata,
+  ] = useState<ProjectMetadata>(emptyProjectMetadata)
 
   const [
     fileName,
@@ -786,6 +822,7 @@ function App() {
     errorCount,
     warningCount,
     needsReviewCount,
+    workflowCounts,
     filteredEntries,
     navigableEntries,
   } =
@@ -795,6 +832,9 @@ function App() {
       errorEntryIds,
       warningEntryIds,
       needsReviewEntryIds,
+      workflowEntries,
+      projectMetadata,
+      currentUserId: authSession?.user.id,
       searchQuery,
       entryFilter,
 
@@ -870,6 +910,13 @@ function App() {
         ) ??
         null
       : null
+
+  useEffect(() => {
+    setManualConflictValue(
+      selectedCollaborationConflict?.attemptedTranslation ?? '',
+    )
+  }, [selectedCollaborationConflict?.entryId])
+
   const selectedFullyProtected =
     selectedEntry
       ? fullyProtectedEntryIds.has(
@@ -1412,9 +1459,7 @@ function App() {
             name:
               'JSON',
 
-            extensions: [
-              'json',
-            ],
+            extensions: ['json', 'csv', 'po'],
           },
         ],
       })
@@ -1476,6 +1521,9 @@ function App() {
       setEntries(
         document.entries,
       )
+
+      setWorkflowEntries({})
+      setProjectMetadata(emptyProjectMetadata())
 
       setDocumentInfo({
         parser:
@@ -1545,7 +1593,7 @@ function App() {
   }
 
   function createCurrentProject():
-    LocalizationProjectV2 | null {
+    LocalizationProjectV3 | null {
     if (
       entries.length === 0 ||
       !documentInfo
@@ -1558,7 +1606,7 @@ function App() {
         'LocalizationHubProject',
 
       version:
-        2,
+        3,
 
       sourceFileName:
         fileName,
@@ -1571,6 +1619,14 @@ function App() {
         documentInfo,
 
       entries,
+
+      workflow: {
+        entries: workflowEntries,
+      },
+
+      metadata: projectLocation?.kind === 'local'
+        ? projectMetadata
+        : { ...projectMetadata, assignments: {} },
     }
   }
 
@@ -1968,6 +2024,14 @@ try {
         project.entries,
       )
 
+      setWorkflowEntries(
+        project.workflow.entries,
+      )
+
+      setProjectMetadata(
+        project.metadata ?? emptyProjectMetadata(),
+      )
+
       setFileName(
         project.sourceFileName,
       )
@@ -1977,11 +2041,11 @@ try {
       )
 
       /*
-       * Legacy v1 projects must use Save As
-       * so they are written back as v2.
+      * Migrated projects must use Save As so
+      * legacy files are never overwritten implicitly.
        */
       setProjectLocation(
-        loaded.migratedFromVersion === 1
+        loaded.migratedFromVersion !== null
           ? null
           : location,
       )
@@ -2986,7 +3050,7 @@ try {
     enabled:
       entries.length === 0,
 
-    onJsonFile:
+    onLocalizationFile:
       handleDroppedJsonFile,
 
     onProjectFile:
@@ -3114,16 +3178,12 @@ try {
     const selectedPath =
       await save({
         defaultPath:
-          `${baseName}_translated.json`,
+          `${baseName}_translated.${currentDocument.parser === 'csv' ? 'csv' : currentDocument.parser === 'gettext-po' ? 'po' : 'json'}`,
 
         filters: [
           {
-            name:
-              'JSON',
-
-            extensions: [
-              'json',
-            ],
+            name: 'Localization files',
+            extensions: ['json', 'csv', 'po'],
           },
         ],
       })
@@ -3202,6 +3262,28 @@ try {
                 }
               : entry,
         ),
+    )
+
+    setWorkflowEntries(
+      (currentWorkflow) => {
+        const currentStatus =
+          currentWorkflow[id]?.status
+
+        if (value.trim() === '') {
+          const next = { ...currentWorkflow }
+          delete next[id]
+          return next
+        }
+
+        if (currentStatus === 'approved' || currentStatus === 'needs-review') {
+          return {
+            ...currentWorkflow,
+            [id]: { status: 'draft' },
+          }
+        }
+
+        return currentWorkflow
+      },
     )
 
     setIsDirty(
@@ -3493,6 +3575,24 @@ try {
                       ? 'Open Cloud · Locked'
                       : 'Open Cloud'
                   }
+                </button>
+
+                <button
+                  type="button"
+                  className={entryFilter === 'draft' ? 'filter-button active' : 'filter-button'}
+                  onClick={() => setEntryFilter('draft')}
+                >
+                  Draft
+                  <span>{workflowCounts.draft.toLocaleString()}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={entryFilter === 'approved' ? 'filter-button active' : 'filter-button'}
+                  onClick={() => setEntryFilter('approved')}
+                >
+                  Approved
+                  <span>{workflowCounts.approved.toLocaleString()}</span>
                 </button>
               </div>
 
@@ -4259,6 +4359,13 @@ try {
                             )
                           }
 
+                          workflowStatus={
+                            getEffectiveEntryWorkflowStatus(
+                              entry,
+                              workflowEntries[entry.id],
+                            )
+                          }
+
                           isSelected={
                             entry.id ===
                             selectedEntryId
@@ -4391,6 +4498,50 @@ try {
                       translationLocale
                     }
                   />
+
+                  <ProjectWorkflowTools
+                    entries={entries}
+                    selectedEntry={selectedEntry}
+                    workflow={workflowEntries}
+                    setWorkflow={setWorkflowEntries}
+                    metadata={projectMetadata}
+                    setMetadata={setProjectMetadata}
+                    readOnly={workspaceReadOnly}
+                    errorIds={errorEntryIds}
+                    warningIds={warningEntryIds}
+                    onTranslationChange={handleTranslationChange}
+                  />
+
+                  <EntryCommentsPanel
+                    projectId={projectLocation?.kind === 'cloud' ? projectLocation.projectId : null}
+                    entryId={selectedEntry.id}
+                    readOnly={workspaceReadOnly}
+                    metadata={projectMetadata}
+                    setMetadata={setProjectMetadata}
+                  />
+
+                  {projectLocation?.kind === 'cloud' && (
+                    <>
+                      <EntryAssignmentPanel
+                        projectId={projectLocation.projectId}
+                        entryId={selectedEntry.id}
+                        metadata={projectMetadata}
+                        setMetadata={setProjectMetadata}
+                        readOnly={workspaceReadOnly}
+                      />
+                      <EntryHistoryPanel
+                        projectId={projectLocation.projectId}
+                        entryId={selectedEntry.id}
+                        revision={cloudRevision}
+                        readOnly={workspaceReadOnly}
+                        onRestored={(translation, revision) => {
+                          setEntries((current) => current.map((entry) => entry.id === selectedEntry.id ? { ...entry, translation } : entry))
+                          setCloudRevision(revision)
+                          setIsDirty(false)
+                        }}
+                      />
+                    </>
+                  )}
 
 
 
@@ -4550,6 +4701,35 @@ try {
                             Translation
                           </label>
 
+                          <label>
+                            Workflow status
+                            <select
+                              value={
+                                getEffectiveEntryWorkflowStatus(
+                                  selectedEntry,
+                                  workflowEntries[selectedEntry.id],
+                                )
+                              }
+                              disabled={workspaceReadOnly || selectedEntry.translation.trim() === ''}
+                              onChange={(event) => {
+                                const status = event.target.value as 'draft' | 'translated' | 'needs-review' | 'approved'
+                                setWorkflowEntries((current) => ({
+                                  ...current,
+                                  [selectedEntry.id]: { status },
+                                }))
+                                if (status === 'approved' && selectedEntry.translation.trim()) {
+                                  setProjectMetadata((current) => current.translationMemory.some((item) => item.source === selectedEntry.source && item.translation === selectedEntry.translation) ? current : { ...current, translationMemory: [...current.translationMemory, { source: selectedEntry.source, translation: selectedEntry.translation, approvedAt: new Date().toISOString() }] })
+                                }
+                                setIsDirty(true)
+                              }}
+                            >
+                              <option value="draft">Draft</option>
+                              <option value="translated">Translated</option>
+                              <option value="needs-review">Needs Review</option>
+                              <option value="approved">Approved</option>
+                            </select>
+                          </label>
+
                           <TranslationEditor
                             value={
                               selectedEntry
@@ -4653,6 +4833,15 @@ try {
                                     </div>
                                   </div>
                                 </div>
+
+                                <label className="collaboration-conflict-merge">
+                                  Manual merged value
+                                  <textarea
+                                    value={manualConflictValue}
+                                    disabled={workspaceReadOnly}
+                                    onChange={(event) => setManualConflictValue(event.target.value)}
+                                  />
+                                </label>
 
                                 <div className="collaboration-conflict-actions">
                                   <button
@@ -4770,6 +4959,23 @@ try {
                                     }}
                                   >
                                     Keep Mine
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="primary-button"
+                                    disabled={workspaceReadOnly}
+                                    onClick={() => {
+                                      const conflict = selectedCollaborationConflict
+                                      handleTranslationChange(conflict.entryId, manualConflictValue)
+                                      setCollaborationConflicts((current) => {
+                                        const next = new Map(current)
+                                        next.delete(conflict.entryId)
+                                        return next
+                                      })
+                                    }}
+                                  >
+                                    Apply Merge
                                   </button>
                                 </div>
                               </div>

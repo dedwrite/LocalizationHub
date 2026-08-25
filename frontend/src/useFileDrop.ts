@@ -8,7 +8,7 @@ import {
 
 type FileDropHandlers = {
   enabled: boolean
-  onJsonFile: (
+  onLocalizationFile: (
     path: string,
   ) => void | Promise<void>
   onProjectFile: (
@@ -21,7 +21,7 @@ type FileDropHandlers = {
 
 export function useFileDrop({
   enabled,
-  onJsonFile,
+  onLocalizationFile,
   onProjectFile,
   onUnsupportedFile,
 }: FileDropHandlers) {
@@ -70,12 +70,8 @@ export function useFileDrop({
                     return
                   }
 
-                  if (
-                    normalized.endsWith(
-                      '.json',
-                    )
-                  ) {
-                    void onJsonFile(
+                  if (normalized.endsWith('.json') || normalized.endsWith('.csv') || normalized.endsWith('.po')) {
+                    void onLocalizationFile(
                       path,
                     )
 
@@ -97,7 +93,7 @@ export function useFileDrop({
     },
     [
       enabled,
-      onJsonFile,
+      onLocalizationFile,
       onProjectFile,
       onUnsupportedFile,
     ],

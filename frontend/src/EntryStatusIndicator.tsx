@@ -1,11 +1,12 @@
 import './EntryStatusIndicator.css'
 import './ReviewSeverity.css'
 
+import type {
+  EffectiveEntryWorkflowStatus,
+} from '@localizationhub/core'
+
 type EntryStatusIndicatorProps = {
   isProtected:
-    boolean
-
-  isTranslated:
     boolean
 
   hasError:
@@ -13,20 +14,22 @@ type EntryStatusIndicatorProps = {
 
   hasWarning:
     boolean
+
+  workflowStatus:
+    EffectiveEntryWorkflowStatus
 }
 
 function EntryStatusIndicator({
   isProtected,
-  isTranslated,
   hasError,
   hasWarning,
+  workflowStatus,
 }: EntryStatusIndicatorProps) {
   let status:
     | 'protected'
     | 'error'
     | 'warning'
-    | 'translated'
-    | 'untranslated'
+    | EffectiveEntryWorkflowStatus
 
   let label:
     string
@@ -55,20 +58,12 @@ function EntryStatusIndicator({
 
     label =
       'Token warning'
-  } else if (
-    isTranslated
-  ) {
-    status =
-      'translated'
-
-    label =
-      'Translated'
   } else {
     status =
-      'untranslated'
+      workflowStatus
 
     label =
-      'Untranslated'
+      workflowStatus.replace('-', ' ')
   }
 
   return (

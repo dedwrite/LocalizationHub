@@ -1,6 +1,8 @@
 import {
   exportJsonLocalization,
 } from './json'
+import { exportCsvLocalization } from '../parsers/csv'
+import { exportPoLocalization } from '../parsers/po'
 
 import type {
   ParsedLocalizationDocument,
@@ -14,6 +16,12 @@ export function exportLocalizationDocument(
       return exportJsonLocalization(
         document,
       )
+
+    case 'csv':
+      return exportCsvLocalization(document)
+
+    case 'gettext-po':
+      return exportPoLocalization(document)
 
     default:
       throw new Error(

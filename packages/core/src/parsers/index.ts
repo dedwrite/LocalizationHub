@@ -1,6 +1,8 @@
 import {
   parseJsonLocalization,
 } from './json'
+import { parseCsvLocalization } from './csv'
+import { parsePoLocalization } from './po'
 
 import type {
   LocalizationParseResult,
@@ -38,6 +40,9 @@ export function parseLocalizationFile(
       text,
     )
   }
+
+  if (extension === 'csv') return parseCsvLocalization(text)
+  if (extension === 'po') return parsePoLocalization(text)
 
   return {
     ok: false,
@@ -89,6 +94,12 @@ export function describeParsedDocument(
         ' | ',
       )
     }
+
+    case 'csv':
+      return `CSV — ${document.entries.length.toLocaleString()} entries`
+
+    case 'gettext-po':
+      return `Gettext PO — ${document.entries.length.toLocaleString()} entries`
   }
 }
 

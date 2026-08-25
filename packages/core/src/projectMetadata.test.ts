@@ -1,0 +1,10 @@
+import { describe, expect, it } from 'vitest'
+import { addProjectTag, emptyProjectMetadata, findTranslationMemory, glossaryIssues, normalizeTagLabel, similarity, toggleEntryTag, updateGlossaryEntry } from './projectMetadata'
+
+describe('project metadata', () => {
+  it('normalizes tags and avoids duplicates', () => { let metadata = addProjectTag(emptyProjectMetadata(), '  Dialogue   '); metadata = addProjectTag(metadata, 'dialogue'); expect(normalizeTagLabel('  Dialogue   ')).toBe('Dialogue'); expect(metadata.tags).toHaveLength(1) })
+  it('toggles entry tags', () => { const metadata = addProjectTag(emptyProjectMetadata(), 'UI'); const tagged = toggleEntryTag(metadata, 'a', metadata.tags[0].id); expect(tagged.entryTags.a).toEqual(['ui']); expect(toggleEntryTag(tagged, 'a', 'ui').entryTags.a).toEqual([]) })
+  it('updates and normalizes glossary entries', () => { const metadata = { ...emptyProjectMetadata(), glossary: [{ sourceTerm: 'Sword', preferredTranslation: 'Blade', forbiddenTranslations: [], caseSensitive: false }] }; const updated = updateGlossaryEntry(metadata, 0, { ...metadata.glossary[0], sourceTerm: '  Sword  ', forbiddenTranslations: ['Sabre', 'Sabre'], notes: '  weapon ' }); expect(updated.glossary[0]).toEqual({ sourceTerm: 'Sword', preferredTranslation: 'Blade', forbiddenTranslations: ['Sabre'], caseSensitive: false, notes: 'weapon' }) })
+  it('detects glossary violations with case sensitivity', () => { const term = { sourceTerm: 'Sword', preferredTranslation: 'Blade', forbiddenTranslations: ['Sabre'], caseSensitive: false }; expect(glossaryIssues('A sword', 'Sabre', [term])).toHaveLength(1); expect(glossaryIssues('a sword', 'blade', [{ ...term, caseSensitive: true }])).toHaveLength(0) })
+  it('ranks deterministic TM matches and guards short text', () => { const memory = [{ source: 'Open menu', translation: 'افتح القائمة' }, { source: 'Open menus', translation: 'افتح القوائم' }, { source: 'Open menu', translation: 'افتح القائمة' }]; expect(similarity('OK', 'OK')).toBe(0); expect(findTranslationMemory('Open menu', memory)[0].score).toBe(1); expect(findTranslationMemory('Open menu', memory)).toHaveLength(2) })
+})

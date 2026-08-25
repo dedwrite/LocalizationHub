@@ -5,6 +5,8 @@ export type JsonPathSegment =
 export type LocalizationFileFormat =
   | 'flat-json-object'
   | 'json-record-array'
+  | 'csv'
+  | 'gettext-po'
 
 /*
  * اتجاه عرض النص.
@@ -81,7 +83,7 @@ export type RecordArraySchema = {
 }
 
 export type ParsedLocalizationDocument = {
-  parser: 'json'
+  parser: 'json' | 'csv' | 'gettext-po'
 
   format:
     LocalizationFileFormat

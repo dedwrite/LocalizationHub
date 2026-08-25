@@ -1,5 +1,5 @@
 import type {
-  LocalizationProjectV2,
+  LocalizationProjectV3,
 } from './projectModel'
 
 export type CloudProjectRole =
@@ -44,7 +44,7 @@ export type CloudProjectSnapshot = {
     string
 
   project:
-    LocalizationProjectV2
+    LocalizationProjectV3
 }
 
 export type CreateCloudProjectRequest = {
@@ -52,7 +52,7 @@ export type CreateCloudProjectRequest = {
     string
 
   project:
-    LocalizationProjectV2
+    LocalizationProjectV3
 }
 
 export type CreateCloudProjectResponse = {
@@ -62,7 +62,7 @@ export type CreateCloudProjectResponse = {
 
 export type SaveCloudProjectRequest = {
   project:
-    LocalizationProjectV2
+    LocalizationProjectV3
 
   baseRevision:
     number

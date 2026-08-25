@@ -7,6 +7,23 @@ const {
 let pool =
   null
 
+let testPool =
+  null
+
+export function setDatabasePoolForTests(value) {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('Database test overrides require NODE_ENV=test.')
+  }
+  testPool = value
+}
+
+export function resetDatabasePoolForTests() {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('Database test overrides require NODE_ENV=test.')
+  }
+  testPool = null
+}
+
 function getPoolMax() {
   const configured =
     Number(
@@ -37,6 +54,8 @@ export function isDatabaseConfigured() {
 }
 
 export function getDatabasePool() {
+  if (testPool) return testPool
+
   if (pool) {
     return pool
   }

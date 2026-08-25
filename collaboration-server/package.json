@@ -8,6 +8,7 @@
     "dev": "node dev.mjs",
     "start": "node server.mjs",
     "check": "node --check server.mjs",
+    "test": "set NODE_ENV=test&& node --test tests/*.test.mjs",
     "db:migrate": "node migrate.mjs"
   },
   "engines": {

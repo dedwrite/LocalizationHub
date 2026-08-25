@@ -19,6 +19,16 @@ import {
   saveCloudProject,
   updateCloudProjectMember,
 } from './cloud-projects.mjs'
+import {
+  assignCloudEntry,
+  createCloudComment,
+  listCloudActivity,
+  listCloudAssignments,
+  listCloudComments,
+  resolveCloudComment,
+  restoreCloudActivity,
+} from './cloud-workflow.mjs'
+import { isValidCloudProjectV3 } from './cloud-project-validation.mjs'
 
 import {
   AuthError,
@@ -3393,6 +3403,52 @@ const httpServer =
           /^\/api\/projects\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\/members\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
         )
 
+      const uuidPattern = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+      const assignmentMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/assignments(?:/([^/]+))?$`))
+      const commentsMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/entries/([^/]+)/comments$`))
+      const commentMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/comments/(${uuidPattern})$`))
+      const activityMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/activity(?:\\?.*)?$`))
+      const restoreMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/activity/([0-9]+)/restore$`))
+
+      if (assignmentMatch || commentsMatch || commentMatch || activityMatch || restoreMatch) {
+        try {
+          const projectId = (assignmentMatch?.[1] ?? commentsMatch?.[1] ?? commentMatch?.[1] ?? activityMatch?.[1] ?? restoreMatch?.[1]).toLowerCase()
+          const actorUserId = cloudAuthentication.user.id
+          if (assignmentMatch) {
+            if (request.method === 'GET' && !assignmentMatch[2]) sendJson(response, 200, await listCloudAssignments(projectId, actorUserId))
+            else if (request.method === 'PUT' && assignmentMatch[2]) { const body = await readJsonBody(request); if (!body || (body.assigneeUserId !== null && typeof body.assigneeUserId !== 'string')) { sendJson(response, 400, { error: 'invalid-request' }); return } sendJson(response, 200, await assignCloudEntry(projectId, decodeURIComponent(assignmentMatch[2]), body.assigneeUserId, actorUserId)) }
+            else { sendJson(response, 404, { error: 'not-found' }) }
+          } else if (commentsMatch) {
+            const entryId = decodeURIComponent(commentsMatch[2])
+            if (request.method === 'GET') sendJson(response, 200, { comments: await listCloudComments(projectId, entryId, actorUserId) })
+            else if (request.method === 'POST') { const body = await readJsonBody(request); if (!body || typeof body.body !== 'string' || !body.body.trim()) { sendJson(response, 400, { error: 'invalid-request' }); return } sendJson(response, 201, { comment: await createCloudComment(projectId, entryId, body.body, actorUserId) }) }
+            else sendJson(response, 404, { error: 'not-found' })
+          } else if (commentMatch) {
+            if (request.method !== 'PATCH') { sendJson(response, 404, { error: 'not-found' }); return }
+            const body = await readJsonBody(request); if (!body || typeof body.resolved !== 'boolean') { sendJson(response, 400, { error: 'invalid-request' }); return }
+            sendJson(response, 200, { comment: await resolveCloudComment(projectId, commentMatch[2], body.resolved, actorUserId) })
+          } else if (restoreMatch) {
+            if (request.method !== 'POST') { sendJson(response, 404, { error: 'not-found' }); return }
+            const body = await readJsonBody(request)
+            if (!body || !Number.isInteger(body.baseRevision) || body.baseRevision < 1) { sendJson(response, 400, { error: 'invalid-request' }); return }
+            sendJson(response, 200, { restore: await restoreCloudActivity(projectId, restoreMatch[2], body.baseRevision, actorUserId) })
+          } else {
+            const url = new URL(request.url, 'http://localhost')
+            sendJson(response, 200, { activity: await listCloudActivity(projectId, url.searchParams.get('entryId'), actorUserId) })
+          }
+        } catch (error) {
+          if (error instanceof CloudProjectNotFoundError) { sendJson(response, 404, { error: error.code === 'entry-not-found' ? 'entry-not-found' : 'project-not-found' }); return }
+          if (error instanceof CloudProjectPermissionError) { sendJson(response, 403, { error: 'project-read-only' }); return }
+          if (error.message === 'invalid-assignee') { sendJson(response, 400, { error: 'invalid-assignee' }); return }
+          if (error.message === 'invalid-body') { sendJson(response, 400, { error: 'invalid-request' }); return }
+          if (error.message === 'revision-conflict') { sendJson(response, 409, { error: 'revision-conflict' }); return }
+          if (error.message === 'entry-not-found') { sendJson(response, 404, { error: 'entry-not-found' }); return }
+          if (error.message === 'invalid-activity') { sendJson(response, 400, { error: 'invalid-activity' }); return }
+          console.error('Cloud workflow request failed:', error); sendJson(response, 500, { error: 'internal-error' })
+        }
+        return
+      }
+
       if (
         request.method ===
           'GET' &&
@@ -3794,10 +3850,7 @@ const httpServer =
             !body.project ||
             typeof body.project !==
               'object' ||
-            body.project.format !==
-              'LocalizationHubProject' ||
-            body.project.version !==
-              2
+            !isValidCloudProjectV3(body.project)
           ) {
             sendJson(
               response,
@@ -3931,10 +3984,7 @@ const httpServer =
             !body.project ||
             typeof body.project !==
               'object' ||
-            body.project.format !==
-              'LocalizationHubProject' ||
-            body.project.version !==
-              2
+            !isValidCloudProjectV3(body.project)
           ) {
             sendJson(
               response,

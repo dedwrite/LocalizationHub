@@ -7,6 +7,11 @@ import type {
 } from '@localizationhub/core'
 
 import {
+  decodeLocalizationProject,
+  ProjectStorageError,
+} from '@localizationhub/core'
+
+import {
   getCloudProject,
   saveCloudProject,
 } from './cloudProjectsApi'
@@ -66,12 +71,23 @@ export const cloudProjectStorage:
           projectId,
         )
 
+      const decoded = decodeLocalizationProject(
+        JSON.stringify(snapshot.project),
+      )
+
+      if (!decoded.ok) {
+        throw new ProjectStorageError(
+          decoded.reason,
+          `Invalid Cloud Project: ${decoded.reason}`,
+        )
+      }
+
       return {
         project:
-          snapshot.project,
+          decoded.project,
 
         migratedFromVersion:
-          null,
+          decoded.migratedFromVersion,
 
         revision:
           snapshot.revision,

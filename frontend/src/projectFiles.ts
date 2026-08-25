@@ -7,7 +7,7 @@ import {
   decodeLocalizationProject,
   ProjectStorageError,
   type LoadedProject,
-  type LocalizationProjectV2,
+  type LocalizationProjectV3,
   type ProjectLocation,
   type ProjectStorage,
   type SavedProject,
@@ -86,7 +86,7 @@ export const desktopProjectStorage:
         ProjectLocation,
 
       project:
-        LocalizationProjectV2,
+        LocalizationProjectV3,
     ): Promise<SavedProject> {
       const path =
         getLocalProjectPath(
@@ -127,7 +127,7 @@ export const desktopProjectStorage:
  */
 export async function writeLocalizationProject(
   path: string,
-  project: LocalizationProjectV2,
+  project: LocalizationProjectV3,
 ): Promise<void> {
   await desktopProjectStorage.save(
     {

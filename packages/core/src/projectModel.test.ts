@@ -12,7 +12,7 @@ describe(
   'decodeLocalizationProject',
   () => {
     it(
-      'loads a v2 project without migration',
+      'migrates a v2 project to v3',
       () => {
         const result =
           decodeLocalizationProject(
@@ -76,13 +76,13 @@ describe(
           return
         }
 
-        expect(
-          result.migratedFromVersion,
-        ).toBe(null)
+        expect(result.migratedFromVersion).toBe(2)
 
         expect(
           result.project.version,
-        ).toBe(2)
+        ).toBe(3)
+
+        expect(result.project.workflow.entries).toEqual({})
 
         expect(
           result.project.selectedEntryId,
@@ -91,7 +91,7 @@ describe(
     )
 
     it(
-      'migrates a v1 project to v2',
+      'migrates a v1 project to v3',
       () => {
         const result =
           decodeLocalizationProject(
@@ -147,7 +147,7 @@ describe(
 
         expect(
           result.project.version,
-        ).toBe(2)
+        ).toBe(3)
 
         expect(
           result.project.tokenProfile,
@@ -260,6 +260,43 @@ describe(
           reason:
             'unsupported-version',
         })
+      },
+    )
+
+    it(
+      'rejects malformed v3 workflow data',
+      () => {
+        expect(
+          decodeLocalizationProject(
+            JSON.stringify({
+              format: 'LocalizationHubProject',
+              version: 3,
+              entries: [{ id: 'entry-1' }],
+              workflow: { entries: { 'entry-1': { status: 'unknown' } } },
+            }),
+          ),
+        ).toEqual({ ok: false, reason: 'invalid-format' })
+      },
+    )
+
+    it(
+      'loads a native v3 project without migration',
+      () => {
+        const result = decodeLocalizationProject(JSON.stringify({
+          format: 'LocalizationHubProject',
+          version: 3,
+          sourceFileName: 'game.json',
+          selectedEntryId: 'entry-1',
+          tokenProfile: 'generic',
+          document: { parser: 'json', format: 'flat-json-object', sourceText: '{}' },
+          entries: [{ id: 'entry-1', key: 'hello', source: 'Hello', translation: 'مرحبا', keyPath: ['hello'], sourcePath: ['hello'] }],
+          workflow: { entries: { 'entry-1': { status: 'approved' } } },
+        }))
+        expect(result.ok).toBe(true)
+        if (result.ok) {
+          expect(result.migratedFromVersion).toBe(null)
+          expect(result.project.workflow.entries['entry-1'].status).toBe('approved')
+        }
       },
     )
   },

@@ -1,0 +1,8 @@
+.workflow-tools { display: grid; gap: 0.75rem; margin: 0.75rem 0; }
+.workflow-tools-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.workflow-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; font-size: 0.78rem; }
+.workflow-chip-list, .workflow-inline-form { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.workflow-inline-form input:not([type='checkbox']) { min-width: 8rem; flex: 1; }
+.workflow-suggestion { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; }
+.workflow-selection-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 12rem; overflow: auto; gap: 0.25rem 0.75rem; font-size: 0.78rem; }
+@media (max-width: 800px) { .workflow-tools-grid { grid-template-columns: 1fr; } .workflow-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
