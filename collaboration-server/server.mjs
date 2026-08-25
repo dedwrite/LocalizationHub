@@ -29,6 +29,11 @@ import {
   restoreCloudActivity,
 } from './cloud-workflow.mjs'
 import { isValidCloudProjectV3 } from './cloud-project-validation.mjs'
+import {
+  resolvePublicWebsiteDirectory,
+  ensurePublicWebsiteDirectory,
+  servePublicWebsite,
+} from './public-website.mjs'
 
 import {
   AuthError,
@@ -80,6 +85,22 @@ const PROTOCOL_VERSION =
 const ENABLE_EXPERIMENTAL_CLOUD_API =
   process.env.ENABLE_EXPERIMENTAL_CLOUD_API ===
   '1'
+
+const SERVE_PUBLIC_WEBSITE =
+  process.env.SERVE_PUBLIC_WEBSITE ===
+  '1'
+
+const PUBLIC_WEBSITE_DIST =
+  resolvePublicWebsiteDirectory()
+
+if (SERVE_PUBLIC_WEBSITE) {
+  try {
+    ensurePublicWebsiteDirectory(PUBLIC_WEBSITE_DIST)
+  } catch (error) {
+    console.error('[website] Public website serving could not start:', error.message)
+    throw error
+  }
+}
 
 const CORS_ALLOWED_ORIGINS =
   new Set([
@@ -4036,6 +4057,18 @@ const httpServer =
         }
 
         return
+      }
+
+      if (SERVE_PUBLIC_WEBSITE) {
+        const served = await servePublicWebsite(
+          request,
+          response,
+          PUBLIC_WEBSITE_DIST,
+        )
+
+        if (served) {
+          return
+        }
       }
 
       sendJson(

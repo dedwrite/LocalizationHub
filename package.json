@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "website:dev": "vite --config website/vite.config.ts --host 127.0.0.1 --port 5174",
-    "website:build": "npm run build --workspace website"
+    "website:build": "npm run build --workspace website",
+    "website:serve": "set SERVE_PUBLIC_WEBSITE=1&& set ENABLE_EXPERIMENTAL_CLOUD_API=0&& node collaboration-server/server.mjs"
   },
   "keywords": [],
   "author": "",
