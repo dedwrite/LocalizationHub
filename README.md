@@ -6,9 +6,9 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 ## Current Release
 
-**LocalizationHub v0.3.0 - Cloud Foundation & Secure Collaboration**
+**LocalizationHub v0.4.0 - Translation Workflow & Quality**
 
-Version 0.3 establishes the account, cloud storage, project membership, and production collaboration foundation while preserving the local-first workflow introduced in earlier releases.
+Version 0.4 adds persistent translation workflow, review, terminology quality, collaboration activity, and expanded localization file-format support while preserving the local-first workflow.
 
 ## Core Principles
 
@@ -246,25 +246,18 @@ Major work included:
 - Save and export workflows.
 - Windows desktop packaging.
 
-## Roadmap - v0.4 and Beyond
-
-Work deferred from the v0.3 milestone moves forward into v0.4 and later releases.
+## Roadmap - Beyond v0.4
 
 Potential areas include:
 
-- Translation Memory.
-- Glossaries and terminology management.
-- Comments and review workflows.
-- Translation history and revision inspection.
-- Project statistics and reporting.
-- Additional localization file formats.
 - Expanded Godot localization workflows.
 - Unreal Engine localization workflows.
-- Game extraction and injection tooling.
 - Git integration.
 - Expanded Cloud project management.
 - Web client development and eventual desktop/web feature parity.
 - Additional collaboration administration and moderation tools.
+
+Game extraction and injection, archive decryption/repacking, and executable modification are explicitly outside the v0.4 product scope.
 
 Roadmap items may move between releases as the project evolves.
 
@@ -297,6 +290,6 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.3.0**
+**LocalizationHub v0.4.0**
 
 Windows builds are distributed through the project's GitHub Releases page.

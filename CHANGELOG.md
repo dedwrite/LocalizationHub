@@ -2,6 +2,26 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.4.0] - 2026-08-25
+
+### Translation Workflow & Quality
+
+- Project V3 workflow metadata with migration from V1/V2 projects.
+- Draft, Translated, Needs Review, and Approved workflow states with persistence.
+- Project tags, advanced search, bulk operations, glossary, and Translation Memory.
+- Project statistics, CSV support, and gettext PO support.
+- Cloud assignments, comments, history/activity, translation restore, and manual conflict review.
+- Owner, Editor, and Viewer enforcement with real PostgreSQL-backed workflow persistence.
+- Assignment cleanup when project membership is revoked.
+- Cloud V3 trust-boundary validation and the permanent real PostgreSQL v0.4 E2E release gate.
+- UI/UX redesign for a focused translation workspace with contextual inspection tools.
+
+### Fixed
+
+- Corrected PostgreSQL UUID typing for comment resolution and strengthened workflow reliability checks.
+
+Game extraction/injection, archive handling, repacking, and executable modification remain outside this release scope.
+
 ## [0.3.0] - 2026-08-24
 
 ### Added
