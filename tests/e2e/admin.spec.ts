@@ -76,7 +76,18 @@ async function mockAdminApi(page: Page) {
 
 async function authenticate(page: Page) {
   await page.goto('/app/admin/security')
-  await page.evaluate(() => window.sessionStorage.setItem('localizationhub.admin.session', 'test-admin-token'))
+  await page.evaluate(() => {
+    window.localStorage.setItem('localizationhub.auth.token', 'test-normal-token')
+    window.sessionStorage.setItem('localizationhub.admin.session', 'test-admin-token')
+  })
+}
+
+// A signed-in (normal session) but NOT yet elevated browser.
+async function signInOnly(page: Page) {
+  await page.goto('/app/admin/security')
+  await page.evaluate(() => {
+    window.localStorage.setItem('localizationhub.auth.token', 'test-normal-token')
+  })
 }
 
 test.describe('admin console routing and views', () => {
@@ -85,7 +96,18 @@ test.describe('admin console routing and views', () => {
     await authenticate(page)
   })
 
-  test('shows the security gate when unauthenticated', async ({ page }) => {
+  test('shows the Sign in prompt when there is no normal session', async ({ page }) => {
+    await page.evaluate(() => {
+      window.localStorage.removeItem('localizationhub.auth.token')
+      window.sessionStorage.removeItem('localizationhub.admin.session')
+    })
+    await page.goto('/app/admin')
+    await expect(page.getByRole('heading', { name: 'Admin Access' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Sign in' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Request email code' })).toHaveCount(0)
+  })
+
+  test('shows the MFA gate when signed in but not elevated', async ({ page }) => {
     await page.evaluate(() => window.sessionStorage.removeItem('localizationhub.admin.session'))
     await page.goto('/app/admin')
     await expect(page.getByRole('heading', { name: 'Admin Access' })).toBeVisible()
@@ -157,4 +179,36 @@ test.describe('admin accessibility and viewports', () => {
       await expect(page.getByText('Total users')).toBeVisible()
     })
   }
+})
+
+test.describe('admin API authentication headers', () => {
+  test('sends the normal Authorization header when requesting the email OTP before elevation', async ({ page }) => {
+    const captured: { url: string; headers: Record<string, string> }[] = []
+    await page.route('**/api/admin**', async (route) => {
+      captured.push({ url: route.request().url(), headers: route.request().headers() })
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    })
+    await signInOnly(page)
+    await page.goto('/app/admin')
+    await page.getByRole('button', { name: 'Request email code' }).click()
+    const request = captured.find((c) => c.url.includes('/api/admin/auth/email/request'))
+    expect(request).toBeTruthy()
+    expect(request!.headers['authorization']).toBe('Bearer test-normal-token')
+    expect(request!.headers['x-admin-session']).toBeUndefined()
+  })
+
+  test('sends both Authorization and X-Admin-Session on elevated calls', async ({ page }) => {
+    const captured: { url: string; headers: Record<string, string> }[] = []
+    await page.route('**/api/admin**', async (route) => {
+      captured.push({ url: route.request().url(), headers: route.request().headers() })
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(dashboard) })
+    })
+    await authenticate(page)
+    await page.goto('/app/admin')
+    await expect(page.getByText('Platform metrics')).toBeVisible()
+    const request = captured.find((c) => c.url.replace(/\/+$/, '').endsWith('/api/admin'))
+    expect(request).toBeTruthy()
+    expect(request!.headers['authorization']).toBe('Bearer test-normal-token')
+    expect(request!.headers['x-admin-session']).toBe('test-admin-token')
+  })
 })

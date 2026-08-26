@@ -1,3 +1,5 @@
+import { getAuthToken } from './appApi'
+
 export type AdminMetrics = {
   total_users: number
   verified_users: number
@@ -64,9 +66,21 @@ function adminToken() {
   return typeof window !== 'undefined' ? window.sessionStorage.getItem(ADMIN_TOKEN_KEY) : null
 }
 
+// Every /api/admin/* request must carry BOTH layers when available:
+//  - Authorization: Bearer <normal LocalizationHub session token> (required)
+//  - X-Admin-Session: <separate elevated admin session token> (after elevation)
 function headers(): HeadersInit {
-  const token = adminToken()
-  return token ? { Accept: 'application/json', 'X-Admin-Session': token } : { Accept: 'application/json' }
+  const result: Record<string, string> = { Accept: 'application/json' }
+  const auth = getAuthToken()
+  if (auth) result.Authorization = `Bearer ${auth}`
+  const admin = adminToken()
+  if (admin) result['X-Admin-Session'] = admin
+  return result
+}
+
+// Whether the browser holds a normal LocalizationHub session token.
+export function hasNormalSession() {
+  return Boolean(getAuthToken())
 }
 
 async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {

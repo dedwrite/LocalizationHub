@@ -21,6 +21,7 @@ import {
   getStorageMetrics,
   getUserSessions,
   hasAdminSession,
+  hasNormalSession,
   logoutAdmin,
   reconfirmTotp,
   removeProjectMemberAdmin,
@@ -1047,6 +1048,18 @@ export default function AdminConsole() {
     return (
       <main className="admin-console">
         <p className="admin-message">Loading…</p>
+      </main>
+    )
+  }
+
+  if (!hasNormalSession()) {
+    return (
+      <main className="admin-console">
+        <div className="admin-gate">
+          <h1>Admin Access</h1>
+          <p className="admin-lede">Sign in to your LocalizationHub account to access operator controls.</p>
+          <a className="admin-btn admin-btn-primary" href="/app/login">Sign in</a>
+        </div>
       </main>
     )
   }
