@@ -293,15 +293,15 @@ describe('user management', () => {
   })
 
   it('removes a membership and cleans up assignments', async () => {
-    const client = new FakeClient({ 'SELECT id FROM project_members': row({ id: 'member-1' }) })
+    const client = new FakeClient({ 'SELECT user_id FROM project_memberships': row({ user_id: 'member-1' }) })
     setDatabasePoolForTests(pool(client))
     await removeUserProjectMembership(PROJECT_ID, USER_ID, ADMIN_ID)
-    assert.ok(client.calls.some((c) => c.sql.includes('DELETE FROM project_members')))
+    assert.ok(client.calls.some((c) => c.sql.includes('DELETE FROM project_memberships')))
     assert.ok(auditHas(client, 'admin.project.member_remove'))
   })
 
   it('refuses to remove a missing membership', async () => {
-    const client = new FakeClient({ 'SELECT id FROM project_members': empty() })
+    const client = new FakeClient({ 'SELECT user_id FROM project_memberships': empty() })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(removeUserProjectMembership(PROJECT_ID, USER_ID, ADMIN_ID), AdminSecurityError)
   })
@@ -309,7 +309,7 @@ describe('user management', () => {
   it('refuses to delete a user who owns projects without the flag', async () => {
     const client = new FakeClient({
       'SELECT id, email FROM users': row({ id: USER_ID, email: 'a@example.com' }),
-      'SELECT id FROM projects WHERE owner_id': row({ id: PROJECT_ID }),
+      'SELECT id FROM projects WHERE owner_user_id': row({ id: PROJECT_ID }),
     })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(deleteUser(USER_ID, false, ADMIN_ID), AdminSecurityError)
@@ -319,13 +319,13 @@ describe('user management', () => {
   it('deletes a user and their owned projects transactionally', async () => {
     const client = new FakeClient({
       'SELECT id, email FROM users': row({ id: USER_ID, email: 'a@example.com' }),
-      'SELECT id FROM projects WHERE owner_id': row({ id: PROJECT_ID }),
+      'SELECT id FROM projects WHERE owner_user_id': row({ id: PROJECT_ID }),
     })
     setDatabasePoolForTests(pool(client))
     await deleteUser(USER_ID, true, ADMIN_ID)
     assert.equal(client.calls[0].sql, 'BEGIN')
     assert.ok(client.calls.some((c) => c.sql === 'COMMIT'))
-    assert.ok(client.calls.some((c) => c.sql.includes('DELETE FROM projects WHERE owner_id')))
+    assert.ok(client.calls.some((c) => c.sql.includes('DELETE FROM projects WHERE owner_user_id')))
     assert.ok(client.calls.some((c) => c.sql.includes('DELETE FROM users WHERE id')))
     assert.equal(client.released, true)
   })
@@ -333,8 +333,8 @@ describe('user management', () => {
   it('rolls back a user deletion when a step fails', async () => {
     const client = new FakeClient({
       'SELECT id, email FROM users': row({ id: USER_ID, email: 'a@example.com' }),
-      'SELECT id FROM projects WHERE owner_id': row({ id: PROJECT_ID }),
-      'DELETE FROM projects WHERE owner_id': { error: new Error('fk failure') },
+      'SELECT id FROM projects WHERE owner_user_id': row({ id: PROJECT_ID }),
+      'DELETE FROM projects WHERE owner_user_id': { error: new Error('fk failure') },
     })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(deleteUser(USER_ID, true, ADMIN_ID), /fk failure/)
@@ -355,8 +355,8 @@ describe('project management', () => {
 
   it('returns project detail with members', async () => {
     const client = new FakeClient({
-      'FROM projects p INNER JOIN users u ON u.id = p.owner_id WHERE p.id': row({ id: PROJECT_ID, name: 'Game', owner_id: ADMIN_ID, owner_username: 'operator' }),
-      'FROM project_members pm INNER JOIN users u': row({ id: USER_ID, username: 'alice', role: 'editor' }),
+      'FROM projects p INNER JOIN users u ON u.id = p.owner_user_id WHERE p.id': row({ id: PROJECT_ID, name: 'Game', owner_id: ADMIN_ID, owner_username: 'operator' }),
+      'FROM project_memberships pm INNER JOIN users u': row({ id: USER_ID, username: 'alice', role: 'editor' }),
     })
     setDatabasePoolForTests(pool(client))
     const project = await getProject(PROJECT_ID)
@@ -371,30 +371,30 @@ describe('project management', () => {
   })
 
   it('refuses to change the owner role', async () => {
-    const client = new FakeClient({ 'SELECT owner_id FROM projects': row({ owner_id: USER_ID }) })
+    const client = new FakeClient({ 'SELECT owner_user_id FROM projects': row({ owner_user_id: USER_ID }) })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(changeProjectMemberRole(PROJECT_ID, USER_ID, 'editor', ADMIN_ID), AdminSecurityError)
   })
 
   it('changes a member role and audits', async () => {
-    const client = new FakeClient({ 'SELECT owner_id FROM projects': row({ owner_id: ADMIN_ID }) })
+    const client = new FakeClient({ 'SELECT owner_user_id FROM projects': row({ owner_user_id: ADMIN_ID }) })
     setDatabasePoolForTests(pool(client))
     await changeProjectMemberRole(PROJECT_ID, USER_ID, 'viewer', ADMIN_ID)
-    assert.ok(client.calls.some((c) => c.sql.includes("UPDATE project_members SET role")))
+    assert.ok(client.calls.some((c) => c.sql.includes("UPDATE project_memberships SET role")))
     assert.ok(auditHas(client, 'admin.project.member_role_change'))
   })
 
   it('refuses ownership transfer to a missing user', async () => {
-    const client = new FakeClient({ 'SELECT owner_id FROM projects': row({ owner_id: ADMIN_ID }), 'SELECT id FROM users WHERE id': empty() })
+    const client = new FakeClient({ 'SELECT owner_user_id FROM projects': row({ owner_user_id: ADMIN_ID }), 'SELECT id FROM users WHERE id': empty() })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(transferProjectOwnership(PROJECT_ID, USER_ID, ADMIN_ID), AdminSecurityError)
   })
 
   it('transfers ownership and audits', async () => {
-    const client = new FakeClient({ 'SELECT owner_id FROM projects': row({ owner_id: ADMIN_ID }), 'SELECT id FROM users WHERE id': row({ id: USER_ID }) })
+    const client = new FakeClient({ 'SELECT owner_user_id FROM projects': row({ owner_user_id: ADMIN_ID }), 'SELECT id FROM users WHERE id': row({ id: USER_ID }) })
     setDatabasePoolForTests(pool(client))
     await transferProjectOwnership(PROJECT_ID, USER_ID, ADMIN_ID)
-    assert.ok(client.calls.some((c) => c.sql.includes('UPDATE projects SET owner_id')))
+    assert.ok(client.calls.some((c) => c.sql.includes('UPDATE projects SET owner_user_id')))
     assert.ok(auditHas(client, 'admin.project.ownership_transfer'))
   })
 
