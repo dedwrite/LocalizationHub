@@ -6,22 +6,30 @@ All notable LocalizationHub release milestones are documented here.
 
 ### Web App & Mobile Translation
 
-## [0.5.0] - 2026-08-26
+- Browser Cloud Project workspace with responsive translation editing.
+- Search, workflow, quality warnings, statistics, comments, assignments, history, restore, team tools, and collaboration controls.
+- Browser-local JSON, CSV, and gettext PO import/export with IndexedDB recovery.
+- Installable web app manifest and mobile/tablet layout work.
 
-### Website & Launch Experience
-### Admin Console (Complete)
+### Admin Console
 
-- Multi-factor Admin authentication: email code + TOTP with Google Authenticator.
+- Multi-factor Admin authentication: email code + TOTP with Google Authenticator (RFC 4648 Base32 secret).
 - Dashboard: real-time platform metrics (users, projects, sessions, storage).
 - Users Management: list, search, view detail, suspend/unsuspend, verify email, revoke sessions, delete with cascade options.
-- Projects Management: list, search, view detail, delete with data cascade.
+- Projects Management: list, search, view detail, delete with data cascade, member roles, ownership transfer.
 - Storage Accounting: platform-wide and per-user storage breakdown.
 - Session Management: list active sessions per user, revoke individual or all sessions.
 - Audit Log: complete admin operation history with metadata.
 - Security: recent TOTP gate for destructive actions, operation audit trail, encrypted TOTP storage.
-- Server-side: 6 new management operations (users, projects, storage, sessions, audit, metrics).
-- Frontend: responsive Admin Console UI across all viewport sizes.
-- All 30 server tests passing; full regression coverage.
+
+## [0.5.0] - 2026-08-26
+
+### Website & Launch Experience
+
+- Public website with release, download, privacy, and terms pages.
+- Same-host website gateway preserving backend, API, verification, and WebSocket route ownership.
+- Approved website motion and launch experience for the v0.5.0 release.
+
 ## [0.4.0] - 2026-08-25
 
 ### Translation Workflow & Quality

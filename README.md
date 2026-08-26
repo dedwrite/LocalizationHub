@@ -376,7 +376,7 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.5.0**
+**LocalizationHub v0.6.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
