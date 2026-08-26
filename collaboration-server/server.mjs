@@ -83,6 +83,7 @@ import {
   listProjects,
   listUserSessions,
   listUsers,
+  reconfirmAdminTotp,
   removeUserProjectMembership,
   requireRecentTotp,
   revokeAllUserSessions,
@@ -2851,6 +2852,12 @@ const httpServer =
           const adminRequest = await getAdminRequest(request)
           if (!adminRequest) {
             sendJson(response, 403, { error: 'admin-session-required', message: 'A valid Admin session is required.' })
+            return
+          }
+          if (request.method === 'POST' && request.url === '/api/admin/auth/totp/reconfirm') {
+            const body = await readJsonBody(request)
+            await reconfirmAdminTotp(adminRequest.adminToken, adminRequest.user.id, body?.code)
+            sendJson(response, 200, { ok: true })
             return
           }
           if (request.method === 'POST' && request.url === '/api/admin/auth/logout') {
