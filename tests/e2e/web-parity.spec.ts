@@ -114,6 +114,18 @@ test.describe('web workspace parity', () => {
     expect(stored.session).toBeNull()
   })
 
+  test('machine translation panel offers supported models with a default', async ({ page }) => {
+    await page.goto('/app/projects/proj-1')
+    await page.getByRole('button', { name: /Machine Translation Reference/ }).click()
+    const modelSelect = page.getByLabel('Model')
+    await expect(modelSelect).toBeVisible()
+    // Defaults to Gemini 3.6 Flash; no obsolete 1.5 model is offered.
+    await expect(modelSelect).toHaveValue('gemini-3.6-flash')
+    const options = await modelSelect.locator('option').allTextContents()
+    expect(options.some((o) => o.includes('1.5'))).toBe(false)
+    expect(options.some((o) => o.includes('3.7'))).toBe(true)
+  })
+
   test('viewer is read-only', async ({ page }) => {
     await mockCloudApi(page, 'viewer')
     await signIn(page)

@@ -638,7 +638,7 @@
 
 .mt-warning { font-size: 11px; color: #e6a23c; margin: 0; }
 
-.mt-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.mt-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; }
 
 .mt-lang-row { display: flex; align-items: flex-end; gap: 8px; }
 .mt-lang-row .dialog-field { flex: 1; }

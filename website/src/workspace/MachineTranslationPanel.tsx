@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LANGUAGE_OPTIONS, PROVIDER_API_KEY_LABELS, PROVIDER_API_KEY_PLACEHOLDERS, PROVIDER_LABELS, translateWithGemini, type TranslationProviderId } from './translationProviders'
+import { DEFAULT_GEMINI_MODEL, GEMINI_MODELS, LANGUAGE_OPTIONS, PROVIDER_API_KEY_LABELS, PROVIDER_API_KEY_PLACEHOLDERS, PROVIDER_LABELS, translateWithGemini, type GeminiModelId, type TranslationProviderId } from './translationProviders'
 
 /*
  * Machine Translation Reference panel (Web).
@@ -19,6 +19,7 @@ export default function MachineTranslationPanel({
 }) {
   const [open, setOpen] = useState(false)
   const [provider] = useState<TranslationProviderId>('gemini')
+  const [model, setModel] = useState<GeminiModelId>(DEFAULT_GEMINI_MODEL)
   const [apiKey, setApiKey] = useState('')
   const [inputText, setInputText] = useState('')
   const [result, setResult] = useState('')
@@ -44,7 +45,7 @@ export default function MachineTranslationPanel({
     setError('')
     setResult('')
     try {
-      const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage })
+      const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model })
       setResult(res.translatedText)
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Translation failed.')
@@ -80,6 +81,12 @@ export default function MachineTranslationPanel({
               Provider
               <select value={provider} disabled>
                 <option value="gemini">{PROVIDER_LABELS.gemini}</option>
+              </select>
+            </label>
+            <label className="dialog-field">
+              Model
+              <select value={model} onChange={(event) => { setModel(event.target.value as GeminiModelId); setResult(''); setError('') }}>
+                {GEMINI_MODELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
               </select>
             </label>
             <label className="dialog-field">
