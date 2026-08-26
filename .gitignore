@@ -15,6 +15,11 @@ src-tauri/target/
 *.log
 npm-debug.log*
 
+# Local staging smoke scripts
+collaboration-server/scripts/comprehensive-cloud-staging-smoke.mjs
+collaboration-server/scripts/pass-2f-websocket-staging-smoke.mjs
+collaboration-server/scripts/pass-2g-email-staging-smoke.mjs
+
 # Editor / OS
 .vscode/
 .DS_Store

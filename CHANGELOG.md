@@ -2,6 +2,14 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.5.0] - 2026-08-26
+
+### Website & Launch Experience
+
+- Public website with release, download, privacy, and terms pages.
+- Same-host website gateway preserving backend, API, verification, and WebSocket route ownership.
+- Approved website motion and launch experience for the v0.5.0 release.
+
 ## [0.4.0] - 2026-08-25
 
 ### Translation Workflow & Quality

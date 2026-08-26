@@ -6,9 +6,9 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 ## Current Release
 
-**LocalizationHub v0.4.0 - Translation Workflow & Quality**
+**LocalizationHub v0.5.0 - Website & Launch Experience**
 
-Version 0.4 adds persistent translation workflow, review, terminology quality, collaboration activity, and expanded localization file-format support while preserving the local-first workflow.
+Version 0.5 adds the public website and launch experience while preserving the local-first workflow and v0.4 translation features.
 
 ## What's New in v0.4.0
 
@@ -202,6 +202,10 @@ LocalizationHub projects preserve parser information so projects can reopen usin
 
 ## Version History
 
+### Version 0.5.0 - Website & Launch Experience
+
+LocalizationHub v0.5.0 adds the public website, release/download experience, product documentation pages, same-host website serving, and the approved website motion system.
+
 ### Version 0.4.0 - Translation Workflow & Quality
 
 LocalizationHub v0.4.0 adds the complete translation workflow and quality layer: persistent V3 workflow metadata, review statuses, tags, advanced filtering, bulk operations, glossary and Translation Memory guidance, project statistics, CSV/PO support, Cloud assignments and comments, activity history, translation restore, manual conflict review, and the redesigned contextual inspector workspace.
@@ -313,8 +317,8 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.4.0**
+**LocalizationHub v0.5.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.4.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.4.0).
+Download the current release: [LocalizationHub v0.5.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.5.0).
