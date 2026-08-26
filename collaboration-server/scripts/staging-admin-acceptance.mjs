@@ -149,7 +149,7 @@ async function main() {
 
   // 5. Dashboard
   const dash = await api('/api/admin', { token: superToken, adminToken })
-  check('dashboard returns metrics', dash.status === 200 && Number.isInteger(dash.json?.metrics?.total_users), `status=${dash.status}`)
+  check('dashboard returns metrics', dash.status === 200 && Number.isInteger(dash.json?.metrics?.total_users), `status=${dash.status} code=${dash.json?.error}`)
 
   // 6. Users management
   const users = await api('/api/admin/users', { token: superToken, adminToken })
