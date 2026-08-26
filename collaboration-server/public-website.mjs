@@ -11,8 +11,10 @@ const MIME_TYPES = new Map([
   ['.jpeg', 'image/jpeg'],
   ['.js', 'text/javascript; charset=utf-8'],
   ['.json', 'application/json; charset=utf-8'],
+  ['.manifest', 'application/manifest+json; charset=utf-8'],
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml'],
+  ['.webmanifest', 'application/manifest+json; charset=utf-8'],
   ['.webp', 'image/webp'],
 ])
 

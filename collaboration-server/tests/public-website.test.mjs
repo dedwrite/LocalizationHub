@@ -13,6 +13,7 @@ async function createFixture() {
   await mkdir(path.join(directory, 'assets'))
   await writeFile(path.join(directory, 'index.html'), '<!doctype html><title>Website</title>')
   await writeFile(path.join(directory, 'assets', 'app-abc123.js'), 'console.log(1)')
+  await writeFile(path.join(directory, 'manifest.webmanifest'), '{"name":"LocalizationHub","display":"standalone"}')
   await writeFile(path.join(directory, 'localizationhub-logo.jpg'), 'jpg')
   await writeFile(path.join(path.dirname(directory), 'outside-secret.txt'), 'secret')
   return directory
@@ -54,6 +55,15 @@ describe('public website serving', () => {
     const logo = responseRecorder()
     assert.equal(await servePublicWebsite({ method: 'GET', url: '/localizationhub-logo.jpg' }, logo, directory), true)
     assert.equal(logo.headers['Content-Type'], 'image/jpeg')
+  })
+
+  it('serves manifest.webmanifest with the correct JSON MIME type', async () => {
+    const directory = await createFixture()
+    const response = responseRecorder()
+    assert.equal(await servePublicWebsite({ method: 'GET', url: '/manifest.webmanifest' }, response, directory), true)
+    assert.equal(response.statusCode, 200)
+    assert.equal(response.headers['Content-Type'], 'application/manifest+json; charset=utf-8')
+    assert.equal(response.headers['Cache-Control'], 'public, max-age=86400')
   })
 
   it('supports HEAD without a response body', async () => {
