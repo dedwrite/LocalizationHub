@@ -99,6 +99,10 @@ export default function EntriesPanel(props: EntriesPanelProps) {
       </div>
       <input
         className="search-input"
+        type="search"
+        name="entry-search"
+        autoComplete="off"
+        enterKeyHint="search"
         value={query}
         onChange={(event) => onQuery(event.target.value)}
         placeholder="Search key, source, or translation"

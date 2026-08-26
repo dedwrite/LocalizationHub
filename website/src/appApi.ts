@@ -1,4 +1,4 @@
-import { addProjectTag, calculateProjectStatistics, emptyProjectMetadata, findTranslationMemory, glossaryIssues, glossaryIssues as getGlossaryIssues, toggleEntryTag, validateProtectedTokens, type ProjectMetadata } from '@localizationhub/core'
+import { addProjectTag, calculateProjectStatistics, decodeLocalizationProject, emptyProjectMetadata, findTranslationMemory, glossaryIssues, glossaryIssues as getGlossaryIssues, toggleEntryTag, validateProtectedTokens, type ProjectMetadata } from '@localizationhub/core'
 
 export type AuthUser = {
   id: string
@@ -27,6 +27,7 @@ export type ProjectSnapshot = {
   revision: number
   updatedAt: string
   project: any
+  migratedFromVersion: 1 | 2 | null
 }
 
 const TOKEN_KEY = 'localizationhub.auth.token'
@@ -53,8 +54,37 @@ export async function restoreSession() { if (!token()) return null; try { const 
 export async function logout() { if (token()) { try { await api('/api/auth/logout', { method: 'POST' }) } finally { clearAuth() } } }
 export async function listProjects() { return (await api('/api/projects')).projects as ProjectSummary[] }
 export async function createProject(name: string, project?: any) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: project ?? { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } } }) })).project as ProjectSnapshot }
-export async function getProject(id: string) { return (await api(`/api/projects/${id}`)).project as ProjectSnapshot }
-export async function saveProject(id: string, baseRevision: number, project: any) { return (await api(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify({ baseRevision, project }) })).project as ProjectSnapshot }
+export async function getProject(id: string) {
+  const snapshot = (await api(`/api/projects/${id}`)).project as Omit<ProjectSnapshot, 'migratedFromVersion'>
+  return decodeCloudProject(snapshot)
+}
+
+/*
+ * Centralized Web Cloud project decoding.
+ *
+ * Mirrors the desktop `cloudProjectStorage.load()`: the nested `project`
+ * payload may be a legacy V1/V2 shape, so it is decoded and migrated in memory
+ * to current V3 via `decodeLocalizationProject`. Only the nested payload is
+ * normalized — id, name, role, revision, and updatedAt are preserved.
+ */
+export function decodeCloudProject(snapshot: Omit<ProjectSnapshot, 'migratedFromVersion'>): ProjectSnapshot {
+  const decoded = decodeLocalizationProject(JSON.stringify(snapshot.project))
+  if (!decoded.ok) {
+    const error = new Error(`This Cloud Project cannot be opened: ${decoded.reason}.`) as Error & { code?: string }
+    error.code = 'cloud-project-decode-failed'
+    throw error
+  }
+  return {
+    ...snapshot,
+    project: decoded.project,
+    migratedFromVersion: decoded.migratedFromVersion,
+  }
+}
+
+export async function saveProject(id: string, baseRevision: number, project: any) {
+  const snapshot = (await api(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify({ baseRevision, project }) })).project as Omit<ProjectSnapshot, 'migratedFromVersion'>
+  return decodeCloudProject(snapshot)
+}
 export async function sendVerification() { return api('/api/auth/verification/send', { method: 'POST' }) }
 export function projectStats(project: any) { return calculateProjectStatistics(project.entries, project.workflow?.entries ?? {}) }
 export function tokenWarnings(source: string, translation: string) { return validateProtectedTokens(source, translation).errors }

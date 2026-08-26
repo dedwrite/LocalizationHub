@@ -81,6 +81,9 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         draftRef.current = project
         setSnapshot(result)
         setDraft(project)
+        if (result.migratedFromVersion) {
+          setNotice(`Legacy Project V${result.migratedFromVersion} loaded. It will be upgraded to Project V3 when next saved.`)
+        }
       })
       .catch((failure) => setError(failure instanceof Error ? failure.message : 'Could not load project.'))
       .finally(() => setLoading(false))

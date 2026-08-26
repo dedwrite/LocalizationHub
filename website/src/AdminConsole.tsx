@@ -369,6 +369,9 @@ function UsersView({ onNavigate }: { onNavigate: Navigate }) {
         <input
           className="admin-search"
           type="search"
+          name="admin-user-search"
+          autoComplete="off"
+          enterKeyHint="search"
           placeholder="Search username or email"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -649,6 +652,9 @@ function ProjectsView({ onNavigate }: { onNavigate: Navigate }) {
         <input
           className="admin-search"
           type="search"
+          name="admin-project-search"
+          autoComplete="off"
+          enterKeyHint="search"
           placeholder="Search project or owner"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
