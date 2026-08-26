@@ -10,6 +10,10 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 Version 0.5 is the project-launch milestone: it adds the public website, production release/download experience, production validation for the existing Cloud and collaboration stack, and a complete Windows release package while preserving the local-first workflow and the translation features introduced in v0.4.
 
+## v0.6.0 Release Candidate
+
+LocalizationHub v0.6.0 is preparing **Web App & Mobile Translation**: browser Cloud Projects, responsive desktop/tablet/phone editing, browser-local JSON/CSV/PO workflows, workflow and quality tools, team collaboration, and browser recovery through IndexedDB. It is not released yet.
+
 ## What's New in v0.5.0
 
 LocalizationHub v0.5.0, **Website & Launch Experience**, moves the project from a working desktop/cloud application into a publicly launched product with an official website, production deployment, release distribution, and end-to-end validation.

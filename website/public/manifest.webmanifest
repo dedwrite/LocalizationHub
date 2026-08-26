@@ -1,0 +1,18 @@
+{
+  "name": "LocalizationHub Web App",
+  "short_name": "LocalizationHub",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0b0d10",
+  "background_color": "#0b0d10",
+  "description": "Browser-based localization translation workspace.",
+  "icons": [
+    {
+      "src": "/localizationhub-logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
