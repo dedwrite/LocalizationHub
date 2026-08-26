@@ -71,6 +71,28 @@ import {
   revokeAdminSession,
   verifyAdminEmailCode,
   verifyAdminTotp,
+  changeProjectMemberRole,
+  deleteProject,
+  deleteUser,
+  getProject,
+  getRecentActivity,
+  getStorageBreakdown,
+  getUser,
+  getPlatformMetrics,
+  listAuditLog,
+  listProjects,
+  listUserSessions,
+  listUsers,
+  removeUserProjectMembership,
+  requireRecentTotp,
+  revokeAllUserSessions,
+  revokeSession,
+  suspendUser,
+  transferProjectOwnership,
+  unverifyUserEmail,
+  unsuspendUser,
+  verifyUserEmail,
+  writeAdminAudit,
 } from './admin.mjs'
 import {
   EMAIL_VERIFICATION_PAGE,
@@ -2837,9 +2859,114 @@ const httpServer =
             return
           }
           if (request.method === 'GET' && request.url === '/api/admin') {
-            const database = getDatabasePool()
-            const metrics = await database.query(`SELECT (SELECT COUNT(*)::int FROM users) AS total_users, (SELECT COUNT(*)::int FROM users WHERE email_verified_at IS NOT NULL) AS verified_users, (SELECT COUNT(*)::int FROM projects) AS total_projects, (SELECT COALESCE(SUM(pg_column_size(project)), 0)::bigint FROM projects) AS logical_project_bytes`)
-            sendJson(response, 200, { user: { id: superAdmin.id, username: superAdmin.username }, metrics: metrics.rows[0] })
+            const metrics = await getPlatformMetrics()
+            const recentActivity = await getRecentActivity(10)
+            sendJson(response, 200, { user: { id: superAdmin.id, username: superAdmin.username }, metrics, recentActivity })
+            return
+          }
+          const urlPatterns = { users: /^\/api\/admin\/users(?:\/([a-f0-9-]+))?(?:\?.*)?$/, projects: /^\/api\/admin\/projects(?:\/([a-f0-9-]+))?(?:\?.*)?$/, storage: /^\/api\/admin\/storage(?:\?.*)?$/, sessions: /^\/api\/admin\/sessions(?:\?.*)?$/, audit: /^\/api\/admin\/audit(?:\?.*)?$/ }
+          const usersMatch = request.url.match(urlPatterns.users)
+          const projectsMatch = request.url.match(urlPatterns.projects)
+          const storageMatch = request.url.match(urlPatterns.storage)
+          const sessionsMatch = request.url.match(urlPatterns.sessions)
+          const auditMatch = request.url.match(urlPatterns.audit)
+          if (request.method === 'GET' && usersMatch) {
+            const userId = usersMatch[1]
+            if (userId) {
+              const user = await getUser(userId)
+              if (!user) { sendJson(response, 404, { error: 'user-not-found' }); return }
+              sendJson(response, 200, user)
+            } else {
+              const url = new URL(`http://localhost${request.url}`)
+              const search = url.searchParams.get('search') || ''
+              const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100)
+              const offset = parseInt(url.searchParams.get('offset') || '0')
+              const result = await listUsers({ search, limit, offset })
+              sendJson(response, 200, result)
+            }
+            return
+          }
+          if (request.method === 'POST' && usersMatch) {
+            await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+            const url = new URL(`http://localhost${request.url}`)
+            const action = url.searchParams.get('action')
+            const userId = url.searchParams.get('userId')
+            if (!userId) { sendJson(response, 400, { error: 'user-id-required' }); return }
+            if (action === 'suspend') { await suspendUser(userId, superAdmin.id); await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.user.suspend', targetType: 'user', targetId: userId, success: true }); sendJson(response, 200, { ok: true }); return }
+            if (action === 'unsuspend') { await unsuspendUser(userId, superAdmin.id); await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.user.unsuspend', targetType: 'user', targetId: userId, success: true }); sendJson(response, 200, { ok: true }); return }
+            if (action === 'verify-email') { await verifyUserEmail(userId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'unverify-email') { await unverifyUserEmail(userId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'revoke-sessions') { await revokeAllUserSessions(userId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'delete') { const body = await readJsonBody(request); await deleteUser(userId, body?.deleteOwnedProjects || false, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            sendJson(response, 400, { error: 'invalid-action' })
+            return
+          }
+          if (request.method === 'GET' && projectsMatch) {
+            const projectId = projectsMatch[1]
+            if (projectId) {
+              const project = await getProject(projectId)
+              if (!project) { sendJson(response, 404, { error: 'project-not-found' }); return }
+              sendJson(response, 200, project)
+            } else {
+              const url = new URL(`http://localhost${request.url}`)
+              const search = url.searchParams.get('search') || ''
+              const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100)
+              const offset = parseInt(url.searchParams.get('offset') || '0')
+              const result = await listProjects({ search, limit, offset })
+              sendJson(response, 200, result)
+            }
+            return
+          }
+          if (request.method === 'POST' && projectsMatch) {
+            await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+            const url = new URL(`http://localhost${request.url}`)
+            const action = url.searchParams.get('action')
+            const projectId = url.searchParams.get('projectId')
+            if (!projectId) { sendJson(response, 400, { error: 'project-id-required' }); return }
+            if (action === 'remove-member') { const body = await readJsonBody(request); await removeUserProjectMembership(projectId, body?.userId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'change-member-role') { const body = await readJsonBody(request); await changeProjectMemberRole(projectId, body?.userId, body?.role, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'transfer-ownership') { const body = await readJsonBody(request); await transferProjectOwnership(projectId, body?.newOwnerId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            if (action === 'delete') { await deleteProject(projectId, superAdmin.id); sendJson(response, 200, { ok: true }); return }
+            sendJson(response, 400, { error: 'invalid-action' })
+            return
+          }
+          if (request.method === 'GET' && storageMatch) {
+            const url = new URL(`http://localhost${request.url}`)
+            const userId = url.searchParams.get('userId')
+            if (userId) {
+              const storage = await getStorageBreakdown(userId)
+              sendJson(response, 200, storage)
+            } else {
+              const metrics = await getPlatformMetrics()
+              sendJson(response, 200, { platform: metrics })
+            }
+            return
+          }
+          if (request.method === 'GET' && sessionsMatch) {
+            const url = new URL(`http://localhost${request.url}`)
+            const userId = url.searchParams.get('userId')
+            if (!userId) { sendJson(response, 400, { error: 'user-id-required' }); return }
+            const sessions = await listUserSessions(userId)
+            sendJson(response, 200, { sessions })
+            return
+          }
+          if (request.method === 'POST' && sessionsMatch) {
+            await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+            const url = new URL(`http://localhost${request.url}`)
+            const action = url.searchParams.get('action')
+            const tokenHash = url.searchParams.get('tokenHash')
+            if (!tokenHash) { sendJson(response, 400, { error: 'token-hash-required' }); return }
+            if (action === 'revoke') { await revokeSession(tokenHash); await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.session.revoke', targetType: 'session', targetId: tokenHash, success: true }); sendJson(response, 200, { ok: true }); return }
+            sendJson(response, 400, { error: 'invalid-action' })
+            return
+          }
+          if (request.method === 'GET' && auditMatch) {
+            const url = new URL(`http://localhost${request.url}`)
+            const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200)
+            const offset = parseInt(url.searchParams.get('offset') || '0')
+            const action = url.searchParams.get('action')
+            const result = await listAuditLog({ limit, offset, action })
+            sendJson(response, 200, result)
             return
           }
           sendJson(response, 404, { error: 'not-found' })
