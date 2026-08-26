@@ -8,7 +8,62 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 **LocalizationHub v0.5.0 - Website & Launch Experience**
 
-Version 0.5 adds the public website and launch experience while preserving the local-first workflow and v0.4 translation features.
+Version 0.5 is the project-launch milestone: it adds the public website, production release/download experience, production validation for the existing Cloud and collaboration stack, and a complete Windows release package while preserving the local-first workflow and the translation features introduced in v0.4.
+
+## What's New in v0.5.0
+
+LocalizationHub v0.5.0, **Website & Launch Experience**, moves the project from a working desktop/cloud application into a publicly launched product with an official website, production deployment, release distribution, and end-to-end validation.
+
+### Public Website & Release Experience
+
+- Official public website for LocalizationHub.
+- Dedicated **Home**, **Download**, **Privacy**, and **Terms** pages.
+- Public email-verification experience integrated with the launched service.
+- Release-aware download presentation for the current Windows build.
+- Product branding and release metadata aligned with v0.5.0.
+- Polished motion, reveal effects, pointer-depth interaction, and responsive presentation.
+- Direct access to the current GitHub Release and Windows installer.
+
+### Production Launch
+
+- Public website and production backend launched together under the official LocalizationHub domain.
+- Same-origin website serving while preserving backend API, health, verification, and real-time collaboration routes.
+- Existing desktop collaboration compatibility preserved during the launch transition.
+- Production database migrations verified before release.
+- Cloud API enabled and validated in the production environment.
+- Website and backend startup behavior validated for a production deployment.
+
+### Accounts, Cloud Projects, and Email Verification
+
+The v0.5 launch also validates the existing Cloud foundation as a complete public workflow:
+
+- Account registration, login, sessions, and logout behavior verified.
+- Real email verification delivery and verification-link flow validated end to end.
+- Verified-account gating for Cloud features confirmed.
+- Cloud Project creation, loading, updates, persistence, and revision-conflict handling verified.
+- Owner, Editor, and Viewer permissions validated against the live Cloud workflow.
+- Membership changes and read/write restrictions verified server-side.
+- Existing workflow metadata, assignments, comments, history, restore, review, and quality data validated against persistent Cloud storage.
+
+### Real-Time Collaboration Validation
+
+- Cloud WebSocket collaboration validated in a hosted environment.
+- Real-time translation updates verified between authenticated collaborators.
+- Session revision handling and synchronization verified.
+- Reconnect behavior validated.
+- Live role and membership enforcement confirmed.
+- Existing collaboration security rules preserved through the website/production launch.
+
+### Release Reliability
+
+- Full staging validation completed before production cutover.
+- Production smoke checks completed for the website, download flow, health endpoint, verification page, Cloud API authentication boundary, and collaboration compatibility.
+- Windows x64 installer built and published for v0.5.0.
+- SHA-256 checksum published alongside the installer.
+- Git tag and GitHub Release published from the verified release commit.
+- Post-release cleanup completed after production validation.
+
+No credentials, private deployment values, database connection details, API keys, or other operational secrets are included in the public release documentation.
 
 ## What's New in v0.4.0
 
@@ -89,7 +144,7 @@ Current account functionality includes:
 
 ## Cloud Projects
 
-LocalizationHub v0.4 continues persistent Cloud Projects with translation workflow and quality collaboration tools.
+LocalizationHub continues persistent Cloud Projects with translation workflow and quality collaboration tools.
 
 Cloud Projects provide:
 
@@ -204,7 +259,7 @@ LocalizationHub projects preserve parser information so projects can reopen usin
 
 ### Version 0.5.0 - Website & Launch Experience
 
-LocalizationHub v0.5.0 adds the public website, release/download experience, product documentation pages, same-host website serving, and the approved website motion system.
+LocalizationHub v0.5.0 launches the official public website and release/download experience, introduces same-origin website serving alongside the existing backend, validates accounts, email verification, Cloud Projects, workflow persistence, permissions, and real-time collaboration in hosted environments, and ships a verified Windows x64 installer with a published SHA-256 checksum.
 
 ### Version 0.4.0 - Translation Workflow & Quality
 
@@ -273,7 +328,7 @@ Major work included:
 - Save and export workflows.
 - Windows desktop packaging.
 
-## Roadmap - Beyond v0.4
+## Roadmap - Beyond v0.5
 
 Potential areas include:
 
@@ -284,7 +339,7 @@ Potential areas include:
 - Web client development and eventual desktop/web feature parity.
 - Additional collaboration administration and moderation tools.
 
-Game extraction and injection, archive decryption/repacking, and executable modification are explicitly outside the v0.4 product scope.
+Game extraction and injection, archive decryption/repacking, and executable modification remain outside the current product scope.
 
 Roadmap items may move between releases as the project evolves.
 
