@@ -640,6 +640,11 @@
 
 .mt-grid { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 10px; }
 
+/* API key is a non-credential secret: masked visually, never a password field. */
+.secret-input-row { display: flex; align-items: center; gap: 8px; }
+.secret-reference-input { flex: 1; }
+.secret-reference-input.masked { -webkit-text-security: disc; }
+
 .mt-lang-row { display: flex; align-items: flex-end; gap: 8px; }
 .mt-lang-row .dialog-field { flex: 1; }
 .mt-swap { flex-shrink: 0; margin-bottom: 16px; }

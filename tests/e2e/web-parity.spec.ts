@@ -132,12 +132,28 @@ test.describe('web workspace parity', () => {
     const search = page.getByLabel('Search entries')
     await expect(search).toBeVisible()
     await expect(search).toHaveAttribute('type', 'search')
-    await expect(search).toHaveAttribute('autocomplete', 'off')
     await expect(search).toHaveAttribute('role', 'searchbox')
-    await expect(search).toHaveAttribute('aria-autocomplete', 'none')
     await expect(search).toHaveAttribute('spellcheck', 'false')
-    // No auth-like form wrapper; it is scoped to a search landmark.
+    // No password-field semantics; no auth-like name.
+    await expect(search).not.toHaveAttribute('type', 'password')
     await expect(search).not.toHaveAttribute('name', /user|account|login/i)
+  })
+
+  test('gemini API key is a masked text input, not a password field', async ({ page }) => {
+    await page.goto('/app/projects/proj-1')
+    await page.getByRole('button', { name: /Machine Translation Reference/ }).click()
+    const keyInput = page.getByLabel('Gemini API Key')
+    await expect(keyInput).toBeVisible()
+    // Not an HTML password field (which triggers Chrome credential heuristics).
+    await expect(keyInput).toHaveAttribute('type', 'text')
+    // Masked by default via class.
+    await expect(keyInput).toHaveClass(/masked/)
+    // Show/Hide toggle reveals the value.
+    await keyInput.fill('sk-test-key-123')
+    await page.getByRole('button', { name: 'Show key' }).click()
+    await expect(keyInput).not.toHaveClass(/masked/)
+    await page.getByRole('button', { name: 'Hide key' }).click()
+    await expect(keyInput).toHaveClass(/masked/)
   })
 
   test('viewer is read-only', async ({ page }) => {

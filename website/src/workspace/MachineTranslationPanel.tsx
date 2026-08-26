@@ -29,6 +29,7 @@ export default function MachineTranslationPanel({
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [elapsedMs, setElapsedMs] = useState<number | null>(null)
+  const [showKey, setShowKey] = useState(false)
 
   useEffect(() => {
     if (sourceText) setInputText(sourceText)
@@ -99,7 +100,21 @@ export default function MachineTranslationPanel({
             </label>
             <label className="dialog-field">
               {PROVIDER_API_KEY_LABELS[provider]}
-              <input type="password" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={PROVIDER_API_KEY_PLACEHOLDERS[provider]} autoComplete="off" />
+              <span className="secret-input-row">
+                <input
+                  type="text"
+                  name="mt-provider-key"
+                  className={showKey ? 'secret-reference-input' : 'secret-reference-input masked'}
+                  value={apiKey}
+                  onChange={(event) => setApiKey(event.target.value)}
+                  placeholder={PROVIDER_API_KEY_PLACEHOLDERS[provider]}
+                  aria-label={PROVIDER_API_KEY_LABELS[provider]}
+                  aria-hidden={false}
+                />
+                <button type="button" className="dialog-button" onClick={() => setShowKey((value) => !value)} aria-pressed={showKey}>
+                  {showKey ? 'Hide key' : 'Show key'}
+                </button>
+              </span>
             </label>
           </div>
           <div className="mt-lang-row">
