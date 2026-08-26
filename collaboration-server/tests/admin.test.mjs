@@ -4,6 +4,8 @@ import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { resetDatabasePoolForTests, setDatabasePoolForTests } from '../database.mjs'
 import {
   AdminSecurityError,
+  base32Decode,
+  base32Encode,
   bootstrapSuperAdmin,
   changeProjectMemberRole,
   deleteProject,
@@ -92,6 +94,99 @@ describe('admin TOTP primitives', () => {
     assert.equal(verifyTotp(secret, '12345'), false)
     assert.equal(verifyTotp(secret, 'abcdef'), false)
     assert.equal(verifyTotp(secret, ''), false)
+  })
+})
+
+describe('Base32 secret format (RFC 4648)', () => {
+  it('generates uppercase A-Z2-7 secrets with no padding and 20 bytes of entropy', () => {
+    for (let i = 0; i < 50; i++) {
+      const secret = generateTotpSecret()
+      assert.match(secret, /^[A-Z2-7]+$/, `secret ${secret} contains non-Base32 characters`)
+      assert.equal(secret.includes('='), false)
+      assert.equal(secret.includes('-'), false)
+      assert.equal(secret.includes('_'), false)
+      assert.equal(secret, secret.toUpperCase())
+      assert.equal(secret.length, 32) // 20 bytes -> 160 bits -> 32 Base32 chars
+    }
+  })
+
+  it('generates distinct secrets (entropy)', () => {
+    const seen = new Set(Array.from({ length: 200 }, () => generateTotpSecret()))
+    assert.equal(seen.size, 200)
+  })
+
+  it('decodes a known static Base32 vector to the correct bytes', () => {
+    // "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ" is the RFC 4226/6238 test secret,
+    // the Base32 encoding of ASCII "12345678901234567890".
+    const decoded = base32Decode('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')
+    assert.equal(decoded.toString('utf8'), '12345678901234567890')
+  })
+
+  it('round-trips bytes through encode and decode', () => {
+    const bytes = Buffer.from('12345678901234567890', 'utf8')
+    const encoded = base32Encode(bytes)
+    assert.equal(encoded, 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')
+    assert.equal(base32Decode(encoded).toString('utf8'), '12345678901234567890')
+  })
+
+  it('rejects secrets with characters outside the Base32 alphabet', () => {
+    assert.throws(() => base32Decode('abc+123'), AdminSecurityError)
+    assert.throws(() => base32Decode('A-Z_2-7'), AdminSecurityError)
+  })
+})
+
+describe('independent RFC 6238 TOTP vectors', () => {
+  // RFC 4226 Appendix D test vectors (secret = "12345678901234567890",
+  // Base32 = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"), 6-digit HOTP at each counter.
+  const RFC_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
+  const vectors = [
+    { counter: 0, code: '755224' },
+    { counter: 1, code: '287082' },
+    { counter: 2, code: '359152' },
+    { counter: 3, code: '969429' },
+    { counter: 4, code: '338314' },
+    { counter: 5, code: '254676' },
+    { counter: 6, code: '287922' },
+    { counter: 7, code: '162583' },
+    { counter: 8, code: '399871' },
+    { counter: 9, code: '520489' },
+  ]
+
+  it('matches the RFC 4226 HOTP test vectors independently', () => {
+    for (const { counter, code } of vectors) {
+      assert.equal(totpCode(RFC_SECRET, counter * 1000 * 30), code, `counter ${counter}`)
+    }
+  })
+
+  it('verifyTotp accepts the independent RFC code at the right timestamp', () => {
+    // counter 1 at t=30s -> code 287082
+    assert.equal(verifyTotp(RFC_SECRET, '287082', 30 * 1000), true)
+    assert.equal(verifyTotp(RFC_SECRET, '000000', 30 * 1000), false)
+  })
+})
+
+describe('otpauth URI standards compliance', () => {
+  it('emits a Google Authenticator-compatible URI', () => {
+    const secret = generateTotpSecret()
+    const uri = otpauthUri(secret, 'operator@example.com')
+    assert.match(uri, /^otpauth:\/\/totp\/LocalizationHub:/)
+    const url = new URL(uri)
+    assert.equal(url.protocol, 'otpauth:')
+    assert.match(url.searchParams.get('secret') ?? '', /^[A-Z2-7]+$/)
+    assert.equal(url.searchParams.get('issuer'), 'LocalizationHub')
+    assert.equal(url.searchParams.get('algorithm'), 'SHA1')
+    assert.equal(url.searchParams.get('digits'), '6')
+    assert.equal(url.searchParams.get('period'), '30')
+    // Label is the URL-encoded username after the issuer prefix.
+    assert.match(uri, /LocalizationHub:operator%40example\.com/)
+  })
+
+  it('secret in the URI is the generated Base32 secret', () => {
+    const secret = generateTotpSecret()
+    const uri = otpauthUri(secret, 'operator')
+    const url = new URL(uri)
+    assert.equal(url.searchParams.get('secret'), secret)
+    assert.match(secret, /^[A-Z2-7]+$/)
   })
 })
 

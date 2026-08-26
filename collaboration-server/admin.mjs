@@ -44,14 +44,13 @@ function decryptSecret(row) {
   decipher.setAuthTag(Buffer.from(row.auth_tag, 'base64url'))
   return Buffer.concat([decipher.update(Buffer.from(row.encrypted_secret, 'base64url')), decipher.final()]).toString('utf8')
 }
-function base32Decode(value) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; let bits = ''; for (const char of value.replace(/=+$/, '').toUpperCase()) { const index = alphabet.indexOf(char); if (index < 0) throw new AdminSecurityError('totp-invalid', 'TOTP secret is invalid.'); bits += index.toString(2).padStart(5, '0') }
-  const bytes = []; for (let index = 0; index + 8 <= bits.length; index += 8) bytes.push(Number.parseInt(bits.slice(index, index + 8), 2)); return Buffer.from(bytes)
-}
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+export function base32Encode(buffer) { let bits = ''; for (const byte of buffer) bits += byte.toString(2).padStart(8, '0'); let encoded = ''; for (let index = 0; index + 5 <= bits.length; index += 5) encoded += BASE32_ALPHABET[Number.parseInt(bits.slice(index, index + 5), 2)]; return encoded }
+export function base32Decode(value) { let bits = ''; for (const char of value.replace(/=+$/, '').toUpperCase()) { const index = BASE32_ALPHABET.indexOf(char); if (index < 0) throw new AdminSecurityError('totp-invalid', 'TOTP secret is invalid.'); bits += index.toString(2).padStart(5, '0') } const bytes = []; for (let index = 0; index + 8 <= bits.length; index += 8) bytes.push(Number.parseInt(bits.slice(index, index + 8), 2)); return Buffer.from(bytes) }
 function hotp(secret, counter) { const buffer = Buffer.alloc(8); buffer.writeBigUInt64BE(BigInt(counter)); const hmac = createHmac('sha1', secret).update(buffer).digest(); const offset = hmac[hmac.length - 1] & 15; return String(((hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000)).padStart(6, '0') }
-export function generateTotpSecret() { return randomBytes(20).toString('base64').replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '') }
-export function totpCode(secret, timestamp = Date.now()) { return hotp(Buffer.from(secret, 'base64url'), Math.floor(timestamp / 1000 / TOTP_PERIOD_SECONDS)) }
-export function verifyTotp(secret, code, timestamp = Date.now()) { if (!/^\d{6}$/.test(code ?? '')) return false; for (const drift of [-1, 0, 1]) { if (equalHex(hash(hotp(Buffer.from(secret, 'base64url'), Math.floor(timestamp / 1000 / TOTP_PERIOD_SECONDS) + drift)), hash(code))) return true } return false }
+export function generateTotpSecret() { return base32Encode(randomBytes(20)) }
+export function totpCode(secret, timestamp = Date.now()) { return hotp(base32Decode(secret), Math.floor(timestamp / 1000 / TOTP_PERIOD_SECONDS)) }
+export function verifyTotp(secret, code, timestamp = Date.now()) { if (!/^\d{6}$/.test(code ?? '')) return false; for (const drift of [-1, 0, 1]) { if (equalHex(hash(hotp(base32Decode(secret), Math.floor(timestamp / 1000 / TOTP_PERIOD_SECONDS) + drift)), hash(code))) return true } return false }
 export function otpauthUri(secret, username) { return `otpauth://totp/LocalizationHub:${encodeURIComponent(username)}?secret=${secret}&issuer=LocalizationHub&algorithm=SHA1&digits=6&period=30` }
 
 export async function bootstrapSuperAdmin(username) {
