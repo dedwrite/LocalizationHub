@@ -8,12 +8,12 @@ import AppWorkspace from './AppWorkspace'
 import './styles.css'
 
 const nav = [
-  ['Product', '/#product'], ['Workflow', '/#workflow'], ['Cloud', '/#cloud'], ['Formats', '/#formats'], ['Download', '/download'], ['GitHub', site.repositoryUrl],
+  ['Product', '/#product'], ['Workflow', '/#workflow'], ['Cloud', '/#cloud'], ['Formats', '/#formats'], ['Web App', '/app'], ['Download', '/download'], ['GitHub', site.repositoryUrl],
 ]
 
 function Header() {
   const motionState = useScrollReveal()
-  return <><header className="site-header"><a className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></a><nav className="main-nav">{nav.map(([label, href]) => <a key={label} href={href}>{label}</a>)}</nav><a className="header-cta" href={site.releaseUrl}>Download v{site.version}</a></header><MotionDebugBadge state={motionState} /></>
+  return <><header className="site-header"><a className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></a><nav className="main-nav">{nav.map(([label, href]) => <a key={label} href={href}>{label}</a>)}</nav><a className="header-cta" href="/app">Open Web App</a></header><MotionDebugBadge state={motionState} /></>
 }
 
 function EditorPreview() {

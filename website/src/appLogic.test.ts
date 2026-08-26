@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canEdit, markRevisionConflict, setEntryStatus, setEntryTranslation } from './appLogic'
+import { canEdit, filterEntries, markRevisionConflict, setEntryStatus, setEntryTranslation } from './appLogic'
 
 const project = { entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } }
 
@@ -20,5 +20,11 @@ describe('web app editor logic', () => {
 
   it('marks a revision conflict without overwriting the revision', () => {
     expect(markRevisionConflict({ revision: 7, conflict: false })).toEqual({ revision: 7, conflict: true })
+  })
+
+  it('supports combined text, status, and translation filters', () => {
+    const entries = [{ id: 'a', source: 'Hello', translation: '' }, { id: 'b', source: 'Bye', translation: 'Au revoir' }]
+    expect(filterEntries(entries, 'status:draft')).toHaveLength(1)
+    expect(filterEntries(entries, 'translated bye')).toHaveLength(1)
   })
 })

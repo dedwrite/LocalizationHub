@@ -1,4 +1,4 @@
-import { calculateProjectStatistics, validateProtectedTokens } from '@localizationhub/core'
+import { addProjectTag, calculateProjectStatistics, emptyProjectMetadata, findTranslationMemory, glossaryIssues, glossaryIssues as getGlossaryIssues, toggleEntryTag, validateProtectedTokens, type ProjectMetadata } from '@localizationhub/core'
 
 export type AuthUser = {
   id: string
@@ -47,3 +47,16 @@ export async function saveProject(id: string, baseRevision: number, project: any
 export async function sendVerification() { return api('/api/auth/verification/send', { method: 'POST' }) }
 export function projectStats(project: any) { return calculateProjectStatistics(project.entries, project.workflow?.entries ?? {}) }
 export function tokenWarnings(source: string, translation: string) { return validateProtectedTokens(source, translation).errors }
+export function metadata(project: any): ProjectMetadata { return { ...emptyProjectMetadata(), ...(project.metadata ?? {}) } }
+export { addProjectTag, findTranslationMemory, getGlossaryIssues, glossaryIssues, toggleEntryTag }
+export async function listMembers(id: string) { return (await api(`/api/projects/${id}/members`)).members }
+export async function addMember(id: string, username: string, role: 'editor' | 'viewer') { return (await api(`/api/projects/${id}/members`, { method: 'POST', body: JSON.stringify({ username, role }) })).member }
+export async function changeMemberRole(id: string, userId: string, role: 'editor' | 'viewer') { return (await api(`/api/projects/${id}/members/${userId}`, { method: 'PATCH', body: JSON.stringify({ role }) })).member }
+export async function removeMember(id: string, userId: string) { return api(`/api/projects/${id}/members/${userId}`, { method: 'DELETE' }) }
+export async function listAssignments(id: string) { return (await api(`/api/projects/${id}/assignments`)).assignments }
+export async function setAssignment(id: string, entryId: string, assigneeUserId: string | null) { return api(`/api/projects/${id}/assignments/${encodeURIComponent(entryId)}`, { method: 'PUT', body: JSON.stringify({ assigneeUserId }) }) }
+export async function listComments(id: string, entryId: string) { return (await api(`/api/projects/${id}/entries/${encodeURIComponent(entryId)}/comments`)).comments }
+export async function addComment(id: string, entryId: string, body: string) { return (await api(`/api/projects/${id}/entries/${encodeURIComponent(entryId)}/comments`, { method: 'POST', body: JSON.stringify({ body }) })).comment }
+export async function resolveComment(id: string, commentId: string, resolved: boolean) { return api(`/api/projects/${id}/comments/${commentId}`, { method: 'PATCH', body: JSON.stringify({ resolved }) }) }
+export async function listActivity(id: string, entryId?: string) { return (await api(`/api/projects/${id}/activity${entryId ? `?entryId=${encodeURIComponent(entryId)}` : ''}`)).activity }
+export async function restoreActivity(id: string, activityId: string, baseRevision: number) { return (await api(`/api/projects/${id}/activity/${activityId}/restore`, { method: 'POST', body: JSON.stringify({ baseRevision }) })).restore }
