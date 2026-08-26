@@ -134,6 +134,38 @@
   margin: 14px 0;
 }
 
+.admin-qr-box {
+  display: inline-block;
+  padding: 14px;
+  background: #ffffff;
+  border-radius: 10px;
+  line-height: 0;
+}
+
+.admin-qr-box svg {
+  display: block;
+}
+
+.admin-qr-warning {
+  color: var(--admin-muted);
+  font-size: 12px;
+  margin: 12px 0 8px;
+}
+
+.admin-btn-link {
+  background: transparent;
+  border: none;
+  color: #9aa5ff;
+  padding: 6px 0;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.admin-btn-link:hover {
+  color: #c3cbff;
+}
+
 .totp-uri {
   display: block;
   max-width: 100%;

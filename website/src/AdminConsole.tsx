@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import type {
   AdminAuditLog,
   AdminDashboard,
@@ -181,6 +182,7 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
   const [code, setCode] = useState('')
   const [totp, setTotp] = useState('')
   const [setup, setSetup] = useState<{ uri: string; secret: string } | null>(null)
+  const [showKey, setShowKey] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -228,14 +230,27 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
             <button
               className="admin-btn"
               disabled={busy || Boolean(setup)}
-              onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => setSetup(enrollment)))}
+              onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => { setSetup(enrollment); setShowKey(false) }))}
             >
               {setup ? 'Authenticator configured' : 'Setup Authenticator'}
             </button>
             {setup && (
               <div className="admin-qr">
-                <p>Scan with Google Authenticator, then enter the code below:</p>
-                <code className="totp-uri">{setup.uri}</code>
+                <p className="admin-lede">Scan with Google Authenticator:</p>
+                <div className="admin-qr-box">
+                  <QRCodeSVG value={setup.uri} size={200} marginSize={2} aria-label="Authenticator QR code" />
+                </div>
+                <p className="admin-qr-warning">Do not share this QR code or setup key. Anyone with it can access this admin account.</p>
+                <button
+                  className="admin-btn admin-btn-link"
+                  onClick={() => setShowKey((v) => !v)}
+                  aria-expanded={showKey}
+                >
+                  {showKey ? 'Hide setup key' : "Can't scan the QR? Show setup key"}
+                </button>
+                {showKey && (
+                  <code className="totp-uri" data-testid="totp-setup-key">{setup.secret}</code>
+                )}
               </div>
             )}
             <label className="admin-field">

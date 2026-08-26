@@ -51,12 +51,22 @@ const sessions = { sessions: [{ token_hash: 'a1b2c3d4e5f6', expires_at: '2026-08
 const storage = { owned_storage: 2048, owned_projects: [{ projectId: 'p1', projectName: 'RPG Localization', bytes: 2048 }] }
 const audit = { logs: [{ id: 'log-1', admin_user_id: 'admin-1', admin_username: 'operator', action: 'admin.user.suspend', target_type: 'user', target_id: 'u2', success: true, metadata: null, created_at: '2026-08-26T10:00:00Z' }], total: 1 }
 
+// A fake (non-production) enrollment payload used only in tests.
+const enrollment = {
+  secret: 'JBSWY3DPEHPK3PXP',
+  uri: 'otpauth://totp/LocalizationHub:operator?secret=JBSWY3DPEHPK3PXP&issuer=LocalizationHub&algorithm=SHA1&digits=6&period=30',
+}
+
 async function mockAdminApi(page: Page) {
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace(/^\/api\/admin\/?/, '')
     const method = route.request().method()
     if (method === 'POST') {
+      if (path.startsWith('auth/totp/enroll')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(enrollment) })
+        return
+      }
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
       return
     }
@@ -210,5 +220,71 @@ test.describe('admin API authentication headers', () => {
     expect(request).toBeTruthy()
     expect(request!.headers['authorization']).toBe('Bearer test-normal-token')
     expect(request!.headers['x-admin-session']).toBe('test-admin-token')
+  })
+})
+
+test.describe('admin TOTP enrollment QR', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockAdminApi(page)
+  })
+
+  async function reachTotpSetup(page: Page) {
+    await signInOnly(page)
+    await page.goto('/app/admin')
+    // Complete the email step (mock accepts any 6-digit code).
+    await page.getByLabel('Email code').fill('123456')
+    await page.getByRole('button', { name: 'Verify email' }).click()
+    await expect(page.getByRole('button', { name: 'Setup Authenticator' })).toBeVisible()
+    await page.getByRole('button', { name: 'Setup Authenticator' }).click()
+  }
+
+  test('renders a real QR element from the otpauth URI', async ({ page }) => {
+    await reachTotpSetup(page)
+    const qr = page.locator('.admin-qr-box svg')
+    await expect(qr).toBeVisible()
+    // The QR SVG encodes the backend otpauth URI in its path data.
+    expect(await qr.getAttribute('aria-label')).toBe('Authenticator QR code')
+  })
+
+  test('does not display the raw otpauth URI by default', async ({ page }) => {
+    await reachTotpSetup(page)
+    await expect(page.getByText('otpauth://totp/', { exact: false })).toHaveCount(0)
+    // The full URI should not appear as visible text anywhere.
+    expect(await page.locator('body').innerText()).not.toContain('otpauth://totp/')
+  })
+
+  test('hides the manual setup key by default and reveals it on click', async ({ page }) => {
+    await reachTotpSetup(page)
+    // Setup key hidden by default.
+    await expect(page.getByTestId('totp-setup-key')).toHaveCount(0)
+    // Reveal via explicit click.
+    await page.getByRole('button', { name: "Can't scan the QR? Show setup key" }).click()
+    await expect(page.getByTestId('totp-setup-key')).toBeVisible()
+    await expect(page.getByTestId('totp-setup-key')).toHaveText('JBSWY3DPEHPK3PXP')
+    // Hide again.
+    await page.getByRole('button', { name: 'Hide setup key' }).click()
+    await expect(page.getByTestId('totp-setup-key')).toHaveCount(0)
+  })
+
+  test('successful confirmation clears enrollment material from the UI', async ({ page }) => {
+    await reachTotpSetup(page)
+    // Confirm with any 6-digit code (mock accepts it and stores an admin token).
+    await page.getByLabel('Authenticator code').fill('123456')
+    await page.getByRole('button', { name: 'Confirm TOTP' }).click()
+    // After elevation the dashboard loads; the QR and setup key are gone.
+    await expect(page.getByText('Platform metrics')).toBeVisible()
+    await expect(page.locator('.admin-qr-box svg')).toHaveCount(0)
+    await expect(page.getByTestId('totp-setup-key')).toHaveCount(0)
+  })
+
+  test('subsequent admin login does not expose the TOTP secret', async ({ page }) => {
+    // Simulate an already-elevated browser (admin session present).
+    await authenticate(page)
+    await page.goto('/app/admin')
+    await expect(page.getByText('Platform metrics')).toBeVisible()
+    // No QR, no setup key, no raw URI anywhere on the dashboard.
+    expect(await page.locator('body').innerText()).not.toContain('otpauth://totp/')
+    expect(await page.locator('body').innerText()).not.toContain('JBSWY3DPEHPK3PXP')
+    await expect(page.locator('.admin-qr-box svg')).toHaveCount(0)
   })
 })
