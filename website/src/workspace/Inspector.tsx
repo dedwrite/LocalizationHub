@@ -14,10 +14,9 @@ type InspectorProps = {
   writable: boolean
   currentUserId: string
   members: any[]
-  setDraft: (value: any) => void
-  setSnapshot: (value: ProjectSnapshot) => void
+  setDraft: (updater: any | ((current: any) => any)) => void
+  onRestored: (snapshot: ProjectSnapshot, project: any) => void
   onNotice: (value: string) => void
-  onRestore: () => void
 }
 
 const TABS: Array<{ id: InspectorTab; label: string }> = [
@@ -32,7 +31,7 @@ const TABS: Array<{ id: InspectorTab; label: string }> = [
 ]
 
 export default function Inspector(props: InspectorProps) {
-  const { projectId, entry, snapshot, draft, writable, currentUserId, members, setDraft, setSnapshot, onNotice, onRestore } = props
+  const { projectId, entry, snapshot, draft, writable, currentUserId, members, setDraft, onRestored, onNotice } = props
   const [tab, setTab] = useState<InspectorTab>('workflow')
   const [comments, setComments] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
@@ -78,9 +77,7 @@ export default function Inspector(props: InspectorProps) {
   async function restore(activityId: string) {
     await run(async () => {
       const result = await restoreActivity(projectId, activityId, snapshot.revision)
-      setSnapshot({ ...snapshot, revision: result.revision })
-      setDraft(structuredClone(result.project))
-      onRestore()
+      onRestored({ ...snapshot, revision: result.revision }, result.project)
       onNotice('Entry restored.')
     })
   }

@@ -4103,11 +4103,7 @@ const httpServer =
             !Number.isInteger(
               body.baseRevision,
             ) ||
-            body.baseRevision < 1 ||
-            !body.project ||
-            typeof body.project !==
-              'object' ||
-            !isValidCloudProjectV3(body.project)
+            body.baseRevision < 1
           ) {
             sendJson(
               response,
@@ -4115,6 +4111,31 @@ const httpServer =
               {
                 error:
                   'invalid-request',
+
+                message:
+                  'Request body must include a base revision.',
+              },
+            )
+
+            return
+          }
+
+          if (
+            !body.project ||
+            typeof body.project !==
+              'object' ||
+            Array.isArray(body.project) ||
+            !isValidCloudProjectV3(body.project)
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-project-payload',
+
+                message:
+                  'Cloud project payload is not a valid Project V3.',
               },
             )
 
@@ -4237,11 +4258,7 @@ const httpServer =
             typeof body.name !==
               'string' ||
             body.name.trim()
-              .length === 0 ||
-            !body.project ||
-            typeof body.project !==
-              'object' ||
-            !isValidCloudProjectV3(body.project)
+              .length === 0
           ) {
             sendJson(
               response,
@@ -4249,6 +4266,31 @@ const httpServer =
               {
                 error:
                   'invalid-request',
+
+                message:
+                  'A project name is required.',
+              },
+            )
+
+            return
+          }
+
+          if (
+            !body.project ||
+            typeof body.project !==
+              'object' ||
+            Array.isArray(body.project) ||
+            !isValidCloudProjectV3(body.project)
+          ) {
+            sendJson(
+              response,
+              400,
+              {
+                error:
+                  'invalid-project-payload',
+
+                message:
+                  'Cloud project payload is not a valid Project V3.',
               },
             )
 
