@@ -13,7 +13,9 @@
 
 export type TranslationProviderId = 'gemini'
 
-export type GeminiModelId = 'gemini-3.6-flash' | 'gemini-3.7-flash'
+export type GeminiModelId = 'gemini-3.5-flash-lite' | 'gemini-3.6-flash' | 'gemini-3.7-flash'
+
+export type GeminiThinkingLevel = 'minimal' | 'low'
 
 export type TranslateRequest = {
   apiKey: string
@@ -31,16 +33,32 @@ export type TranslateResult = {
 /*
  * Centralized Gemini model configuration.
  *
+ * Each model declares its thinking level and speed class so translation
+ * requests never fall back to a model's default (often medium/high) thinking,
+ * which adds unnecessary latency for short translation-reference work.
+ *
  * Only currently supported Gemini Flash models are exposed. The obsolete
- * `gemini-1.5-flash` model ID is intentionally absent. Keep model IDs here —
- * do not scatter them across components or tests.
+ * `gemini-1.5-flash` model ID is intentionally absent. Keep model IDs and
+ * their metadata here — do not scatter them across components or tests.
  */
-export const GEMINI_MODELS: Array<{ id: GeminiModelId; label: string }> = [
-  { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash' },
-  { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash' },
+export type GeminiModel = {
+  id: GeminiModelId
+  label: string
+  speedClass: 'fastest' | 'balanced' | 'quality'
+  thinkingLevel: GeminiThinkingLevel
+}
+
+export const GEMINI_MODELS: GeminiModel[] = [
+  { id: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash-Lite', speedClass: 'fastest', thinkingLevel: 'minimal' },
+  { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash', speedClass: 'balanced', thinkingLevel: 'minimal' },
+  { id: 'gemini-3.7-flash', label: 'Gemini 3.7 Flash', speedClass: 'quality', thinkingLevel: 'low' },
 ]
 
-export const DEFAULT_GEMINI_MODEL: GeminiModelId = 'gemini-3.6-flash'
+export const DEFAULT_GEMINI_MODEL: GeminiModelId = 'gemini-3.5-flash-lite'
+
+function geminiModelById(model: GeminiModelId): GeminiModel {
+  return GEMINI_MODELS.find((item) => item.id === model) ?? GEMINI_MODELS[0]
+}
 
 function geminiUrl(model: GeminiModelId): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
@@ -131,6 +149,7 @@ export class TranslationProviderError extends Error {
 
 export async function translateWithGemini(request: TranslateRequest): Promise<TranslateResult> {
   const model = request.model ?? DEFAULT_GEMINI_MODEL
+  const modelConfig = geminiModelById(model)
 
   /*
    * Instruction is kept separate from the user text (system_instruction) so
@@ -158,7 +177,16 @@ export async function translateWithGemini(request: TranslateRequest): Promise<Tr
         system_instruction: { parts: [{ text: systemInstruction }] },
         contents: [{ parts: [{ text: request.text }] }],
         generation_config: {
-          max_output_tokens: 2048,
+          /*
+           * Explicit thinking level avoids the model default (often higher
+           * thinking), which reduces latency for short translation work.
+           */
+          thinking_config: { thinking_level: modelConfig.thinkingLevel },
+          /*
+           * Translation output is short; a tight budget avoids burning a large
+           * generic generation budget while preserving placeholders/markup.
+           */
+          max_output_tokens: 1024,
           response_mime_type: 'text/plain',
         },
       }),

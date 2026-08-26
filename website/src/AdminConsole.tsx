@@ -369,9 +369,17 @@ function UsersView({ onNavigate }: { onNavigate: Navigate }) {
         <input
           className="admin-search"
           type="search"
-          name="admin-user-search"
+          id="admin-user-search"
+          name="admin-user-search-field"
+          role="searchbox"
+          aria-autocomplete="none"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           enterKeyHint="search"
+          data-lpignore="true"
+          data-form-type="other"
           placeholder="Search username or email"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -652,9 +660,17 @@ function ProjectsView({ onNavigate }: { onNavigate: Navigate }) {
         <input
           className="admin-search"
           type="search"
-          name="admin-project-search"
+          id="admin-project-search"
+          name="admin-project-search-field"
+          role="searchbox"
+          aria-autocomplete="none"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           enterKeyHint="search"
+          data-lpignore="true"
+          data-form-type="other"
           placeholder="Search project or owner"
           value={search}
           onChange={(e) => setSearch(e.target.value)}

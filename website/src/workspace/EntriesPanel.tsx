@@ -97,17 +97,27 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           )
         })}
       </div>
-      <input
-        className="search-input"
-        type="search"
-        name="entry-search"
-        autoComplete="off"
-        enterKeyHint="search"
-        value={query}
-        onChange={(event) => onQuery(event.target.value)}
-        placeholder="Search key, source, or translation"
-        aria-label="Search entries"
-      />
+      <div role="search" className="entries-search-wrap">
+        <input
+          className="search-input"
+          type="search"
+          id="workspace-entry-search"
+          name="workspace-entry-search-field"
+          role="searchbox"
+          aria-autocomplete="none"
+          autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="search"
+          data-lpignore="true"
+          data-form-type="other"
+          value={query}
+          onChange={(event) => onQuery(event.target.value)}
+          placeholder="Search key, source, or translation"
+          aria-label="Search entries"
+        />
+      </div>
       {selection.size > 0 && (
         <div className="bulk-bar">
           <span>{selection.size} selected</span>

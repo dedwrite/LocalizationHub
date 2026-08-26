@@ -27,10 +27,10 @@ function request(overrides: Partial<TranslateRequest> = {}): TranslateRequest {
 }
 
 describe('Gemini translation provider', () => {
-  it('exposes only supported Gemini Flash models and defaults to 3.6 Flash', () => {
-    expect(GEMINI_MODELS.map((m) => m.id)).toEqual(['gemini-3.6-flash', 'gemini-3.7-flash'])
+  it('exposes supported models and defaults to the fast model', () => {
+    expect(GEMINI_MODELS.map((m) => m.id)).toEqual(['gemini-3.5-flash-lite', 'gemini-3.6-flash', 'gemini-3.7-flash'])
     expect(GEMINI_MODELS.some((m) => m.id.includes('1.5'))).toBe(false)
-    expect(DEFAULT_GEMINI_MODEL).toBe('gemini-3.6-flash')
+    expect(DEFAULT_GEMINI_MODEL).toBe('gemini-3.5-flash-lite')
   })
 
   it('does not reference the obsolete gemini-1.5-flash model anywhere', () => {
@@ -40,7 +40,22 @@ describe('Gemini translation provider', () => {
     expect(DEFAULT_GEMINI_MODEL).not.toContain('1.5')
   })
 
-  it('defaults to gemini-3.6-flash in the request URL and omits deprecated sampling params', async () => {
+  it('assigns minimal/low thinking per model and never medium/high', () => {
+    const thinking = Object.fromEntries(GEMINI_MODELS.map((m) => [m.id, m.thinkingLevel]))
+    expect(thinking['gemini-3.5-flash-lite']).toBe('minimal')
+    expect(thinking['gemini-3.6-flash']).toBe('minimal')
+    expect(thinking['gemini-3.7-flash']).toBe('low')
+    for (const level of Object.values(thinking)) {
+      expect(['medium', 'high']).not.toContain(level)
+    }
+  })
+
+  it('assigns the fast model as fastest speed class', () => {
+    const fastest = GEMINI_MODELS.find((m) => m.speedClass === 'fastest')
+    expect(fastest?.id).toBe('gemini-3.5-flash-lite')
+  })
+
+  it('defaults to gemini-3.5-flash-lite and sets explicit minimal thinking', async () => {
     let capturedUrl = ''
     let capturedBody: any = null
     globalThis.fetch = vi.fn(async (input: any, init: any) => {
@@ -50,12 +65,13 @@ describe('Gemini translation provider', () => {
     }) as unknown as typeof fetch
 
     await translateWithGemini(request())
-    expect(capturedUrl).toContain('/models/gemini-3.6-flash:generateContent')
+    expect(capturedUrl).toContain('/models/gemini-3.5-flash-lite:generateContent')
     expect(capturedUrl).not.toContain('gemini-1.5-flash')
-    // No deprecated temperature/top_p sampling parameters.
+    // Explicit thinking level, no deprecated sampling params.
+    expect(capturedBody.generation_config.thinking_config.thinking_level).toBe('minimal')
     expect(capturedBody.generation_config.temperature).toBeUndefined()
     expect(capturedBody.generation_config.top_p).toBeUndefined()
-    expect(capturedBody.generation_config.max_output_tokens).toBe(2048)
+    expect(capturedBody.generation_config.max_output_tokens).toBe(1024)
     expect(capturedBody.contents[0].parts[0].text).toBe('Hello')
     expect(capturedBody.system_instruction.parts[0].text).toContain('translation reference')
   })
@@ -89,13 +105,16 @@ describe('Gemini translation provider', () => {
     expect(failure.message).not.toContain('test-key')
   })
 
-  it('uses the selected model when provided', async () => {
+  it('uses the selected model and its thinking level when provided', async () => {
     let capturedUrl = ''
-    globalThis.fetch = vi.fn(async (input: any) => {
+    let capturedBody: any = null
+    globalThis.fetch = vi.fn(async (input: any, init: any) => {
       capturedUrl = String(input)
+      capturedBody = JSON.parse(init.body)
       return { ok: true, status: 200, text: async () => '', json: async () => ({ candidates: [{ content: { parts: [{ text: 'x' }] } }] }) }
     }) as unknown as typeof fetch
     await translateWithGemini(request({ model: 'gemini-3.7-flash' }))
     expect(capturedUrl).toContain('/models/gemini-3.7-flash:generateContent')
+    expect(capturedBody.generation_config.thinking_config.thinking_level).toBe('low')
   })
 })

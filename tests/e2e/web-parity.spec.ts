@@ -119,11 +119,25 @@ test.describe('web workspace parity', () => {
     await page.getByRole('button', { name: /Machine Translation Reference/ }).click()
     const modelSelect = page.getByLabel('Model')
     await expect(modelSelect).toBeVisible()
-    // Defaults to Gemini 3.6 Flash; no obsolete 1.5 model is offered.
-    await expect(modelSelect).toHaveValue('gemini-3.6-flash')
+    // Defaults to the fast model; no obsolete 1.5 model is offered.
+    await expect(modelSelect).toHaveValue('gemini-3.5-flash-lite')
     const options = await modelSelect.locator('option').allTextContents()
     expect(options.some((o) => o.includes('1.5'))).toBe(false)
     expect(options.some((o) => o.includes('3.7'))).toBe(true)
+    expect(options.some((o) => o.includes('Fastest'))).toBe(true)
+  })
+
+  test('entries search field uses non-auth semantics', async ({ page }) => {
+    await page.goto('/app/projects/proj-1')
+    const search = page.getByLabel('Search entries')
+    await expect(search).toBeVisible()
+    await expect(search).toHaveAttribute('type', 'search')
+    await expect(search).toHaveAttribute('autocomplete', 'off')
+    await expect(search).toHaveAttribute('role', 'searchbox')
+    await expect(search).toHaveAttribute('aria-autocomplete', 'none')
+    await expect(search).toHaveAttribute('spellcheck', 'false')
+    // No auth-like form wrapper; it is scoped to a search landmark.
+    await expect(search).not.toHaveAttribute('name', /user|account|login/i)
   })
 
   test('viewer is read-only', async ({ page }) => {

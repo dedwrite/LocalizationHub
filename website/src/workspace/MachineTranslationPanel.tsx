@@ -28,6 +28,7 @@ export default function MachineTranslationPanel({
   const [translating, setTranslating] = useState(false)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null)
 
   useEffect(() => {
     if (sourceText) setInputText(sourceText)
@@ -44,11 +45,15 @@ export default function MachineTranslationPanel({
     setTranslating(true)
     setError('')
     setResult('')
+    setElapsedMs(null)
+    const started = performance.now()
     try {
       const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model })
       setResult(res.translatedText)
+      setElapsedMs(Math.round(performance.now() - started))
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Translation failed.')
+      setElapsedMs(null)
     } finally {
       setTranslating(false)
     }
@@ -86,7 +91,10 @@ export default function MachineTranslationPanel({
             <label className="dialog-field">
               Model
               <select value={model} onChange={(event) => { setModel(event.target.value as GeminiModelId); setResult(''); setError('') }}>
-                {GEMINI_MODELS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                {GEMINI_MODELS.map((item) => {
+                  const speed = item.speedClass === 'fastest' ? 'Fastest' : item.speedClass === 'balanced' ? 'Balanced' : 'Highest quality'
+                  return <option key={item.id} value={item.id}>{item.label} — {speed}</option>
+                })}
               </select>
             </label>
             <label className="dialog-field">
@@ -128,6 +136,7 @@ export default function MachineTranslationPanel({
                 <button className="dialog-button" onClick={copyResult}>{copied ? 'Copied' : 'Copy'}</button>
               </div>
               <p>{result}</p>
+              {elapsedMs != null && <span className="mt-elapsed">Translated in {elapsedMs} ms</span>}
             </div>
           )}
         </div>
