@@ -8,7 +8,7 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 **LocalizationHub v0.6.1 - Web Workspace Parity & Translator Experience**
 
-Version 0.6.1 brings the browser workspace to parity with the desktop application: a dense three-pane translator workspace with a full Inspector, Machine Translation Reference (Gemini), protected-token validation, entry filters and bulk workflow, Search & Replace, keyboard shortcuts, and autosave — all while preserving the local-first workflow, Cloud Projects, and the private Super Admin console.
+Version 0.6.1 brings the browser workspace to parity with the desktop application: a dense three-pane translator workspace with a full Inspector, Machine Translation Reference (Gemini), protected-token validation, entry filters and bulk workflow, Search & Replace, keyboard shortcuts, and autosave — all while preserving the local-first workflow and Cloud Projects. Existing Admin and security functionality remains intact.
 
 ## v0.6.1 Web Workspace Parity & Translator Experience
 

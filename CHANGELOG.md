@@ -29,14 +29,14 @@ All notable LocalizationHub release milestones are documented here.
 
 ### Admin Console
 
-- Multi-factor Admin authentication: email code + TOTP with Google Authenticator (RFC 4648 Base32 secret).
+- Multi-factor Admin authentication: email code + TOTP with Google Authenticator.
 - Dashboard: real-time platform metrics (users, projects, sessions, storage).
 - Users Management: list, search, view detail, suspend/unsuspend, verify email, revoke sessions, delete with cascade options.
 - Projects Management: list, search, view detail, delete with data cascade, member roles, ownership transfer.
 - Storage Accounting: platform-wide and per-user storage breakdown.
 - Session Management: list active sessions per user, revoke individual or all sessions.
-- Audit Log: complete admin operation history with metadata.
-- Security: recent TOTP gate for destructive actions, operation audit trail, encrypted TOTP storage.
+- Audit Log: complete admin operation history.
+- Security: sensitive operations require additional confirmation; all administrative activity is audited.
 
 ## [0.5.0] - 2026-08-26
 
