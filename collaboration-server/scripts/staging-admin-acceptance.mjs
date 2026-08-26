@@ -100,7 +100,7 @@ async function main() {
   const normal = await register(fixtures.normal)
   const owner = await register(fixtures.owner)
   const editor = await register(fixtures.editor)
-  await register(fixtures.viewer)
+  const viewer = await register(fixtures.viewer)
 
   // Create a representative project owned by owner, with editor + viewer members.
   const proj = await pool.query(

@@ -67,6 +67,7 @@ import {
   beginTotpEnrollment,
   createAdminSession,
   getSuperAdmin,
+  hasRecentAdminEmailVerification,
   requestAdminEmailCode,
   revokeAdminSession,
   verifyAdminEmailCode,
@@ -216,9 +217,6 @@ const clients =
  * can only be consumed once.
  */
 const collaborationTickets =
-  new Map()
-
-const pendingAdminEmailVerifications =
   new Map()
 
 function createCollaborationTicket(
@@ -2827,25 +2825,26 @@ const httpServer =
           if (request.method === 'POST' && request.url === '/api/admin/auth/email/verify') {
             const body = await readJsonBody(request)
             await verifyAdminEmailCode(superAdmin.id, body?.code)
-            pendingAdminEmailVerifications.set(superAdmin.id, Date.now() + 5 * 60 * 1000)
             sendJson(response, 200, { ok: true })
             return
           }
-          const emailVerifiedUntil = pendingAdminEmailVerifications.get(superAdmin.id) ?? 0
-          if (emailVerifiedUntil <= Date.now()) {
-            sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
-            return
-          }
           if (request.method === 'POST' && request.url === '/api/admin/auth/totp/enroll') {
+            if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
+              sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
+              return
+            }
             const enrollment = await beginTotpEnrollment(superAdmin.id, superAdmin.username)
             sendJson(response, 200, enrollment)
             return
           }
           if (request.method === 'POST' && request.url === '/api/admin/auth/totp/confirm') {
+            if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
+              sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
+              return
+            }
             const body = await readJsonBody(request)
             await verifyAdminTotp(superAdmin.id, body?.code)
             const adminToken = await createAdminSession(superAdmin.id)
-            pendingAdminEmailVerifications.delete(superAdmin.id)
             sendJson(response, 200, { ok: true, adminToken })
             return
           }

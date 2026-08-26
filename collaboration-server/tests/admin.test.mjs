@@ -14,6 +14,7 @@ import {
   getRecentActivity,
   getStorageBreakdown,
   getUser,
+  hasRecentAdminEmailVerification,
   listAuditLog,
   listProjects,
   listUserSessions,
@@ -149,6 +150,25 @@ describe('admin email challenge', () => {
     })
     setDatabasePoolForTests(pool(client))
     await assert.rejects(verifyAdminEmailCode(ADMIN_ID, '123456'), AdminSecurityError)
+  })
+
+  it('reports a recent email verification from the database', async () => {
+    const client = new FakeClient({ 'SELECT used_at FROM admin_email_challenges': row({ used_at: new Date().toISOString() }) })
+    setDatabasePoolForTests(pool(client))
+    assert.equal(await hasRecentAdminEmailVerification(ADMIN_ID), true)
+  })
+
+  it('reports no recent email verification when absent', async () => {
+    const client = new FakeClient({ 'SELECT used_at FROM admin_email_challenges': empty() })
+    setDatabasePoolForTests(pool(client))
+    assert.equal(await hasRecentAdminEmailVerification(ADMIN_ID), false)
+  })
+
+  it('reports no recent email verification when stale', async () => {
+    const stale = new Date(Date.now() - 6 * 60 * 1000).toISOString()
+    const client = new FakeClient({ 'SELECT used_at FROM admin_email_challenges': row({ used_at: stale }) })
+    setDatabasePoolForTests(pool(client))
+    assert.equal(await hasRecentAdminEmailVerification(ADMIN_ID), false)
   })
 })
 
