@@ -2,6 +2,22 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.6.1] - 2026-08-26
+
+### Web Workspace Parity & Translator Experience
+
+- Desktop-parity three-pane Web Workspace (Entries / Translator / Inspector) with resizable and collapsible panels, focus mode, and locally persisted layout.
+- Overhauled Inspector with Workflow, Quality, Comments, Assignments, History, Tags, Translation Memory, and Glossary tabs — no horizontal tab scrolling.
+- Machine Translation Reference panel on Web (Gemini / Google AI Studio) with session-only API keys that are never persisted or sent to the backend.
+- Entry list parity: status/QA/comment/assignment indicators, counts, search, filters, checkbox bulk selection, and bulk workflow actions.
+- Protected-token inline validation and Token Profile selection using shared core logic.
+- Translator-grade Search & Replace with Replace All confirmation, and Jump to Entry.
+- Project Overview, workspace toolbar, save states (Saved / Unsaved / Saving / Failed), and debounced autosave for Cloud Projects.
+- Keyboard workflow: Ctrl+S save, Ctrl+Enter commit-and-advance, Alt+Down/Up navigation, Ctrl+F search, Escape dismiss.
+- Windowed list virtualization for large projects (10k+ entries).
+- Branded New Project modal (import JSON/CSV/PO) and polished Projects page with progress and search — no native browser dialogs.
+- Responsive layouts for 360–1920px with no horizontal document overflow; Viewer read-only enforced.
+
 ## [0.6.0] - 2026-08-26
 
 ### Web App & Mobile Translation

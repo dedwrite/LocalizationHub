@@ -9,6 +9,17 @@ export type AuthUser = {
 }
 
 export type AuthResult = { user: AuthUser; token: string; expiresAt: string }
+export type ProjectSummary = {
+  id: string
+  name: string
+  role: 'owner' | 'editor' | 'viewer'
+  revision: number
+  updatedAt: string
+  sourceFileName?: string
+  entryCount?: number
+  translatedCount?: number
+  memberCount?: number
+}
 export type ProjectSnapshot = {
   id: string
   name: string
@@ -40,8 +51,8 @@ export async function login(username: string, password: string) { const result =
 export async function register(username: string, email: string, password: string) { const result = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) }); saveAuth(result); return result as AuthResult }
 export async function restoreSession() { if (!token()) return null; try { const result = await api('/api/auth/me'); window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)); return result.user as AuthUser } catch { clearAuth(); return null } }
 export async function logout() { if (token()) { try { await api('/api/auth/logout', { method: 'POST' }) } finally { clearAuth() } } }
-export async function listProjects() { return (await api('/api/projects')).projects as Array<Omit<ProjectSnapshot, 'project'>> }
-export async function createProject(name: string) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } } }) })).project as ProjectSnapshot }
+export async function listProjects() { return (await api('/api/projects')).projects as ProjectSummary[] }
+export async function createProject(name: string, project?: any) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: project ?? { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } } }) })).project as ProjectSnapshot }
 export async function getProject(id: string) { return (await api(`/api/projects/${id}`)).project as ProjectSnapshot }
 export async function saveProject(id: string, baseRevision: number, project: any) { return (await api(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify({ baseRevision, project }) })).project as ProjectSnapshot }
 export async function sendVerification() { return api('/api/auth/verification/send', { method: 'POST' }) }
@@ -56,6 +67,7 @@ export async function removeMember(id: string, userId: string) { return api(`/ap
 export async function listAssignments(id: string) { return (await api(`/api/projects/${id}/assignments`)).assignments }
 export async function setAssignment(id: string, entryId: string, assigneeUserId: string | null) { return api(`/api/projects/${id}/assignments/${encodeURIComponent(entryId)}`, { method: 'PUT', body: JSON.stringify({ assigneeUserId }) }) }
 export async function listComments(id: string, entryId: string) { return (await api(`/api/projects/${id}/entries/${encodeURIComponent(entryId)}/comments`)).comments }
+export async function listCommentCounts(id: string) { return (await api(`/api/projects/${id}/comments-summary`)).entries as Array<{ entryId: string; count: number; unresolved: number }> }
 export async function addComment(id: string, entryId: string, body: string) { return (await api(`/api/projects/${id}/entries/${encodeURIComponent(entryId)}/comments`, { method: 'POST', body: JSON.stringify({ body }) })).comment }
 export async function resolveComment(id: string, commentId: string, resolved: boolean) { return api(`/api/projects/${id}/comments/${commentId}`, { method: 'PATCH', body: JSON.stringify({ resolved }) }) }
 export async function listActivity(id: string, entryId?: string) { return (await api(`/api/projects/${id}/activity${entryId ? `?entryId=${encodeURIComponent(entryId)}` : ''}`)).activity }

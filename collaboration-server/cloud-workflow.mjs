@@ -144,6 +144,28 @@ export async function listCloudComments(projectId, entryId, actorUserId) {
   }))
 }
 
+export async function listCloudCommentCounts(projectId, actorUserId) {
+  const database = getDatabasePool()
+  const access = await getProjectAccess(database, projectId, actorUserId)
+  const result = await database.query(
+    `SELECT entry_id, COUNT(*)::int AS comment_count,
+            COUNT(*) FILTER (WHERE resolved_at IS NULL)::int AS unresolved_count
+       FROM project_comments
+      WHERE project_id = $1
+      GROUP BY entry_id
+      ORDER BY entry_id`,
+    [projectId],
+  )
+  return {
+    entries: result.rows.map((row) => ({
+      entryId: row.entry_id,
+      count: row.comment_count,
+      unresolved: row.unresolved_count,
+    })),
+    role: access.role,
+  }
+}
+
 export async function createCloudComment(projectId, entryId, body, actorUserId) {
   if (typeof body !== 'string' || !body.trim()) throw new Error('invalid-body')
   const database = getDatabasePool()

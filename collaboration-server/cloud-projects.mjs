@@ -449,6 +449,21 @@ export async function listCloudProjects(
            AS source_file_name,
          projects.revision,
          projects.updated_at,
+         jsonb_array_length(
+           COALESCE(projects.project -> 'entries', '[]'::jsonb)
+         ) AS entry_count,
+         (
+           SELECT COUNT(*)
+           FROM jsonb_array_elements(
+             COALESCE(projects.project -> 'entries', '[]'::jsonb)
+           ) AS entry
+           WHERE length(COALESCE(entry ->> 'translation', '')) > 0
+         ) AS translated_count,
+         (
+           SELECT COUNT(*)::int
+           FROM project_memberships AS members
+           WHERE members.project_id = projects.id
+         ) AS member_count,
          CASE
            WHEN projects.owner_user_id = $1
              THEN 'owner'
@@ -493,6 +508,15 @@ export async function listCloudProjects(
         new Date(
           row.updated_at,
         ).toISOString(),
+
+      entryCount:
+        row.entry_count,
+
+      translatedCount:
+        row.translated_count,
+
+      memberCount:
+        row.member_count,
     }),
   )
 }

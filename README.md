@@ -6,9 +6,13 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 ## Current Release
 
-**LocalizationHub v0.6.0 - Web App & Mobile Translation**
+**LocalizationHub v0.6.1 - Web Workspace Parity & Translator Experience**
 
-Version 0.6 adds browser translation, responsive mobile/tablet workflows, browser-local formats, and Cloud collaboration while preserving the local-first workflow. A private Super Admin security console is available only through server-authoritative email and TOTP step-up authentication.
+Version 0.6.1 brings the browser workspace to parity with the desktop application: a dense three-pane translator workspace with a full Inspector, Machine Translation Reference (Gemini), protected-token validation, entry filters and bulk workflow, Search & Replace, keyboard shortcuts, and autosave — all while preserving the local-first workflow, Cloud Projects, and the private Super Admin console.
+
+## v0.6.1 Web Workspace Parity & Translator Experience
+
+LocalizationHub v0.6.1 delivers a desktop-grade translator workspace in the browser, including a resizable Entries / Translator / Inspector layout, a full Inspector (Workflow, Quality, Comments, Assignments, History, Tags, Memory, Glossary), Machine Translation Reference with session-only keys, protected-token QA, entry filters and bulk workflow actions, Search & Replace, Jump to Entry, keyboard shortcuts, and autosave for Cloud Projects.
 
 ## v0.6.0 Web App & Mobile Translation
 
@@ -376,8 +380,8 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.6.0**
+**LocalizationHub v0.6.1**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.6.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.6.0).
+Download the current release: [LocalizationHub v0.6.1 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.6.1).

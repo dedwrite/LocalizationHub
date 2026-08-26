@@ -24,6 +24,7 @@ import {
   createCloudComment,
   listCloudActivity,
   listCloudAssignments,
+  listCloudCommentCounts,
   listCloudComments,
   resolveCloudComment,
   restoreCloudActivity,
@@ -3658,18 +3659,22 @@ const httpServer =
       const uuidPattern = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
       const assignmentMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/assignments(?:/([^/]+))?$`))
       const commentsMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/entries/([^/]+)/comments$`))
+      const commentCountsMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/comments-summary$`))
       const commentMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/comments/(${uuidPattern})$`))
       const activityMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/activity(?:\\?.*)?$`))
       const restoreMatch = request.url?.match(new RegExp(`^/api/projects/(${uuidPattern})/activity/([0-9]+)/restore$`))
 
-      if (assignmentMatch || commentsMatch || commentMatch || activityMatch || restoreMatch) {
+      if (assignmentMatch || commentsMatch || commentCountsMatch || commentMatch || activityMatch || restoreMatch) {
         try {
-          const projectId = (assignmentMatch?.[1] ?? commentsMatch?.[1] ?? commentMatch?.[1] ?? activityMatch?.[1] ?? restoreMatch?.[1]).toLowerCase()
+          const projectId = (assignmentMatch?.[1] ?? commentsMatch?.[1] ?? commentCountsMatch?.[1] ?? commentMatch?.[1] ?? activityMatch?.[1] ?? restoreMatch?.[1]).toLowerCase()
           const actorUserId = cloudAuthentication.user.id
           if (assignmentMatch) {
             if (request.method === 'GET' && !assignmentMatch[2]) sendJson(response, 200, await listCloudAssignments(projectId, actorUserId))
             else if (request.method === 'PUT' && assignmentMatch[2]) { const body = await readJsonBody(request); if (!body || (body.assigneeUserId !== null && typeof body.assigneeUserId !== 'string')) { sendJson(response, 400, { error: 'invalid-request' }); return } sendJson(response, 200, await assignCloudEntry(projectId, decodeURIComponent(assignmentMatch[2]), body.assigneeUserId, actorUserId)) }
             else { sendJson(response, 404, { error: 'not-found' }) }
+          } else if (commentCountsMatch) {
+            if (request.method !== 'GET') { sendJson(response, 404, { error: 'not-found' }); return }
+            sendJson(response, 200, await listCloudCommentCounts(projectId, actorUserId))
           } else if (commentsMatch) {
             const entryId = decodeURIComponent(commentsMatch[2])
             if (request.method === 'GET') sendJson(response, 200, { comments: await listCloudComments(projectId, entryId, actorUserId) })
