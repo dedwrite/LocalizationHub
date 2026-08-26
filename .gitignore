@@ -23,4 +23,6 @@ collaboration-server/scripts/pass-2g-email-staging-smoke.mjs
 # Editor / OS
 .vscode/
 .DS_Store
+test-results/
+playwright-report/
 Thumbs.db
