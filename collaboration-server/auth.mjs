@@ -128,6 +128,14 @@ function toPublicUser(
       row.email_verified_at !==
       null,
 
+    siteRole:
+      row.site_role ??
+      'user',
+
+    suspended:
+      row.suspended_at !==
+      null,
+
     createdAt:
       new Date(
         row.created_at,
@@ -372,6 +380,8 @@ export async function registerUser({
            username,
            email,
            email_verified_at,
+           site_role,
+           suspended_at,
            created_at`,
         [
           randomUUID(),
@@ -463,6 +473,8 @@ export async function loginUser({
          password_salt,
          password_hash,
          email_verified_at,
+         site_role,
+         suspended_at,
          created_at
        FROM users
        WHERE username = $1
@@ -485,6 +497,13 @@ export async function loginUser({
     throw new AuthError(
       'invalid-credentials',
       'Username or password is incorrect.',
+    )
+  }
+
+  if (user.suspended_at !== null) {
+    throw new AuthError(
+      'account-suspended',
+      'This account is suspended.',
     )
   }
 
@@ -530,12 +549,15 @@ export async function authenticateToken(
          u.username,
          u.email,
          u.email_verified_at,
+         u.site_role,
+         u.suspended_at,
          u.created_at,
          s.expires_at
        FROM sessions s
        INNER JOIN users u
          ON u.id = s.user_id
        WHERE s.token_hash = $1
+         AND u.suspended_at IS NULL
        LIMIT 1`,
       [
         tokenHash,

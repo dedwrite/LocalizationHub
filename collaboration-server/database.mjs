@@ -74,6 +74,15 @@ export function getDatabasePool() {
     new Pool({
       connectionString,
 
+      ssl:
+        process.env.DATABASE_SSL ===
+        '1'
+          ? {
+              rejectUnauthorized:
+                false,
+            }
+          : undefined,
+
       max:
         getPoolMax(),
 

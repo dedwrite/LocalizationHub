@@ -6,13 +6,13 @@ It combines a structured desktop editor with optional Cloud Projects, account-ba
 
 ## Current Release
 
-**LocalizationHub v0.5.0 - Website & Launch Experience**
+**LocalizationHub v0.6.0 - Web App & Mobile Translation**
 
-Version 0.5 is the project-launch milestone: it adds the public website, production release/download experience, production validation for the existing Cloud and collaboration stack, and a complete Windows release package while preserving the local-first workflow and the translation features introduced in v0.4.
+Version 0.6 adds browser translation, responsive mobile/tablet workflows, browser-local formats, and Cloud collaboration while preserving the local-first workflow. A private Super Admin security console is available only through server-authoritative email and TOTP step-up authentication.
 
-## v0.6.0 Release Candidate
+## v0.6.0 Web App & Mobile Translation
 
-LocalizationHub v0.6.0 is preparing **Web App & Mobile Translation**: browser Cloud Projects, responsive desktop/tablet/phone editing, browser-local JSON/CSV/PO workflows, workflow and quality tools, team collaboration, and browser recovery through IndexedDB. It is not released yet.
+LocalizationHub v0.6.0 provides **Web App & Mobile Translation**: browser Cloud Projects, responsive desktop/tablet/phone editing, browser-local JSON/CSV/PO workflows, workflow and quality tools, team collaboration, browser recovery through IndexedDB, and a private Super Admin security console.
 
 ## What's New in v0.5.0
 
@@ -380,4 +380,4 @@ The latest release is:
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.5.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.5.0).
+Download the current release: [LocalizationHub v0.6.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.6.0).

@@ -475,3 +475,34 @@ export async function sendVerificationEmail({
       body.id,
   }
 }
+
+export async function sendAdminAccessCodeEmail({
+  email,
+  code,
+  fetchImpl = globalThis.fetch,
+}) {
+  if (!email || !/^\d{6}$/.test(code ?? '')) {
+    throw new TypeError('Admin email recipient and code are required.')
+  }
+  const apiKey = requireEnvironment('RESEND_API_KEY')
+  const from = requireEnvironment('EMAIL_FROM')
+  const text = [
+    'LocalizationHub Admin Access Code',
+    '',
+    `Your Admin Access Code is: ${code}`,
+    '',
+    'This code expires in approximately five minutes and can only be used once.',
+    'If you did not request Admin access, you can safely ignore this email.',
+  ].join('\n')
+  const response = await fetchImpl(RESEND_API_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `admin-access/${hashForEmail(code)}` },
+    body: JSON.stringify({ from, to: [email], subject: 'LocalizationHub Admin Access Code', text, html: `<p>LocalizationHub Admin Access Code</p><p><strong>${code}</strong></p><p>If you did not request Admin access, you can safely ignore this email.</p>`, tags: [{ name: 'category', value: 'admin_access' }] }),
+  })
+  if (!response.ok) throw new EmailDeliveryError(`Email provider returned HTTP ${response.status}.`, { statusCode: response.status })
+  return { provider: 'resend' }
+}
+
+function hashForEmail(value) {
+  return createHash('sha256').update(value, 'utf8').digest('hex')
+}

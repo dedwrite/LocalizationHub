@@ -34,6 +34,9 @@ import {
   ensurePublicWebsiteDirectory,
   servePublicWebsite,
 } from './public-website.mjs'
+import {
+  getDatabasePool,
+} from './database.mjs'
 
 import {
   AuthError,
@@ -55,8 +58,20 @@ import {
 import {
   EmailDeliveryConfigurationError,
   EmailDeliveryError,
+  sendAdminAccessCodeEmail,
   sendVerificationEmail,
 } from './email-delivery.mjs'
+import {
+  AdminSecurityError,
+  authenticateAdminSession,
+  beginTotpEnrollment,
+  createAdminSession,
+  getSuperAdmin,
+  requestAdminEmailCode,
+  revokeAdminSession,
+  verifyAdminEmailCode,
+  verifyAdminTotp,
+} from './admin.mjs'
 import {
   EMAIL_VERIFICATION_PAGE,
 } from './email-verification-page.mjs'
@@ -178,6 +193,9 @@ const clients =
  * can only be consumed once.
  */
 const collaborationTickets =
+  new Map()
+
+const pendingAdminEmailVerifications =
   new Map()
 
 function createCollaborationTicket(
@@ -2674,6 +2692,15 @@ async function getAuthenticatedRequest(
   }
 }
 
+async function getAdminRequest(request) {
+  const authentication = await getAuthenticatedRequest(request)
+  if (!authentication) return null
+  const adminToken = request.headers['x-admin-session']
+  if (!adminToken) return null
+  const adminSession = await authenticateAdminSession(adminToken, authentication.user.id)
+  return adminSession ? { ...authentication, adminToken, adminSession } : null
+}
+
 async function readJsonBody(
   request,
 ) {
@@ -2753,6 +2780,77 @@ const httpServer =
 
         response.end()
 
+        return
+      }
+
+      if (request.url?.startsWith('/api/admin')) {
+        const authentication = await getAuthenticatedRequest(request)
+        if (!authentication) {
+          sendJson(response, 401, { error: 'unauthorized', message: 'Authentication is required.' })
+          return
+        }
+        const superAdmin = await getSuperAdmin(authentication.user.id)
+        if (!superAdmin) {
+          sendJson(response, 403, { error: 'admin-forbidden', message: 'Super Admin access is required.' })
+          return
+        }
+        try {
+          if (request.method === 'POST' && request.url === '/api/admin/auth/email/request') {
+            const challenge = await requestAdminEmailCode(superAdmin.id)
+            await sendAdminAccessCodeEmail({ email: challenge.user.email, code: challenge.code })
+            sendJson(response, 202, { ok: true })
+            return
+          }
+          if (request.method === 'POST' && request.url === '/api/admin/auth/email/verify') {
+            const body = await readJsonBody(request)
+            await verifyAdminEmailCode(superAdmin.id, body?.code)
+            pendingAdminEmailVerifications.set(superAdmin.id, Date.now() + 5 * 60 * 1000)
+            sendJson(response, 200, { ok: true })
+            return
+          }
+          const emailVerifiedUntil = pendingAdminEmailVerifications.get(superAdmin.id) ?? 0
+          if (emailVerifiedUntil <= Date.now()) {
+            sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
+            return
+          }
+          if (request.method === 'POST' && request.url === '/api/admin/auth/totp/enroll') {
+            const enrollment = await beginTotpEnrollment(superAdmin.id, superAdmin.username)
+            sendJson(response, 200, enrollment)
+            return
+          }
+          if (request.method === 'POST' && request.url === '/api/admin/auth/totp/confirm') {
+            const body = await readJsonBody(request)
+            await verifyAdminTotp(superAdmin.id, body?.code)
+            const adminToken = await createAdminSession(superAdmin.id)
+            pendingAdminEmailVerifications.delete(superAdmin.id)
+            sendJson(response, 200, { ok: true, adminToken })
+            return
+          }
+          const adminRequest = await getAdminRequest(request)
+          if (!adminRequest) {
+            sendJson(response, 403, { error: 'admin-session-required', message: 'A valid Admin session is required.' })
+            return
+          }
+          if (request.method === 'POST' && request.url === '/api/admin/auth/logout') {
+            await revokeAdminSession(adminRequest.adminToken)
+            sendJson(response, 200, { ok: true })
+            return
+          }
+          if (request.method === 'GET' && request.url === '/api/admin') {
+            const database = getDatabasePool()
+            const metrics = await database.query(`SELECT (SELECT COUNT(*)::int FROM users) AS total_users, (SELECT COUNT(*)::int FROM users WHERE email_verified_at IS NOT NULL) AS verified_users, (SELECT COUNT(*)::int FROM projects) AS total_projects, (SELECT COALESCE(SUM(pg_column_size(project)), 0)::bigint FROM projects) AS logical_project_bytes`)
+            sendJson(response, 200, { user: { id: superAdmin.id, username: superAdmin.username }, metrics: metrics.rows[0] })
+            return
+          }
+          sendJson(response, 404, { error: 'not-found' })
+        } catch (error) {
+          if (error instanceof AdminSecurityError) {
+            sendJson(response, 403, { error: error.code, message: error.message })
+            return
+          }
+          console.error('Admin request failed:', error)
+          sendJson(response, 500, { error: 'internal-error' })
+        }
         return
       }
 

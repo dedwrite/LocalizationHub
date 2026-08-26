@@ -2,7 +2,7 @@
 
 All notable LocalizationHub release milestones are documented here.
 
-## [0.6.0] - Release candidate
+## [0.6.0] - 2026-08-26
 
 ### Web App & Mobile Translation
 
@@ -10,6 +10,7 @@ All notable LocalizationHub release milestones are documented here.
 - Search, workflow, quality warnings, statistics, comments, assignments, history, restore, team tools, and collaboration controls.
 - Browser-local JSON, CSV, and gettext PO import/export with IndexedDB recovery.
 - Installable web app manifest and mobile/tablet layout work.
+- Private Super Admin security console foundation with server-side role bootstrap, encrypted TOTP enrollment, hashed email challenges, separate Admin sessions, audit storage, and protected Admin routing.
 
 ## [0.5.0] - 2026-08-26
 
