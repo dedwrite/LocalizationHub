@@ -33,7 +33,7 @@ export type ProjectSnapshot = {
 const TOKEN_KEY = 'localizationhub.auth.token'
 const USER_KEY = 'localizationhub.auth.user'
 
-function token() { return window.localStorage.getItem(TOKEN_KEY) }
+function token(): string | null { try { return window.localStorage.getItem(TOKEN_KEY) } catch { return null } }
 function headers() { const value = token(); return value ? { Accept: 'application/json', Authorization: `Bearer ${value}` } : { Accept: 'application/json' } }
 async function api(path: string, init: RequestInit = {}) {
   const response = await fetch(path, { ...init, headers: { ...headers(), ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...init.headers } as HeadersInit })
@@ -44,13 +44,36 @@ async function api(path: string, init: RequestInit = {}) {
   return body
 }
 
-export function getStoredUser(): AuthUser | null { const value = window.localStorage.getItem(USER_KEY); return value ? JSON.parse(value) : null }
-export function saveAuth(result: AuthResult) { window.localStorage.setItem(TOKEN_KEY, result.token); window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)) }
-export function clearAuth() { window.localStorage.removeItem(TOKEN_KEY); window.localStorage.removeItem(USER_KEY) }
+function isAuthUser(value: unknown): value is AuthUser {
+  return Boolean(value) && typeof value === 'object' && value !== null
+    && typeof (value as AuthUser).id === 'string'
+    && typeof (value as AuthUser).username === 'string'
+}
+
+export function getStoredUser(): AuthUser | null {
+  let value: string | null = null
+  try { value = window.localStorage.getItem(USER_KEY) } catch { return null }
+  if (!value) return null
+  try {
+    const parsed: unknown = JSON.parse(value)
+    if (!isAuthUser(parsed)) { clearAuth(); return null }
+    return parsed
+  } catch { clearAuth(); return null }
+}
+
+export function saveAuth(result: AuthResult) {
+  try { window.localStorage.setItem(TOKEN_KEY, result.token) } catch { /* Storage unavailable; session stays in memory. */ }
+  try { window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)) } catch { /* Ignore. */ }
+}
+
+export function clearAuth() {
+  try { window.localStorage.removeItem(TOKEN_KEY) } catch { /* Ignore. */ }
+  try { window.localStorage.removeItem(USER_KEY) } catch { /* Ignore. */ }
+}
 export function getAuthToken() { return token() }
 export async function login(username: string, password: string) { const result = await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }); saveAuth(result); return result as AuthResult }
 export async function register(username: string, email: string, password: string) { const result = await api('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) }); saveAuth(result); return result as AuthResult }
-export async function restoreSession() { if (!token()) return null; try { const result = await api('/api/auth/me'); window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)); return result.user as AuthUser } catch { clearAuth(); return null } }
+export async function restoreSession() { if (!token()) return null; try { const result = await api('/api/auth/me'); try { window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)) } catch { /* Storage write failed; keep the in-memory session. */ } return result.user as AuthUser } catch { clearAuth(); return null } }
 export async function logout() { if (token()) { try { await api('/api/auth/logout', { method: 'POST' }) } finally { clearAuth() } } }
 export async function listProjects() { return (await api('/api/projects')).projects as ProjectSummary[] }
 export async function createProject(name: string, project?: any) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: project ?? { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } } }) })).project as ProjectSnapshot }

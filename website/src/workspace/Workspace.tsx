@@ -10,6 +10,7 @@ import ProjectOverview from './ProjectOverview'
 import SearchReplace from './SearchReplace'
 import ConfirmDialog from './ConfirmDialog'
 import BrowserCollaboration from '../BrowserCollaboration'
+import { navigate } from '../navigation'
 import type { ProjectSnapshot } from '../appApi'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
@@ -17,11 +18,6 @@ type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollap
 type DraftUpdater = any | ((current: any) => any)
 
 const STATUSES = ['draft', 'translated', 'needs-review', 'approved'] as const
-
-function navigate(path: string) {
-  window.history.pushState({}, '', path)
-  window.dispatchEvent(new PopStateEvent('popstate'))
-}
 
 function loadLayout(): LayoutState {
   try {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { parseLocalizationFile } from '@localizationhub/core'
 import { createProject, getStoredUser, listProjects, login, logout, register, restoreSession, sendVerification, type AuthUser, type ProjectSummary } from './appApi'
+import { navigate } from './navigation'
 import LocalWorkspace from './LocalWorkspace'
 import Workspace from './workspace/Workspace'
 import NewProjectModal from './workspace/NewProjectModal'
@@ -9,7 +10,6 @@ import './workspace/workspace.css'
 
 type View = 'login' | 'register' | 'projects' | 'editor' | 'local'
 function routeView(path = window.location.pathname): View { if (path === '/app/login') return 'login'; if (path === '/app/register') return 'register'; if (path === '/app/local') return 'local'; if (path.startsWith('/app/projects/')) return 'editor'; return path.startsWith('/app') ? 'projects' : 'login' }
-function navigate(path: string) { window.history.pushState({}, '', path); window.dispatchEvent(new PopStateEvent('popstate')) }
 function friendlyStatus(status: string) { return status.replace('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()) }
 
 export default function AppWorkspace() {
@@ -22,8 +22,9 @@ export default function AppWorkspace() {
   if (!ready) return <div className="app-loading">Restoring workspace…</div>
   if (view === 'login' || view === 'register') return <AuthView mode={view} onAuth={(next) => { setUser(next); navigate('/app/projects') }} />
   if (view === 'local') return <LocalWorkspace />
-  if (view === 'editor') return <Workspace user={user!} onHome={() => navigate('/app/projects')} />
-  return <ProjectsView user={user!} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} />
+  if (!user) return <div className="app-loading">Opening workspace…</div>
+  if (view === 'editor') return <Workspace user={user} onHome={() => navigate('/app/projects')} />
+  return <ProjectsView user={user} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} />
 }
 
 function AuthView({ mode, onAuth }: { mode: 'login' | 'register'; onAuth: (user: AuthUser) => void }) {
