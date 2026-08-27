@@ -36,6 +36,9 @@ import {
   servePublicWebsite,
 } from './public-website.mjs'
 import {
+  applyCorsHeaders,
+} from './cors.mjs'
+import {
   getDatabasePool,
 } from './database.mjs'
 
@@ -141,23 +144,6 @@ if (SERVE_PUBLIC_WEBSITE) {
     throw error
   }
 }
-
-const CORS_ALLOWED_ORIGINS =
-  new Set([
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-
-    ...(
-      process.env.CORS_ALLOWED_ORIGINS ??
-      ''
-    )
-      .split(',')
-      .map(
-        (origin) =>
-          origin.trim(),
-      )
-      .filter(Boolean),
-  ])
 
 const HOST =
   process.env.HOST ??
@@ -2300,45 +2286,6 @@ async function handleMessage(
         'Unknown collaboration message.',
       )
   }
-}
-
-function applyCorsHeaders(
-  request,
-  response,
-) {
-  const origin =
-    request.headers.origin
-
-  if (
-    !origin ||
-    !CORS_ALLOWED_ORIGINS.has(
-      origin,
-    )
-  ) {
-    return false
-  }
-
-  response.setHeader(
-    'Access-Control-Allow-Origin',
-    origin,
-  )
-
-  response.setHeader(
-    'Vary',
-    'Origin',
-  )
-
-  response.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  )
-
-  response.setHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization',
-  )
-
-  return true
 }
 
 function sendJson(
