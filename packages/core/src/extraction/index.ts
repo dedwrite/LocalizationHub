@@ -41,6 +41,7 @@ export {
 
 export { extractGodot, extractGodotScript } from './engines/godot'
 export { extractPo, parsePo } from './engines/gettext'
+export { extractInkb, readInkbTextStrings, parseInkbMetadata, type InkbStoryType, type InkbMetadata } from './engines/inkb'
 export { extractUnity, extractUnityStringTable, extractUnityStructuredJson } from './engines/unity'
 export { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta, detectEncryptedUnrealContainer } from './engines/unreal'
 export { extractInk } from './engines/ink'

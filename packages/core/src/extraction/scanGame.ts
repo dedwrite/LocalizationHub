@@ -17,6 +17,7 @@ import { extractPo } from './engines/gettext'
 import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
+import { extractInkb } from './engines/inkb'
 import { readLocmeta } from './engines/locmeta'
 import { aggregateCultures, applyNativeCulture } from './cultureAggregation'
 import type {
@@ -87,7 +88,7 @@ export type ResourceKind =
   | 'script'             // GDScript source (.gd) — safe, targeted extraction
   | 'unreal-binary'      // .locres/.locmeta — native readers
   | 'godot-binary'       // .res/.scn/.translation/.gdc — requires conversion
-  | 'ink-binary'         // .inkb compiled Ink — requires Ink tooling
+  | 'inkb-story'         // Until Then .inkb story (native reader)
   | 'archive'            // .pak/.utoc/.ucas/.pck/.assets/.unity3d/.bundle
   | 'structural'         // .import/.remap/.godot/.uid/.md5 sidecar — never text
   | 'unknown'            // not localizable, skipped silently
@@ -96,7 +97,7 @@ const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres
 const SCRIPT_EXTENSIONS = new Set(['.gd'])
 const UNREAL_BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
 const GODOT_BINARY_RESOURCE_EXTENSIONS = new Set(['.res', '.scn', '.translation', '.gdc'])
-const INK_BINARY_EXTENSIONS = new Set(['.inkb'])
+const INKB_STORY_EXTENSIONS = new Set(['.inkb'])
 const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.bundle'])
 const STRUCTURAL_EXTENSIONS = new Set(['.import', '.remap', '.godot', '.uid', '.md5', '.meta', '.cfg'])
 
@@ -125,7 +126,7 @@ export function classifyFileKind(file: ScanFile): ResourceKind {
   if (SCRIPT_EXTENSIONS.has(ext)) return 'script'
   if (UNREAL_BINARY_EXTENSIONS.has(ext)) return 'unreal-binary'
   if (GODOT_BINARY_RESOURCE_EXTENSIONS.has(ext)) return 'godot-binary'
-  if (INK_BINARY_EXTENSIONS.has(ext)) return 'ink-binary'
+  if (INKB_STORY_EXTENSIONS.has(ext)) return 'inkb-story'
   if (ARCHIVE_EXTENSIONS.has(ext)) return 'archive'
   if (STRUCTURAL_EXTENSIONS.has(ext)) return 'structural'
   return 'unknown'
@@ -180,14 +181,13 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     script: 0,
     'unreal-binary': 0,
     'godot-binary': 0,
-    'ink-binary': 0,
+    'inkb-story': 0,
     archive: 0,
     structural: 0,
     unknown: 0,
   }
   const archivePaths: string[] = []
   const godotBinaryPaths: string[] = []
-  const inkBinaryPaths: string[] = []
 
   let filesAnalyzed = 0
   options.onProgress?.({
@@ -208,18 +208,14 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     kindCounts[kind] += 1
     if (kind === 'unknown' || kind === 'structural') continue
 
-    // Containers / binary resources / compiled Ink are reported as aggregate
-    // diagnostics at the end — never one card per file, never read as text.
+    // Containers / binary resources are reported as aggregate diagnostics at
+    // the end — never one card per file, never read as text.
     if (kind === 'archive') {
       if (archivePaths.length < 5) archivePaths.push(file.relativePath)
       continue
     }
     if (kind === 'godot-binary') {
       if (godotBinaryPaths.length < 5) godotBinaryPaths.push(file.relativePath)
-      continue
-    }
-    if (kind === 'ink-binary') {
-      if (inkBinaryPaths.length < 5) inkBinaryPaths.push(file.relativePath)
       continue
     }
 
@@ -235,6 +231,14 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
         }
       } else if (kind === 'script') {
         result = extractGodotScript(file.relativePath, await reader.readText(file))
+      } else if (kind === 'inkb-story') {
+        result = extractInkb(file.relativePath, await reader.readBinary(file))
+        if (result.entries.length === 0) {
+          result = {
+            ...result,
+            diagnostics: [{ kind: 'unsupported-format', message: 'Unrecognized .inkb story format (not an Until Then story).', path: file.relativePath }],
+          }
+        }
       } else if (kind === 'unreal-binary') {
         const buffer = await reader.readBinary(file)
         if (extensionOf(file.name) === '.locres') {
@@ -291,14 +295,6 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
       examplePaths: godotBinaryPaths,
     })
   }
-  if (inkBinaryPaths.length > 0) {
-    diagnostics.push({
-      kind: 'ink-binary-not-parsed',
-      message: 'Compiled Ink (.inkb) dialogue requires Ink tooling.',
-      count: kindCounts['ink-binary'],
-      examplePaths: inkBinaryPaths,
-    })
-  }
 
   // --- Aggregate repeated diagnostics so 88k files become a handful of cards. ---
   const aggregatedDiagnostics = aggregateDiagnostics(diagnostics)
@@ -320,7 +316,7 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   stats.binaryResources = kindCounts['godot-binary'] + kindCounts['unreal-binary']
   stats.localizationResources = kindCounts['text-resource']
   stats.structuralResources = kindCounts.structural
-  stats.unsupportedResources = kindCounts.archive + kindCounts['godot-binary'] + kindCounts['ink-binary']
+  stats.unsupportedResources = kindCounts.archive + kindCounts['godot-binary']
   stats.skipped = kindCounts.structural + kindCounts.unknown
 
   // Culture aggregation: collapse duplicate per-culture entries into one

@@ -28,7 +28,7 @@ export type DetectionInput = {
 }
 
 const UNREAL_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.uasset', '.uexp', '.ubulk', '.locres', '.locmeta', '.umap'])
-const GODOT_EXTENSIONS = new Set(['.pck', '.godot', '.tres', '.res', '.tscn', '.scn', '.translation', '.gd'])
+const GODOT_EXTENSIONS = new Set(['.pck', '.godot', '.tres', '.res', '.tscn', '.scn', '.translation', '.gd', '.inkb'])
 const UNITY_FILES = new Set(['globalgamemanagers', 'data.unity3d', 'resources.assets', 'level0', 'projectversion.txt'])
 const UNITY_EXTENSIONS = new Set(['.bundle', '.unity3d', '.assets', '.asset'])
 const UNITY_DIRECTORY_SUFFIXES = ['_data', 'streamingassets', 'addressables']

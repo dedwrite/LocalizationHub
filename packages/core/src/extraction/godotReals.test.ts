@@ -86,15 +86,15 @@ describe('Godot binary resource classification + diagnostics', () => {
 
   it('aggregates .res/.translation/.scn/.gdc into one binary-resource card', async () => {
     const result = await scanGame({
-      files: files(['a.res', 'b.res', 'c.translation', 'd.scn', 'e.gdc', 'f.inkb', 'g.inkb']),
+      files: files(['a.res', 'b.res', 'c.translation', 'd.scn', 'e.gdc']),
       reader: { readText: async () => '', readBinary: async () => new Uint8Array() },
     })
     const binary = result.diagnostics.find((d) => d.kind === 'binary-resource-not-converted')
     expect(binary).toBeTruthy()
     expect(binary?.count).toBe(5)
-    const ink = result.diagnostics.find((d) => d.kind === 'ink-binary-not-parsed')
-    expect(ink?.count).toBe(2)
-    expect(result.diagnostics.length).toBeLessThan(4)
+    // .inkb is now a parseable story (not a binary diagnostic).
+    expect(result.diagnostics.find((d) => d.kind === 'ink-binary-not-parsed')).toBeUndefined()
+    expect(result.diagnostics.length).toBeLessThan(3)
   })
 
   it('does NOT read binary .scn as UTF-8 text', async () => {
