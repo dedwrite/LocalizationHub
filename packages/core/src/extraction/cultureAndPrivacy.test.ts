@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readLocres } from './engines/locres'
 import { readLocmeta } from './engines/locmeta'
-import { aggregateCultures, applyNativeCulture } from './cultureAggregation'
+import { aggregateCultures, applyNativeCulture, overrideSourceCulture } from './cultureAggregation'
 import { scanGame, type ScanFile } from './scanGame'
 import { buildProjectFromExtraction } from './projectFromExtraction'
 import { extractUnrealTokens } from '../tokens/unreal'
@@ -87,7 +87,10 @@ describe('culture aggregation', () => {
 
     expect(entries).toHaveLength(1)
     expect(entries[0].key).toBe('PLAY')
-    expect(entries[0].localeVariants?.map((v) => v.locale).sort()).toEqual(['de', 'en', 'fr'])
+    // Without native-culture metadata, the alphabetically-first culture (de) is
+    // the source; the others are locale variants.
+    expect(entries[0].sourceText).toBe('Spielen')
+    expect(entries[0].localeVariants?.map((v) => v.locale).sort()).toEqual(['en', 'fr'])
     expect(targets).toHaveLength(1)
     expect(targets[0].name).toBe('Game')
     expect(targets[0].availableCultures.sort()).toEqual(['de', 'en', 'fr'])
@@ -122,6 +125,25 @@ describe('LOCRES protected tokens + classification', () => {
     const buffer = buildCompactLocres([{ namespace: 'Dialogue', keys: [{ key: 'Line_01', localized: 'Where have you been?' }] }])
     const result = readLocres(buffer, { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
     expect(result.entries[0].classification).toBe('Dialogue')
+  })
+})
+
+describe('source culture override', () => {
+  it('switches each entry sourceText to the selected culture, preserving the others as variants', () => {
+    const en = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Play' }, { key: 'QUIT', localized: 'Quit' }] }]), { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    const fr = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Jouer' }, { key: 'QUIT', localized: 'Quitter' }] }]), { containerPath: 'Game/Content/Localization/Game/fr/Game.locres' })
+    const { entries } = aggregateCultures([...en.entries, ...fr.entries])
+
+    // Default: en is source.
+    expect(entries.find((e) => e.key === 'PLAY')?.sourceText).toBe('Play')
+
+    // Override to fr: PLAY becomes "Jouer", QUIT becomes "Quitter".
+    const overridden = overrideSourceCulture(entries, 'fr')
+    expect(overridden.find((e) => e.key === 'PLAY')?.sourceText).toBe('Jouer')
+    expect(overridden.find((e) => e.key === 'PLAY')?.sourceLocale).toBe('fr')
+    expect(overridden.find((e) => e.key === 'QUIT')?.sourceText).toBe('Quitter')
+    // en is now preserved as a variant.
+    expect(overridden.find((e) => e.key === 'PLAY')?.localeVariants?.map((v) => v.locale)).toEqual(['en'])
   })
 })
 

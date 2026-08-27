@@ -22,6 +22,15 @@ export type {
   TokenValidationResult,
 } from './types'
 
+export {
+  createCustomTokenProfile,
+  validateCustomPattern,
+  previewCustomPattern,
+  type CustomPattern,
+  type CustomPatternValidation,
+  type CustomPatternPreview,
+} from './custom'
+
 const tokenProfiles: Record<
   TokenProfileId,
   TokenProfile | undefined
@@ -34,9 +43,24 @@ const tokenProfiles: Record<
   custom: undefined,
 }
 
+/*
+ * The `custom` profile is user-defined and lives outside this module (e.g.
+ * in the desktop/web UI). The registry holds the active custom profile so
+ * that `getTokenProfile('custom')` resolves it; when unset it falls back to
+ * the generic profile rather than failing.
+ */
+let customTokenProfile: TokenProfile | undefined
+
+export function setCustomTokenProfile(profile: TokenProfile | undefined): void {
+  customTokenProfile = profile
+}
+
 export function getTokenProfile(
   profileId: TokenProfileId = 'generic',
 ): TokenProfile {
+  if (profileId === 'custom' && customTokenProfile) {
+    return customTokenProfile
+  }
   return (
     tokenProfiles[profileId] ??
     genericTokenProfile

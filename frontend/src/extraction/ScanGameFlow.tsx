@@ -1,16 +1,16 @@
 import { useCallback, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
-import { readFile, readTextFile } from '@tauri-apps/plugin-fs'
 import {
-  scanGame,
   buildProjectFromExtraction,
+  overrideSourceCulture,
   type ExtractionResult,
   type ScanFile,
   type ScanProgress,
   type LocalizationProjectV3,
   type ContextFieldMapping,
 } from '@localizationhub/core'
+import { runDesktopExtraction, loadToolPaths } from './desktopExtraction'
 import ExtractionReview from './ExtractionReview'
 import './ScanGameFlow.css'
 
@@ -36,21 +36,17 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const runScan = useCallback(async (discovery: { files: ScanFile[]; directories: string[] }, mappings?: ContextFieldMapping[]) => {
     setPhase('scanning')
     setError('')
-
-    const reader = {
-      // IO always uses the absolute path; provenance uses relativePath.
-      readText: async (file: ScanFile) => readTextFile(file.absolutePath),
-      readBinary: async (file: ScanFile) => new Uint8Array(await readFile(file.absolutePath)),
-    }
+    setProgress(null)
 
     try {
-      const scanResult = await scanGame({
-        files: discovery.files,
-        directories: discovery.directories,
+      // The orchestrator handles loose resources directly and unpacks engine
+      // archives (.pak via repak, .utoc via retoc) through configured tools.
+      const scanResult = await runDesktopExtraction(discovery, loadToolPaths(), {
         mappings,
-        reader,
         signal: { get cancelled() { return cancelledRef.current } },
-        onProgress: setProgress,
+        onProgress: (p) => {
+          if (p.scan) setProgress(p.scan)
+        },
       })
       setResult(scanResult)
       setPhase('reviewing')
@@ -99,8 +95,13 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
 
   function handleCreate(includedEntryIds: Set<string>, sourceLocale?: string) {
     if (!result) return
-    const project = buildProjectFromExtraction(result, 'extracted-game.json', includedEntryIds)
-    // Preserve the user's source-language selection in the project language info.
+    // If the user chose a source culture, switch every logical entry's source
+    // text to that culture before building the project (not just a label).
+    const entries = sourceLocale
+      ? overrideSourceCulture(result.entries, sourceLocale)
+      : result.entries
+    const overridden: ExtractionResult = { ...result, entries }
+    const project = buildProjectFromExtraction(overridden, 'extracted-game.json', includedEntryIds)
     if (sourceLocale && project.document.language == null) {
       project.document.language = { sourceLocale, translationDirection: 'auto', sourceDirection: 'auto' }
     }

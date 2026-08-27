@@ -78,13 +78,16 @@ export function aggregateCultures(
     // Sort by locale for determinism.
     variants.sort((a, b) => (a.sourceLocale ?? '').localeCompare(b.sourceLocale ?? ''))
 
-    // First-discovered (or native, when known) becomes the source text.
+    // The first-discovered (or native, when later applied) becomes the source.
+    // `localeVariants` holds every OTHER culture (never the source culture).
     const first = variants[0]
-    const localeVariants = variants.map((v) => ({ locale: v.sourceLocale ?? 'unknown', text: v.sourceText }))
+    const localeVariants = variants
+      .filter((v) => v !== first)
+      .map((v) => ({ locale: v.sourceLocale ?? 'unknown', text: v.sourceText }))
 
     output.push({
       ...first,
-      localeVariants: localeVariants.length > 1 ? localeVariants : undefined,
+      localeVariants: localeVariants.length > 0 ? localeVariants : undefined,
     })
   }
 
@@ -122,12 +125,13 @@ export function applyNativeCulture(
     const nativeVariant = entry.localeVariants.find((v) => v.locale === native)
     if (!nativeVariant || nativeVariant.text === entry.sourceText) return entry
 
-    // Swap: native culture becomes source. The native variant is removed (it is
-    // now the source itself); every other culture (including the old source
-    // locale) is already present in `localeVariants` and is preserved.
-    const variants = entry.localeVariants
-      .filter((v) => v.locale !== native)
-      .sort((a, b) => a.locale.localeCompare(b.locale))
+    // Swap: native culture becomes source. The old source culture becomes a
+    // variant (preserving its text); the native culture is removed from the
+    // variant list (it is now the source itself).
+    const variants = [
+      ...entry.localeVariants.filter((v) => v.locale !== native),
+      { locale: entry.sourceLocale ?? 'unknown', text: entry.sourceText },
+    ].sort((a, b) => a.locale.localeCompare(b.locale))
 
     return {
       ...entry,
@@ -138,6 +142,43 @@ export function applyNativeCulture(
   })
 
   return { entries, targets }
+}
+
+/*
+ * Override the source culture for every logical entry.
+ *
+ * For each entry with locale variants, the selected culture becomes the source
+ * text (and source locale); the previous source culture becomes a variant and
+ * the selected culture is removed from the variant list. Entries whose selected
+ * culture is already the source (or which lack variants) are left unchanged.
+ * This is what makes the Extraction Review source-language selector actually
+ * change each entry's source text, not just a metadata label.
+ */
+export function overrideSourceCulture(
+  entries: ExtractedEntry[],
+  selectedCulture: string,
+): ExtractedEntry[] {
+  if (!selectedCulture) return entries
+
+  return entries.map((entry) => {
+    if (!entry.localeVariants) return entry
+    if (entry.sourceLocale === selectedCulture) return entry
+
+    const selectedVariant = entry.localeVariants.find((v) => v.locale === selectedCulture)
+    if (!selectedVariant) return entry
+
+    const variants = [
+      ...entry.localeVariants.filter((v) => v.locale !== selectedCulture),
+      { locale: entry.sourceLocale ?? 'unknown', text: entry.sourceText },
+    ].sort((a, b) => a.locale.localeCompare(b.locale))
+
+    return {
+      ...entry,
+      sourceText: selectedVariant.text,
+      sourceLocale: selectedCulture,
+      localeVariants: variants.length > 0 ? variants : undefined,
+    }
+  })
 }
 
 export { identityOf, targetOf }

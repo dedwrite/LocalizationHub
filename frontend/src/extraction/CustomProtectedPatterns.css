@@ -1,0 +1,145 @@
+.cpp {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--text, #e6e6e6);
+}
+
+.cpp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cpp-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.cpp-close {
+  background: transparent;
+  border: 1px solid var(--border, #3a3a3a);
+  color: inherit;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cpp-lede {
+  color: var(--muted, #a0a0a0);
+  font-size: 0.92rem;
+  margin: 0 0 20px;
+}
+
+.cpp-add-fields {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cpp-label,
+.cpp-pattern,
+.cpp-sample {
+  background: var(--input-bg, #1f1f1f);
+  border: 1px solid var(--border, #3a3a3a);
+  color: inherit;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.cpp-label {
+  flex: 0 0 180px;
+}
+
+.cpp-pattern {
+  flex: 1 1 300px;
+  font-family: var(--mono, monospace);
+}
+
+.cpp-pattern[aria-invalid='true'] {
+  border-color: var(--danger, #e06c6c);
+}
+
+.cpp-button {
+  background: var(--accent, #2f6fed);
+  border: none;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cpp-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cpp-remove {
+  background: transparent;
+  border: 1px solid var(--border, #3a3a3a);
+  color: var(--danger, #e06c6c);
+}
+
+.cpp-error {
+  color: var(--danger, #e06c6c);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+
+.cpp-list {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cpp-empty {
+  color: var(--muted, #a0a0a0);
+  font-size: 0.9rem;
+}
+
+.cpp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #3a3a3a);
+  border-radius: 6px;
+}
+
+.cpp-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cpp-row-pattern {
+  font-family: var(--mono, monospace);
+  font-size: 0.85rem;
+  color: var(--accent, #7aa2f7);
+}
+
+.cpp-row-matches {
+  font-size: 0.82rem;
+  color: var(--muted, #a0a0a0);
+}
+
+.cpp-preview h2 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.cpp-sample {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cpp-sample-tokens {
+  color: var(--muted, #a0a0a0);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+  word-break: break-word;
+}

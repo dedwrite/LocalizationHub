@@ -1,6 +1,7 @@
 mod deepl;
 mod external_tool;
 mod scan;
+mod tempdir;
 mod translation;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -17,6 +18,8 @@ pub fn run() {
                 deepl::translate_with_deepl,
                 scan::scan_directory,
                 external_tool::run_external_tool,
+                tempdir::create_temp_job_dir,
+                tempdir::remove_temp_dir,
             ],
         )
         .setup(|app| {

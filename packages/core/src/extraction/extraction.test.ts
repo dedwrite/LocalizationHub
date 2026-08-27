@@ -88,6 +88,17 @@ describe('context inference', () => {
     expect(context.speakerGender).toBe('female')
   })
 
+  it('maps a field to ignore: no translation entry and no context', () => {
+    const record = { internalId: 'npc-001', text: 'Hello.' }
+    const { context, translatableFields } = inferContextFromRecord(record, [
+      { fieldName: 'internalId', role: 'ignore' },
+    ])
+    // internalId is ignored: it is neither a translatable text field nor context.
+    expect(translatableFields.map((f) => f.field)).toEqual(['text'])
+    expect(context.speaker).toBeUndefined()
+    expect(context.developerNote).toBeUndefined()
+  })
+
   it('normalizes gender values without inventing from names', () => {
     expect(normalizeGender('female')).toBe('female')
     expect(normalizeGender('f')).toBe('female')

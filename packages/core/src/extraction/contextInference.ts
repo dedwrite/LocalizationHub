@@ -35,6 +35,12 @@ export type ContextFieldRole =
   | 'developerNote'
   | 'translatorNote'
   | 'translatableText'
+  /*
+   * Explicitly ignore a field: never produce a translation entry from it and
+   * never treat it as context. Used for user mappings that mark structural
+   * fields (IDs, timestamps, internal flags) as non-localization data.
+   */
+  | 'ignore'
 
 export type ContextFieldMapping = {
   fieldName: string
@@ -58,6 +64,8 @@ const ALIASES: Record<ContextFieldRole, RegExp> = {
   developerNote: /^(note|notes|comment|devnote|developer_note|commentary)$/iu,
   translatorNote: /^(translator_note|translatornote|context_note|contextnote)$/iu,
   translatableText: /^(text|message|line|content|subtitle|spokentext|spoken_text|caption|localizedtext|localized_text|displaytext|display_text|value|choice|response|reply|answer|option|quote|utterance)$/iu,
+  // "ignore" has no built-in alias — it is only assigned via user field mapping.
+  ignore: /^$/,
 }
 
 /*
@@ -69,6 +77,8 @@ export function recognizeContextField(
 ): ContextFieldRole | undefined {
   const normalized = fieldName.trim()
   for (const [role, pattern] of Object.entries(ALIASES)) {
+    // "ignore" is never auto-recognized; it is only assigned by user mapping.
+    if (role === 'ignore') continue
     if (pattern.test(normalized)) {
       return role as ContextFieldRole
     }
@@ -190,6 +200,9 @@ export function inferContextFromRecord(
         break
       case 'translatableText':
         translatableFields.push({ field: fieldName, role })
+        break
+      case 'ignore':
+        // Explicitly ignored: no translation entry, no context. Skip entirely.
         break
     }
   }

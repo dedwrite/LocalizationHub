@@ -1,36 +1,51 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-dialog'
+import CustomProtectedPatterns from './CustomProtectedPatterns'
 import './ToolsDependencies.css'
 
 /*
  * Tools / Dependencies settings for the extraction pipeline.
  *
  * Configures optional external CLI tools for archive/binary formats. Paths are
- * stored locally only (never in projects, never in Cloud data). Status is
- * resolved by attempting `--version`; a non-zero/missing result is "Invalid".
+ * stored locally only (never in projects, never in Cloud data). A tool is only
+ * "Ready" after its per-tool version/test contract succeeds; a typed path is
+ * merely "Configured (unverified)".
  */
 
-export type ToolId = 'repak' | 'retoc' | 'uassetdumper' | 'gdsdecomp' | 'unitypy'
+export type ToolId = 'repak' | 'retoc' | 'uassetdumper' | 'gdre' | 'unitypy'
+
+export type ToolStatus =
+  | 'not-configured'
+  | 'configured-unverified'
+  | 'testing'
+  | 'ready'
+  | 'invalid'
+  | 'unsupported-version'
 
 export type ToolAdapter = {
   id: ToolId
   label: string
   engine: 'Unreal' | 'Godot' | 'Unity'
   description: string
+  // Version-detection args. Empty means "no reliable version flag"; testing
+  // then uses the probeArgs instead.
   versionArgs: string[]
+  // Args used to prove the tool actually works (e.g. `--help`).
+  probeArgs: string[]
 }
 
 export const TOOL_ADAPTERS: ToolAdapter[] = [
-  { id: 'repak', label: 'repak', engine: 'Unreal', description: 'Unreal .pak reader/writer', versionArgs: ['--version'] },
-  { id: 'retoc', label: 'retoc', engine: 'Unreal', description: 'Unreal IoStore (.utoc/.ucas) reader', versionArgs: ['--version'] },
-  { id: 'uassetdumper', label: 'UAssetDumper', engine: 'Unreal', description: 'Unreal .uasset → JSON', versionArgs: [] },
-  { id: 'gdsdecomp', label: 'gdsdecomp', engine: 'Godot', description: 'Godot .pck extraction', versionArgs: ['--version'] },
-  { id: 'unitypy', label: 'UnityPy', engine: 'Unity', description: 'Unity serialized-asset reader', versionArgs: ['--version'] },
+  { id: 'repak', label: 'repak', engine: 'Unreal', description: 'Unreal .pak reader/writer', versionArgs: ['--version'], probeArgs: ['--help'] },
+  { id: 'retoc', label: 'retoc', engine: 'Unreal', description: 'Unreal IoStore (.utoc/.ucas) reader', versionArgs: ['--version'], probeArgs: ['--help'] },
+  { id: 'uassetdumper', label: 'UAssetDumper', engine: 'Unreal', description: 'Unreal .uasset → JSON', versionArgs: [], probeArgs: [] },
+  { id: 'gdre', label: 'gdre_tools', engine: 'Godot', description: 'Godot PCK/resource recovery', versionArgs: ['--version'], probeArgs: ['--help'] },
+  { id: 'unitypy', label: 'UnityPy', engine: 'Unity', description: 'Unity serialized-asset reader', versionArgs: ['--version'], probeArgs: ['--version'] },
 ]
 
 const STORAGE_KEY = 'localizationhub.tools'
 
-type ToolStatus = { id: ToolId; status: 'found' | 'not-configured' | 'invalid'; version?: string }
+type ToolState = { status: ToolStatus; version?: string }
 
 function loadConfigs(): Record<string, string> {
   try {
@@ -41,32 +56,53 @@ function loadConfigs(): Record<string, string> {
 }
 
 export default function ToolsDependencies({ onClose }: { onClose: () => void }) {
+  const [tab, setTab] = useState<'dependencies' | 'profile'>('dependencies')
   const [configs, setConfigs] = useState<Record<string, string>>(loadConfigs)
-  const [statuses, setStatuses] = useState<Record<string, ToolStatus>>({})
-  const [testing, setTesting] = useState<ToolId | null>(null)
+  const [states, setStates] = useState<Record<string, ToolState>>({})
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(configs))
   }, [configs])
 
+  function deriveStatus(id: ToolId): ToolStatus {
+    return states[id]?.status ?? (configs[id] ? 'configured-unverified' : 'not-configured')
+  }
+
+  async function browse(adapter: ToolAdapter) {
+    const selected = await open({ directory: false, multiple: false, title: `Locate ${adapter.label}` })
+    if (typeof selected === 'string') {
+      setConfigs((current) => ({ ...current, [adapter.id]: selected }))
+      // Editing the path resets to unverified.
+      setStates((current) => ({ ...current, [adapter.id]: { status: 'configured-unverified' } }))
+    }
+  }
+
   async function testTool(adapter: ToolAdapter) {
     const path = configs[adapter.id]
     if (!path) return
-    setTesting(adapter.id)
+
+    setStates((current) => ({ ...current, [adapter.id]: { status: 'testing' } }))
+
     try {
+      // Use version args if present; otherwise probe with the probe args.
+      const args = adapter.versionArgs.length > 0 ? adapter.versionArgs : adapter.probeArgs
       const result = await invoke<{ code: number; stdout: string; stderr: string }>('run_external_tool', {
         executable: path,
-        args: adapter.versionArgs,
+        args,
       })
-      const version = (result.stdout || result.stderr).trim().split('\n')[0]?.slice(0, 80) ?? ''
-      setStatuses((current) => ({
+      const output = (result.stdout || result.stderr).trim()
+      const firstLine = output.split('\n')[0]?.slice(0, 80) ?? ''
+
+      if (result.code !== 0) {
+        setStates((current) => ({ ...current, [adapter.id]: { status: 'invalid' } }))
+        return
+      }
+      setStates((current) => ({
         ...current,
-        [adapter.id]: { id: adapter.id, status: result.code === 0 ? 'found' : 'invalid', version: version || undefined },
+        [adapter.id]: { status: 'ready', version: firstLine || undefined },
       }))
     } catch {
-      setStatuses((current) => ({ ...current, [adapter.id]: { id: adapter.id, status: 'invalid' } }))
-    } finally {
-      setTesting(null)
+      setStates((current) => ({ ...current, [adapter.id]: { status: 'invalid' } }))
     }
   }
 
@@ -76,48 +112,67 @@ export default function ToolsDependencies({ onClose }: { onClose: () => void }) 
       delete next[id]
       return next
     })
-    setStatuses((current) => {
+    setStates((current) => {
       const next = { ...current }
       delete next[id]
       return next
     })
   }
 
+  const depsTabClass = tab === 'dependencies' ? 'td-tab td-tab-active' : 'td-tab'
+  const profileTabClass = tab === 'profile' ? 'td-tab td-tab-active' : 'td-tab'
+
+  if (tab === 'profile') {
+    return <CustomProtectedPatterns onClose={onClose} />
+  }
+
   return (
     <main className="tools-deps">
       <header className="td-header">
         <h1>Tools / Dependencies</h1>
-        <button className="td-close" onClick={onClose}>Done</button>
+        <div className="td-header-actions">
+          <button className={depsTabClass} onClick={() => setTab('dependencies')}>
+            Dependencies
+          </button>
+          <button className={profileTabClass} onClick={() => setTab('profile')}>
+            Extraction Profile
+          </button>
+          <button className="td-close" onClick={onClose}>Done</button>
+        </div>
       </header>
       <p className="td-lede">
-        Optional external tools unlock archive and binary engine formats. Configure a tool path to enable
-        its adapter; paths are stored locally only and never uploaded.
+        Optional external tools unlock archive and binary engine formats. A tool is only Ready after its
+        version test succeeds. Paths are stored locally only and never uploaded.
       </p>
 
       <div className="td-list">
         {TOOL_ADAPTERS.map((adapter) => {
-          const status = statuses[adapter.id]?.status ?? (configs[adapter.id] ? 'found' : 'not-configured')
+          const status = deriveStatus(adapter.id)
           return (
             <section key={adapter.id} className="td-card">
               <div className="td-card-head">
                 <strong>{adapter.label}</strong>
-                <span className={`td-status td-${status}`}>{status.replace('-', ' ')}</span>
+                <span className={`td-status td-${status}`}>{status.replace(/-/g, ' ')}</span>
               </div>
               <p className="td-desc">{adapter.engine} · {adapter.description}</p>
               <div className="td-row">
                 <input
                   className="td-path"
                   value={configs[adapter.id] ?? ''}
-                  onChange={(event) => setConfigs((current) => ({ ...current, [adapter.id]: event.target.value }))}
+                  onChange={(event) => {
+                    setConfigs((current) => ({ ...current, [adapter.id]: event.target.value }))
+                    setStates((current) => ({ ...current, [adapter.id]: { status: 'configured-unverified' } }))
+                  }}
                   placeholder="Executable path"
                   aria-label={`${adapter.label} path`}
                 />
-                <button className="td-button" onClick={() => testTool(adapter)} disabled={!configs[adapter.id] || testing === adapter.id}>
-                  {testing === adapter.id ? 'Testing…' : 'Test'}
+                <button className="td-button" onClick={() => browse(adapter)}>Browse</button>
+                <button className="td-button" onClick={() => testTool(adapter)} disabled={!configs[adapter.id] || status === 'testing'}>
+                  {status === 'testing' ? 'Testing…' : 'Test'}
                 </button>
                 <button className="td-button" onClick={() => clearTool(adapter.id)} disabled={!configs[adapter.id]}>Clear</button>
               </div>
-              {statuses[adapter.id]?.version && <p className="td-version">{statuses[adapter.id].version}</p>}
+              {states[adapter.id]?.version && <p className="td-version">{states[adapter.id].version}</p>}
             </section>
           )
         })}
