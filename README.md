@@ -2,19 +2,47 @@
 
 LocalizationHub is a local-first localization workspace for game translation projects and collaborative translation teams.
 
-It combines a structured desktop editor with optional Cloud Projects, account-based collaboration, protected-token validation, lossless localization workflows, and machine translation reference tools.
+It combines a structured desktop editor with a full browser workspace, optional Cloud Projects, account-based collaboration, protected-token validation, lossless localization workflows, and machine translation reference tools.
 
 ## Current Release
 
-**LocalizationHub v0.6.1 - Web Workspace Parity & Translator Experience**
+**LocalizationHub v0.6.1 — Web Workspace Parity & Translator Experience**
 
-Version 0.6.1 brings the browser workspace to parity with the desktop application: a dense three-pane translator workspace with a full Inspector, Machine Translation Reference (Gemini), protected-token validation, entry filters and bulk workflow, Search & Replace, keyboard shortcuts, and autosave — all while preserving the local-first workflow and Cloud Projects. Existing Admin and security functionality remains intact.
+v0.6.1 brings the browser workspace to full parity with the desktop application and adds a purpose-built mobile experience:
 
-## v0.6.1 Web Workspace Parity & Translator Experience
+- **Desktop** — a structured localization editor for local `.lhproj` projects with workflow states, QA tools, glossary and Translation Memory, protected-token validation, and optional Cloud integration.
+- **Web (desktop/tablet)** — a three-pane Entries / Translator / Inspector workspace in the browser with Cloud Projects, browser-local import/export, and the same workflow and QA tooling.
+- **Web (mobile)** — a dedicated Entries / Editor / Tools workspace built for phones, with a touch-first editor and iPhone Safari support.
+- **Machine Translation Reference** — advisory Gemini translation with session-only API keys held in browser memory.
 
-LocalizationHub v0.6.1 delivers a desktop-grade translator workspace in the browser, including a resizable Entries / Translator / Inspector layout, a full Inspector (Workflow, Quality, Comments, Assignments, History, Tags, Memory, Glossary), Machine Translation Reference with session-only keys, protected-token QA, entry filters and bulk workflow actions, Search & Replace, Jump to Entry, keyboard shortcuts, and autosave for Cloud Projects.
+Existing administration and account-security functionality remains intact.
 
-On phones, the workspace is a dedicated mobile app with Entries / Editor / Tools bottom navigation, a touch-first editor, compact filtering and stats, and iPhone Safari-safe inputs, viewport, and safe-area handling.
+## Web App
+
+LocalizationHub's browser workspace runs the same translator workflow as the desktop application:
+
+- **Three-pane desktop layout** — resizable Entries, Translator, and Inspector panels with focus mode and locally persisted layout.
+- **Editor** — source card with protected-token highlighting, direction-aware (LTR/RTL) translation editing, inline QA warnings, and Jump to Entry.
+- **Entries** — counts, search, filters (All, Untranslated, Draft, Translated, Needs Review, Approved, Errors, Warnings, Has Comments, Assigned to Me, Has Tags), checkbox bulk selection, and bulk workflow actions.
+- **Inspector** — Workflow, Quality, Comments, Assignments, History, Tags, Translation Memory, and Glossary.
+- **Search & Replace** — project-wide find/replace with Replace All confirmation.
+- **Project Overview** — project facts, revision, members, and statistics.
+- **Save** — manual Save with clear Saved / Unsaved / Saving / Failed state, plus debounced autosave for Cloud Projects.
+- **Keyboard workflow** — Ctrl+S save, Ctrl+Enter commit-and-advance, Alt+Down/Up navigation, Ctrl+F search, Escape dismiss.
+- **Large-project virtualization** — windowed entry list for 10,000+ entries.
+- **Browser-local workflows** — JSON, CSV, and gettext PO import/export with IndexedDB recovery, no account required.
+
+## Mobile Web Workspace
+
+On phones, LocalizationHub is a dedicated mobile app rather than a stacked desktop layout:
+
+- **Entries / Editor / Tools bottom navigation** — three focused surfaces for the primary translation flow.
+- **Entries** — project progress summary, search, primary filter chips plus "More filters", and a dedicated selection mode for bulk actions.
+- **Editor** — entry key and workflow state, readable source card with Copy, an auto-growing 16px translation field (no iOS zoom-in), compact workflow buttons, and Previous / Next / Next Untranslated navigation.
+- **Tools** — the full Inspector plus Project Overview, Search & Replace, and Collaboration.
+- **Touch-first** — comfortable tap targets, clear selected states, and a header Save with obvious persistence state.
+- **iPhone Safari** — dynamic viewport and safe-area handling keep content and navigation above the browser chrome and home indicator, and LTR/RTL direction applies to content independently.
+- **Tested** — permanent WebKit (Safari) Playwright coverage alongside Chromium, so phone acceptance is never conflated with Chromium viewport emulation.
 
 ## v0.6.0 Web App & Mobile Translation
 
@@ -228,23 +256,30 @@ Cloud collaboration permissions are enforced by the server rather than trusted t
 
 ## Machine Translation Reference
 
-LocalizationHub includes an optional Machine Translation Reference panel.
+LocalizationHub includes an optional, advisory Machine Translation Reference panel.
 
-Supported providers currently include:
+The web workspace integrates with **Google Gemini (Google AI Studio)** with these model options:
 
-- Google Gemini
-- Google Cloud Translation
-- DeepL
+- **Gemini 3.5 Flash-Lite** — fastest, the default.
+- **Gemini 3.6 Flash** — balanced speed and quality.
+- **Gemini 3.7 Flash** — highest quality.
+
+The Gemini integration uses a lower-latency thinking configuration so translations return quickly. Provider errors are surfaced inline without interrupting the editor.
 
 Machine translation is intentionally separated from the translation editor and does not automatically overwrite human translations.
 
-API keys are kept in application memory only and are not stored in:
+### API key handling
 
-- `.lhproj` files
-- Localization files
-- Application configuration
-- Local storage
-- Logs
+- The API key is held in browser memory for the current tab only — never persisted, never sent to the LocalizationHub backend, and never written to project data, localization files, configuration, local storage, or logs.
+- The key field is a visually masked text input with a Show / Hide toggle (not a password field), which avoids unwanted browser credential autofill prompts.
+
+## Project Compatibility
+
+LocalizationHub preserves compatibility across project versions and clients:
+
+- **Project V1/V2 compatibility** — older project files open normally and are upgraded in memory to the current Project V3 format on next save.
+- **Migration to Project V3** — workflow metadata (statuses, assignments, comments, history, tags) is preserved through the upgrade.
+- **Desktop / Web interoperability** — Cloud Projects edited in the desktop app open unchanged in the browser, and vice versa, sharing the same parser, workflow, and protected-token logic through `@localizationhub/core`.
 
 ## Shared Localization Core
 

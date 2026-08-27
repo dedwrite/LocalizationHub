@@ -2,31 +2,59 @@
 
 All notable LocalizationHub release milestones are documented here.
 
-## [0.6.1] - 2026-08-26
+## [0.6.1] - 2026-08-27
 
-### Web Workspace Parity & Translator Experience
+### Added
 
 - Desktop-parity three-pane Web Workspace (Entries / Translator / Inspector) with resizable and collapsible panels, focus mode, and locally persisted layout.
 - Overhauled Inspector with Workflow, Quality, Comments, Assignments, History, Tags, Translation Memory, and Glossary tabs — no horizontal tab scrolling.
-- Machine Translation Reference panel on Web (Gemini / Google AI Studio) with session-only API keys that are never persisted or sent to the backend.
-- Entry list parity: status/QA/comment/assignment indicators, counts, search, filters, checkbox bulk selection, and bulk workflow actions.
-- Protected-token inline validation and Token Profile selection using shared core logic.
+- Machine Translation Reference panel on Web (Gemini / Google AI Studio) with Gemini 3.5 Flash-Lite (fastest, default), Gemini 3.6 Flash (balanced), and Gemini 3.7 Flash (quality), plus a lower-latency thinking configuration.
 - Translator-grade Search & Replace with Replace All confirmation, and Jump to Entry.
 - Project Overview, workspace toolbar, save states (Saved / Unsaved / Saving / Failed), and debounced autosave for Cloud Projects.
-- Keyboard workflow: Ctrl+S save, Ctrl+Enter commit-and-advance, Alt+Down/Up navigation, Ctrl+F search, Escape dismiss.
-- Windowed list virtualization for large projects (10k+ entries).
-- Branded New Project modal (import JSON/CSV/PO) and polished Projects page with progress and search — no native browser dialogs.
+- Branded New Project modal (import JSON/CSV/PO) and a polished Projects page with progress and search — no native browser dialogs.
+- Dedicated mobile workspace with Entries / Editor / Tools bottom navigation and a touch-first editor.
+
+### Changed
+
+- Entry list brought to desktop parity: status/QA/comment/assignment indicators, counts, search, filters, checkbox bulk selection, and bulk workflow actions.
 - Responsive layouts for 360–1920px with no horizontal document overflow; Viewer read-only enforced.
 
-### Mobile Workspace Redesign
+### Fixed
 
-- Dedicated phone workspace with a bottom navigation of **Entries**, **Editor**, and **Tools** — no more desktop panels stacked vertically.
-- Touch-first editor: comfortable auto-growing translation field, source card with copy, compact workflow status buttons, and Previous / Next / Next Untranslated navigation.
-- Compact entries screen with a progress summary, search, primary filter chips plus "More filters", and a dedicated selection mode for bulk actions.
-- Mobile Tools surface hosting the full Inspector plus Project Overview, Search & Replace, and Collaboration, without crowding the editor.
+- Resolved a production crash where opening the Web App with no valid session showed "Workspace unavailable" instead of Login.
+- Hardened browser auth restoration so corrupt or stale local storage never breaks startup.
+- Improved the error boundary to surface real diagnostics in development while keeping a friendly fallback in production.
+- Stopped Chrome credential autofill from hijacking the Machine Translation API key field (visually masked text input with Show / Hide).
+- Fixed a stale Gemini model reference; the web Machine Translation now uses supported current models.
+- Corrected draft update resolution so saves always serialize a valid project object rather than a stale closure.
+
+### Compatibility
+
+- Legacy Cloud Projects (Project V1/V2) open and migrate in memory to the current Project V3 format on next save.
+- Desktop / Web interoperability preserved through the shared `@localizationhub/core` parser, workflow, and protected-token logic.
+
+### Performance
+
+- Windowed list virtualization keeps the entry list smooth for projects with 10,000+ entries.
+- Lower-latency Gemini thinking configuration returns translations more quickly.
+
+### Mobile
+
+- Dedicated phone workspace — no more desktop panels stacked vertically.
+- Touch-first editor: auto-growing translation field, source card with copy, compact workflow buttons, and Previous / Next / Next Untranslated navigation.
+- Compact entries screen: progress summary, search, primary filter chips plus "More filters", and a dedicated selection mode.
+- Mobile Tools surface hosting the full Inspector plus Project Overview, Search & Replace, and Collaboration.
 - Simplified mobile Projects page and a purposeful Cloud / Local switcher.
-- iPhone Safari behavior: 16px inputs (no auto-zoom), dynamic-viewport and safe-area handling, RTL/LTR-aware editing, and no controls hidden behind browser chrome.
-- WebKit (Safari) Playwright coverage kept permanently alongside Chromium — Chromium viewport emulation is no longer treated as Safari acceptance.
+
+### Privacy
+
+- Machine Translation API keys are held in browser memory only and are never persisted, logged, or sent to the LocalizationHub backend.
+- No project contents, credentials, or session tokens are exposed by error reporting.
+
+### Testing
+
+- Permanent WebKit (Safari) Playwright coverage added alongside Chromium — Chromium viewport emulation is no longer reported as Safari acceptance.
+- Added a Safari boot regression suite (clean, corrupt-storage, and expired-session startup) and a mobile workflow suite covering the full phone translation flow, RTL, touch targets, and the phone overflow matrix.
 
 ## [0.6.0] - 2026-08-26
 
