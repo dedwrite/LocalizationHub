@@ -45,6 +45,18 @@ export type CustomPatternPreview = {
 
 const MAX_PATTERN_LENGTH = 512
 const MAX_CUSTOM_PATTERNS = 100
+/* Preview sample is bounded so a hostile pattern cannot freeze the UI. */
+const MAX_PREVIEW_SAMPLE_LENGTH = 4096
+const MAX_PREVIEW_MATCHES = 200
+
+/*
+ * Heuristic rejection of patterns prone to catastrophic backtracking, e.g.
+ * `(a+)+`, `(.*)*`, `([a-z]+){1,}`. Nested quantifiers over a group can blow up
+ * exponential-time on long inputs; we refuse them rather than risk a freeze.
+ */
+function hasNestedQuantifier(pattern: string): boolean {
+  return /\([^()]*[+*{][^()]*\)\s*[+*{]/u.test(pattern)
+}
 
 function tryCompile(pattern: string): { regex?: RegExp; error?: string } {
   const trimmed = pattern.trim()
@@ -53,6 +65,11 @@ function tryCompile(pattern: string): { regex?: RegExp; error?: string } {
   }
   if (trimmed.length > MAX_PATTERN_LENGTH) {
     return { error: `Pattern exceeds ${MAX_PATTERN_LENGTH} characters.` }
+  }
+  if (hasNestedQuantifier(trimmed)) {
+    return {
+      error: 'Pattern contains a nested quantifier (e.g. (a+)+) that can cause catastrophic backtracking.',
+    }
   }
   try {
     const regex = new RegExp(trimmed, 'gu')
@@ -87,8 +104,9 @@ export function previewCustomPattern(
 
   const regex = result.regex as RegExp
   const matches: CustomPatternPreview['matches'] = []
+  const boundedSample = sample.slice(0, MAX_PREVIEW_SAMPLE_LENGTH)
   let match: RegExpExecArray | null
-  while ((match = regex.exec(sample)) !== null) {
+  while ((match = regex.exec(boundedSample)) !== null && matches.length < MAX_PREVIEW_MATCHES) {
     if (!match[0]) {
       regex.lastIndex += 1
       continue

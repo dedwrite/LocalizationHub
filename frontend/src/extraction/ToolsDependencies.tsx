@@ -33,14 +33,19 @@ export type ToolAdapter = {
   versionArgs: string[]
   // Args used to prove the tool actually works (e.g. `--help`).
   probeArgs: string[]
+  // When true, the tool has no version/probe command and can only be verified
+  // by running it against a real asset during Scan Game.
+  noProbe?: boolean
+  // When true, a second config field (the UnityPy helper script) is shown.
+  needsScript?: boolean
 }
 
 export const TOOL_ADAPTERS: ToolAdapter[] = [
   { id: 'repak', label: 'repak', engine: 'Unreal', description: 'Unreal .pak reader/writer', versionArgs: ['--version'], probeArgs: ['--help'] },
   { id: 'retoc', label: 'retoc', engine: 'Unreal', description: 'Unreal IoStore (.utoc/.ucas) reader', versionArgs: ['--version'], probeArgs: ['--help'] },
-  { id: 'uassetdumper', label: 'UAssetDumper', engine: 'Unreal', description: 'Unreal .uasset → JSON', versionArgs: [], probeArgs: [] },
-  { id: 'gdre', label: 'gdre_tools', engine: 'Godot', description: 'Godot PCK/resource recovery', versionArgs: ['--version'], probeArgs: ['--help'] },
-  { id: 'unitypy', label: 'UnityPy', engine: 'Unity', description: 'Unity serialized-asset reader', versionArgs: ['--version'], probeArgs: ['--version'] },
+  { id: 'uassetdumper', label: 'UAssetDumper', engine: 'Unreal', description: 'Unreal .uasset → JSON (UE4.27)', versionArgs: [], probeArgs: [], noProbe: true },
+  { id: 'gdre', label: 'gdre_tools', engine: 'Godot', description: 'Godot PCK/resource recovery', versionArgs: ['--gdre-version'], probeArgs: ['--help'] },
+  { id: 'unitypy', label: 'UnityPy', engine: 'Unity', description: 'Unity serialized-asset reader (Python helper)', versionArgs: ['-c', 'import UnityPy; print(UnityPy.__version__)'], probeArgs: ['-c', 'import UnityPy; print(UnityPy.__version__)'], needsScript: true },
 ]
 
 const STORAGE_KEY = 'localizationhub.tools'
@@ -80,6 +85,7 @@ export default function ToolsDependencies({ onClose }: { onClose: () => void }) 
   async function testTool(adapter: ToolAdapter) {
     const path = configs[adapter.id]
     if (!path) return
+    if (adapter.noProbe) return
 
     setStates((current) => ({ ...current, [adapter.id]: { status: 'testing' } }))
 
@@ -167,11 +173,27 @@ export default function ToolsDependencies({ onClose }: { onClose: () => void }) 
                   aria-label={`${adapter.label} path`}
                 />
                 <button className="td-button" onClick={() => browse(adapter)}>Browse</button>
-                <button className="td-button" onClick={() => testTool(adapter)} disabled={!configs[adapter.id] || status === 'testing'}>
+                <button
+                  className="td-button"
+                  onClick={() => testTool(adapter)}
+                  disabled={!configs[adapter.id] || status === 'testing' || adapter.noProbe}
+                  title={adapter.noProbe ? 'No version probe available; verified during Scan Game' : undefined}
+                >
                   {status === 'testing' ? 'Testing…' : 'Test'}
                 </button>
                 <button className="td-button" onClick={() => clearTool(adapter.id)} disabled={!configs[adapter.id]}>Clear</button>
               </div>
+              {adapter.needsScript && (
+                <div className="td-row">
+                  <input
+                    className="td-path"
+                    value={configs['unitypyScript'] ?? ''}
+                    onChange={(event) => setConfigs((current) => ({ ...current, unitypyScript: event.target.value }))}
+                    placeholder="UnityPy helper script (.py) — ships with the app by default"
+                    aria-label="UnityPy helper script path"
+                  />
+                </div>
+              )}
               {states[adapter.id]?.version && <p className="td-version">{states[adapter.id].version}</p>}
             </section>
           )

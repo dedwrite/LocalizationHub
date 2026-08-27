@@ -30,6 +30,7 @@ export type DetectionInput = {
 const UNREAL_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.uasset', '.uexp', '.ubulk', '.locres', '.locmeta', '.umap'])
 const GODOT_EXTENSIONS = new Set(['.pck', '.godot', '.tres', '.res', '.tscn', '.scn', '.translation', '.gd'])
 const UNITY_FILES = new Set(['globalgamemanagers', 'data.unity3d', 'resources.assets', 'level0', 'projectversion.txt'])
+const UNITY_EXTENSIONS = new Set(['.bundle', '.unity3d', '.assets', '.asset'])
 const UNITY_DIRECTORY_SUFFIXES = ['_data', 'streamingassets', 'addressables']
 
 function countByExtension(files: FileSignature[], extensions: Set<string>): number {
@@ -63,10 +64,12 @@ export function detectEngine(input: DetectionInput): EngineDetection {
 
   const unityFileCount = hasFileName(input.files, UNITY_FILES)
   const unityLevelCount = input.files.filter((file) => /^level\d+$/u.test(file.lower)).length
+  const unityExtensionCount = countByExtension(input.files, UNITY_EXTENSIONS)
   const unityDataDir = hasDirectoryEnding(input.directories, UNITY_DIRECTORY_SUFFIXES)
   const unityAssetsCount = input.files.filter((file) => /(^|\/)(resources|sharedassets\d*|globalgamemanagers)\.assets$/u.test(file.lower)).length
   if (unityDataDir) evidence.push('Unity *_Data directory present')
   if (unityAssetsCount > 0) evidence.push(`${unityAssetsCount} Unity serialized asset file(s)`)
+  if (unityExtensionCount > 0) evidence.push(`${unityExtensionCount} Unity asset/bundle file(s) (.bundle/.unity3d/.assets)`)
   if (unityFileCount > 0 || unityLevelCount > 0) evidence.push('Unity signature file(s) present')
 
   const inkCount = input.files.filter((file) => file.lower.endsWith('.ink') || file.lower.endsWith('.ink.json') || file.lower.endsWith('.json') && file.lower.includes('ink')).length
@@ -76,7 +79,7 @@ export function detectEngine(input: DetectionInput): EngineDetection {
   const scores: Array<{ engine: EngineFamily; score: number }> = [
     { engine: 'unreal', score: unrealCount > 0 ? 100 : 0 },
     { engine: 'godot', score: (godotProjectFile ? 60 : 0) + (godotCount > 0 ? 50 : 0) },
-    { engine: 'unity', score: (unityDataDir ? 60 : 0) + (unityAssetsCount > 0 ? 50 : 0) + ((unityFileCount > 0 || unityLevelCount > 0) ? 30 : 0) },
+    { engine: 'unity', score: (unityDataDir ? 60 : 0) + (unityAssetsCount > 0 ? 50 : 0) + (unityExtensionCount > 0 ? 45 : 0) + ((unityFileCount > 0 || unityLevelCount > 0) ? 30 : 0) },
     { engine: 'ink', score: inkCount > 0 ? 90 : 0 },
   ]
 

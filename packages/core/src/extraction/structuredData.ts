@@ -14,6 +14,7 @@ import {
   inferContextFromRecord,
   type ContextFieldMapping,
 } from './contextInference'
+import { mergeCustomProtectedSegments } from './engines/shared'
 import type {
   EntryClassification,
   ExtractedEntry,
@@ -121,7 +122,10 @@ export function analyzeRecord(
           ? { source: 'structural-inference', confidence: 'high' }
           : { source: 'heuristic', confidence: decision.confidence }
 
-    const protectedSegments = options.extractProtectedSegments(value)
+    const protectedSegments = mergeCustomProtectedSegments(
+      value,
+      options.extractProtectedSegments(value),
+    )
 
     entries.push({
       id: structuralEntryId([...path, field, fieldIndex]),
@@ -190,6 +194,16 @@ export function walkStructuredData(
   if (isObject(value)) {
     // Treat as a record if it has any string-valued leaf that looks textual.
     options.onRecord({ record: value, path, order: order.value++ })
+    // Descend into nested objects/arrays so deep structures (Unity type
+    // trees, nested dialogue databases, UAsset property trees) are reached.
+    for (const [key, child] of Object.entries(value)) {
+      if (isObject(child) || Array.isArray(child)) {
+        walkStructuredData(child, {
+          ...options,
+          path: [...path, key],
+        })
+      }
+    }
     return
   }
 }

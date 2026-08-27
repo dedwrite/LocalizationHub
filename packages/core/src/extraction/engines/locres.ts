@@ -29,6 +29,7 @@
 
 import type { ExtractedEntry, ExtractionDiagnostic } from '../types'
 import { extractUnrealTokens } from '../../tokens/unreal'
+import { mergeCustomProtectedSegments } from './shared'
 
 export const LOCRES_MAGIC = [0x7574140e, 0xfc034a67, 0x9d90154a, 0x1b7f37c3] as const
 
@@ -307,7 +308,10 @@ export function readLocres(
 
         const target = localizationTargetFromPath(origin.containerPath)
         const locale = cultureFromPath(origin.containerPath)
-        const protectedSegments = toProtectedSegments(extractUnrealTokens(localizedString))
+        const protectedSegments = mergeCustomProtectedSegments(
+          localizedString,
+          toProtectedSegments(extractUnrealTokens(localizedString)),
+        )
 
         entries.push({
           // Stable identity includes the localization target so two different

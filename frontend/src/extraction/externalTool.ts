@@ -21,6 +21,21 @@ export type ExternalToolSpec = {
   executablePath: string
 }
 
+/*
+ * Argument builders are shared with the Node/Vitest integration harness and
+ * live in core (see @localizationhub/core/extraction/toolArgs). Re-exported
+ * here so existing desktop callers keep working against a single source of
+ * truth.
+ */
+export {
+  repakUnpackArgs,
+  retocUnpackArgs,
+  gdreExtractArgs,
+  gdreBinToTxtArgs,
+  unitypyExtractArgs,
+  uassetdumperToJsonArgs,
+} from '@localizationhub/core'
+
 export type ExternalToolRunResult =
   | { ok: true; stdout: string; stderr: string }
   | { ok: false; kind: 'not-found' | 'timeout' | 'non-zero' | 'spawn-error'; message: string; stderr?: string }
@@ -63,33 +78,4 @@ export function createProcessRunner(
       }
     },
   }
-}
-
-/*
- * Build a safe argument list for repak `unpack` with an optional AES key.
- * The key is passed as a single argument (never via shell interpolation).
- *
- * Verified CLI contract (repak_cli 0.2.3):
- *   repak [--aes-key KEY] unpack [--output DIR] [INPUT]...
- */
-export function repakUnpackArgs(pakPath: string, outDir: string, aesKey?: string): string[] {
-  const args: string[] = []
-  if (aesKey) args.push('--aes-key', aesKey)
-  args.push('unpack', pakPath, '--output', outDir)
-  return args
-}
-
-/*
- * Build a safe argument list for retoc IoStore `unpack`.
- *
- * Verified CLI contract (retoc_cli 0.1.5):
- *   retoc [--aes-key KEY] unpack <UTOC> <OUTPUT>
- * `--aes-key` is a global option placed before the subcommand; `<UTOC>` and
- * `<OUTPUT>` are positional.
- */
-export function retocUnpackArgs(utocPath: string, outDir: string, aesKey?: string): string[] {
-  const args: string[] = []
-  if (aesKey) args.push('--aes-key', aesKey)
-  args.push('unpack', utocPath, outDir)
-  return args
 }

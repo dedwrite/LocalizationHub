@@ -58,6 +58,13 @@ export type ScanOptions = {
   mappings?: Array<{ fieldName: string; role: any }>
   onProgress?: (progress: ScanProgress) => void
   signal?: { cancelled: boolean }
+  /*
+   * Optional engine-family override from the orchestrator. When the caller has
+   * already unpacked an engine archive (e.g. a Unity .bundle whose extracted
+   * resources are extensionless/JSON), it supplies the engine it KNOWS is
+   * present so text is dispatched to the correct adapter.
+   */
+  engineHint?: EngineFamily
 }
 
 export type ScanProgress = {
@@ -126,7 +133,10 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     files: files.map((file) => ({ name: file.name, lower: file.name.toLowerCase() })),
     directories: (directories ?? []).map((dir) => ({ name: dir, lower: dir.toLowerCase() })),
   }
-  const detection = detectEngine(detectionInput)
+  let detection = detectEngine(detectionInput)
+  if (options.engineHint) {
+    detection = { ...detection, engine: options.engineHint }
+  }
 
   const candidates = files.filter(isCandidate)
   const diagnostics: ExtractionDiagnostic[] = []

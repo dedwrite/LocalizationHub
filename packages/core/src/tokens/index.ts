@@ -55,6 +55,16 @@ export function setCustomTokenProfile(profile: TokenProfile | undefined): void {
   customTokenProfile = profile
 }
 
+/*
+ * Extract the tokens of the active custom profile (if any). Used by the
+ * extraction pipeline so user-defined protected patterns are carried onto
+ * extracted entries in addition to the engine's built-in tokens.
+ */
+export function extractCustomProtectedTokens(text: string): ProtectedToken[] {
+  if (!customTokenProfile) return []
+  return customTokenProfile.extract(text)
+}
+
 export function getTokenProfile(
   profileId: TokenProfileId = 'generic',
 ): TokenProfile {

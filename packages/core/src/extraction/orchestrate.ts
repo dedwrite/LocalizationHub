@@ -1,0 +1,271 @@
+/*
+ * Engine-agnostic extraction orchestrator (pure, injectable primitives).
+ *
+ * This is the SAME orchestration used by the desktop "Scan Game" flow and by
+ * the Node/Vitest integration harness. It is pure: every side effect (process
+ * execution, temp dirs, file IO) is injected, so the identical logic runs in
+ * the Tauri desktop (invoke/plugin-fs primitives) and in Node (child_process /
+ * fs primitives) against real game archives.
+ *
+ * Pipeline:
+ *   discovered files
+ *   → build an archive plan (which tool unpacks which container)
+ *   → unpack each archive into an isolated temp dir
+ *   → re-discover / derive parseable resources
+ *   → remap temp paths to logical archive paths (pak::…, pck::…, etc.)
+ *   → core scanGame
+ *   → cleanup
+ */
+
+import { scanGame, type ScanFile, type ScanProgress } from './scanGame'
+import type { ExtractionResult, EngineFamily } from './types'
+import type { ContextFieldMapping } from './contextInference'
+import {
+  gdreExtractArgs,
+  repakUnpackArgs,
+  retocUnpackArgs,
+  uassetdumperToJsonArgs,
+  unitypyExtractArgs,
+  type ToolId,
+  type ToolPaths,
+} from './toolArgs'
+
+export type ToolRunResult = {
+  code: number
+  stdout: string
+  stderr: string
+  timed_out: boolean
+  output_truncated: boolean
+}
+
+export type ScanDirectoryResult = {
+  files: Array<{ path: string; size: number }>
+  directories: string[]
+}
+
+export type ExtractionPrimitives = {
+  runTool: (executable: string, args: string[], timeoutMs?: number) => Promise<ToolRunResult>
+  createTempDir: () => Promise<string>
+  removeTempDir: (path: string) => Promise<void>
+  scanDirectory: (root: string) => Promise<ScanDirectoryResult>
+  readText: (absolutePath: string) => Promise<string>
+  readBinary: (absolutePath: string) => Promise<Uint8Array>
+}
+
+export type OrchestratorProgress = {
+  phase: 'discovering' | 'extracting' | 'parsing' | 'done'
+  message?: string
+  scan?: ScanProgress
+}
+
+export type OrchestratorOptions = {
+  mappings?: ContextFieldMapping[]
+  onProgress?: (progress: OrchestratorProgress) => void
+  signal?: { cancelled: boolean }
+  /* Per-tool timeout in milliseconds. */
+  toolTimeoutMs?: number
+}
+
+export class OrchestrationError extends Error {
+  readonly kind: string
+  constructor(message: string, kind: string) {
+    super(message)
+    this.name = 'OrchestrationError'
+    this.kind = kind
+  }
+}
+
+export type ArchiveJob = {
+  file: ScanFile
+  kind: 'pak' | 'iostore' | 'pck' | 'unity' | 'uasset'
+  toolId: ToolId
+  executable: string
+  buildArgs: (outDir: string) => string[]
+}
+
+function extensionOf(name: string): string {
+  const dot = name.lastIndexOf('.')
+  return dot === -1 ? '' : name.slice(dot).toLowerCase()
+}
+
+const UNITY_ARCHIVE_EXTENSIONS = new Set(['.bundle', '.unity3d'])
+
+/*
+ * Infer the engine family from the archive jobs the plan produced, so text
+ * extracted from an unpacked archive is dispatched to the correct adapter even
+ * when the extracted resources themselves are extensionless or generic JSON.
+ */
+function engineHintFor(jobs: ArchiveJob[]): EngineFamily | undefined {
+  const counts = { unreal: 0, godot: 0, unity: 0 }
+  for (const job of jobs) {
+    if (job.kind === 'pak' || job.kind === 'iostore' || job.kind === 'uasset') counts.unreal += 1
+    else if (job.kind === 'pck') counts.godot += 1
+    else if (job.kind === 'unity') counts.unity += 1
+  }
+  const best = (Object.entries(counts) as Array<[EngineFamily, number]>).reduce((a, b) => (b[1] > a[1] ? b : a))
+  return best[1] > 0 ? best[0] : undefined
+}
+
+/*
+ * Classify discovered files into loose (directly parseable) files and archive
+ * jobs (files that must be unpacked/derived through an external tool first).
+ * The plan is pure and deterministic.
+ */
+export function buildArchivePlan(files: ScanFile[], tools: ToolPaths): { looseFiles: ScanFile[]; jobs: ArchiveJob[] } {
+  const looseFiles: ScanFile[] = []
+  const jobs: ArchiveJob[] = []
+  // Basenames (sans extension) of .utoc archives we will unpack: their sibling
+  // .ucas containers are handled by retoc and must not be reported twice.
+  const handledUtocBases = new Set<string>()
+  // Basenames of .uasset files we will convert: their .uexp/.ubulk companions
+  // are read by UAssetAPI automatically and must not be reported separately.
+  const handledUassetBases = new Set<string>()
+
+  for (const file of files) {
+    const ext = extensionOf(file.name)
+    if (ext === '.utoc' && tools.retoc) handledUtocBases.add(file.name.slice(0, -ext.length))
+    if (ext === '.uasset' && tools.uassetdumper) handledUassetBases.add(file.name.slice(0, -ext.length))
+  }
+
+  for (const file of files) {
+    const ext = extensionOf(file.name)
+    if (ext === '.pak' && tools.repak) {
+      jobs.push({
+        file,
+        kind: 'pak',
+        toolId: 'repak',
+        executable: tools.repak,
+        buildArgs: (outDir) => repakUnpackArgs(file.absolutePath, outDir),
+      })
+    } else if (ext === '.utoc' && tools.retoc) {
+      jobs.push({
+        file,
+        kind: 'iostore',
+        toolId: 'retoc',
+        executable: tools.retoc,
+        buildArgs: (outDir) => retocUnpackArgs(file.absolutePath, outDir),
+      })
+    } else if (ext === '.ucas' && handledUtocBases.has(file.name.slice(0, -ext.length))) {
+      // Companion container of a .utoc already being unpacked — skip it.
+      continue
+    } else if (ext === '.pck' && tools.gdre) {
+      jobs.push({
+        file,
+        kind: 'pck',
+        toolId: 'gdre',
+        executable: tools.gdre,
+        buildArgs: (outDir) => gdreExtractArgs(file.absolutePath, outDir),
+      })
+    } else if ((UNITY_ARCHIVE_EXTENSIONS.has(ext) || ext === '.assets') && tools.unitypy) {
+      jobs.push({
+        file,
+        kind: 'unity',
+        toolId: 'unitypy',
+        executable: tools.unitypy as string,
+        buildArgs: (outDir) => unitypyExtractArgs(tools.unitypyScript as string, file.absolutePath, outDir),
+      })
+    } else if (ext === '.uasset' && tools.uassetdumper) {
+      jobs.push({
+        file,
+        kind: 'uasset',
+        toolId: 'uassetdumper',
+        executable: tools.uassetdumper,
+        buildArgs: (outDir) => uassetdumperToJsonArgs(file.absolutePath, `${outDir}/${file.name}.json`),
+      })
+    } else if ((ext === '.uexp' || ext === '.ubulk') && handledUassetBases.has(file.name.slice(0, -ext.length))) {
+      // Companion of a .uasset already being converted — skip it.
+      continue
+    } else {
+      looseFiles.push(file)
+    }
+  }
+
+  return { looseFiles, jobs }
+}
+
+/*
+ * Run the full pipeline. `discovery.files` are already-normalized ScanFiles
+ * (relativePath = safe provenance, absolutePath = runtime IO).
+ */
+export async function orchestrateExtraction(
+  discovery: { files: ScanFile[]; directories: string[] },
+  tools: ToolPaths,
+  primitives: ExtractionPrimitives,
+  options: OrchestratorOptions = {},
+): Promise<ExtractionResult> {
+  const { looseFiles, jobs } = buildArchivePlan(discovery.files, tools)
+
+  const allFiles: ScanFile[] = [...looseFiles]
+  const tempDirs: string[] = []
+  const timeoutMs = options.toolTimeoutMs ?? 300_000
+
+  for (const job of jobs) {
+    if (options.signal?.cancelled) break
+    options.onProgress?.({ phase: 'extracting', message: `Extracting ${job.file.name}` })
+
+    const tempDir = await primitives.createTempDir()
+    tempDirs.push(tempDir)
+
+    const args = job.buildArgs(tempDir)
+    const result = await primitives.runTool(job.executable, args, timeoutMs)
+
+    if (result.timed_out) {
+      throw new OrchestrationError(`${job.file.name} extraction timed out.`, 'timeout')
+    }
+    if (result.code !== 0) {
+      throw new OrchestrationError(
+        `${job.file.name} extraction failed (${job.kind}): ${(result.stderr || result.stdout).slice(0, 500)}`,
+        'external-tool-failed',
+      )
+    }
+
+    // Collect the parseable resources this job produced.
+    if (job.kind === 'uasset') {
+      // UAssetDumper writes exactly one JSON next to the (single) input.
+      allFiles.push({
+        name: `${job.file.name}.json`,
+        relativePath: `${job.file.relativePath}.json`,
+        absolutePath: `${tempDir}/${job.file.name}.json`,
+        size: 0,
+      })
+      continue
+    }
+
+    // Unpack tools (repak/retoc/gdre/unitypy): re-discover the temp dir.
+    const extracted = await primitives.scanDirectory(tempDir)
+    const containerName = job.file.name
+    for (const f of extracted.files) {
+      allFiles.push({
+        name: f.path.split('/').pop() ?? f.path,
+        relativePath: `${containerName}::${f.path}`,
+        absolutePath: `${tempDir}/${f.path}`,
+        size: f.size,
+      })
+    }
+  }
+
+  try {
+    options.onProgress?.({ phase: 'parsing', message: 'Parsing resources' })
+
+    const reader = {
+      readText: (file: ScanFile) => primitives.readText(file.absolutePath),
+      readBinary: (file: ScanFile) => primitives.readBinary(file.absolutePath),
+    }
+
+    const result = await scanGame({
+      files: allFiles,
+      directories: discovery.directories,
+      reader,
+      mappings: options.mappings,
+      signal: options.signal,
+      engineHint: engineHintFor(jobs),
+      onProgress: (scan) => options.onProgress?.({ phase: 'parsing', scan }),
+    })
+
+    options.onProgress?.({ phase: 'done', message: 'Extraction complete' })
+    return result
+  } finally {
+    // Clean up temp dirs after parsing, regardless of success/failure/cancel.
+    await Promise.all(tempDirs.map((dir) => primitives.removeTempDir(dir)))
+  }
+}
