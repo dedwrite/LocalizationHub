@@ -16,7 +16,7 @@ export * from './engineDetection'
 export * from './extractionReview'
 export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanProgress } from './scanGame'
 export { buildProjectFromExtraction } from './projectFromExtraction'
-export { aggregateCultures, applyNativeCulture, overrideSourceCulture } from './cultureAggregation'
+export { aggregateCultures, applyNativeCulture, overrideSourceCulture, computeLocaleCoverage, type LocaleCoverage } from './cultureAggregation'
 export {
   detectGodotJsonLocale,
   detectGodotInkbLocale,

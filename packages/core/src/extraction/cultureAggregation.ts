@@ -205,4 +205,35 @@ export function overrideSourceCulture(
   })
 }
 
-export { identityOf, targetOf }
+/*
+ * Per-locale coverage across the LOGICAL entries.
+ *
+ * For each locale reports:
+ *   - `source`: how many logical entries have that locale as their source text
+ *   - `available`: how many entries have that locale available at all (as
+ *     source OR a locale variant)
+ *
+ * This is the honest "which language is actually complete?" summary: a game
+ * whose story is Japanese-only and databases are English-multi-locale will show
+ * `ja` high on story source and `en` high on database source, rather than
+ * silently blending them into one source language.
+ */
+export type LocaleCoverage = Record<string, { source: number; available: number }>
+
+export function computeLocaleCoverage(entries: ExtractedEntry[]): LocaleCoverage {
+  const coverage: LocaleCoverage = {}
+  const bump = (locale: string | undefined, kind: 'source' | 'available') => {
+    if (!locale) return
+    const item = coverage[locale] ?? { source: 0, available: 0 }
+    item[kind] += 1
+    coverage[locale] = item
+  }
+  for (const entry of entries) {
+    bump(entry.sourceLocale, 'source')
+    bump(entry.sourceLocale, 'available')
+    for (const variant of entry.localeVariants ?? []) {
+      bump(variant.locale, 'available')
+    }
+  }
+  return coverage
+}

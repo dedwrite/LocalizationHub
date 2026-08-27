@@ -133,4 +133,49 @@ describe('inkb dialogue extraction', () => {
     const result = extractInkb('x.inkb', garbage)
     expect(result.entries).toHaveLength(0)
   })
+
+  it('attributes bare continuation lines to the previous speaker', () => {
+    const buffer = buildInkb([
+      'type: "dialogue"',
+      'characters: { "Mark": "MarkBorja", "Ryan": "RyanSoriano" }',
+      'player: "Mark"',
+      'Ryan: 当ててみようか',
+      'ピンポーン！',
+      'Mark: ピンポーン！',
+    ])
+    const result = extractInkb('1/1c/1c.inkb', buffer)
+    expect(result.entries).toHaveLength(3)
+    // Continuation inherits Ryan as speaker.
+    expect(result.entries[1].sourceText).toBe('ピンポーン！')
+    expect(result.entries[1].context?.speaker).toBe('Ryan')
+    expect(result.entries[1].context?.speakerId).toBe('RyanSoriano')
+    expect(result.entries[1].rawMetadata?.continuation).toBe(true)
+  })
+
+  it('skips bare identifiers (story labels), not text', () => {
+    const buffer = buildInkb([
+      'type: "dialogue"',
+      'characters: { "Mark": "MarkBorja" }',
+      'player: "Mark"',
+      'Mark: 降参だ。',
+      'music_end',
+      'bgg75cdd4i5',
+    ])
+    const result = extractInkb('1/2/1d.inkb', buffer)
+    expect(result.entries).toHaveLength(1)
+    expect(result.entries[0].sourceText).toBe('降参だ。')
+  })
+
+  it('tracks $ F <char> focus commands for implicit speaker', () => {
+    const buffer = buildInkb([
+      'type: "dialogue"',
+      'characters: { "Mark": "MarkBorja" }',
+      'player: "Mark"',
+      '$ F MarkBorja default',
+      'こんにちは。',
+    ])
+    const result = extractInkb('x.inkb', buffer)
+    expect(result.entries).toHaveLength(1)
+    expect(result.entries[0].context?.speaker).toBe('MarkBorja')
+  })
 })

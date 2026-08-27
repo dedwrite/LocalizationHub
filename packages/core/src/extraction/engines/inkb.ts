@@ -39,7 +39,6 @@ import { detectGodotInkbLocale } from '../godotLocales'
 import type {
   ExtractedEntry,
   ExtractionResult,
-  SourceLocator,
 } from '../types'
 import { buildEntry, toProtectedSegments } from './shared'
 
@@ -172,31 +171,22 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   let order = 0
   const conversationId = `inkb:${storyId}`
 
-  for (const str of strings) {
-    // Commands and metadata are not translatable.
-    if (str.startsWith('$')) continue
-    if (METADATA_HEADER_PATTERN.test(str)) continue
+  // Until Then splits a speaker's speech across multiple NUL strings: only the
+  // FIRST carries `char_key: text`; the continuation lines are bare text with
+  // NO prefix (the speaker carries over). `$ F <char>` focus commands also set
+  // the active speaker. Track the current speaker to attribute bare lines.
+  let currentSpeaker: string | undefined
+  let currentSpeakerId: string | undefined
 
-    const match = str.match(DIALOGUE_PATTERN)
-    if (!match) continue
-
-    const charKey = match[1]
-    const text = match[3]
-    if (!text.trim()) continue
-
-    // ":" is the thought key (inner monologue); otherwise resolve the speaker.
-    const isThought = charKey === ':'
-    const speaker = isThought ? undefined : charKey
-    const characterId = isThought ? undefined : metadata.characters[charKey]
-
-    const origin: SourceLocator = {
-      engine: 'godot',
-      containerPath: fileName,
-      objectType: 'inkb-dialogue',
-      resourceName: storyId,
-      key: charKey,
-    }
-
+  const push = (
+    text: string,
+    speaker: string | undefined,
+    characterId: string | undefined,
+    isThought: boolean,
+    charKey: string | undefined,
+    isContinuation: boolean,
+  ) => {
+    if (!text.trim()) return
     entries.push(buildEntry({
       id: structuralEntryId(['inkb', storyId, String(order)]),
       key: `${storyId}:${order}`,
@@ -216,16 +206,65 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
           : undefined,
         conversationProvenance: { source: 'structural-inference', confidence: 'high' },
       },
-      origin,
+      origin: {
+        engine: 'godot',
+        containerPath: fileName,
+        objectType: 'inkb-dialogue',
+        resourceName: storyId,
+        key: charKey ?? (speaker ?? 'narration'),
+      },
       protectedSegments: toProtectedSegments(extractGodotTokens(text)),
       protectionProfile: 'godot',
       rawMetadata: {
         storyType: metadata.type,
         isThought,
-        charKey,
+        charKey: charKey ?? (speaker ?? 'narration'),
+        continuation: isContinuation,
         revealText: hasRevealText(text),
       },
     }))
+  }
+
+  for (const str of strings) {
+    // Commands: track `$ F <char>` focus commands for implicit speaker.
+    if (str.startsWith('$')) {
+      const focusMatch = str.match(/^\$\s*F\s+([A-Za-z0-9_]+)/u)
+      if (focusMatch) {
+        currentSpeaker = focusMatch[1]
+        currentSpeakerId = metadata.characters[focusMatch[1]] ?? focusMatch[1]
+      }
+      continue
+    }
+    if (METADATA_HEADER_PATTERN.test(str)) continue
+
+    const match = str.match(DIALOGUE_PATTERN)
+    if (match) {
+      const charKey = match[1]
+      const text = match[3]
+      const isThought = charKey === ':'
+      const speaker = isThought ? undefined : charKey
+      const characterId = isThought ? undefined : metadata.characters[charKey]
+      if (!isThought) {
+        currentSpeaker = speaker
+        currentSpeakerId = characterId
+      }
+      push(text, speaker, characterId, isThought, charKey, false)
+      continue
+    }
+
+    // Thought (inner monologue): `:: text`
+    if (str.startsWith('::')) {
+      push(str.slice(2), undefined, undefined, true, ':', false)
+      continue
+    }
+
+    // Bare continuation line: natural-language text with no speaker prefix.
+    // It inherits the current speaker (or is narration when there is none).
+    // Pure ASCII identifiers (story labels like `music_end`, `bgg75cdd4i5`)
+    // are NOT text and are skipped.
+    if (isBareDialogueText(str)) {
+      push(str, currentSpeaker, currentSpeakerId, false, currentSpeaker ?? 'narration', true)
+    }
   }
 
   return {
@@ -253,4 +292,22 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
 function hasRevealText(text: string): boolean {
   REVEAL_PATTERN.lastIndex = 0
   return REVEAL_PATTERN.test(text)
+}
+
+/*
+ * Is a bare (no `char_key:`) NUL string user-facing dialogue text?
+ *
+ * Until Then splits a speaker's speech across multiple strings: only the first
+ * carries `char_key: text`; continuation lines are bare. They are text when
+ * they contain non-ASCII (CJK) characters OR natural-language whitespace
+ * (multi-word Latin). Pure ASCII identifiers/event labels (`music_end`,
+ * `bgg75cdd4i5`, `signkv189l`) are story internals, NOT text.
+ */
+function isBareDialogueText(str: string): boolean {
+  const s = str.trim()
+  if (s.length === 0) return false
+  // Pure ASCII identifier/label → skip.
+  if (/^[A-Za-z0-9_.-]+$/u.test(s)) return false
+  // Text: contains non-ASCII (CJK/Arabic/etc.) OR whitespace between words.
+  return /[^\x00-\x7F]/u.test(s) || /\s/u.test(s)
 }
