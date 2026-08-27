@@ -159,6 +159,8 @@ import EntryHistoryPanel from './EntryHistoryPanel'
 import EditorInspector from './EditorInspector'
 import BulkActionBar from './BulkActionBar'
 import ProjectOverview from './ProjectOverview'
+import ScanGameFlow from './extraction/ScanGameFlow'
+import ExtractionSourcePanel from './extraction/ExtractionSourcePanel'
 
 import Toast, {
   type ToastMessage,
@@ -198,6 +200,11 @@ function App() {
   const [
     showCollaborationPanel,
     setShowCollaborationPanel,
+  ] = useState(false)
+
+  const [
+    scanFlowOpen,
+    setScanFlowOpen,
   ] = useState(false)
 
   const collaborationRevisionsRef =
@@ -3418,6 +3425,71 @@ try {
   }
 
   if (
+    scanFlowOpen
+  ) {
+    return (
+      <ScanGameFlow
+        onProjectCreated={
+          (project) => {
+            setEntries(
+              project.entries,
+            )
+
+            setWorkflowEntries(
+              project.workflow.entries,
+            )
+
+            setProjectMetadata(
+              project.metadata ?? emptyProjectMetadata(),
+            )
+
+            setFileName(
+              project.sourceFileName,
+            )
+
+            setDocumentInfo(
+              project.document,
+            )
+
+            setSelectedEntryId(
+              project.selectedEntryId ??
+                project.entries[0]?.id ??
+                null,
+            )
+
+            setTokenProfile(
+              project.tokenProfile ??
+                'generic',
+            )
+
+            setProjectLocation(
+              null,
+            )
+
+            setScanFlowOpen(
+              false,
+            )
+
+            setIsDirty(
+              false,
+            )
+
+            showToast(
+              'success',
+              `Extracted ${project.entries.length} entries.`,
+            )
+          }
+        }
+        onCancel={() => {
+          setScanFlowOpen(
+            false,
+          )
+        }}
+      />
+    )
+  }
+
+  if (
     entries.length ===
     0
   ) {
@@ -3461,6 +3533,19 @@ try {
                 }
               >
                 Open Project
+              </button>
+
+              <button
+                className="secondary-button"
+                type="button"
+                title="Extract text from a game folder (read-only)"
+                onClick={() => {
+                  setScanFlowOpen(
+                    true,
+                  )
+                }}
+              >
+                Scan Game
               </button>
 
               <button
@@ -4856,6 +4941,12 @@ try {
                                       setCloudRevision(revision)
                                       setIsDirty(false)
                                     }}
+                                  />
+                                )}
+                                {tab === 'source' && (
+                                  <ExtractionSourcePanel
+                                    entryId={selectedEntry.id}
+                                    metadata={projectMetadata}
                                   />
                                 )}
                               </>

@@ -246,3 +246,24 @@ export type ExtractionResult = {
   diagnostics: ExtractionDiagnostic[]
   stats: ExtractionStats
 }
+
+/*
+ * Optional project metadata carrying extraction provenance/context into a
+ * LocalizationHub Project V3 (backward-compatible: absent for non-extracted
+ * projects). Keyed by entry id. Origin paths are project-relative, never
+ * absolute user filesystem paths.
+ */
+export type ExtractionEngineInfo = {
+  engine: EngineFamily
+  familyLabel: string
+  confidence: Confidence
+  entries: Record<
+    string,
+    {
+      context?: EntryContext
+      origin: SourceLocator
+      classification: EntryClassification
+      classificationConfidence: Confidence
+    }
+  >
+}

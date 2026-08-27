@@ -1,0 +1,53 @@
+.scan-flow {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  background: #0b0d10;
+  color: #f5f7fa;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+}
+
+.scan-progress {
+  display: grid;
+  gap: 16px;
+  width: min(520px, calc(100% - 40px));
+  text-align: center;
+}
+
+.scan-progress h1 { margin: 0; font-size: 20px; }
+
+.scan-progress-line {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #8b93a7;
+}
+
+.scan-progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #242c38;
+  overflow: hidden;
+}
+
+.scan-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4f3db5, #6f61d8);
+  transition: width 0.2s;
+}
+
+.scan-cancel {
+  justify-self: center;
+  border: 1px solid #3b4350;
+  background: #171c24;
+  color: #f5f7fa;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.scan-error { color: #ff9c9c; }

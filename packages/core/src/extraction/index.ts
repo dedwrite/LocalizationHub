@@ -15,6 +15,7 @@ export * from './structuredData'
 export * from './engineDetection'
 export * from './extractionReview'
 export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanProgress } from './scanGame'
+export { buildProjectFromExtraction } from './projectFromExtraction'
 
 export { extractGodot } from './engines/godot'
 export { extractUnity, extractUnityStringTable, extractUnityStructuredJson } from './engines/unity'

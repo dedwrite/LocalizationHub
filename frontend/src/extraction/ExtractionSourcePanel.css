@@ -1,0 +1,31 @@
+.extraction-source {
+  display: grid;
+  gap: 14px;
+  padding: 12px;
+}
+
+.ex-section {
+  display: grid;
+  gap: 8px;
+}
+
+.ex-heading {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #c8ced8;
+}
+
+.ex-detail {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 5px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.ex-detail dt { color: #8b93a7; }
+.ex-detail dd { margin: 0; color: #d6dbe5; word-break: break-word; font-family: 'DM Mono', monospace; }
+
+.ex-classification { margin: 0; font-size: 13px; color: #9686ff; text-transform: capitalize; }

@@ -1,3 +1,5 @@
+import type { ExtractionEngineInfo } from './extraction/types'
+
 export type ProjectTag = { id: string; label: string }
 
 export type EntryComment = {
@@ -31,6 +33,7 @@ export type ProjectMetadata = {
   comments: EntryComment[]
   glossary: GlossaryEntry[]
   translationMemory: TranslationMemoryEntry[]
+  extraction?: ExtractionEngineInfo
 }
 
 export const emptyProjectMetadata = (): ProjectMetadata => ({

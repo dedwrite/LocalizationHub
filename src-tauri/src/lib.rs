@@ -1,4 +1,5 @@
 mod deepl;
+mod scan;
 mod translation;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -13,6 +14,7 @@ pub fn run() {
                 translation::translate_with_google,
                 translation::translate_with_gemini,
                 deepl::translate_with_deepl,
+                scan::scan_directory,
             ],
         )
         .setup(|app| {
