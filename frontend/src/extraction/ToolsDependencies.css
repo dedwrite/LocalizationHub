@@ -1,0 +1,31 @@
+.tools-deps {
+  height: 100vh;
+  overflow-y: auto;
+  background: #0b0d10;
+  color: #f5f7fa;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  padding: 20px clamp(16px, 4vw, 40px);
+  box-sizing: border-box;
+}
+
+.td-header { display: flex; align-items: center; justify-content: space-between; }
+.td-header h1 { margin: 0; font-size: 20px; }
+.td-close { border: 1px solid #3b4350; background: #171c24; color: #f5f7fa; padding: 8px 16px; border-radius: 6px; cursor: pointer; font: inherit; }
+
+.td-lede { color: #8b93a7; font-size: 13px; max-width: 640px; }
+
+.td-list { display: grid; gap: 12px; margin-top: 16px; }
+.td-card { border: 1px solid #1f2530; background: #11151c; padding: 14px; border-radius: 8px; display: grid; gap: 8px; }
+.td-card-head { display: flex; align-items: center; justify-content: space-between; }
+.td-card-head strong { font-size: 14px; }
+.td-desc { margin: 0; font-size: 12px; color: #8b93a7; }
+.td-status { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 8px; }
+.td-found { color: #55c987; background: #16281f; }
+.td-not-configured { color: #8b93a7; background: #1c2230; }
+.td-invalid { color: #ef5b5b; background: #3a1f26; }
+
+.td-row { display: flex; gap: 8px; }
+.td-path { flex: 1; border: 1px solid #303744; background: #0b0e12; color: #f5f7fa; padding: 9px 12px; border-radius: 6px; font: inherit; font-size: 13px; font-family: 'DM Mono', monospace; }
+.td-button { border: 1px solid #3b4350; background: #171c24; color: #f5f7fa; padding: 9px 14px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px; }
+.td-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.td-version { margin: 0; font-size: 11px; color: #8b93a7; font-family: 'DM Mono', monospace; }

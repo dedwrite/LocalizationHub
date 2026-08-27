@@ -50,4 +50,19 @@
   font-size: 13px;
 }
 
+.scan-hint { color: #8b93a7; font-size: 13px; margin: 0; }
+
+.scan-choices { display: grid; gap: 10px; margin-top: 8px; }
+.scan-choice {
+  border: 1px solid #4f3db5;
+  background: #171c24;
+  color: #f5f7fa;
+  padding: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+}
+.scan-choice:hover { background: #1f2630; }
+
 .scan-error { color: #ff9c9c; }

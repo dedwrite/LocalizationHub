@@ -161,6 +161,7 @@ import BulkActionBar from './BulkActionBar'
 import ProjectOverview from './ProjectOverview'
 import ScanGameFlow from './extraction/ScanGameFlow'
 import ExtractionSourcePanel from './extraction/ExtractionSourcePanel'
+import ToolsDependencies from './extraction/ToolsDependencies'
 
 import Toast, {
   type ToastMessage,
@@ -205,6 +206,11 @@ function App() {
   const [
     scanFlowOpen,
     setScanFlowOpen,
+  ] = useState(false)
+
+  const [
+    toolsOpen,
+    setToolsOpen,
   ] = useState(false)
 
   const collaborationRevisionsRef =
@@ -3425,6 +3431,20 @@ try {
   }
 
   if (
+    toolsOpen
+  ) {
+    return (
+      <ToolsDependencies
+        onClose={() => {
+          setToolsOpen(
+            false,
+          )
+        }}
+      />
+    )
+  }
+
+  if (
     scanFlowOpen
   ) {
     return (
@@ -3546,6 +3566,18 @@ try {
                 }}
               >
                 Scan Game
+              </button>
+
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  setToolsOpen(
+                    true,
+                  )
+                }}
+              >
+                Tools
               </button>
 
               <button

@@ -14,7 +14,7 @@
 import { detectEngine, type DetectionInput } from './engineDetection'
 import { extractGodot } from './engines/godot'
 import { extractUnity } from './engines/unity'
-import { extractUnrealText, extractUnrealLocres } from './engines/unreal'
+import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
 import type {
   EngineFamily,
@@ -36,6 +36,7 @@ export type FileReader = {
 
 export type ScanOptions = {
   files: ScanFile[]
+  directories?: string[]
   reader: FileReader
   mappings?: Array<{ fieldName: string; role: any }>
   onProgress?: (progress: ScanProgress) => void
@@ -54,6 +55,9 @@ const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres
 const BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
 const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.res'])
 
+// Extensionless Unity serialized files are discovered by exact/pattern name.
+const EXTENSIONLESS_NAMES = new Set(['globalgamemanagers', 'globalgamemanagers.assets', 'data.unity3d', 'level0', 'projectsettings', 'unitydefaultresources'])
+
 function extensionOf(name: string): string {
   const dot = name.lastIndexOf('.')
   if (dot === -1) return ''
@@ -61,6 +65,11 @@ function extensionOf(name: string): string {
 }
 
 function isCandidate(file: ScanFile): boolean {
+  const lower = file.name.toLowerCase()
+  if (EXTENSIONLESS_NAMES.has(lower)) return true
+  if (lower.startsWith('level') && !lower.includes('.')) return true
+  if (lower.startsWith('sharedassets') && lower.endsWith('.assets')) return true
+
   const ext = extensionOf(file.name)
   return (
     TEXT_EXTENSIONS.has(ext) ||
@@ -94,11 +103,11 @@ function combineStats(parts: ExtractionStats[]): ExtractionStats {
 }
 
 export async function scanGame(options: ScanOptions): Promise<ExtractionResult> {
-  const { files, reader, mappings, signal } = options
+  const { files, reader, mappings, signal, directories } = options
 
   const detectionInput: DetectionInput = {
     files: files.map((file) => ({ name: file.name, lower: file.name.toLowerCase() })),
-    directories: [],
+    directories: (directories ?? []).map((dir) => ({ name: dir, lower: dir.toLowerCase() })),
   }
   const detection = detectEngine(detectionInput)
 
@@ -129,9 +138,13 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
       if (TEXT_EXTENSIONS.has(ext)) {
         const text = await reader.readText(file)
         result = dispatchText(file, text, detection.engine, mappings)
-      } else if (ext === '.locres' || ext === '.locmeta') {
+      } else if (ext === '.locres') {
         const buffer = await reader.readBinary(file)
         result = extractUnrealLocres({ fileName: file.relativePath, buffer })
+      } else if (ext === '.locmeta') {
+        // LOCMETA is metadata only; never parsed as a translatable resource.
+        const buffer = await reader.readBinary(file)
+        result = extractUnrealLocmeta({ fileName: file.relativePath, buffer })
       } else if (ARCHIVE_EXTENSIONS.has(ext)) {
         // Archives are delegated to external tooling; record a diagnostic so
         // the review can report them honestly rather than ignoring them.

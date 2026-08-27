@@ -148,3 +148,57 @@
 }
 .er-low-conf { font-size: 11px; color: #e6a23c; }
 .er-empty { padding: 32px; text-align: center; color: #8b93a7; }
+
+/* Selection + virtualization additions */
+.er-counts { font-size: 13px; color: #8b93a7; align-self: center; }
+.er-counts strong { color: #f5f7fa; }
+.er-button.er-small { padding: 7px 12px; font-size: 12px; }
+.er-controls-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.er-search { flex: 1; min-width: 200px; }
+
+.er-files { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px clamp(16px, 4vw, 40px); border-bottom: 1px solid #1f2530; }
+.er-file-chip {
+  border: 1px solid #303744;
+  background: #171c24;
+  color: #aeb6c2;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+}
+.er-file-chip.excluded { opacity: 0.4; text-decoration: line-through; }
+
+.er-list-wrap { flex: 1; min-height: 0; position: relative; }
+.virtual-list { height: 100%; overflow-y: auto; overflow-x: hidden; padding: 12px clamp(16px, 4vw, 40px); box-sizing: border-box; }
+.virtual-row { padding: 0 0 8px 0; box-sizing: border-box; }
+
+.er-row { height: calc(100% - 8px); box-sizing: border-box; }
+.er-row.excluded { opacity: 0.45; }
+.er-row input[type='checkbox'] { align-self: flex-start; margin-top: 3px; }
+
+.er-mapping { padding: 10px clamp(16px, 4vw, 40px); border-bottom: 1px solid #1f2530; display: grid; gap: 8px; }
+.er-mapping-row { display: flex; gap: 8px; }
+.er-mapping input, .er-mapping select {
+  border: 1px solid #303744;
+  background: #0b0e12;
+  color: #f5f7fa;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+.er-mapping-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.er-mapping-chip {
+  font-size: 12px;
+  color: #c9b8ff;
+  background: #1c1f33;
+  border: 1px solid #2b2f66;
+  padding: 3px 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.er-mapping-chip button { border: 0; background: transparent; color: #8b93a7; cursor: pointer; font-size: 14px; padding: 0; }

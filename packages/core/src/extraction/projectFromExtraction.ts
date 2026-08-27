@@ -36,8 +36,12 @@ function toParsedEntry(entry: ExtractedEntry): ParsedLocalizationEntry {
 export function buildProjectFromExtraction(
   result: ExtractionResult,
   sourceFileName: string,
+  includedEntryIds?: Set<string>,
 ): LocalizationProjectV3 {
-  const entries = result.entries.map(toParsedEntry)
+  const selectedEntries = includedEntryIds
+    ? result.entries.filter((entry) => includedEntryIds.has(entry.id))
+    : result.entries
+  const entries = selectedEntries.map(toParsedEntry)
 
   const extractionInfo: ExtractionEngineInfo = {
     engine: result.engine,
@@ -46,7 +50,7 @@ export function buildProjectFromExtraction(
     entries: {},
   }
 
-  for (const entry of result.entries) {
+  for (const entry of selectedEntries) {
     extractionInfo.entries[entry.id] = {
       context: entry.context,
       origin: entry.origin,

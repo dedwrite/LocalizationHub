@@ -38,4 +38,22 @@ describe('projectFromExtraction', () => {
     expect(project.entries[1].key).toBe('menu_quit')
     expect(project.entries[0].id).not.toBe(project.entries[1].id)
   })
+
+  it('honors the included-entry filter (100 extracted, 25 excluded → 75 in project)', () => {
+    // Build a synthetic 100-entry result.
+    const text = JSON.stringify(
+      Array.from({ length: 100 }, (_, i) => ({ speaker: 'A', text: `Line ${i}` })),
+    )
+    const result = extractGodot({ fileName: 'dialogue.json', text })
+    expect(result.entries).toHaveLength(100)
+
+    // Exclude 25 entries (the first 25).
+    const excluded = new Set(result.entries.slice(0, 25).map((e) => e.id))
+    const included = new Set(result.entries.filter((e) => !excluded.has(e.id)).map((e) => e.id))
+
+    const project = buildProjectFromExtraction(result, 'game.extracted', included)
+    expect(project.entries).toHaveLength(75)
+    expect(project.metadata?.extraction?.entries).not.toBeUndefined()
+    expect(Object.keys(project.metadata?.extraction?.entries ?? {})).toHaveLength(75)
+  })
 })

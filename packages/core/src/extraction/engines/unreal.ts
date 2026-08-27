@@ -22,6 +22,7 @@ import type {
 } from '../types'
 import { buildEntry, toProtectedSegments } from './shared'
 import { readLocres } from './locres'
+import { readLocmeta } from './locmeta'
 
 type UnrealTextInput = {
   fileName: string
@@ -206,6 +207,18 @@ export function extractUnrealText(input: UnrealTextInput): ExtractionResult {
 export function extractUnrealLocres(input: UnrealBufferInput): ExtractionResult {
   const result = readLocres(input.buffer, { containerPath: input.fileName })
   return emptyResult('unreal', input.fileName, result.diagnostics, result.entries)
+}
+
+/*
+ * LOCMETA is metadata only (native culture, compiled cultures); it never
+ * produces translatable entries. Diagnostics are informational.
+ */
+export function extractUnrealLocmeta(input: UnrealBufferInput): ExtractionResult {
+  const meta = readLocmeta(input.buffer)
+  if (meta.error) {
+    return emptyResult('unreal', input.fileName, [{ kind: 'corrupt-resource', message: meta.error, path: input.fileName }])
+  }
+  return emptyResult('unreal', input.fileName, [])
 }
 
 export function detectEncryptedUnrealContainer(fileName: string, buffer: Uint8Array): ExtractionDiagnostic | undefined {

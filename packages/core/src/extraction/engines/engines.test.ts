@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { extractGodot } from './godot'
 import { extractUnity } from './unity'
-import { extractUnrealText, extractUnrealLocres } from './unreal'
+import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './unreal'
 import { extractInk } from './ink'
-import { readLocres, isLocresBuffer } from './locres'
+import { readLocres, isLocresBuffer, LOCRES_MAGIC, ELocResVersion } from './locres'
+import { readLocmeta, LOCMETA_MAGIC } from './locmeta'
 import { extractUnrealTokens } from '../../tokens/unreal'
 import { extractUnityTokens } from '../../tokens/unity'
 
@@ -94,58 +95,96 @@ describe('Unreal adapter', () => {
     expect(result.entries[0].sourceText).toBe('Start Game')
   })
 
-  it('detects a LOCRES buffer', () => {
-    const buffer = new Uint8Array(16)
-    buffer[0] = 0x0e; buffer[1] = 0x14; buffer[2] = 0x74; buffer[3] = 0x75
+  it('detects a LOCRES buffer by its full FGuid magic', () => {
+    const buffer = buildLocres({ namespaces: [] })
     expect(isLocresBuffer(buffer)).toBe(true)
   })
 
-  it('reports legacy LOCRES version as unsupported', () => {
-    const buffer = new Uint8Array(12)
-    buffer[0] = 0x0e; buffer[1] = 0x14; buffer[2] = 0x74; buffer[3] = 0x75
-    // version = 1 (legacy)
-    buffer[4] = 1
+  it('reads a Compact-format LOCRES with namespace/key/source-hash/localized-value', () => {
+    const buffer = buildLocres({
+      namespaces: [
+        {
+          namespace: 'Dialogue',
+          keys: [
+            { key: 'Greeting', sourceHash: 0x12345678, localized: 'Hello, world.' },
+            { key: 'Farewell', sourceHash: 0x9abcdef0, localized: 'Goodbye.' },
+          ],
+        },
+        {
+          namespace: 'UI',
+          keys: [
+            { key: 'Menu_Start', sourceHash: 0x11111111, localized: 'Start' },
+          ],
+        },
+      ],
+    })
+
+    const result = readLocres(buffer, { containerPath: 'Game/Localization/Dialogue/en/Dialogue.locres' })
+
+    expect(result.version).toBe(ELocResVersion.Compact)
+    expect(result.versionLabel).toBe('Compact')
+    expect(result.entries).toHaveLength(3)
+
+    const greeting = result.entries.find((e) => e.key === 'Greeting')
+    expect(greeting?.namespace).toBe('Dialogue')
+    expect(greeting?.sourceText).toBe('Hello, world.')
+    expect(greeting?.rawMetadata?.sourceStringHash).toBe(0x12345678)
+    expect(greeting?.sourceLocale).toBe('en')
+
+    const menuStart = result.entries.find((e) => e.key === 'Menu_Start')
+    expect(menuStart?.namespace).toBe('UI')
+  })
+
+  it('reads a Legacy-format LOCRES (no magic) with inline FString values', () => {
+    const buffer = buildLegacyLocres([
+      { namespace: 'LegacyNs', key: 'K1', sourceHash: 1, localized: 'Value One' },
+      { namespace: 'LegacyNs', key: 'K2', sourceHash: 2, localized: 'Value Two' },
+    ])
+
     const result = readLocres(buffer, {})
+    expect(result.version).toBe(ELocResVersion.Legacy)
+    expect(result.entries).toHaveLength(2)
+    expect(result.entries[0].key).toBe('K1')
+    expect(result.entries[0].sourceText).toBe('Value One')
+  })
+
+  it('preserves UTF-16 (Arabic) localized values in a Compact LOCRES', () => {
+    const buffer = buildLocres({
+      namespaces: [
+        { namespace: 'Dialogue', keys: [{ key: 'Greeting', sourceHash: 7, localized: 'مرحبا بالعالم' }] },
+      ],
+    })
+
+    const result = readLocres(buffer, {})
+    expect(result.entries).toHaveLength(1)
+    expect(result.entries[0].sourceText).toBe('مرحبا بالعالم')
+  })
+
+  it('reports a too-new LOCRES version as unsupported', () => {
+    const writer = new ByteWriter()
+    writer.writeGuid(LOCRES_MAGIC)
+    writer.writeU8(99) // future version
+    const result = readLocres(writer.bytes(), {})
     expect(result.diagnostics.some((d) => d.kind === 'unsupported-engine-version')).toBe(true)
   })
 
-  it('reads an optimized (v2) LOCRES with namespace/key/source', () => {
-    const encoder = new TextEncoder()
-    const ns = 'Dialogue'
-    const key = 'Greeting'
-    const src = 'Hello, world.'
-    const nsBytes = new Uint8Array(ns.length * 2 + 2)
-    const keyBytes = new Uint8Array(key.length * 2 + 2)
-    const srcBytes = new Uint8Array(src.length * 2 + 2)
-    const write = (target: Uint8Array, str: string) => {
-      for (let i = 0; i < str.length; i += 1) {
-        const code = str.charCodeAt(i)
-        target[i * 2] = code & 0xff
-        target[i * 2 + 1] = code >> 8
-      }
-    }
-    write(nsBytes, ns)
-    write(keyBytes, key)
-    write(srcBytes, src)
+  it('LOCMETA is parsed as metadata, never as a translatable resource', () => {
+    const writer = new ByteWriter()
+    writer.writeGuid(LOCMETA_MAGIC)
+    writer.writeU8(1) // AddedCompiledCultures
+    writer.writeFString('en')
+    writer.writeFString('Engine')
+    writer.writeU32(2)
+    writer.writeFString('fr')
+    writer.writeFString('de')
 
-    // Layout: magic(4) + version(4) + count(4) + entry[hash(4)+offset(4)] + string table
-    const stringTable = new Uint8Array([...nsBytes, ...keyBytes, ...srcBytes])
-    const total = 12 + 8 + stringTable.length
-    const buffer = new Uint8Array(total)
-    const dv = new DataView(buffer.buffer)
-    dv.setUint32(0, 0x7574140e, true)
-    dv.setInt32(4, 2, true)
-    dv.setInt32(8, 1, true)
-    dv.setUint32(12, 0x12345678, true) // hash
-    dv.setUint32(16, 20, true) // offset to string table (12 + 8 = 20)
+    const meta = readLocmeta(writer.bytes())
+    expect(meta.nativeCulture).toBe('en')
+    expect(meta.nativeLocRes).toBe('Engine')
+    expect(meta.compiledCultures).toEqual(['fr', 'de'])
 
-    for (let i = 0; i < stringTable.length; i += 1) buffer[20 + i] = stringTable[i]
-
-    const result = extractUnrealLocres({ fileName: 'Game.locres', buffer })
-    expect(result.entries).toHaveLength(1)
-    expect(result.entries[0].key).toBe('Greeting')
-    expect(result.entries[0].namespace).toBe('Dialogue')
-    expect(result.entries[0].sourceText).toBe('Hello, world.')
+    const result = extractUnrealLocmeta({ fileName: 'Engine.locmeta', buffer: writer.bytes() })
+    expect(result.entries).toHaveLength(0)
   })
 })
 
@@ -184,3 +223,143 @@ describe('token profiles', () => {
     expect(tokens.some((t) => t.raw === '{}')).toBe(true)
   })
 })
+
+/*
+ * Synthetic fixture builders that encode the REAL LOCRES binary format
+ * (verified against CUE4Parse), so the parser is tested against correct data
+ * rather than the previous incorrect assumptions.
+ */
+
+class ByteWriter {
+  private chunks: Uint8Array[] = []
+
+  writeU8(value: number) { this.chunks.push(new Uint8Array([value & 0xff])) }
+
+  writeU32(value: number) {
+    const b = new Uint8Array(4)
+    new DataView(b.buffer).setUint32(0, value >>> 0, true)
+    this.chunks.push(b)
+  }
+
+  writeI32(value: number) {
+    const b = new Uint8Array(4)
+    new DataView(b.buffer).setInt32(0, value, true)
+    this.chunks.push(b)
+  }
+
+  writeI64(value: number) {
+    const b = new Uint8Array(8)
+    new DataView(b.buffer).setBigInt64(0, BigInt(value), true)
+    this.chunks.push(b)
+  }
+
+  writeGuid(parts: readonly number[]) {
+    for (const p of parts) this.writeU32(p)
+  }
+
+  writeFString(value: string) {
+    const isAscii = /^[\x00-\x7F]*$/u.test(value)
+    if (isAscii) {
+      this.writeI32(value.length + 1)
+      const b = new Uint8Array(value.length + 1)
+      for (let i = 0; i < value.length; i += 1) b[i] = value.charCodeAt(i)
+      this.chunks.push(b)
+    } else {
+      this.writeI32(-(value.length + 1))
+      const b = new Uint8Array((value.length + 1) * 2)
+      for (let i = 0; i < value.length; i += 1) {
+        const code = value.charCodeAt(i)
+        b[i * 2] = code & 0xff
+        b[i * 2 + 1] = code >> 8
+      }
+      this.chunks.push(b)
+    }
+  }
+
+  bytes(): Uint8Array {
+    const total = this.chunks.reduce((sum, c) => sum + c.length, 0)
+    const out = new Uint8Array(total)
+    let offset = 0
+    for (const c of this.chunks) { out.set(c, offset); offset += c.length }
+    return out
+  }
+}
+
+type LocresNamespace = {
+  namespace: string
+  keys: Array<{ key: string; sourceHash: number; localized: string }>
+}
+
+function buildLocres(input: { namespaces: LocresNamespace[] }): Uint8Array {
+  const writer = new ByteWriter()
+  writer.writeGuid(LOCRES_MAGIC)
+  writer.writeU8(ELocResVersion.Compact)
+  writer.writeI64(0) // placeholder offset, patched below
+
+  // Gather the unique localized strings and assign indexes as we write entries.
+  const localizedStrings: string[] = []
+  const indexes: number[] = []
+
+  writer.writeU32(input.namespaces.length)
+  for (const ns of input.namespaces) {
+    writer.writeFString(ns.namespace)
+    writer.writeU32(ns.keys.length)
+    for (const key of ns.keys) {
+      writer.writeFString(key.key)
+      writer.writeU32(key.sourceHash)
+      let index = localizedStrings.indexOf(key.localized)
+      if (index === -1) {
+        index = localizedStrings.length
+        localizedStrings.push(key.localized)
+      }
+      indexes.push(index)
+      writer.writeI32(index)
+    }
+  }
+
+  const lutOffset = writer.bytes().length
+
+  const lut = new ByteWriter()
+  lut.writeI32(localizedStrings.length)
+  for (const str of localizedStrings) {
+    lut.writeFString(str)
+    // Compact LOCRES LUT has no RefCount field (only Optimized variants do).
+  }
+
+  const headerBytes = writer.bytes()
+  const patched = new Uint8Array(headerBytes.length)
+  patched.set(headerBytes)
+  new DataView(patched.buffer).setBigInt64(17, BigInt(lutOffset), true)
+
+  const lutBytes = lut.bytes()
+  const out = new Uint8Array(patched.length + lutBytes.length)
+  out.set(patched)
+  out.set(lutBytes, patched.length)
+  return out
+}
+
+function buildLegacyLocres(
+  entries: Array<{ namespace: string; key: string; sourceHash: number; localized: string }>,
+): Uint8Array {
+  // Legacy format has NO magic and NO version byte: it starts directly with
+  // the namespace count.
+  const groups = new Map<string, typeof entries>()
+  for (const e of entries) {
+    const list = groups.get(e.namespace) ?? []
+    list.push(e)
+    groups.set(e.namespace, list)
+  }
+
+  const writer = new ByteWriter()
+  writer.writeU32(groups.size)
+  for (const [namespace, list] of groups) {
+    writer.writeFString(namespace)
+    writer.writeU32(list.length)
+    for (const e of list) {
+      writer.writeFString(e.key)
+      writer.writeU32(e.sourceHash)
+      writer.writeFString(e.localized)
+    }
+  }
+  return writer.bytes()
+}

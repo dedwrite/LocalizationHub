@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type {
   ExtractionResult,
   ExtractedEntry,
@@ -7,22 +7,31 @@ import {
   REVIEW_FILTERS,
   matchesReviewFilter,
   type ReviewFilterId,
+  type ContextFieldMapping,
 } from '@localizationhub/core'
+import VirtualList from './VirtualList'
 import './ExtractionReview.css'
 
 type Props = {
   result: ExtractionResult
-  onCreateProject: (entries: ExtractedEntry[]) => void
+  onCreateProject: (includedEntryIds: Set<string>) => void
   onCancel: () => void
 }
+
+const ROW_HEIGHT = 148
 
 export default function ExtractionReview({ result, onCreateProject, onCancel }: Props) {
   const [filter, setFilter] = useState<ReviewFilterId>('all')
   const [search, setSearch] = useState('')
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
+  const [excludedFiles, setExcludedFiles] = useState<Set<string>>(new Set())
+  const [mappingsOpen, setMappingsOpen] = useState(false)
 
-  const visible = useMemo(() => {
+  // Effective entry list: apply filter + search + file exclusion.
+  const filteredEntries = useMemo(() => {
     const text = search.trim().toLowerCase()
     return result.entries.filter((entry) => {
+      if (excludedFiles.has(entry.origin.containerPath ?? '')) return false
       if (!matchesReviewFilter(entry, filter)) return false
       if (!text) return true
       return (
@@ -31,7 +40,68 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
         (entry.context?.speaker ?? '').toLowerCase().includes(text)
       )
     })
-  }, [result.entries, filter, search])
+  }, [result.entries, filter, search, excludedFiles])
+
+  const includedCount = useMemo(
+    () => result.entries.filter((e) => !excludedIds.has(e.id) && !excludedFiles.has(e.origin.containerPath ?? '')).length,
+    [result.entries, excludedIds, excludedFiles],
+  )
+  const excludedCount = result.entries.length - includedCount
+
+  // File grouping.
+  const files = useMemo(() => {
+    const map = new Map<string, { count: number }>()
+    for (const entry of result.entries) {
+      const path = entry.origin.containerPath ?? '(unknown)'
+      const item = map.get(path) ?? { count: 0 }
+      item.count += 1
+      map.set(path, item)
+    }
+    return [...map.entries()].sort((a, b) => b[1].count - a[1].count)
+  }, [result.entries])
+
+  const toggleEntry = useCallback((id: string) => {
+    setExcludedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleFile = useCallback((path: string) => {
+    setExcludedFiles((current) => {
+      const next = new Set(current)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }, [])
+
+  const excludeVisible = useCallback(() => {
+    setExcludedIds((current) => {
+      const next = new Set(current)
+      for (const entry of filteredEntries) next.add(entry.id)
+      return next
+    })
+  }, [filteredEntries])
+
+  const includeVisible = useCallback(() => {
+    setExcludedIds((current) => {
+      const next = new Set(current)
+      for (const entry of filteredEntries) next.delete(entry.id)
+      return next
+    })
+  }, [filteredEntries])
+
+  function handleCreate() {
+    const included = new Set(
+      result.entries
+        .filter((e) => !excludedIds.has(e.id) && !excludedFiles.has(e.origin.containerPath ?? ''))
+        .map((e) => e.id),
+    )
+    onCreateProject(included)
+  }
 
   const { stats, detection } = result
 
@@ -48,13 +118,16 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
           </p>
         </div>
         <div className="er-actions">
+          <span className="er-counts">
+            Included: <strong>{includedCount}</strong> · Excluded: <strong>{excludedCount}</strong>
+          </span>
           <button className="er-button" onClick={onCancel}>Cancel</button>
           <button
             className="er-button er-primary"
-            onClick={() => onCreateProject(result.entries)}
-            disabled={result.entries.length === 0}
+            onClick={handleCreate}
+            disabled={includedCount === 0}
           >
-            Create Project ({result.entries.length})
+            Create Project ({includedCount})
           </button>
         </div>
       </header>
@@ -92,23 +165,52 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
             </button>
           ))}
         </div>
-        <input
-          className="er-search"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search extracted text, key, or speaker"
-          aria-label="Search extracted entries"
-        />
+        <div className="er-controls-row">
+          <input
+            className="er-search"
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search extracted text, key, or speaker"
+            aria-label="Search extracted entries"
+          />
+          <button className="er-button er-small" onClick={excludeVisible}>Exclude visible</button>
+          <button className="er-button er-small" onClick={includeVisible}>Include visible</button>
+          <button className="er-button er-small" onClick={() => setMappingsOpen((v) => !v)}>Context mapping</button>
+        </div>
       </div>
 
-      <div className="er-list" role="list">
-        {visible.map((entry) => (
-          <EntryRow key={entry.id} entry={entry} />
+      {mappingsOpen && <ContextMappingPanel />}
+
+      <div className="er-files" aria-label="Files">
+        {files.map(([path, item]) => (
+          <button
+            key={path}
+            className={`er-file-chip ${excludedFiles.has(path) ? 'excluded' : ''}`}
+            onClick={() => toggleFile(path)}
+            aria-pressed={!excludedFiles.has(path)}
+          >
+            {path} · {item.count}
+          </button>
         ))}
-        {visible.length === 0 && (
-          <div className="er-empty">No entries match the current filter.</div>
-        )}
+      </div>
+
+      <div className="er-list-wrap">
+        <VirtualList
+          count={filteredEntries.length}
+          rowHeight={ROW_HEIGHT}
+          renderRow={(index) => {
+            const entry = filteredEntries[index]
+            return (
+              <EntryRow
+                entry={entry}
+                excluded={excludedIds.has(entry.id)}
+                onToggle={() => toggleEntry(entry.id)}
+              />
+            )
+          }}
+        />
+        {filteredEntries.length === 0 && <div className="er-empty">No entries match the current filter.</div>}
       </div>
     </main>
   )
@@ -123,9 +225,15 @@ function Stat({ label, value }: { label: string; value: number }) {
   )
 }
 
-function EntryRow({ entry }: { entry: ExtractedEntry }) {
+function EntryRow({ entry, excluded, onToggle }: { entry: ExtractedEntry; excluded: boolean; onToggle: () => void }) {
   return (
-    <div className="er-row" role="listitem">
+    <div className={`er-row ${excluded ? 'excluded' : ''}`} role="listitem">
+      <input
+        type="checkbox"
+        checked={!excluded}
+        onChange={onToggle}
+        aria-label={`${excluded ? 'Include' : 'Exclude'} ${entry.key ?? entry.id}`}
+      />
       <span className={`er-cat er-cat-${entry.classification.toLowerCase()}`}>{entry.classification}</span>
       <div className="er-row-body">
         <p className="er-source-text" dir="auto">{entry.sourceText}</p>
@@ -153,8 +261,54 @@ function EntryRow({ entry }: { entry: ExtractedEntry }) {
             ))}
           </div>
         )}
-        {entry.classificationConfidence === 'low' && <span className="er-low-conf">low confidence</span>}
       </div>
+    </div>
+  )
+}
+
+/*
+ * Context field mapping preview. The actual re-run applies mappings through the
+ * core structured analyzer. This panel lets users map unknown fields.
+ */
+function ContextMappingPanel() {
+  const [mappings, setMappings] = useState<ContextFieldMapping[]>([])
+  const [field, setField] = useState('')
+  const [role, setRole] = useState<ContextFieldMapping['role']>('translatableText')
+
+  const roles: ContextFieldMapping['role'][] = [
+    'translatableText', 'speaker', 'listener', 'speakerGender', 'listenerGender',
+    'grammaticalGender', 'scene', 'conversationId', 'dialogueId', 'nodeId',
+    'parentNodeId', 'choiceGroup', 'voiceId', 'audioAsset', 'developerNote', 'translatorNote',
+  ]
+
+  return (
+    <div className="er-mapping">
+      <div className="er-mapping-row">
+        <input value={field} onChange={(e) => setField(e.target.value)} placeholder="Field name (e.g. who)" aria-label="Field name" />
+        <select value={role} onChange={(e) => setRole(e.target.value as ContextFieldMapping['role'])} aria-label="Map to role">
+          {roles.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <button
+          className="er-button er-small"
+          onClick={() => {
+            if (!field.trim()) return
+            setMappings((current) => [...current.filter((m) => m.fieldName !== field.trim()), { fieldName: field.trim(), role }])
+            setField('')
+          }}
+        >
+          Add mapping
+        </button>
+      </div>
+      {mappings.length > 0 && (
+        <div className="er-mapping-chips">
+          {mappings.map((m) => (
+            <span key={m.fieldName} className="er-mapping-chip">
+              {m.fieldName} → {m.role}
+              <button onClick={() => setMappings((current) => current.filter((x) => x.fieldName !== m.fieldName))} aria-label={`Remove ${m.fieldName}`}>×</button>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

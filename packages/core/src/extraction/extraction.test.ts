@@ -227,6 +227,24 @@ describe('engine detection', () => {
     expect(detection.engine).toBe('unity')
   })
 
+  it('detects Unity HIGH-confidence from a realistic extensionless layout', () => {
+    const detection = detectEngine({
+      files: [
+        { name: 'Game.exe', lower: 'game.exe' },
+        { name: 'globalgamemanagers', lower: 'globalgamemanagers' },
+        { name: 'resources.assets', lower: 'resources.assets' },
+        { name: 'sharedassets0.assets', lower: 'sharedassets0.assets' },
+        { name: 'level0', lower: 'level0' },
+      ],
+      directories: [
+        { name: 'Game_Data', lower: 'game_data' },
+        { name: 'Game_Data/StreamingAssets', lower: 'game_data/streamingassets' },
+      ],
+    })
+    expect(detection.engine).toBe('unity')
+    expect(detection.confidence).toBe('high')
+  })
+
   it('returns low-confidence generic for unknown content', () => {
     const detection = detectEngine({ files: [{ name: 'readme.txt', lower: 'readme.txt' }], directories: [] })
     expect(detection.engine).toBe('generic')

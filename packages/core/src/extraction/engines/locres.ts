@@ -1,70 +1,153 @@
 /*
- * Unreal Engine `.locres` reader (optimized format, version 2).
+ * Unreal Engine `.locres` (FTextLocalizationResource) reader.
  *
- * The optimized format (UE 4.22+ and UE 5) is:
- *   uint32 MagicNumber = 0x7574140E (little-endian)
- *   int32  VersionNumber = 2
- *   int32  NumberOfEntries
- *   FLocKeyMapEntry Entries[N]: { uint32 StrHash, uint32 Offset }
- *   StringTable: at each entry's Offset, three consecutive UTF-16LE
- *     null-terminated strings: Namespace, Key, SourceString
+ * Implemented against the real serialized layout (verified against
+ * CUE4Parse's FTextLocalizationResource.cs and real engine files):
  *
- * The reader is fully bounds-checked and returns a partial-extraction
- * diagnostic instead of garbage when the layout does not validate. Legacy
- * (v1) and compiled (v3) formats are reported as unsupported and delegated to
- * external tooling.
+ *   FGuid  LocResMagic   = 7574140E-FC034A67-9D90154A-1B7F37C3  (16 bytes)
+ *   uint8  VersionNumber  (ELocResVersion)
+ *            Legacy            = 0
+ *            Compact           = 1
+ *            Optimized_CRC32   = 2
+ *            Optimized_CityHash64 = 3
+ *   [Compact+] int64 LocalizedStringArrayOffset  (INDEX_NONE = -1)
+ *     -> seek: int32 count, then count x (FString + int32 RefCount)
+ *   [Optimized+] skip int32 EntriesCount
+ *   uint32 NamespaceCount
+ *     per namespace: FTextKey namespace, uint32 KeyCount
+ *       per key: FTextKey key, uint32 SourceStringHash,
+ *                [Compact+] int32 LocalizedStringIndex | [Legacy] FString
+ *
+ * FTextKey = [Optimized+] uint32 StrHash + FString.
+ * FString   = int32 length (negative = UTF-16LE code units, positive = 8-bit
+ *             bytes), including the null terminator.
+ *
+ * The localized value is the string for this resource's culture (the source
+ * string is only represented by its hash). We store the localized value
+ * honestly and preserve the source hash + culture-derived locale as metadata.
  */
 
 import type { ExtractedEntry, ExtractionDiagnostic } from '../types'
 
-const LOCRES_MAGIC = 0x7574140e
+export const LOCRES_MAGIC = [0x7574140e, 0xfc034a67, 0x9d90154a, 0x1b7f37c3] as const
+
+export const ELocResVersion = {
+  Legacy: 0,
+  Compact: 1,
+  Optimized_CRC32: 2,
+  Optimized_CityHash64: 3,
+} as const
+
+export type LocResVersion = (typeof ELocResVersion)[keyof typeof ELocResVersion]
+
+const VERSION_LABELS: Record<number, string> = {
+  0: 'Legacy',
+  1: 'Compact',
+  2: 'Optimized_CRC32',
+  3: 'Optimized_CityHash64',
+}
 
 export type LocresReadResult = {
   entries: ExtractedEntry[]
   diagnostics: ExtractionDiagnostic[]
-  version?: number
+  version?: LocResVersion
+  versionLabel?: string
+  namespaceCount?: number
+  entryCount?: number
 }
 
-const decoder = new TextDecoder('utf-16le', { fatal: false })
+class ByteReader {
+  position = 0
+  private readonly buffer: Uint8Array
 
-function readUInt32(buffer: Uint8Array, offset: number): number {
-  return (
-    (buffer[offset] ?? 0) |
-    ((buffer[offset + 1] ?? 0) << 8) |
-    ((buffer[offset + 2] ?? 0) << 16) |
-    ((buffer[offset + 3] ?? 0) << 24)
-  ) >>> 0
-}
-
-function readInt32(buffer: Uint8Array, offset: number): number {
-  return readUInt32(buffer, offset) | 0
-}
-
-function readNullTerminatedUtf16(
-  buffer: Uint8Array,
-  offset: number,
-): { text: string; nextOffset: number } | null {
-  if (offset < 0 || offset + 1 >= buffer.length) return null
-  let end = offset
-  while (end + 1 < buffer.length) {
-    const low = buffer[end]
-    const high = buffer[end + 1]
-    if (low === 0 && high === 0) break
-    end += 2
+  constructor(buffer: Uint8Array) {
+    this.buffer = buffer
   }
-  if (end >= buffer.length) return null
-  const text = decoder.decode(buffer.subarray(offset, end))
-  return { text, nextOffset: end + 2 }
+
+  readUInt8(): number {
+    if (this.position >= this.buffer.length) throw new Error('Unexpected end of LOCRES.')
+    return this.buffer[this.position++]
+  }
+
+  readUInt32(): number {
+    if (this.position + 4 > this.buffer.length) throw new Error('Unexpected end of LOCRES.')
+    const value =
+      (this.buffer[this.position] |
+        (this.buffer[this.position + 1] << 8) |
+        (this.buffer[this.position + 2] << 16) |
+        (this.buffer[this.position + 3] << 24)) >>> 0
+    this.position += 4
+    return value
+  }
+
+  readInt32(): number {
+    return this.readUInt32() | 0
+  }
+
+  readInt64(): number {
+    const lo = this.readUInt32()
+    const hi = this.readUInt32()
+    return (hi >>> 0) * 0x100000000 + lo
+  }
+
+  readGuid(): number[] {
+    return [this.readUInt32(), this.readUInt32(), this.readUInt32(), this.readUInt32()]
+  }
+
+  readFString(): string {
+    const length = this.readInt32()
+    if (length === 0) return ''
+
+    if (length < 0) {
+      const codeUnits = -length
+      const byteCount = codeUnits * 2
+      if (this.position + byteCount > this.buffer.length) throw new Error('LOCRES string exceeds buffer.')
+      const sub = this.buffer.subarray(this.position, this.position + byteCount)
+      this.position += byteCount
+      return new TextDecoder('utf-16le').decode(sub).replace(/\0$/u, '')
+    }
+
+    if (this.position + length > this.buffer.length) throw new Error('LOCRES string exceeds buffer.')
+    const sub = this.buffer.subarray(this.position, this.position + length)
+    this.position += length
+    return new TextDecoder('utf-8').decode(sub).replace(/\0$/u, '')
+  }
+
+  readTextKey(version: LocResVersion): { str: string; strHash: number } {
+    let strHash = 0
+    if (version >= ELocResVersion.Optimized_CRC32) {
+      strHash = this.readUInt32()
+    }
+    const str = this.readFString()
+    return { str, strHash }
+  }
+}
+
+function cultureFromPath(path: string | undefined): string | undefined {
+  if (!path) return undefined
+  // Unreal localization layout: .../Localization/<namespace>/<culture>/<name>.locres
+  const parts = path.replace(/\\/g, '/').split('/')
+  const idx = parts.findIndex((p) => p.toLowerCase() === 'localization')
+  if (idx >= 0 && parts.length > idx + 2) {
+    return parts[idx + 2]
+  }
+  return undefined
 }
 
 export function isLocresBuffer(buffer: Uint8Array): boolean {
-  if (buffer.length < 8) return false
-  return readUInt32(buffer, 0) === LOCRES_MAGIC
+  if (buffer.length < 16) return false
+  const reader = new ByteReader(buffer)
+  try {
+    const guid = reader.readGuid()
+    return guid.every((value, i) => value === LOCRES_MAGIC[i])
+  } catch {
+    return false
+  }
 }
 
 export function readLocres(
   buffer: Uint8Array,
-  origin: { containerPath?: string; namespace?: string },
+  origin: { containerPath?: string },
 ): LocresReadResult {
   const diagnostics: ExtractionDiagnostic[] = []
   const entries: ExtractedEntry[] = []
@@ -76,85 +159,142 @@ export function readLocres(
     }
   }
 
-  if (readUInt32(buffer, 0) !== LOCRES_MAGIC) {
+  const reader = new ByteReader(buffer)
+
+  let version: LocResVersion
+  try {
+    const guid = reader.readGuid()
+    if (guid.every((value, i) => value === LOCRES_MAGIC[i])) {
+      const rawVersion = reader.readUInt8()
+      if (rawVersion > ELocResVersion.Optimized_CityHash64) {
+        return {
+          entries,
+          version: rawVersion as LocResVersion,
+          diagnostics: [{ kind: 'unsupported-engine-version', message: `LOCRES version ${rawVersion} is newer than this reader supports.` }],
+        }
+      }
+      version = rawVersion as LocResVersion
+    } else {
+      // Legacy resources lack the magic; the whole buffer is the legacy stream.
+      version = ELocResVersion.Legacy
+      reader.position = 0
+    }
+  } catch {
     return {
       entries,
-      diagnostics: [{ kind: 'unsupported-format', message: 'Not a LOCRES resource (bad magic).' }],
+      diagnostics: [{ kind: 'corrupt-resource', message: 'LOCRES header is truncated.' }],
     }
   }
 
-  const version = readInt32(buffer, 4)
-  if (version !== 2) {
-    return {
-      entries,
-      version,
-      diagnostics: [{ kind: 'unsupported-engine-version', message: `LOCRES version ${version} is not natively supported; use the external LocRes tool.` }],
+  // Localized string lookup table (Compact and later).
+  let localizedStrings: string[] = []
+  if (version >= ELocResVersion.Compact) {
+    try {
+      const offset = reader.readInt64()
+      if (offset !== -1 && offset >= 0 && offset < buffer.length) {
+        const saved = reader.position
+        try {
+          reader.position = offset
+          const count = reader.readInt32()
+          if (count >= 0 && count < 1_000_000) {
+            localizedStrings = new Array<string>(count)
+            for (let i = 0; i < count; i += 1) {
+              localizedStrings[i] = reader.readFString()
+              // RefCount is only present for Optimized variants (CRC32+).
+              if (version >= ELocResVersion.Optimized_CRC32) {
+                reader.readInt32()
+              }
+            }
+          }
+        } finally {
+          // Always restore the position, even if the LUT is malformed, so the
+          // entry section below is not read from the wrong offset.
+          reader.position = saved
+        }
+      }
+    } catch {
+      diagnostics.push({ kind: 'partial-extraction', message: 'LOCRES localized-string table could not be read.' })
     }
   }
 
-  const entryCount = readInt32(buffer, 8)
-  if (entryCount < 0 || entryCount > 1_000_000) {
-    return {
-      entries,
-      version,
-      diagnostics: [{ kind: 'corrupt-resource', message: 'LOCRES entry count is invalid.' }],
+  // Optimized variants store an explicit entry count we skip (derived below).
+  if (version >= ELocResVersion.Optimized_CRC32) {
+    try {
+      reader.readUInt32()
+    } catch {
+      // Ignore; entry iteration is bounds-checked anyway.
     }
   }
 
-  // FLocKeyMapEntry table: entryCount * 8 bytes (StrHash + Offset).
-  const entriesStart = 12
-  const entryTableEnd = entriesStart + entryCount * 8
-  if (entryTableEnd > buffer.length) {
-    return {
-      entries,
-      version,
-      diagnostics: [{ kind: 'corrupt-resource', message: 'LOCRES entry table exceeds buffer.' }],
-    }
-  }
-
+  let namespaceCount = 0
+  let entryCount = 0
   let order = 0
-  for (let i = 0; i < entryCount; i += 1) {
-    const recordStart = entriesStart + i * 8
-    // StrHash (unused for extraction) + Offset into the string table.
-    const offset = readUInt32(buffer, recordStart + 4)
 
-    const namespace = readNullTerminatedUtf16(buffer, offset)
-    if (!namespace) {
-      diagnostics.push({ kind: 'partial-extraction', message: 'LOCRES string offset out of bounds.' })
-      break
-    }
-    const key = readNullTerminatedUtf16(buffer, namespace.nextOffset)
-    if (!key) {
-      diagnostics.push({ kind: 'partial-extraction', message: 'LOCRES key offset out of bounds.' })
-      break
-    }
-    const source = readNullTerminatedUtf16(buffer, key.nextOffset)
-    if (!source) {
-      diagnostics.push({ kind: 'partial-extraction', message: 'LOCRES source offset out of bounds.' })
-      break
-    }
+  try {
+    namespaceCount = reader.readUInt32()
 
-    if (!source.text) continue
+    for (let n = 0; n < namespaceCount; n += 1) {
+      const namespace = reader.readTextKey(version)
+      const keyCount = reader.readUInt32()
 
-    entries.push({
-      id: `locres:${origin.namespace ?? ''}:${key.text}`,
-      key: key.text,
-      namespace: namespace.text || origin.namespace,
-      order: order++,
-      sourceText: source.text,
-      classification: 'UI',
-      classificationConfidence: 'high',
-      origin: {
-        engine: 'unreal',
-        containerPath: origin.containerPath,
-        resourceName: `${namespace.text}.locres`,
-        namespace: namespace.text || origin.namespace,
-        key: key.text,
-      },
-      protectedSegments: [],
-      protectionProfile: 'unreal',
-    })
+      for (let k = 0; k < keyCount; k += 1) {
+        const key = reader.readTextKey(version)
+        const sourceStringHash = reader.readUInt32()
+
+        let localizedString = ''
+        if (version >= ELocResVersion.Compact) {
+          const index = reader.readInt32()
+          localizedString = (index >= 0 && index < localizedStrings.length)
+            ? (localizedStrings[index] ?? '')
+            : ''
+        } else {
+          localizedString = reader.readFString()
+        }
+
+        if (!localizedString) continue
+
+        entries.push({
+          id: `locres:${namespace.str}:${key.str}`,
+          key: key.str,
+          namespace: namespace.str || undefined,
+          order: order++,
+          sourceText: localizedString,
+          sourceLocale: cultureFromPath(origin.containerPath),
+          classification: 'UI',
+          classificationConfidence: 'high',
+          origin: {
+            engine: 'unreal',
+            containerPath: origin.containerPath,
+            resourceName: origin.containerPath?.split(/[\\/]/u).pop(),
+            namespace: namespace.str || undefined,
+            key: key.str,
+          },
+          protectedSegments: [],
+          protectionProfile: 'unreal',
+          rawMetadata: {
+            sourceStringHash,
+            namespaceHash: namespace.strHash,
+            keyHash: key.strHash,
+            locResName: origin.containerPath,
+          },
+        })
+        entryCount += 1
+      }
+    }
+  } catch {
+    if (entryCount > 0) {
+      diagnostics.push({ kind: 'partial-extraction', message: 'LOCRES truncated during entry iteration.' })
+    } else {
+      diagnostics.push({ kind: 'corrupt-resource', message: 'LOCRES entry section could not be parsed.' })
+    }
   }
 
-  return { entries, version, diagnostics }
+  return {
+    entries,
+    diagnostics,
+    version,
+    versionLabel: VERSION_LABELS[version] ?? `Unknown (${version})`,
+    namespaceCount,
+    entryCount,
+  }
 }

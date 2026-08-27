@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile, readTextFile } from '@tauri-apps/plugin-fs'
@@ -14,17 +14,14 @@ import ExtractionReview from './ExtractionReview'
 import './ScanGameFlow.css'
 
 type ScannedFileResult = { path: string; size: number }
+type ScanDiscovery = { files: ScannedFileResult[]; directories: string[] }
 
 type Props = {
   onProjectCreated: (project: LocalizationProjectV3) => void
   onCancel: () => void
 }
 
-type Phase =
-  | 'choosing'
-  | 'scanning'
-  | 'reviewing'
-  | 'error'
+type Phase = 'choosing' | 'scanning' | 'reviewing' | 'error'
 
 export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const [phase, setPhase] = useState<Phase>('choosing')
@@ -33,36 +30,23 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const [error, setError] = useState('')
   const cancelledRef = useRef(false)
 
-  const beginScan = useCallback(async (root: string) => {
+  const runScan = useCallback(async (discovery: { files: ScanFile[]; directories: string[] }) => {
     setPhase('scanning')
     setError('')
 
+    const reader = {
+      readText: async (file: ScanFile) => readTextFile(file.relativePath),
+      readBinary: async (file: ScanFile) => new Uint8Array(await readFile(file.relativePath)),
+    }
+
     try {
-      const discovered = await invoke<ScannedFileResult[]>('scan_directory', { root })
-      const files: ScanFile[] = discovered.map((file) => ({
-        name: file.path.split('/').pop() ?? file.path,
-        relativePath: file.path,
-        size: file.size,
-      }))
-
-      const reader = {
-        readText: async (file: ScanFile) => {
-          // Tauri fs reads relative to the app's scope; for scan, we join the
-          // root + relative path. The caller keeps root in scope.
-          return readTextFile(`${root}/${file.relativePath}`)
-        },
-        readBinary: async (file: ScanFile) => {
-          return new Uint8Array(await readFile(`${root}/${file.relativePath}`))
-        },
-      }
-
       const scanResult = await scanGame({
-        files,
+        files: discovery.files,
+        directories: discovery.directories,
         reader,
         signal: { get cancelled() { return cancelledRef.current } },
         onProgress: setProgress,
       })
-
       setResult(scanResult)
       setPhase('reviewing')
     } catch (scanError) {
@@ -71,28 +55,62 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
     }
   }, [])
 
-  useEffect(() => {
-    void (async () => {
-      const selected = await open({ directory: true, title: 'Choose a game folder or resource root' })
-      if (typeof selected === 'string') {
-        await beginScan(selected)
-      } else {
-        onCancel()
-      }
-    })()
-  }, [beginScan, onCancel])
+  const beginFolderScan = useCallback(async (root: string) => {
+    setPhase('scanning')
+    const discovery = await invoke<ScanDiscovery>('scan_directory', { root })
+    const files: ScanFile[] = discovery.files.map((file) => ({
+      name: file.path.split('/').pop() ?? file.path,
+      relativePath: `${root}/${file.path}`,
+      size: file.size,
+    }))
+    await runScan({ files, directories: discovery.directories })
+  }, [runScan])
 
-  function handleCreate(_entries: ExtractionResult['entries']) {
+  const beginFileScan = useCallback(async (filePath: string) => {
+    setPhase('scanning')
+    const name = filePath.split(/[\\/]/u).pop() ?? filePath
+    const file: ScanFile = { name, relativePath: filePath, size: 0 }
+    await runScan({ files: [file], directories: [] })
+  }, [runScan])
+
+  async function chooseFolder() {
+    const selected = await open({ directory: true, title: 'Choose a game folder or resource root' })
+    if (typeof selected === 'string') await beginFolderScan(selected)
+    else onCancel()
+  }
+
+  async function chooseFile() {
+    const selected = await open({ directory: false, title: 'Choose a resource or archive file', multiple: false })
+    if (typeof selected === 'string') await beginFileScan(selected)
+  }
+
+  function handleCreate(includedEntryIds: Set<string>) {
     if (!result) return
-    const project = buildProjectFromExtraction(result, 'extracted-game.json')
+    const project = buildProjectFromExtraction(result, 'extracted-game.json', includedEntryIds)
     onProjectCreated(project)
   }
 
-  if (phase === 'choosing' || phase === 'scanning') {
+  if (phase === 'choosing') {
     return (
       <main className="scan-flow">
         <div className="scan-progress">
-          <h1>{phase === 'choosing' ? 'Choose a game folder' : 'Scanning resources (read-only)…'}</h1>
+          <h1>Scan Game</h1>
+          <p className="scan-hint">Read-only extraction of localization text from game resources.</p>
+          <div className="scan-choices">
+            <button className="scan-choice" onClick={chooseFolder}>Select Game Folder</button>
+            <button className="scan-choice" onClick={chooseFile}>Select Resource / File</button>
+            <button className="scan-cancel" onClick={onCancel}>Cancel</button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (phase === 'scanning') {
+    return (
+      <main className="scan-flow">
+        <div className="scan-progress">
+          <h1>Scanning resources (read-only)…</h1>
           {progress && (
             <div className="scan-progress-line">
               <span>{progress.filesDiscovered} files discovered</span>
@@ -102,7 +120,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
             </div>
           )}
           <div className="scan-progress-track">
-            <div className="scan-progress-fill" style={{ width: progress && progress.filesDiscovered > 0 ? `${Math.min(100, (progress.filesAnalyzed / progress.candidateFiles) * 100)}%` : '0%' }} />
+            <div className="scan-progress-fill" style={{ width: progress && progress.candidateFiles > 0 ? `${Math.min(100, (progress.filesAnalyzed / progress.candidateFiles) * 100)}%` : '0%' }} />
           </div>
           <button className="scan-cancel" onClick={() => { cancelledRef.current = true; onCancel() }}>Cancel</button>
         </div>

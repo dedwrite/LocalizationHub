@@ -1,4 +1,5 @@
 mod deepl;
+mod external_tool;
 mod scan;
 mod translation;
 
@@ -15,6 +16,7 @@ pub fn run() {
                 translation::translate_with_gemini,
                 deepl::translate_with_deepl,
                 scan::scan_directory,
+                external_tool::run_external_tool,
             ],
         )
         .setup(|app| {
