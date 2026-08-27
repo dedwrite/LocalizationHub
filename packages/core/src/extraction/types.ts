@@ -77,6 +77,7 @@ export type ExtractionDiagnosticKind =
   | 'binary-resource-not-converted'
   | 'script-not-extracted'
   | 'ink-binary-not-parsed'
+  | 'locale-structure-mismatch'
   | 'structural-skipped'
   | 'no-translatable-text'
 

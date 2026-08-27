@@ -165,7 +165,12 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   // variants of the same story share one logical identity.
   const localeInfo = detectGodotInkbLocale(fileName)
   const storyId = localeInfo.storyPath
-  const sourceLocale = localeInfo.locale
+  // The base story (no `locales/<culture>/` prefix) is the source/native
+  // language. Until Then's runtime default is English (`Constants.DEFAULT_LOCALE
+  // = "en"`); the base `.inkb` files are English. This is documented Until
+  // Then-specific behavior, consistent with the JSON database base ("en").
+  const sourceLocale = localeInfo.locale ?? 'en'
+  const isSourceLocale = localeInfo.isBase === true
 
   const entries: ExtractedEntry[] = []
   let order = 0
@@ -178,6 +183,13 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   let currentSpeaker: string | undefined
   let currentSpeakerId: string | undefined
 
+  // Structural fingerprint: the sequence of speaker keys (or ":" for thought).
+  // This is culture-independent (speaker aliases like Mark/Ryan/Louise do not
+  // change across locales) and is used to detect cross-locale structural
+  // divergence (e.g. a translator merging/splitting lines), so we never merge
+  // a mismatched story's lines silently.
+  const fingerprint: string[] = []
+
   const push = (
     text: string,
     speaker: string | undefined,
@@ -187,6 +199,12 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
     isContinuation: boolean,
   ) => {
     if (!text.trim()) return
+    // A non-continuation line advances the structural fingerprint: an explicit
+    // speaker key, or ":" for an inner thought. Continuations share the
+    // preceding line's identity and do NOT add a fingerprint element.
+    if (!isContinuation) {
+      fingerprint.push(isThought ? ':' : (charKey ?? speaker ?? 'narration'))
+    }
     entries.push(buildEntry({
       id: structuralEntryId(['inkb', storyId, String(order)]),
       key: `${storyId}:${order}`,
@@ -221,6 +239,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
         charKey: charKey ?? (speaker ?? 'narration'),
         continuation: isContinuation,
         revealText: hasRevealText(text),
+        isSourceLocale,
       },
     }))
   }
@@ -265,6 +284,14 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
     if (isBareDialogueText(str)) {
       push(str, currentSpeaker, currentSpeakerId, false, currentSpeaker ?? 'narration', true)
     }
+  }
+
+  // Attach the full structural fingerprint to every entry so the culture
+  // aggregator can detect cross-locale structural divergence (translators
+  // merging/splitting lines) and refuse to merge mismatched stories.
+  const fingerprintKey = fingerprint.join('|')
+  for (const entry of entries) {
+    entry.rawMetadata = { ...entry.rawMetadata, structuralFingerprint: fingerprintKey }
   }
 
   return {

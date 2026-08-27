@@ -92,6 +92,29 @@ export function aggregateCultures(
     merged.set(identity, entry)
 
     const variants = groups.get(identity) ?? [entry]
+
+    // --- Cross-locale structural-mismatch guard -------------------------
+    // Godot `.inkb` entries carry a `structuralFingerprint` (the sequence of
+    // speaker keys / thoughts). Translators may merge/split lines, so two
+    // locale copies of the SAME story can have different line counts/order.
+    // Index-based identities would silently mispair those. When the
+    // fingerprints diverge, we do NOT merge — each locale stays a separate
+    // entry and the caller reports a `locale-structure-mismatch` diagnostic.
+    const fingerprints = new Set(
+      variants
+        .map((v) => v.rawMetadata?.structuralFingerprint)
+        .filter((fp): fp is string => typeof fp === 'string' && fp.length > 0),
+    )
+    if (fingerprints.size > 1) {
+      for (const v of variants) {
+        if (!merged.has(identity)) merged.set(identity, v)
+        // Remove the culture identity so each locale becomes an independent
+        // entry (the caller reports the mismatch instead of a wrong merge).
+        output.push({ ...v, cultureIdentity: undefined })
+      }
+      continue
+    }
+
     // Sort deterministically, but ALWAYS put the source/native entry first when
     // one is marked (`rawMetadata.isSourceLocale` — e.g. the unsuffixed base
     // Godot JSON database). Otherwise sort by locale for determinism.
@@ -236,4 +259,38 @@ export function computeLocaleCoverage(entries: ExtractedEntry[]): LocaleCoverage
     }
   }
   return coverage
+}
+
+/*
+ * Detect cross-locale structural divergence in `.inkb` stories.
+ *
+ * Returns the story paths whose locale copies carry DIFFERENT structural
+ * fingerprints (translators merged/split/omitted lines). These stories must
+ * NOT be merged by index — the caller keeps each locale separate and reports a
+ * `locale-structure-mismatch` diagnostic.
+ */
+export function detectStructuralMismatches(
+  entries: ExtractedEntry[],
+): Array<{ storyPath: string; locales: string[] }> {
+  const byStory = new Map<string, Map<string, string>>()
+  for (const entry of entries) {
+    const fp = entry.rawMetadata?.structuralFingerprint
+    const scene = entry.context?.scene
+    if (typeof fp !== 'string' || !fp || typeof scene !== 'string') continue
+    let perLocale = byStory.get(scene)
+    if (!perLocale) {
+      perLocale = new Map()
+      byStory.set(scene, perLocale)
+    }
+    perLocale.set(entry.sourceLocale ?? 'unknown', fp)
+  }
+
+  const mismatches: Array<{ storyPath: string; locales: string[] }> = []
+  for (const [storyPath, perLocale] of byStory) {
+    const uniqueFingerprints = new Set(perLocale.values())
+    if (uniqueFingerprints.size > 1) {
+      mismatches.push({ storyPath, locales: [...perLocale.keys()].sort() })
+    }
+  }
+  return mismatches
 }

@@ -19,7 +19,7 @@ import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './
 import { extractInk } from './engines/ink'
 import { extractInkb } from './engines/inkb'
 import { readLocmeta } from './engines/locmeta'
-import { aggregateCultures, applyNativeCulture } from './cultureAggregation'
+import { aggregateCultures, applyNativeCulture, detectStructuralMismatches } from './cultureAggregation'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
@@ -341,6 +341,17 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     acc.add(id)
     return acc
   }, new Set<string>()).size
+
+  // --- Cross-locale structural mismatch diagnostic -----------------------
+  const mismatches = detectStructuralMismatches(entries)
+  if (mismatches.length > 0) {
+    aggregatedDiagnostics.push({
+      kind: 'locale-structure-mismatch',
+      message: 'Some story locale copies have different line structure (translation merged/split lines); kept separate instead of merging.',
+      count: mismatches.length,
+      examplePaths: mismatches.slice(0, 5).map((m) => `${m.storyPath} (${m.locales.join(', ')})`),
+    })
+  }
 
   // --- Zero-entry safety: a scan with thousands of resources and no text is
   // not a successful scan; surface it prominently. ---

@@ -45,25 +45,42 @@ export function detectGodotJsonLocale(fileName: string): GodotJsonLocale {
 }
 
 export type GodotInkbLocale = {
-  /* Culture-independent story path (everything after `locales/<culture>/`). */
+  /* Culture-independent story path (relative to the story root, `res://assets/story`). */
   storyPath: string
   /* Locale code from the `locales/<culture>/` segment, when present. */
   locale?: string
+  /* True when this is the base (unsuffixed, source-language) story. */
+  isBase?: boolean
 }
-
-const INKB_LOCALE_PATTERN = /(?:^|\/)locales\/([^/]+)\/(.+)$/u
 
 /*
  * Extract the locale + culture-independent story path from a `.inkb` path.
  *
- * `.../story/locales/ja/1/1c/1c.inkb` → { locale: "ja", storyPath: "1/1c/1c" }
- * `1/1c/1c.inkb` (no locales segment) → { storyPath: "1/1c/1c" }
+ * The story root is `res://assets/story` (or any path ending in `story/`):
+ *
+ *   assets/story/1/1c/1c.inkb                  → { storyPath: "1/1c/1c", isBase: true }
+ *   assets/story/locales/ja/1/1c/1c.inkb       → { locale: "ja", storyPath: "1/1c/1c" }
+ *   f/assets/story/locales/ja/1/1c/1c.inkb     → { locale: "ja", storyPath: "1/1c/1c" }
+ *   1/1c/1c.inkb (no story root)               → { storyPath: "1/1c/1c" }
+ *
+ * Both the base story and its `locales/<culture>/` overlays therefore share the
+ * SAME storyPath, so they aggregate into one logical identity.
  */
 export function detectGodotInkbLocale(fileName: string): GodotInkbLocale {
-  const normalized = fileName.replace(/\\/g, '/')
-  const match = normalized.match(INKB_LOCALE_PATTERN)
-  if (match) {
-    return { locale: match[1].toLowerCase(), storyPath: match[2].replace(/\.inkb$/iu, '') }
+  const normalized = fileName.replace(/\\/g, '/').replace(/\.inkb$/iu, '')
+
+  // Strip any leading story-root prefix (`.../assets/story/` or `.../story/`).
+  let relative = normalized
+  const storyRoot = normalized.match(/^(?:.*\/)?(?:assets\/)?story\/(.+)$/u)
+  if (storyRoot) {
+    relative = storyRoot[1]
   }
-  return { storyPath: normalized.replace(/\.inkb$/iu, '') }
+
+  // A locale overlay is `locales/<culture>/<rest>`.
+  const localeMatch = relative.match(/^locales\/([^/]+)\/(.+)$/u)
+  if (localeMatch) {
+    return { locale: localeMatch[1].toLowerCase(), storyPath: localeMatch[2] }
+  }
+
+  return { storyPath: relative, isBase: true }
 }

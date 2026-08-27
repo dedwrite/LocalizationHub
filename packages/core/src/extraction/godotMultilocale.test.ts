@@ -37,7 +37,13 @@ describe('Godot inkb locale detection', () => {
   })
 
   it('leaves paths without a locales segment intact', () => {
-    expect(detectGodotInkbLocale('1/1c/1c.inkb')).toEqual({ storyPath: '1/1c/1c' })
+    expect(detectGodotInkbLocale('1/1c/1c.inkb')).toEqual({ storyPath: '1/1c/1c', isBase: true })
+  })
+
+  it('normalizes the assets/story root and strips the locales overlay', () => {
+    expect(detectGodotInkbLocale('assets/story/1/1c/1c.inkb')).toEqual({ storyPath: '1/1c/1c', isBase: true })
+    expect(detectGodotInkbLocale('assets/story/locales/ja/1/1c/1c.inkb')).toEqual({ locale: 'ja', storyPath: '1/1c/1c' })
+    expect(detectGodotInkbLocale('f/assets/story/locales/fr/1/1c/1c.inkb')).toEqual({ locale: 'fr', storyPath: '1/1c/1c' })
   })
 })
 
