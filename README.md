@@ -14,6 +14,8 @@ Version 0.6.1 brings the browser workspace to parity with the desktop applicatio
 
 LocalizationHub v0.6.1 delivers a desktop-grade translator workspace in the browser, including a resizable Entries / Translator / Inspector layout, a full Inspector (Workflow, Quality, Comments, Assignments, History, Tags, Memory, Glossary), Machine Translation Reference with session-only keys, protected-token QA, entry filters and bulk workflow actions, Search & Replace, Jump to Entry, keyboard shortcuts, and autosave for Cloud Projects.
 
+On phones, the workspace is a dedicated mobile app with Entries / Editor / Tools bottom navigation, a touch-first editor, compact filtering and stats, and iPhone Safari-safe inputs, viewport, and safe-area handling.
+
 ## v0.6.0 Web App & Mobile Translation
 
 LocalizationHub v0.6.0 provides **Web App & Mobile Translation**: browser Cloud Projects, responsive desktop/tablet/phone editing, browser-local JSON/CSV/PO workflows, workflow and quality tools, team collaboration, browser recovery through IndexedDB, and a private Super Admin security console.

@@ -18,6 +18,9 @@ type EditorPanelProps = {
   onJumpTo: (position: number) => void
   sourceLocale?: string
   targetLocale?: string
+  mobile?: boolean
+  onNext?: () => void
+  onPrev?: () => void
 }
 
 const STATUSES = ['draft', 'translated', 'needs-review', 'approved'] as const
@@ -41,7 +44,7 @@ function ProtectedSource({ text, profileId }: { text: string; profileId: TokenPr
 }
 
 export default function EditorPanel(props: EditorPanelProps) {
-  const { entry, status, writable, tokenProfileId, issues, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale } = props
+  const { entry, status, writable, tokenProfileId, issues, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale, mobile = false, onNext, onPrev } = props
   const [jumpOpen, setJumpOpen] = useState(false)
   const [jumpValue, setJumpValue] = useState('')
   const [copied, setCopied] = useState(false)
@@ -53,6 +56,21 @@ export default function EditorPanel(props: EditorPanelProps) {
   useEffect(() => {
     if (entry) setJumpValue(String(position + 1))
   }, [entry, position])
+
+  // On mobile, grow the translation textarea to fit its content so the user
+  // never scrolls inside a cramped box; the surface itself scrolls instead.
+  useEffect(() => {
+    if (!mobile) return
+    const element = textareaRef.current
+    if (!element) return
+    const resize = () => {
+      element.style.height = 'auto'
+      element.style.height = `${Math.max(120, element.scrollHeight + 2)}px`
+    }
+    resize()
+    element.addEventListener('input', resize)
+    return () => element.removeEventListener('input', resize)
+  }, [mobile, translation])
 
   async function copySource() {
     if (!source) return
@@ -75,7 +93,13 @@ export default function EditorPanel(props: EditorPanelProps) {
   }
 
   return (
-    <div className="editor-panel">
+    <div className={`editor-panel ${mobile ? 'mob-editor' : ''}`}>
+      {mobile && (
+        <div className="mob-entry-head">
+          <span className="mob-entry-key">{entry?.key || entry?.id}</span>
+          <span className={`mob-status-pill mob-status-${status}`}>{friendlyStatus(status)}</span>
+        </div>
+      )}
       <div className="editor-topbar">
         <div className="editor-position">
           <button className="link-button" onClick={() => setJumpOpen((v) => !v)} aria-expanded={jumpOpen}>
@@ -94,7 +118,7 @@ export default function EditorPanel(props: EditorPanelProps) {
             </form>
           )}
         </div>
-        <div className="status-select" role="group" aria-label="Workflow status">
+        <div className="status-select" role="group" aria-label="Workflow status" style={mobile ? { display: 'none' } : undefined}>
           {STATUSES.map((item) => (
             <button
               key={item}
@@ -149,13 +173,38 @@ export default function EditorPanel(props: EditorPanelProps) {
           )}
         </section>
 
+        {mobile && (
+          <div className="mob-workflow" role="group" aria-label="Workflow status">
+            {STATUSES.map((item) => (
+              <button
+                key={item}
+                className={`mob-workflow-option ${status === item ? 'active' : ''}`}
+                disabled={!writable}
+                onClick={() => onStatusChange(item)}
+              >
+                {friendlyStatus(item)}
+              </button>
+            ))}
+          </div>
+        )}
+
         <MachineTranslationPanel sourceText={source} sourceLocale={sourceLocale} targetLocale={targetLocale} />
       </div>
 
       <div className="editor-footer">
-        <button className="nav-button" onClick={onPrevUntranslated} disabled={!writable}>Previous Untranslated</button>
-        <span className="editor-hint">Ctrl+S save · Alt+↓/↑ navigate</span>
-        <button className="nav-button nav-primary" onClick={onNextUntranslated} disabled={!writable}>Next Untranslated</button>
+        {mobile ? (
+          <>
+            <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>
+            <button className="nav-button nav-primary" onClick={onNextUntranslated} disabled={!writable}>Next Untranslated</button>
+            <button className="nav-button" onClick={onNext} disabled={position >= total - 1}>Next</button>
+          </>
+        ) : (
+          <>
+            <button className="nav-button" onClick={onPrevUntranslated} disabled={!writable}>Previous Untranslated</button>
+            <span className="editor-hint">Ctrl+S save · Alt+↓/↑ navigate</span>
+            <button className="nav-button nav-primary" onClick={onNextUntranslated} disabled={!writable}>Next Untranslated</button>
+          </>
+        )}
       </div>
     </div>
   )

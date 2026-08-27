@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openTools } from './helpers'
 
 type State = {
   project: any
@@ -102,6 +103,7 @@ test.describe('cloud save regression', () => {
 
   test('functional draft updater (toggle tag) never serializes a function', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
+    await openTools(page)
     await page.getByRole('tab', { name: 'Tags', exact: true }).click()
     await page.getByRole('button', { name: 'UI' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
@@ -111,12 +113,14 @@ test.describe('cloud save regression', () => {
     expect(last.project.metadata.entryTags['e0']).toContain('ui')
 
     await page.reload()
+    await openTools(page)
     await page.getByRole('tab', { name: 'Tags', exact: true }).click()
     await expect(page.getByRole('button', { name: 'UI' })).toHaveClass(/active/)
   })
 
   test('functional draft updater (create tag) persists', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
+    await openTools(page)
     await page.getByRole('tab', { name: 'Tags', exact: true }).click()
     await page.getByLabel('New tag label').fill('Ship')
     await page.getByRole('button', { name: 'Add tag' }).click()
@@ -129,6 +133,7 @@ test.describe('cloud save regression', () => {
 
   test('functional draft updater (apply Translation Memory) persists', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
+    await openTools(page)
     await page.getByRole('tab', { name: 'Memory', exact: true }).click()
     await page.getByRole('button', { name: 'Apply' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })

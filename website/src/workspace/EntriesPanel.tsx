@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { ENTRY_FILTERS, type BulkSelection, type EntryFilterId, type EntryView } from './entryCollection'
 import VirtualList from './VirtualList'
 
@@ -17,6 +18,7 @@ type EntriesPanelProps = {
   assigneeOf: (entryId: string) => string | null
   onOpenBulk: () => void
   onJumpTo: () => void
+  mobile?: boolean
 }
 
 function statusDotClass(view: EntryView): string {
@@ -27,8 +29,24 @@ function statusDotClass(view: EntryView): string {
   return 'dot-draft'
 }
 
+function statusLabel(view: EntryView): string {
+  if (view.hasError) return 'Error'
+  if (view.hasWarning) return 'Warning'
+  return view.status === 'translated' ? 'Translated' : view.status === 'untranslated' ? 'Untranslated' : 'Review'
+}
+
 export default function EntriesPanel(props: EntriesPanelProps) {
-  const { views, counts, filter, onFilter, query, onQuery, selected, onSelect, selection, onToggleSelection, onClearSelection, commentEntryIds, assigneeOf, onOpenBulk, onJumpTo } = props
+  const { views, counts, filter, onFilter, query, onQuery, selected, onSelect, selection, onToggleSelection, onClearSelection, commentEntryIds, assigneeOf, onOpenBulk, onJumpTo, mobile = false } = props
+  const [moreFilters, setMoreFilters] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+
+  const primaryFilters = useMemo(() => ENTRY_FILTERS.filter((item) => item.primary), [])
+  const secondaryFilters = useMemo(() => ENTRY_FILTERS.filter((item) => !item.primary), [])
+
+  const total = counts.total ?? 0
+  const translated = counts.translated ?? 0
+  const remaining = total - translated
+  const percent = total ? Math.round((translated / total) * 100) : 0
 
   function renderRow(item: unknown) {
     const view = item as EntryView
@@ -36,6 +54,39 @@ export default function EntriesPanel(props: EntriesPanelProps) {
     const isChecked = selection.has(view.index)
     const commentCount = commentEntryIds.has(view.entry.id) ? 1 : 0
     const assignee = assigneeOf(view.entry.id)
+    const key = view.entry.key || view.entry.id
+
+    if (mobile) {
+      return (
+        <div
+          className={`entry-row mob-entry-row ${isSelected ? 'selected' : ''}`}
+          onClick={() => onSelect(view.index)}
+          role="listitem"
+        >
+          {selectionMode && (
+            <input
+              type="checkbox"
+              className="entry-checkbox"
+              checked={isChecked}
+              onClick={(event) => event.stopPropagation()}
+              onChange={() => onToggleSelection(view.index)}
+              aria-label={`Select ${key}`}
+            />
+          )}
+          <span className={`entry-status-dot ${statusDotClass(view)}`} aria-hidden="true" />
+          <div className="entry-row-main">
+            <span className="entry-key">{key}</span>
+            <span className="entry-preview">{view.entry.translation || view.entry.source || 'Untranslated'}</span>
+          </div>
+          <div className="entry-row-meta">
+            <span className={`entry-state-tag state-${statusLabel(view).toLowerCase().replace(' ', '-')}`}>{statusLabel(view)}</span>
+            {commentCount > 0 && <span className="entry-flag flag-comment" title="Has comments">💬</span>}
+            {assignee && <span className="entry-flag flag-assignee" title={`Assigned to ${assignee}`}>◎</span>}
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div
         className={`entry-row ${isSelected ? 'selected' : ''}`}
@@ -60,6 +111,95 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           {view.hasWarning && !view.hasError && <span className="entry-flag flag-warning" title="QA warning">!</span>}
           {commentCount > 0 && <span className="entry-flag flag-comment" title="Has comments">💬</span>}
           {assignee && <span className="entry-flag flag-assignee" title={`Assigned to ${assignee}`}>◎</span>}
+        </div>
+      </div>
+    )
+  }
+
+  const filters = mobile ? [...primaryFilters, ...(moreFilters ? secondaryFilters : [])] : ENTRY_FILTERS
+
+  if (mobile) {
+    return (
+      <div className="entries-panel mob-entries">
+        <div className="mob-entries-summary">
+          <div className="mob-summary-line">
+            <strong>{total.toLocaleString()} entries</strong>
+            <span className="mob-summary-sub">{remaining.toLocaleString()} remaining</span>
+          </div>
+          <div className="mob-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={translated} aria-label="Project completion progress">
+            <div className="mob-progress-fill" style={{ width: `${percent}%` }} />
+          </div>
+          <div className="mob-summary-detail">
+            <span>{translated.toLocaleString()} translated</span>
+            <span>·</span>
+            <span>{counts['needs-review'] ?? 0} review</span>
+            {counts.errors > 0 && <><span>·</span><span className="mob-summary-error">{counts.errors} errors</span></>}
+          </div>
+        </div>
+
+        <div role="search" className="mob-entries-search">
+          <input
+            className="search-input"
+            type="search"
+            name="workspace-entry-search"
+            role="searchbox"
+            spellCheck={false}
+            enterKeyHint="search"
+            value={query}
+            onChange={(event) => onQuery(event.target.value)}
+            placeholder="Search key, source, or translation"
+            aria-label="Search entries"
+          />
+        </div>
+
+        <div className="mob-filters" role="tablist" aria-label="Entry filters">
+          {filters.map((item) => {
+            const count = counts[item.id] ?? 0
+            return (
+              <button
+                key={item.id}
+                role="tab"
+                aria-selected={filter === item.id}
+                className={`mob-filter-chip ${filter === item.id ? 'active' : ''}`}
+                onClick={() => onFilter(item.id)}
+              >
+                {item.label}
+                {item.id !== 'all' && <span className="mob-filter-count">{count}</span>}
+              </button>
+            )
+          })}
+          <button
+            className="mob-filter-chip mob-filter-more"
+            aria-expanded={moreFilters}
+            onClick={() => setMoreFilters((value) => !value)}
+          >
+            {moreFilters ? 'Less' : 'More filters'}
+          </button>
+        </div>
+
+        <div className="mob-entries-tools">
+          <button
+            className={`mob-tool-action ${selectionMode ? 'active' : ''}`}
+            aria-pressed={selectionMode}
+            onClick={() => {
+              setSelectionMode((value) => !value)
+              if (selectionMode) onClearSelection()
+            }}
+          >
+            {selectionMode ? 'Done' : 'Select entries'}
+          </button>
+        </div>
+
+        {selectionMode && selection.size > 0 && (
+          <div className="bulk-bar mob-bulk-bar">
+            <span>{selection.size} selected</span>
+            <button onClick={onOpenBulk}>Bulk actions</button>
+            <button onClick={onClearSelection}>Clear</button>
+          </div>
+        )}
+
+        <div className="entries-list">
+          <VirtualList items={views} rowHeight={68} renderRow={renderRow} />
         </div>
       </div>
     )

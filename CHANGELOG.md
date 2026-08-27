@@ -18,6 +18,16 @@ All notable LocalizationHub release milestones are documented here.
 - Branded New Project modal (import JSON/CSV/PO) and polished Projects page with progress and search — no native browser dialogs.
 - Responsive layouts for 360–1920px with no horizontal document overflow; Viewer read-only enforced.
 
+### Mobile Workspace Redesign
+
+- Dedicated phone workspace with a bottom navigation of **Entries**, **Editor**, and **Tools** — no more desktop panels stacked vertically.
+- Touch-first editor: comfortable auto-growing translation field, source card with copy, compact workflow status buttons, and Previous / Next / Next Untranslated navigation.
+- Compact entries screen with a progress summary, search, primary filter chips plus "More filters", and a dedicated selection mode for bulk actions.
+- Mobile Tools surface hosting the full Inspector plus Project Overview, Search & Replace, and Collaboration, without crowding the editor.
+- Simplified mobile Projects page and a purposeful Cloud / Local switcher.
+- iPhone Safari behavior: 16px inputs (no auto-zoom), dynamic-viewport and safe-area handling, RTL/LTR-aware editing, and no controls hidden behind browser chrome.
+- WebKit (Safari) Playwright coverage kept permanently alongside Chromium — Chromium viewport emulation is no longer treated as Safari acceptance.
+
 ## [0.6.0] - 2026-08-26
 
 ### Web App & Mobile Translation

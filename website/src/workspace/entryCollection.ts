@@ -21,16 +21,16 @@ export type EntryFilterId =
   | 'assigned-to-me'
   | 'tags'
 
-export type EntryFilter = { id: EntryFilterId; label: string }
+export type EntryFilter = { id: EntryFilterId; label: string; primary?: boolean }
 
 export const ENTRY_FILTERS: EntryFilter[] = [
-  { id: 'all', label: 'All' },
-  { id: 'untranslated', label: 'Untranslated' },
+  { id: 'all', label: 'All', primary: true },
+  { id: 'untranslated', label: 'Untranslated', primary: true },
+  { id: 'translated', label: 'Translated', primary: true },
+  { id: 'needs-review', label: 'Needs Review', primary: true },
+  { id: 'errors', label: 'Errors', primary: true },
   { id: 'draft', label: 'Draft' },
-  { id: 'translated', label: 'Translated' },
-  { id: 'needs-review', label: 'Needs Review' },
   { id: 'approved', label: 'Approved' },
-  { id: 'errors', label: 'Errors' },
   { id: 'warnings', label: 'Warnings' },
   { id: 'comments', label: 'Has Comments' },
   { id: 'assigned-to-me', label: 'Assigned to Me' },

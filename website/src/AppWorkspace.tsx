@@ -7,6 +7,8 @@ import Workspace from './workspace/Workspace'
 import NewProjectModal from './workspace/NewProjectModal'
 import './app-workspace.css'
 import './workspace/workspace.css'
+import './app-workspace.mobile.css'
+import './workspace/workspace.mobile.css'
 
 type View = 'login' | 'register' | 'projects' | 'editor' | 'local'
 function routeView(path = window.location.pathname): View { if (path === '/app/login') return 'login'; if (path === '/app/register') return 'register'; if (path === '/app/local') return 'local'; if (path.startsWith('/app/projects/')) return 'editor'; return path.startsWith('/app') ? 'projects' : 'login' }
@@ -99,4 +101,4 @@ function ProjectCard({ project, onOpen }: { project: ProjectSummary; onOpen: () 
   )
 }
 
-function MobileNav() { return <nav className="mobile-nav"><button onClick={() => navigate('/app/projects')}>Entries</button><button onClick={() => (document.querySelector('.search-input') as HTMLInputElement | null)?.focus()}>Search</button><button onClick={() => navigate('/app/projects')}>Project</button><button onClick={() => (document.querySelector('.inspector') as HTMLElement | null)?.scrollIntoView({ behavior: 'smooth' })}>Tools</button><button onClick={() => navigate('/app/local')}>Local</button></nav> }
+function MobileNav() { const onLocal = window.location.pathname === '/app/local'; return <nav className="mobile-nav" aria-label="Projects"><button className={onLocal ? '' : 'active'} aria-current={onLocal ? undefined : 'page'} onClick={() => navigate('/app/projects')}>Cloud projects</button><button className={onLocal ? 'active' : ''} aria-current={onLocal ? 'page' : undefined} onClick={() => navigate('/app/local')}>Local browser</button></nav> }

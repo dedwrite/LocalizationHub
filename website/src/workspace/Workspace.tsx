@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProject, saveProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
 import { canEdit } from '../appLogic'
-import { buildEntryCollection, entryIssues, type BulkSelection } from './entryCollection'
+import { buildEntryCollection, entryIssues, type BulkSelection, type EntryFilterId } from './entryCollection'
 import { validateProjectV3 } from './projectValidation'
 import EntriesPanel from './EntriesPanel'
 import EditorPanel from './EditorPanel'
@@ -10,6 +10,8 @@ import ProjectOverview from './ProjectOverview'
 import SearchReplace from './SearchReplace'
 import ConfirmDialog from './ConfirmDialog'
 import BrowserCollaboration from '../BrowserCollaboration'
+import MobileWorkspace from './MobileWorkspace'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { navigate } from '../navigation'
 import type { ProjectSnapshot } from '../appApi'
 
@@ -39,6 +41,7 @@ function saveLayout(layout: LayoutState) {
 
 export default function Workspace({ user, onHome }: { user: { id: string; username: string }; onHome: () => void }) {
   const projectId = window.location.pathname.split('/').pop()!
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null)
   const [draft, setDraft] = useState<any>(null)
   const [selected, setSelected] = useState(0)
@@ -354,6 +357,71 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   }
 
   const focusMode = layout.entriesCollapsed && layout.inspectorCollapsed
+
+  if (isMobile) {
+    return (
+      <MobileWorkspace
+        user={user}
+        projectId={projectId}
+        projectName={snapshot.name}
+        role={snapshot.role}
+        saveState={saveState}
+        tokenProfileId={tokenProfileId}
+        tokenProfiles={['generic', 'godot']}
+        onTokenProfile={(value) => updateDraft((current: any) => ({ ...current, tokenProfile: value }))}
+        goHome={goHome}
+        onHome={onHome}
+        onSave={saveNow}
+        views={collection.views}
+        counts={collection.counts}
+        filter={filter as EntryFilterId}
+        onFilter={setFilter}
+        query={query}
+        onQuery={setQuery}
+        selected={selected}
+        onSelect={setSelected}
+        selection={selection}
+        onToggleSelection={toggleSelection}
+        onClearSelection={() => setSelection(new Set())}
+        commentEntryIds={commentEntryIds}
+        assigneeOf={assigneeOf}
+        entry={entry}
+        status={status}
+        writable={writable}
+        issues={issues}
+        direction={direction}
+        position={selected}
+        total={entries.length}
+        onTranslationChange={updateTranslation}
+        onStatusChange={updateStatus}
+        onNextUntranslated={nextUntranslated}
+        onJumpTo={goto}
+        sourceLocale={sourceLocale}
+        targetLocale={targetLocale}
+        snapshot={snapshot}
+        draft={draft}
+        setDraft={updateDraft}
+        onRestored={applyServerState}
+        onNotice={setNotice}
+        members={members}
+        entries={entries}
+        applyReplace={applyReplace}
+        applyBulk={applyBulk}
+        overviewOpen={overviewOpen}
+        setOverviewOpen={setOverviewOpen}
+        replaceOpen={replaceOpen}
+        setReplaceOpen={setReplaceOpen}
+        collabOpen={collabOpen}
+        setCollabOpen={setCollabOpen}
+        bulkOpen={bulkOpen}
+        setBulkOpen={setBulkOpen}
+        confirmLeave={confirmLeave}
+        setConfirmLeave={setConfirmLeave}
+        notice={notice}
+        setNotice={setNotice}
+      />
+    )
+  }
 
   return (
     <main className="workspace-page workspace-shell">

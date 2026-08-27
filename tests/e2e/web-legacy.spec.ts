@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openEditor, openEntries } from './helpers'
 
 // Realistic V2 (pre-workflow) project payload as the server would return it.
 function v2Project() {
@@ -61,11 +62,13 @@ test.describe('legacy cloud project migration', () => {
     await page.goto('/app/projects/proj-1')
 
     // Both legacy entries remain present.
+    await openEntries(page)
     await expect(page.locator('.entry-key').filter({ hasText: 'menu.start' })).toBeVisible()
     await expect(page.locator('.entry-key').filter({ hasText: 'menu.quit' })).toBeVisible()
     await expect(page.getByText(/Legacy Project V2 loaded/)).toBeVisible()
 
     // Edit + manual save.
+    await openEditor(page)
     await page.getByLabel('Translation').fill('Commencer')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible()
@@ -85,7 +88,9 @@ test.describe('legacy cloud project migration', () => {
     await mockLegacyApi(page, 'viewer')
     await signIn(page)
     await page.goto('/app/projects/proj-1')
+    await openEntries(page)
     await expect(page.locator('.entry-key').filter({ hasText: 'menu.start' })).toBeVisible()
+    await openEditor(page)
     await expect(page.getByLabel('Translation')).not.toBeEditable()
     await expect(page.getByText('Read only')).toBeVisible()
     expect(putCount).toBe(0)
