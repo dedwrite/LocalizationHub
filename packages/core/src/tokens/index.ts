@@ -1,5 +1,7 @@
 ﻿import { genericTokenProfile } from './generic'
 import { godotTokenProfile } from './godot'
+import { unrealTokenProfile } from './unreal'
+import { unityTokenProfile } from './unity'
 
 import type {
   ProtectedToken,
@@ -26,8 +28,8 @@ const tokenProfiles: Record<
 > = {
   generic: genericTokenProfile,
   godot: godotTokenProfile,
-  unity: undefined,
-  unreal: undefined,
+  unreal: unrealTokenProfile,
+  unity: unityTokenProfile,
   renpy: undefined,
   custom: undefined,
 }

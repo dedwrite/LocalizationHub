@@ -1,0 +1,24 @@
+/*
+ * LocalizationHub v0.7 — Game Text Extraction.
+ *
+ * Public API for engine-agnostic extraction, classification, protection, and
+ * context intelligence. Engine adapters produce one normalized
+ * `ExtractionResult`; the UI/Web/Cloud layers only ever see these types.
+ */
+
+export * from './types'
+export * from './provenance'
+export * from './classification'
+export * from './contextInference'
+export * from './conversationInference'
+export * from './structuredData'
+export * from './engineDetection'
+export * from './extractionReview'
+export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanProgress } from './scanGame'
+
+export { extractGodot } from './engines/godot'
+export { extractUnity, extractUnityStringTable, extractUnityStructuredJson } from './engines/unity'
+export { extractUnrealText, extractUnrealLocres, detectEncryptedUnrealContainer } from './engines/unreal'
+export { extractInk } from './engines/ink'
+export { readLocres, isLocresBuffer } from './engines/locres'
+export { buildEntry, toProtectedSegments } from './engines/shared'
