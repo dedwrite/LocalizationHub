@@ -12,6 +12,7 @@ import {
 } from './classification'
 import {
   inferContextFromRecord,
+  resolveFieldRole,
   type ContextFieldMapping,
 } from './contextInference'
 import { mergeCustomProtectedSegments } from './engines/shared'
@@ -156,7 +157,71 @@ export function analyzeRecord(
     fieldIndex += 1
   }
 
+  // --- UI-text fallback: fields that are NOT recognized as context or as an
+  // explicit translatable alias, but whose NAME strongly suggests display text
+  // (name / title / description / category / status / post / comment / etc.).
+  // These are the dominant field names in real game databases (e.g. Until
+  // Then's fb.json / email.json / characters.json). Values still pass the
+  // classifyString heuristic, so paths, GUIDs, counts, and identifiers are
+  // excluded — only natural-language or single-name display text is kept. ---
+  for (const [fieldName, value] of Object.entries(record)) {
+    if (typeof value !== 'string' || value.trim().length === 0) continue
+    // Skip fields already handled as translatable or context above.
+    if (resolveFieldRole(fieldName, options.mappings ?? [])) continue
+    const normalized = fieldName.toLowerCase()
+    if ((options.neverTranslatableFields ?? []).some((n) => n.toLowerCase() === normalized)) continue
+    if (!isUiTextField(normalized)) continue
+
+    const decision = classifyString(value, { uiComponentField: true })
+    if (!decision.translatable) continue
+
+    const namedClassification = classifyFieldName(fieldName)
+    const fieldClassification: EntryClassification =
+      namedClassification !== 'Unknown' ? namedClassification : decision.classification
+
+    entries.push({
+      id: structuralEntryId([...path, fieldName, fieldIndex]),
+      key: record.key != null ? String(record.key) : undefined,
+      namespace: options.namespace,
+      order: order * 1000 + fieldIndex,
+      sourceText: value,
+      classification: fieldClassification,
+      classificationConfidence: decision.confidence,
+      context: {
+        ...context,
+        classificationProvenance: { source: 'explicit-field', confidence: 'high' },
+      },
+      origin: {
+        engine: options.engine,
+        containerPath: options.containerPath,
+        internalAssetPath: options.internalAssetPath,
+        resourceName: options.resourceName,
+        fieldPath: [...path, fieldName].join('.'),
+        objectType: 'structured-record',
+        key: record.key != null ? String(record.key) : undefined,
+      },
+      protectedSegments: mergeCustomProtectedSegments(
+        value,
+        options.extractProtectedSegments(value),
+      ),
+      protectionProfile: options.protectionProfile,
+      rawMetadata: { field: fieldName },
+    })
+
+    fieldIndex += 1
+  }
+
   return { entries, context }
+}
+
+/*
+ * Field names that strongly imply displayed text in structured game data.
+ * Deliberately conservative: identifier-like names (id/key/guid/path/uid) are
+ * excluded by the neverTranslatableFields list, and every value still passes
+ * the classifyString heuristic.
+ */
+function isUiTextField(fieldName: string): boolean {
+  return /^(name|title|description|desc|category|status|subject|body|post|comment|headline|bio|nickname|first_name|firstname|last_name|lastname|label|header|footer|caption|subtitle|tooltip|placeholder|hint|summary|details|about|tagline|slogan|display_name|displayname|username|full_name|fullname)$/u.test(fieldName)
 }
 
 /*

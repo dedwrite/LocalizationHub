@@ -253,6 +253,19 @@
 }
 .er-diag-kind { font-family: 'DM Mono', monospace; color: #e6a23c; flex-shrink: 0; text-transform: uppercase; font-size: 10px; }
 .er-diag-message { color: #c8ced8; }
+.er-diag-count { color: #ef5b5b; font-weight: 600; font-size: 11px; flex-shrink: 0; }
 .er-diag-path { color: #8b93a7; font-family: 'DM Mono', monospace; font-size: 10px; margin-left: auto; }
+.er-diag-examples { display: flex; flex-wrap: wrap; gap: 4px; }
+.er-diag-example { color: #8b93a7; font-family: 'DM Mono', monospace; font-size: 10px; background: #0b0d10; padding: 1px 5px; border-radius: 3px; }
 .er-diag-low-confidence .er-diag-kind, .er-diag-partial-extraction .er-diag-kind { color: #e6a23c; }
-.er-diag-external-tool-not-found .er-diag-kind, .er-diag-encrypted-container .er-diag-kind, .er-diag-unsupported-format .er-diag-kind { color: #ef5b5b; }
+.er-diag-external-tool-not-found .er-diag-kind, .er-diag-encrypted-container .er-diag-kind, .er-diag-unsupported-format .er-diag-kind, .er-diag-binary-resource-not-converted .er-diag-kind, .er-diag-ink-binary-not-parsed .er-diag-kind { color: #ef5b5b; }
+
+.er-zero-entry {
+  margin: 0 clamp(16px, 4vw, 40px) 12px;
+  padding: 14px 16px;
+  border: 1px solid #7a3d3d;
+  background: #2a1515;
+  border-radius: 8px;
+}
+.er-zero-entry strong { color: #f0a0a0; }
+.er-zero-entry p { color: #d8b4b4; margin: 6px 0 0; font-size: 13px; line-height: 1.5; }

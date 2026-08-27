@@ -39,7 +39,8 @@ export {
   type ToolPaths,
 } from './toolArgs'
 
-export { extractGodot } from './engines/godot'
+export { extractGodot, extractGodotScript } from './engines/godot'
+export { extractPo, parsePo } from './engines/gettext'
 export { extractUnity, extractUnityStringTable, extractUnityStructuredJson } from './engines/unity'
 export { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta, detectEncryptedUnrealContainer } from './engines/unreal'
 export { extractInk } from './engines/ink'

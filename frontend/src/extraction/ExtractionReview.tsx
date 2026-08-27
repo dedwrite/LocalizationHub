@@ -186,8 +186,26 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
         <Stat label="With listener" value={stats.entriesWithListener} />
         <Stat label="Explicit gender" value={stats.entriesWithExplicitGender} />
         <Stat label="Protected tokens" value={stats.protectedTokenCount} />
+        <Stat label="Resources" value={stats.resourcesDiscovered ?? stats.filesScanned} />
+        <Stat label="Text resources" value={stats.textResources ?? 0} />
+        <Stat label="Binary resources" value={stats.binaryResources ?? 0} />
+        <Stat label="Unsupported" value={stats.unsupportedResources ?? 0} />
+        <Stat label="Skipped" value={stats.skipped ?? 0} />
         <Stat label="Warnings" value={stats.warnings} />
+        <Stat label="Errors" value={stats.errors} />
       </section>
+
+      {result.entries.length === 0 && (
+        <div className="er-zero-entry" role="alert">
+          <strong>No translatable text was extracted from this game.</strong>
+          <p>
+            {stats.resourcesDiscovered ?? stats.filesScanned} resources were discovered but none produced text.
+            This usually means the game's text lives in a binary resource type (e.g. compiled Ink, binary
+            `.res`/`.scn`, optimized `.translation`) or a script format that needs conversion — or the source
+            text uses a schema not yet recognized. See Diagnostics for a grouped summary.
+          </p>
+        </div>
+      )}
 
       <div className="er-controls">
         <div className="er-filters" role="tablist" aria-label="Review filters">
@@ -228,7 +246,17 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
             <div key={index} className={`er-diagnostic er-diag-${diagnostic.kind}`}>
               <span className="er-diag-kind">{diagnostic.kind}</span>
               <span className="er-diag-message">{diagnostic.message}</span>
+              {diagnostic.count != null && diagnostic.count > 1 && (
+                <span className="er-diag-count">{diagnostic.count.toLocaleString()} files</span>
+              )}
               {diagnostic.path && <span className="er-diag-path">{diagnostic.path}</span>}
+              {diagnostic.examplePaths && diagnostic.examplePaths.length > 0 && (
+                <span className="er-diag-examples">
+                  {diagnostic.examplePaths.map((p) => (
+                    <code key={p} className="er-diag-example">{p}</code>
+                  ))}
+                </span>
+              )}
             </div>
           ))}
         </div>

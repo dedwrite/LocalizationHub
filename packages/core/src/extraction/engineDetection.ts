@@ -75,11 +75,29 @@ export function detectEngine(input: DetectionInput): EngineDetection {
   const inkCount = input.files.filter((file) => file.lower.endsWith('.ink') || file.lower.endsWith('.ink.json') || file.lower.endsWith('.json') && file.lower.includes('ink')).length
   if (inkCount > 0) evidence.push(`${inkCount} Ink file(s)`)
 
-  // Score-based decision. Prefer the strongest, most specific signal.
+  // Score-based decision. Prefer the strongest, most specific signal. Large
+  // numbers of a single engine's resources are strong evidence even without a
+  // project file (e.g. a recovered PCK may not surface project.godot at the
+  // scan root).
+  const godotScore = godotProjectFile
+    ? 100
+    : godotCount >= 100
+      ? 100
+      : godotCount >= 10
+        ? 60
+        : godotCount > 0
+          ? 30
+          : 0
+  const unityScore =
+    (unityDataDir ? 60 : 0) +
+    (unityAssetsCount > 0 ? 50 : 0) +
+    (unityExtensionCount >= 100 ? 100 : unityExtensionCount >= 10 ? 40 : unityExtensionCount > 0 ? 25 : 0) +
+    ((unityFileCount > 0 || unityLevelCount > 0) ? 30 : 0)
+
   const scores: Array<{ engine: EngineFamily; score: number }> = [
     { engine: 'unreal', score: unrealCount > 0 ? 100 : 0 },
-    { engine: 'godot', score: (godotProjectFile ? 60 : 0) + (godotCount > 0 ? 50 : 0) },
-    { engine: 'unity', score: (unityDataDir ? 60 : 0) + (unityAssetsCount > 0 ? 50 : 0) + (unityExtensionCount > 0 ? 45 : 0) + ((unityFileCount > 0 || unityLevelCount > 0) ? 30 : 0) },
+    { engine: 'godot', score: godotScore },
+    { engine: 'unity', score: unityScore },
     { engine: 'ink', score: inkCount > 0 ? 90 : 0 },
   ]
 

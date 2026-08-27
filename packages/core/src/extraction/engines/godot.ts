@@ -17,6 +17,7 @@
 import { extractGodotTokens } from '../../tokens/godot'
 import { detectEngine } from '../engineDetection'
 import { analyzeRecord, structuralEntryId, walkStructuredData } from '../structuredData'
+import { extractPo } from './gettext'
 import type {
   EngineFamily,
   ExtractedEntry,
@@ -311,8 +312,9 @@ export function extractGodot(input: GodotInput): ExtractionResult {
   const lower = input.fileName.toLowerCase()
 
   if (extension === 'csv') return extractGodotCsv(input.fileName, input.text)
-  if (extension === 'po' || extension === 'pot') return extractGodotCsv(input.fileName, input.text)
+  if (extension === 'po' || extension === 'pot') return extractPo(input.fileName, input.text)
   if (extension === 'tscn' || extension === 'scn' || extension === 'tres') return extractGodotScene(input.fileName, input.text)
+  if (extension === 'gd') return extractGodotScript(input.fileName, input.text)
   if (extension === 'json' || lower.includes('dialogue')) return extractGodotStructuredJson(input.fileName, input.text, input.mappings ?? [])
 
   // Binary .translation / .res / .scn are delegated to external tooling.
@@ -323,4 +325,110 @@ export function extractGodot(input: GodotInput): ExtractionResult {
     diagnostics: [{ kind: 'unsupported-format', message: `Godot ${extension ?? 'binary'} extraction requires external tooling.`, path: input.fileName }],
     stats: { filesScanned: 1, candidateFiles: 1, entriesFound: 0, byClassification: {}, protectedTokenCount: 0, entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: 0, errors: 1 },
   }
+}
+
+/*
+ * GDScript (.gd) safe extraction.
+ *
+ * Only confidently user-facing localization call sites become entries:
+ *   tr("..."), tr_n("singular", "plural", n, ctx)
+ *   TranslationServer.translate("...")
+ *
+ * Plain string literals (resource paths, node paths, method names, signals,
+ * debug strings) are deliberately NOT extracted. GDScript is full of code
+ * strings; treating every literal as translatable would be a precision
+ * disaster. When a script has no recognized call sites, it yields zero entries
+ * and zero diagnostics (silently skipped, not a card).
+ */
+export function extractGodotScript(fileName: string, text: string): ExtractionResult {
+  const entries: ExtractedEntry[] = []
+  let order = 0
+
+  // tr("...") — the dominant Godot localization call.
+  const trPattern = /\btr\(\s*"((?:[^"\\]|\\.)*)"/gu
+  let match: RegExpExecArray | null
+  while ((match = trPattern.exec(text)) !== null) {
+    const value = unescapeGdString(match[1])
+    if (!value.trim()) continue
+    entries.push(buildEntry({
+      id: structuralEntryId(['godot-gd-tr', fileName, String(order)]),
+      order: order++,
+      sourceText: value,
+      classification: 'UI',
+      classificationConfidence: 'high',
+      origin: { engine: 'godot', containerPath: fileName, fieldPath: 'tr()', objectType: 'GDScript' },
+      protectedSegments: toProtectedSegments(extractGodotTokens(value)),
+      protectionProfile: 'godot',
+      rawMetadata: { call: 'tr' },
+    }))
+  }
+
+  // tr_n("singular", "plural", n [, ctx]) — plural-aware.
+  const trnPattern = /\btr_n\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"/gu
+  let pluralMatch: RegExpExecArray | null
+  while ((pluralMatch = trnPattern.exec(text)) !== null) {
+    const singular = unescapeGdString(pluralMatch[1])
+    const plural = unescapeGdString(pluralMatch[2])
+    if (!singular.trim()) continue
+    entries.push(buildEntry({
+      id: structuralEntryId(['godot-gd-trn', fileName, String(order)]),
+      order: order++,
+      sourceText: singular,
+      pluralVariants: [{ quantity: 'one', text: singular }, { quantity: 'other', text: plural }],
+      classification: 'UI',
+      classificationConfidence: 'high',
+      origin: { engine: 'godot', containerPath: fileName, fieldPath: 'tr_n()', objectType: 'GDScript' },
+      protectedSegments: toProtectedSegments(extractGodotTokens(singular)),
+      protectionProfile: 'godot',
+      rawMetadata: { call: 'tr_n' },
+    }))
+  }
+
+  // TranslationServer.translate("...").
+  const translatePattern = /TranslationServer\.translate\(\s*"((?:[^"\\]|\\.)*)"/gu
+  let tsMatch: RegExpExecArray | null
+  while ((tsMatch = translatePattern.exec(text)) !== null) {
+    const value = unescapeGdString(tsMatch[1])
+    if (!value.trim()) continue
+    entries.push(buildEntry({
+      id: structuralEntryId(['godot-gd-ts', fileName, String(order)]),
+      order: order++,
+      sourceText: value,
+      classification: 'UI',
+      classificationConfidence: 'high',
+      origin: { engine: 'godot', containerPath: fileName, fieldPath: 'TranslationServer.translate()', objectType: 'GDScript' },
+      protectedSegments: toProtectedSegments(extractGodotTokens(value)),
+      protectionProfile: 'godot',
+      rawMetadata: { call: 'TranslationServer.translate' },
+    }))
+  }
+
+  return {
+    engine: 'godot',
+    detection: detectEngine({ files: [{ name: fileName, lower: fileName.toLowerCase() }], directories: [] }),
+    entries,
+    diagnostics: [],
+    stats: {
+      filesScanned: 1,
+      candidateFiles: 1,
+      entriesFound: entries.length,
+      byClassification: entries.reduce<Record<string, number>>((acc, e) => { acc[e.classification] = (acc[e.classification] ?? 0) + 1; return acc }, {}),
+      protectedTokenCount: entries.reduce((sum, e) => sum + e.protectedSegments.length, 0),
+      entriesWithSpeaker: 0,
+      entriesWithListener: 0,
+      entriesWithExplicitGender: 0,
+      entriesWithInferredContext: 0,
+      conversationGroups: 0,
+      warnings: 0,
+      errors: 0,
+    },
+  }
+}
+
+function unescapeGdString(raw: string): string {
+  return raw
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
 }

@@ -74,11 +74,23 @@ export type ExtractionDiagnosticKind =
   | 'partial-extraction'
   | 'low-confidence'
   | 'cancelled'
+  | 'binary-resource-not-converted'
+  | 'script-not-extracted'
+  | 'ink-binary-not-parsed'
+  | 'structural-skipped'
+  | 'no-translatable-text'
 
 export type ExtractionDiagnostic = {
   kind: ExtractionDiagnosticKind
   message: string
   path?: string
+  /*
+   * When a diagnostic represents many identical files, it is aggregated once
+   * with a count and a bounded set of example paths instead of one card per
+   * file. Extraction Review expands these into the examples on demand.
+   */
+  count?: number
+  examplePaths?: string[]
 }
 
 /*
@@ -245,6 +257,19 @@ export type ExtractionStats = {
   conversationGroups: number
   warnings: number
   errors: number
+  /*
+   * Categorised resource counts so the UI can distinguish "88k resources
+   * discovered" from "how many were actually localizable / convertible /
+   * excluded".
+   */
+  resourcesDiscovered?: number
+  resourcesAnalyzed?: number
+  textResources?: number
+  binaryResources?: number
+  localizationResources?: number
+  structuralResources?: number
+  unsupportedResources?: number
+  skipped?: number
 }
 
 export type ExtractionResult = {

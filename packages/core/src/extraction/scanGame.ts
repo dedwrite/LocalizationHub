@@ -12,7 +12,8 @@
  */
 
 import { detectEngine, type DetectionInput } from './engineDetection'
-import { extractGodot } from './engines/godot'
+import { extractGodot, extractGodotScript } from './engines/godot'
+import { extractPo } from './engines/gettext'
 import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
@@ -75,9 +76,29 @@ export type ScanProgress = {
   phase: 'discovering' | 'analyzing' | 'done'
 }
 
-const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.scn', '.txt', '.ink', '.gd'])
-const BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
-const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.res'])
+/*
+ * Engine-resource classification. Each discovered file is routed into exactly
+ * one bucket so binary resources are NEVER mistaken for UTF-8 text and
+ * unsupported resources are reported once (aggregated) rather than once per
+ * file.
+ */
+export type ResourceKind =
+  | 'text-resource'      // UTF-8 parseable (JSON/CSV/PO/tscn/tres/txt/ink/gd)
+  | 'script'             // GDScript source (.gd) — safe, targeted extraction
+  | 'unreal-binary'      // .locres/.locmeta — native readers
+  | 'godot-binary'       // .res/.scn/.translation/.gdc — requires conversion
+  | 'ink-binary'         // .inkb compiled Ink — requires Ink tooling
+  | 'archive'            // .pak/.utoc/.ucas/.pck/.assets/.unity3d/.bundle
+  | 'structural'         // .import/.remap/.godot/.uid/.md5 sidecar — never text
+  | 'unknown'            // not localizable, skipped silently
+
+const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.txt', '.ink'])
+const SCRIPT_EXTENSIONS = new Set(['.gd'])
+const UNREAL_BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
+const GODOT_BINARY_RESOURCE_EXTENSIONS = new Set(['.res', '.scn', '.translation', '.gdc'])
+const INK_BINARY_EXTENSIONS = new Set(['.inkb'])
+const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.bundle'])
+const STRUCTURAL_EXTENSIONS = new Set(['.import', '.remap', '.godot', '.uid', '.md5', '.meta', '.cfg'])
 
 // Extensionless Unity serialized files are discovered by exact/pattern name.
 const EXTENSIONLESS_NAMES = new Set(['globalgamemanagers', 'globalgamemanagers.assets', 'data.unity3d', 'level0', 'projectsettings', 'unitydefaultresources'])
@@ -88,18 +109,26 @@ function extensionOf(name: string): string {
   return name.slice(dot).toLowerCase()
 }
 
-function isCandidate(file: ScanFile): boolean {
+/*
+ * Classify a file by extension. `.scn` is ambiguous (Godot text scenes are
+ * `.tscn`, binary scenes are `.scn`), so a magic-byte check is performed for it
+ * at dispatch time — never a blind UTF-8 read.
+ */
+export function classifyFileKind(file: ScanFile): ResourceKind {
   const lower = file.name.toLowerCase()
-  if (EXTENSIONLESS_NAMES.has(lower)) return true
-  if (lower.startsWith('level') && !lower.includes('.')) return true
-  if (lower.startsWith('sharedassets') && lower.endsWith('.assets')) return true
+  if (EXTENSIONLESS_NAMES.has(lower)) return 'archive'
+  if (lower.startsWith('level') && !lower.includes('.')) return 'archive'
+  if (lower.startsWith('sharedassets') && lower.endsWith('.assets')) return 'archive'
 
   const ext = extensionOf(file.name)
-  return (
-    TEXT_EXTENSIONS.has(ext) ||
-    BINARY_EXTENSIONS.has(ext) ||
-    ARCHIVE_EXTENSIONS.has(ext)
-  )
+  if (TEXT_EXTENSIONS.has(ext)) return 'text-resource'
+  if (SCRIPT_EXTENSIONS.has(ext)) return 'script'
+  if (UNREAL_BINARY_EXTENSIONS.has(ext)) return 'unreal-binary'
+  if (GODOT_BINARY_RESOURCE_EXTENSIONS.has(ext)) return 'godot-binary'
+  if (INK_BINARY_EXTENSIONS.has(ext)) return 'ink-binary'
+  if (ARCHIVE_EXTENSIONS.has(ext)) return 'archive'
+  if (STRUCTURAL_EXTENSIONS.has(ext)) return 'structural'
+  return 'unknown'
 }
 
 function combineStats(parts: ExtractionStats[]): ExtractionStats {
@@ -138,12 +167,27 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     detection = { ...detection, engine: options.engineHint }
   }
 
-  const candidates = files.filter(isCandidate)
+  const candidates = files.filter((f) => classifyFileKind(f) !== 'unknown')
   const diagnostics: ExtractionDiagnostic[] = []
   const entries: ExtractionResult['entries'] = []
   const statsParts: ExtractionStats[] = []
   // Native-culture metadata collected from .locmeta files (target → native culture).
   const nativeByTarget = new Map<string, string>()
+
+  // Resource-kind accounting so the UI can distinguish resources from text.
+  const kindCounts: Record<ResourceKind, number> = {
+    'text-resource': 0,
+    script: 0,
+    'unreal-binary': 0,
+    'godot-binary': 0,
+    'ink-binary': 0,
+    archive: 0,
+    structural: 0,
+    unknown: 0,
+  }
+  const archivePaths: string[] = []
+  const godotBinaryPaths: string[] = []
+  const inkBinaryPaths: string[] = []
 
   let filesAnalyzed = 0
   options.onProgress?.({
@@ -154,39 +198,54 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     phase: 'analyzing',
   })
 
-  for (const file of candidates) {
+  for (const file of files) {
     if (signal?.cancelled) {
       diagnostics.push({ kind: 'cancelled', message: 'Scan cancelled.', path: file.relativePath })
       break
     }
 
-    const ext = extensionOf(file.name)
-    let result: ExtractionResult
+    const kind = classifyFileKind(file)
+    kindCounts[kind] += 1
+    if (kind === 'unknown' || kind === 'structural') continue
 
+    // Containers / binary resources / compiled Ink are reported as aggregate
+    // diagnostics at the end — never one card per file, never read as text.
+    if (kind === 'archive') {
+      if (archivePaths.length < 5) archivePaths.push(file.relativePath)
+      continue
+    }
+    if (kind === 'godot-binary') {
+      if (godotBinaryPaths.length < 5) godotBinaryPaths.push(file.relativePath)
+      continue
+    }
+    if (kind === 'ink-binary') {
+      if (inkBinaryPaths.length < 5) inkBinaryPaths.push(file.relativePath)
+      continue
+    }
+
+    let result: ExtractionResult
     try {
-      if (TEXT_EXTENSIONS.has(ext)) {
-        const text = await reader.readText(file)
-        result = dispatchText(file, text, detection.engine, mappings)
-      } else if (ext === '.locres') {
-        const buffer = await reader.readBinary(file)
-        result = extractUnrealLocres({ fileName: file.relativePath, buffer })
-      } else if (ext === '.locmeta') {
-        // LOCMETA is metadata only; capture native culture for aggregation.
-        const buffer = await reader.readBinary(file)
-        const meta = readLocmeta(buffer)
-        if (meta.nativeCulture && meta.nativeLocRes) {
-          nativeByTarget.set(meta.nativeLocRes, meta.nativeCulture)
+      if (kind === 'text-resource') {
+        const ext = extensionOf(file.name)
+        if (ext === '.po' || ext === '.pot') {
+          result = extractPo(file.relativePath, await reader.readText(file))
+        } else {
+          const text = await reader.readText(file)
+          result = dispatchText(file, text, detection.engine, mappings)
         }
-        result = extractUnrealLocmeta({ fileName: file.relativePath, buffer })
-      } else if (ARCHIVE_EXTENSIONS.has(ext)) {
-        // Archives are delegated to external tooling; record a diagnostic so
-        // the review can report them honestly rather than ignoring them.
-        result = {
-          engine: detection.engine,
-          detection,
-          entries: [],
-          diagnostics: [{ kind: 'external-tool-not-found', message: `Archive ${file.relativePath} requires external unpacking.`, path: file.relativePath }],
-          stats: { filesScanned: 1, candidateFiles: 1, entriesFound: 0, byClassification: {}, protectedTokenCount: 0, entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: 0, errors: 1 },
+      } else if (kind === 'script') {
+        result = extractGodotScript(file.relativePath, await reader.readText(file))
+      } else if (kind === 'unreal-binary') {
+        const buffer = await reader.readBinary(file)
+        if (extensionOf(file.name) === '.locres') {
+          result = extractUnrealLocres({ fileName: file.relativePath, buffer })
+        } else {
+          // LOCMETA is metadata only; capture native culture for aggregation.
+          const meta = readLocmeta(buffer)
+          if (meta.nativeCulture && meta.nativeLocRes) {
+            nativeByTarget.set(meta.nativeLocRes, meta.nativeCulture)
+          }
+          result = extractUnrealLocmeta({ fileName: file.relativePath, buffer })
         }
       } else {
         continue
@@ -215,6 +274,35 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     })
   }
 
+  // --- Aggregated diagnostics (one card per class, not per file) ---
+  if (archivePaths.length > 0) {
+    diagnostics.push({
+      kind: 'external-tool-not-found',
+      message: 'Archive containers require external unpacking.',
+      count: kindCounts.archive,
+      examplePaths: archivePaths,
+    })
+  }
+  if (godotBinaryPaths.length > 0) {
+    diagnostics.push({
+      kind: 'binary-resource-not-converted',
+      message: 'Binary Godot resources (.res/.scn/.translation/.gdc) require conversion.',
+      count: kindCounts['godot-binary'],
+      examplePaths: godotBinaryPaths,
+    })
+  }
+  if (inkBinaryPaths.length > 0) {
+    diagnostics.push({
+      kind: 'ink-binary-not-parsed',
+      message: 'Compiled Ink (.inkb) dialogue requires Ink tooling.',
+      count: kindCounts['ink-binary'],
+      examplePaths: inkBinaryPaths,
+    })
+  }
+
+  // --- Aggregate repeated diagnostics so 88k files become a handful of cards. ---
+  const aggregatedDiagnostics = aggregateDiagnostics(diagnostics)
+
   options.onProgress?.({
     filesDiscovered: files.length,
     filesAnalyzed,
@@ -226,6 +314,14 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   const stats = combineStats(statsParts)
   stats.filesScanned = files.length
   stats.candidateFiles = candidates.length
+  stats.resourcesDiscovered = files.length
+  stats.resourcesAnalyzed = filesAnalyzed
+  stats.textResources = kindCounts['text-resource']
+  stats.binaryResources = kindCounts['godot-binary'] + kindCounts['unreal-binary']
+  stats.localizationResources = kindCounts['text-resource']
+  stats.structuralResources = kindCounts.structural
+  stats.unsupportedResources = kindCounts.archive + kindCounts['godot-binary'] + kindCounts['ink-binary']
+  stats.skipped = kindCounts.structural + kindCounts.unknown
 
   // Culture aggregation: collapse duplicate per-culture entries into one
   // logical entry per localization identity, using LOCMETA native culture.
@@ -233,14 +329,53 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   const withNative = applyNativeCulture(aggregated, nativeByTarget)
   stats.entriesFound = withNative.entries.length
 
+  // --- Zero-entry safety: a scan with thousands of resources and no text is
+  // not a successful scan; surface it prominently. ---
+  if (withNative.entries.length === 0 && files.length > 0) {
+    aggregatedDiagnostics.push({
+      kind: 'no-translatable-text',
+      message: 'No translatable text was extracted from this game.',
+      count: 1,
+    })
+  }
+
   return {
     engine: detection.engine,
     detection,
     entries: withNative.entries,
-    diagnostics,
+    diagnostics: aggregatedDiagnostics,
     stats,
     localizationTargets: withNative.targets,
   }
+}
+
+/*
+ * Collapse repeated diagnostics by (kind + message) into a single card with a
+ * count and a bounded set of example paths. Single occurrences are left as-is.
+ */
+function aggregateDiagnostics(diagnostics: ExtractionDiagnostic[]): ExtractionDiagnostic[] {
+  const byKey = new Map<string, ExtractionDiagnostic>()
+  const order: string[] = []
+  for (const d of diagnostics) {
+    const key = `${d.kind}\u0000${d.message}`
+    const existing = byKey.get(key)
+    if (!existing) {
+      byKey.set(key, {
+        kind: d.kind,
+        message: d.message,
+        path: d.path,
+        count: d.count ?? 1,
+        examplePaths: d.examplePaths ?? (d.path ? [d.path] : []),
+      })
+      order.push(key)
+    } else {
+      existing.count = (existing.count ?? 1) + (d.count ?? 1)
+      if (d.path && (existing.examplePaths?.length ?? 0) < 5) {
+        existing.examplePaths = [...(existing.examplePaths ?? []), d.path]
+      }
+    }
+  }
+  return order.map((key) => byKey.get(key) as ExtractionDiagnostic)
 }
 
 function dispatchText(
