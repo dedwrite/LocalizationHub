@@ -10,6 +10,8 @@ src-tauri/target/
 .env
 .env.*
 !.env.example
+# Public build-time configuration for the desktop client (non-secret endpoints only).
+!frontend/.env.production
 
 # Logs
 *.log

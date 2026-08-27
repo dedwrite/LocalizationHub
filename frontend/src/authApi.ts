@@ -6,6 +6,10 @@ import {
   type AuthUser,
 } from './authSession'
 
+import {
+  getCloudApiBaseUrl,
+} from './runtimeConfig'
+
 type AuthApiErrorCode =
   | 'disabled'
   | 'network-error'
@@ -45,24 +49,14 @@ export class AuthApiError
 
 function getAuthApiBaseUrl():
   string {
-  const configured =
-    import.meta.env
-      .VITE_CLOUD_API_URL
-      ?.trim()
-
-  if (configured) {
-    return configured
-      .replace(/\/$/, '')
+  try {
+    return getCloudApiBaseUrl()
+  } catch {
+    throw new AuthApiError(
+      'disabled',
+      'Authentication is not enabled in this build.',
+    )
   }
-
-  if (import.meta.env.DEV) {
-    return 'http://127.0.0.1:8787'
-  }
-
-  throw new AuthApiError(
-    'disabled',
-    'Authentication is not enabled in this build.',
-  )
 }
 
 async function requestJson<T>(

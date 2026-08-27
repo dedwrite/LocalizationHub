@@ -20,6 +20,10 @@ import {
   getAuthToken,
 } from './authSession'
 
+import {
+  getCloudApiBaseUrl,
+} from './runtimeConfig'
+
 type CloudProjectsApiErrorCode =
   | 'disabled'
   | 'network-error'
@@ -69,26 +73,16 @@ export class CloudProjectsApiError
   }
 }
 
-function getCloudApiBaseUrl():
+function getApiBaseUrl():
   string {
-  const configured =
-    import.meta.env
-      .VITE_CLOUD_API_URL
-      ?.trim()
-
-  if (configured) {
-    return configured
-      .replace(/\/$/, '')
+  try {
+    return getCloudApiBaseUrl()
+  } catch {
+    throw new CloudProjectsApiError(
+      'disabled',
+      'Cloud Projects are not enabled in this build.',
+    )
   }
-
-  if (import.meta.env.DEV) {
-    return 'http://127.0.0.1:8787'
-  }
-
-  throw new CloudProjectsApiError(
-    'disabled',
-    'Cloud Projects are not enabled in this build.',
-  )
 }
 
 async function requestJson<T>(
@@ -99,7 +93,7 @@ async function requestJson<T>(
     RequestInit,
 ): Promise<T> {
   const baseUrl =
-    getCloudApiBaseUrl()
+    getApiBaseUrl()
 
   const authToken =
     getAuthToken()

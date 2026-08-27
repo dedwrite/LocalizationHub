@@ -27,6 +27,12 @@ All notable LocalizationHub release milestones are documented here.
 - Stopped Chrome credential autofill from hijacking the Machine Translation API key field (visually masked text input with Show / Hide).
 - Fixed a stale Gemini model reference; the web Machine Translation now uses supported current models.
 - Corrected draft update resolution so saves always serialize a valid project object rather than a stale closure.
+- Corrected the Windows installer to embed the production Cloud API and collaboration endpoints; a release build now fails fast if that configuration is missing.
+
+### Build & release
+
+- Centralized desktop endpoint resolution in `runtimeConfig` and added a committed non-secret `.env.production` so a release installer is Cloud-enabled without manual environment setup.
+- Added a production-config validation gate to the release build and a production-build regression test that verifies the compiled bundle embeds the intended endpoints.
 
 ### Compatibility
 

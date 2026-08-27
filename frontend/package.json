@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/validate-production-config.mjs && tsc -b && vite build",
+    "build:release": "node scripts/validate-production-config.mjs && tsc -b && vite build",
+    "verify:production": "node scripts/verify-production-build.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:tokens": "vitest run src/tokens"

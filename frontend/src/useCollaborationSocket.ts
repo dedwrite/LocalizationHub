@@ -19,15 +19,13 @@ import {
   getAuthToken,
 } from './authSession'
 
+import {
+  getCollaborationServerUrl,
+  getCollaborationHttpUrl,
+} from './runtimeConfig'
+
 const COLLABORATION_SERVER_URL =
-  import.meta.env
-    .VITE_COLLABORATION_SERVER_URL
-    ?.trim() ||
-  (
-    import.meta.env.PROD
-      ? 'wss://localizationhub-relay.onrender.com'
-      : 'ws://127.0.0.1:8787'
-  )
+  getCollaborationServerUrl()
 
 /*
  * Browsers cannot attach custom headers to a
@@ -55,23 +53,10 @@ function getCollaborationWebSocketUrl(
 }
 
 /*
- * Derives the HTTP(S) base URL for the
- * collaboration relay from the WebSocket
- * URL so the ticket endpoint is always
- * reached on the same service.
+ * The HTTP(S) ticket endpoint is derived from the WebSocket URL by
+ * `getCollaborationHttpUrl()` in `runtimeConfig`, so the ticket request is
+ * always reached on the same collaboration service.
  */
-function getCollaborationHttpUrl():
-  string {
-  return COLLABORATION_SERVER_URL
-    .replace(
-      /^wss:/,
-      'https:',
-    )
-    .replace(
-      /^ws:/,
-      'http:',
-    )
-}
 
 /*
  * Exchanges the stored session token over

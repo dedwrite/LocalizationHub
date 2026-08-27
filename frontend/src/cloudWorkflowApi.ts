@@ -1,6 +1,7 @@
 import { getAuthToken } from './authSession'
+import { getCloudApiBaseUrl } from './runtimeConfig'
 
-function baseUrl(): string { return (import.meta.env.VITE_CLOUD_API_URL?.trim() || 'http://127.0.0.1:8787').replace(/\/$/u, '') }
+function baseUrl(): string { return getCloudApiBaseUrl() }
 async function request<T>(path: string, init?: RequestInit): Promise<T> { const response = await fetch(`${baseUrl()}${path}`, { ...init, headers: { Accept: 'application/json', 'Content-Type': 'application/json', Authorization: `Bearer ${getAuthToken() ?? ''}`, ...init?.headers } }); const body = await response.json() as T & { error?: string }; if (!response.ok) throw new Error(body.error ?? `Cloud request failed: ${response.status}`); return body }
 export type CloudComment = { id: string; entryId: string; body: string; authorUserId?: string; authorName?: string; createdAt: string; resolved: boolean }
 export type CloudAssignment = { entryId: string; assigneeUserId: string; updatedAt: string }
