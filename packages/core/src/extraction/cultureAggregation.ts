@@ -1,0 +1,143 @@
+/*
+ * Culture-aware localization aggregation.
+ *
+ * A multi-locale game may ship the same localization identity (namespace/key)
+ * in multiple culture resources. Instead of producing one duplicate entry per
+ * culture, this layer groups matching identities and produces ONE logical entry
+ * per identity, with the native/source culture as `sourceText` and the other
+ * cultures preserved as `localeVariants`.
+ *
+ * Uses LOCMETA (native culture) when available; otherwise falls back to the
+ * first-discovered culture WITHOUT guessing (marked via target metadata).
+ */
+
+import type {
+  ExtractedEntry,
+  LocalizationTarget,
+} from './types'
+
+/*
+ * Group extracted entries by a culture-independent identity. For LOCRES the
+ * identity is `target::namespace::key`; for other engines it falls back to the
+ * native key/namespace. Entries whose identity is a path-stable ID (Godot CSV,
+ * Unity StringTable) are already unique and are left untouched.
+ */
+function identityOf(entry: ExtractedEntry): string | undefined {
+  if (entry.origin.engine !== 'unreal') return undefined
+  if (entry.origin.namespace == null || entry.key == null) return undefined
+  const target = entry.rawMetadata?.localizationTarget ?? entry.origin.resourceName ?? ''
+  return `unreal:${target}:${entry.origin.namespace}:${entry.key}`
+}
+
+function targetOf(entry: ExtractedEntry): string {
+  return String(entry.rawMetadata?.localizationTarget ?? entry.origin.resourceName ?? 'unknown')
+}
+
+/*
+ * Aggregate a scan's entries and produce localization-target metadata.
+ *
+ * - Unreal LOCRES entries are grouped by target/namespace/key; the native
+ *   culture becomes the source and the rest become locale variants.
+ * - All other entries pass through unchanged.
+ */
+export function aggregateCultures(
+  entries: ExtractedEntry[],
+): { entries: ExtractedEntry[]; targets: LocalizationTarget[] } {
+  const targetCultures = new Map<string, Set<string>>()
+  const groups = new Map<string, ExtractedEntry[]>()
+
+  for (const entry of entries) {
+    if (entry.sourceLocale) {
+      const target = targetOf(entry)
+      const set = targetCultures.get(target) ?? new Set<string>()
+      set.add(entry.sourceLocale)
+      targetCultures.set(target, set)
+    }
+
+    const identity = identityOf(entry)
+    if (identity) {
+      const list = groups.get(identity) ?? []
+      list.push(entry)
+      groups.set(identity, list)
+    }
+  }
+
+  const merged = new Map<string, ExtractedEntry>()
+  const output: ExtractedEntry[] = []
+
+  for (const entry of entries) {
+    const identity = identityOf(entry)
+    if (!identity) {
+      output.push(entry)
+      continue
+    }
+    if (merged.has(identity)) continue
+    merged.set(identity, entry)
+
+    const variants = groups.get(identity) ?? [entry]
+    // Sort by locale for determinism.
+    variants.sort((a, b) => (a.sourceLocale ?? '').localeCompare(b.sourceLocale ?? ''))
+
+    // First-discovered (or native, when known) becomes the source text.
+    const first = variants[0]
+    const localeVariants = variants.map((v) => ({ locale: v.sourceLocale ?? 'unknown', text: v.sourceText }))
+
+    output.push({
+      ...first,
+      localeVariants: localeVariants.length > 1 ? localeVariants : undefined,
+    })
+  }
+
+  const targets: LocalizationTarget[] = [...targetCultures.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([name, cultures]) => ({
+      name,
+      availableCultures: [...cultures].sort(),
+    }))
+
+  return { entries: output, targets }
+}
+
+/*
+ * Apply native-culture info from LOCMETA-derived target metadata to the
+ * aggregated result. When a target's native culture is known, the entry for that
+ * culture is used as the source; other cultures become `localeVariants`.
+ */
+export function applyNativeCulture(
+  result: { entries: ExtractedEntry[]; targets: LocalizationTarget[] },
+  nativeByTarget: Map<string, string>,
+): { entries: ExtractedEntry[]; targets: LocalizationTarget[] } {
+  if (nativeByTarget.size === 0) return result
+
+  const targets = result.targets.map((target) => ({
+    ...target,
+    nativeCulture: nativeByTarget.get(target.name),
+  }))
+
+  const entries = result.entries.map((entry) => {
+    const target = targetOf(entry)
+    const native = nativeByTarget.get(target)
+    if (!native || !entry.localeVariants) return entry
+
+    const nativeVariant = entry.localeVariants.find((v) => v.locale === native)
+    if (!nativeVariant || nativeVariant.text === entry.sourceText) return entry
+
+    // Swap: native culture becomes source. The native variant is removed (it is
+    // now the source itself); every other culture (including the old source
+    // locale) is already present in `localeVariants` and is preserved.
+    const variants = entry.localeVariants
+      .filter((v) => v.locale !== native)
+      .sort((a, b) => a.locale.localeCompare(b.locale))
+
+    return {
+      ...entry,
+      sourceText: nativeVariant.text,
+      sourceLocale: native,
+      localeVariants: variants.length > 0 ? variants : undefined,
+    }
+  })
+
+  return { entries, targets }
+}
+
+export { identityOf, targetOf }

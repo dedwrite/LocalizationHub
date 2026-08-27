@@ -3,7 +3,7 @@ import { scanGame, type ScanFile } from './scanGame'
 
 function makeFile(name: string, content: string): { file: ScanFile; content: string } {
   return {
-    file: { name, relativePath: name, size: content.length },
+    file: { name, relativePath: name, absolutePath: name, size: content.length },
     content,
   }
 }
@@ -77,7 +77,7 @@ describe('scanGame orchestrator', () => {
     }
     const signal = { cancelled: true }
     const result = await scanGame({
-      files: [...fixtures.keys()].map((name) => ({ name, relativePath: name, size: 0 })),
+      files: [...fixtures.keys()].map((name) => ({ name, relativePath: name, absolutePath: name, size: 0 })),
       reader: memoryReader(fixtures),
       signal,
     })

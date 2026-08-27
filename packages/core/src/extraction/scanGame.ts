@@ -16,6 +16,8 @@ import { extractGodot } from './engines/godot'
 import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
+import { readLocmeta } from './engines/locmeta'
+import { aggregateCultures, applyNativeCulture } from './cultureAggregation'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
@@ -25,11 +27,26 @@ import type {
 
 export type ScanFile = {
   name: string
+  /*
+   * Project-relative provenance path (e.g. "Data/dialogue.json" or
+   * "Game/Content/Localization/Game/en/Game.locres"). This is what flows into
+   * `SourceLocator.containerPath` and project metadata. NEVER an absolute
+   * filesystem path — it must not contain the user's drive, username, or root.
+   */
   relativePath: string
+  /*
+   * Desktop runtime only: the absolute filesystem path used for IO. Never
+   * serialized into normalized project metadata or SourceLocator.
+   */
+  absolutePath: string
   size: number
 }
 
 export type FileReader = {
+  /*
+   * Reads by ABSOLUTE path (desktop runtime IO). The returned content is then
+   * parsed with the project-relative path as provenance.
+   */
   readText: (file: ScanFile) => Promise<string>
   readBinary: (file: ScanFile) => Promise<Uint8Array>
 }
@@ -115,6 +132,8 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   const diagnostics: ExtractionDiagnostic[] = []
   const entries: ExtractionResult['entries'] = []
   const statsParts: ExtractionStats[] = []
+  // Native-culture metadata collected from .locmeta files (target → native culture).
+  const nativeByTarget = new Map<string, string>()
 
   let filesAnalyzed = 0
   options.onProgress?.({
@@ -142,8 +161,12 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
         const buffer = await reader.readBinary(file)
         result = extractUnrealLocres({ fileName: file.relativePath, buffer })
       } else if (ext === '.locmeta') {
-        // LOCMETA is metadata only; never parsed as a translatable resource.
+        // LOCMETA is metadata only; capture native culture for aggregation.
         const buffer = await reader.readBinary(file)
+        const meta = readLocmeta(buffer)
+        if (meta.nativeCulture && meta.nativeLocRes) {
+          nativeByTarget.set(meta.nativeLocRes, meta.nativeCulture)
+        }
         result = extractUnrealLocmeta({ fileName: file.relativePath, buffer })
       } else if (ARCHIVE_EXTENSIONS.has(ext)) {
         // Archives are delegated to external tooling; record a diagnostic so
@@ -194,12 +217,19 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   stats.filesScanned = files.length
   stats.candidateFiles = candidates.length
 
+  // Culture aggregation: collapse duplicate per-culture entries into one
+  // logical entry per localization identity, using LOCMETA native culture.
+  const aggregated = aggregateCultures(entries)
+  const withNative = applyNativeCulture(aggregated, nativeByTarget)
+  stats.entriesFound = withNative.entries.length
+
   return {
     engine: detection.engine,
     detection,
-    entries,
+    entries: withNative.entries,
     diagnostics,
     stats,
+    localizationTargets: withNative.targets,
   }
 }
 

@@ -28,6 +28,7 @@
  */
 
 import type { ExtractedEntry, ExtractionDiagnostic } from '../types'
+import { extractUnrealTokens } from '../../tokens/unreal'
 
 export const LOCRES_MAGIC = [0x7574140e, 0xfc034a67, 0x9d90154a, 0x1b7f37c3] as const
 
@@ -132,6 +133,57 @@ function cultureFromPath(path: string | undefined): string | undefined {
     return parts[idx + 2]
   }
   return undefined
+}
+
+/*
+ * Derive the localization target (resource) name from the .locres path. Unreal
+ * layout: .../Content/Localization/<Target>/<Culture>/<Target>.locres — the
+ * target is the directory immediately after "Localization".
+ */
+function localizationTargetFromPath(path: string | undefined): string {
+  if (!path) return 'unknown'
+  const parts = path.replace(/\\/g, '/').split('/')
+  const idx = parts.findIndex((p) => p.toLowerCase() === 'localization')
+  if (idx >= 0 && parts.length > idx + 1) {
+    return parts[idx + 1]
+  }
+  return path.split('/').pop()?.replace(/\.locres$/iu, '') ?? 'unknown'
+}
+
+/*
+ * Classify a LOCRES entry from namespace/key hints. Localization membership
+ * proves the entry is translatable, not that it is UI. Use the namespace and
+ * key to suggest a category; otherwise Unknown with medium confidence.
+ */
+function classifyLocresEntry(namespace: string, key: string): ExtractedEntry['classification'] {
+  const ns = namespace.toLowerCase()
+  const k = key.toLowerCase()
+
+  if (/dialogue|spoken|voice|subtitle|caption|conversation/.test(`${ns} ${k}`)) {
+    return /subtitle|caption/.test(`${ns} ${k}`) ? 'Subtitle' : 'Dialogue'
+  }
+  if (/quest|objective|mission/.test(`${ns} ${k}`)) return 'Quest'
+  if (/item|weapon|armor|consumable/.test(ns)) return 'ItemName'
+  if (/lore|codex|journal|book|letter/.test(`${ns} ${k}`)) return 'Codex'
+  if (/achievement|trophy/.test(`${ns} ${k}`)) return 'Achievement'
+  if (/tutorial|hint|tip|tooltip/.test(`${ns} ${k}`)) return 'Tutorial'
+  if (/notification|toast|announce/.test(`${ns} ${k}`)) return 'Notification'
+  if (/menu|settings|options|hud|ui/.test(ns)) return 'UI'
+  if (/system|error|warning/.test(ns)) return 'SystemMessage'
+
+  return 'Unknown'
+}
+
+function toProtectedSegments(
+  tokens: Array<{ raw: string; kind: string; start: number; end: number; ruleId: string }>,
+): Array<{ raw: string; kind: string; start: number; end: number; ruleId: string }> {
+  return tokens.map((token) => ({
+    raw: token.raw,
+    kind: token.kind,
+    start: token.start,
+    end: token.end,
+    ruleId: token.ruleId,
+  }))
 }
 
 export function isLocresBuffer(buffer: Uint8Array): boolean {
@@ -253,29 +305,37 @@ export function readLocres(
 
         if (!localizedString) continue
 
+        const target = localizationTargetFromPath(origin.containerPath)
+        const locale = cultureFromPath(origin.containerPath)
+        const protectedSegments = toProtectedSegments(extractUnrealTokens(localizedString))
+
         entries.push({
-          id: `locres:${namespace.str}:${key.str}`,
+          // Stable identity includes the localization target so two different
+          // targets (or two different resources) that share a namespace/key
+          // do not collide.
+          id: `locres:${target}:${namespace.str}:${key.str}`,
           key: key.str,
           namespace: namespace.str || undefined,
           order: order++,
           sourceText: localizedString,
-          sourceLocale: cultureFromPath(origin.containerPath),
-          classification: 'UI',
-          classificationConfidence: 'high',
+          sourceLocale: locale,
+          classification: classifyLocresEntry(namespace.str, key.str),
+          classificationConfidence: 'medium',
           origin: {
             engine: 'unreal',
             containerPath: origin.containerPath,
-            resourceName: origin.containerPath?.split(/[\\/]/u).pop(),
+            resourceName: target,
             namespace: namespace.str || undefined,
             key: key.str,
           },
-          protectedSegments: [],
+          protectedSegments,
           protectionProfile: 'unreal',
           rawMetadata: {
             sourceStringHash,
             namespaceHash: namespace.strHash,
             keyHash: key.strHash,
             locResName: origin.containerPath,
+            localizationTarget: target,
           },
         })
         entryCount += 1

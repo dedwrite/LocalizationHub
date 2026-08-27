@@ -190,6 +190,14 @@ export type ExtractedEntry = {
   existingTranslation?: string
   pluralVariants?: Array<{ quantity: string; text: string }>
 
+  /*
+   * Additional locale variants for the SAME logical localization identity
+   * (e.g. a namespace/key present in multiple culture .locres files). This is
+   * populated by the culture-aggregation layer so a multi-locale game produces
+   * ONE entry per identity, not one duplicate per culture.
+   */
+  localeVariants?: Array<{ locale: string; text: string }>
+
   classification: EntryClassification
   classificationConfidence: Confidence
 
@@ -245,6 +253,21 @@ export type ExtractionResult = {
   entries: ExtractedEntry[]
   diagnostics: ExtractionDiagnostic[]
   stats: ExtractionStats
+
+  /*
+   * Localization targets discovered during the scan (e.g. Unreal LOCMETA/LOCRES
+   * targets with their native culture and available cultures). Used for
+   * culture-aware aggregation and the Extraction Review culture controls.
+   */
+  localizationTargets?: LocalizationTarget[]
+}
+
+export type LocalizationTarget = {
+  name: string
+  nativeCulture?: string
+  nativeLocRes?: string
+  compiledCultures?: string[]
+  availableCultures: string[]
 }
 
 /*

@@ -1,0 +1,191 @@
+import { describe, expect, it } from 'vitest'
+import { readLocres } from './engines/locres'
+import { readLocmeta } from './engines/locmeta'
+import { aggregateCultures, applyNativeCulture } from './cultureAggregation'
+import { scanGame, type ScanFile } from './scanGame'
+import { buildProjectFromExtraction } from './projectFromExtraction'
+import { extractUnrealTokens } from '../tokens/unreal'
+import type { ExtractionResult } from './types'
+
+// A minimal Compact LOCRES builder reused for culture/ID tests.
+function buildCompactLocres(namespaces: Array<{ namespace: string; keys: Array<{ key: string; localized: string }> }>): Uint8Array {
+  // Reuse a simplified inline builder matching the real Compact layout.
+  const writer = new ByteWriter()
+  writer.writeGuid([0x7574140e, 0xfc034a67, 0x9d90154a, 0x1b7f37c3])
+  writer.writeU8(1) // Compact
+
+  const localizedStrings: string[] = []
+  writer.writeI64(0) // placeholder
+
+  writer.writeU32(namespaces.length)
+  for (const ns of namespaces) {
+    writer.writeFString(ns.namespace)
+    writer.writeU32(ns.keys.length)
+    for (const key of ns.keys) {
+      writer.writeFString(key.key)
+      writer.writeU32(0) // source hash
+      let idx = localizedStrings.indexOf(key.localized)
+      if (idx === -1) { idx = localizedStrings.length; localizedStrings.push(key.localized) }
+      writer.writeI32(idx)
+    }
+  }
+
+  const lutOffset = writer.bytes().length
+  const lut = new ByteWriter()
+  lut.writeI32(localizedStrings.length)
+  for (const s of localizedStrings) lut.writeFString(s)
+
+  const header = writer.bytes()
+  const patched = new Uint8Array(header.length)
+  patched.set(header)
+  new DataView(patched.buffer).setBigInt64(17, BigInt(lutOffset), true)
+
+  const lutBytes = lut.bytes()
+  const out = new Uint8Array(patched.length + lutBytes.length)
+  out.set(patched)
+  out.set(lutBytes, patched.length)
+  return out
+}
+
+class ByteWriter {
+  private chunks: Uint8Array[] = []
+  writeU8(v: number) { this.chunks.push(new Uint8Array([v & 0xff])) }
+  writeU32(v: number) { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v >>> 0, true); this.chunks.push(b) }
+  writeI32(v: number) { const b = new Uint8Array(4); new DataView(b.buffer).setInt32(0, v, true); this.chunks.push(b) }
+  writeI64(v: number) { const b = new Uint8Array(8); new DataView(b.buffer).setBigInt64(0, BigInt(v), true); this.chunks.push(b) }
+  writeGuid(parts: readonly number[]) { for (const p of parts) this.writeU32(p) }
+  writeFString(value: string) {
+    const ascii = /^[\x00-\x7F]*$/u.test(value)
+    if (ascii) {
+      this.writeI32(value.length + 1)
+      const b = new Uint8Array(value.length + 1)
+      for (let i = 0; i < value.length; i += 1) b[i] = value.charCodeAt(i)
+      this.chunks.push(b)
+    } else {
+      this.writeI32(-(value.length + 1))
+      const b = new Uint8Array((value.length + 1) * 2)
+      for (let i = 0; i < value.length; i += 1) { const c = value.charCodeAt(i); b[i * 2] = c & 0xff; b[i * 2 + 1] = c >> 8 }
+      this.chunks.push(b)
+    }
+  }
+  bytes(): Uint8Array {
+    const total = this.chunks.reduce((s, c) => s + c.length, 0)
+    const out = new Uint8Array(total)
+    let o = 0
+    for (const c of this.chunks) { out.set(c, o); o += c.length }
+    return out
+  }
+}
+
+describe('culture aggregation', () => {
+  it('collapses the same namespace/key across cultures into one entry with locale variants', () => {
+    const en = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Play' }] }]), { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    const fr = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Jouer' }] }]), { containerPath: 'Game/Content/Localization/Game/fr/Game.locres' })
+    const de = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Spielen' }] }]), { containerPath: 'Game/Content/Localization/Game/de/Game.locres' })
+
+    const { entries, targets } = aggregateCultures([...en.entries, ...fr.entries, ...de.entries])
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0].key).toBe('PLAY')
+    expect(entries[0].localeVariants?.map((v) => v.locale).sort()).toEqual(['de', 'en', 'fr'])
+    expect(targets).toHaveLength(1)
+    expect(targets[0].name).toBe('Game')
+    expect(targets[0].availableCultures.sort()).toEqual(['de', 'en', 'fr'])
+  })
+
+  it('uses LOCMETA native culture to set the source text', () => {
+    const fr = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Jouer' }] }]), { containerPath: 'Game/Content/Localization/Game/fr/Game.locres' })
+    const en = readLocres(buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'PLAY', localized: 'Play' }] }]), { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+
+    // Without native-culture metadata, en sorts first alphabetically → source.
+    const { entries } = aggregateCultures([...fr.entries, ...en.entries])
+    expect(entries[0].sourceText).toBe('Play')
+
+    // With native culture = fr, fr becomes the source even though en sorts first.
+    const withNative = applyNativeCulture({ entries, targets: [] }, new Map([['Game', 'fr']]))
+    expect(withNative.entries[0].sourceText).toBe('Jouer')
+    expect(withNative.entries[0].sourceLocale).toBe('fr')
+    // en (the old source) is preserved as the remaining locale variant.
+    expect(withNative.entries[0].localeVariants?.map((v) => v.locale)).toEqual(['en'])
+  })
+})
+
+describe('LOCRES protected tokens + classification', () => {
+  it('runs the Unreal token profile against localized text', () => {
+    const buffer = buildCompactLocres([{ namespace: 'Game', keys: [{ key: 'COUNT', localized: 'You have {Count}|plural(one=item,other=items).' }] }])
+    const result = readLocres(buffer, { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    expect(result.entries[0].protectedSegments.length).toBeGreaterThan(0)
+    expect(result.entries[0].protectedSegments.some((s) => s.raw.includes('plural'))).toBe(true)
+  })
+
+  it('classifies dialogue namespaces as Dialogue, not UI', () => {
+    const buffer = buildCompactLocres([{ namespace: 'Dialogue', keys: [{ key: 'Line_01', localized: 'Where have you been?' }] }])
+    const result = readLocres(buffer, { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    expect(result.entries[0].classification).toBe('Dialogue')
+  })
+})
+
+describe('stable global IDs', () => {
+  it('produces distinct IDs for the same key in two different StringTables', () => {
+    const t1 = buildCompactLocres([{ namespace: 'TableA', keys: [{ key: 'PLAY', localized: 'Play' }] }])
+    const t2 = buildCompactLocres([{ namespace: 'TableB', keys: [{ key: 'PLAY', localized: 'Play' }] }])
+    const r1 = readLocres(t1, { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    const r2 = readLocres(t2, { containerPath: 'Game/Content/Localization/Game/en/Game.locres' })
+    // Different namespaces → different IDs.
+    expect(r1.entries[0].id).not.toBe(r2.entries[0].id)
+  })
+})
+
+describe('privacy', () => {
+  it('never serializes absolute paths, usernames, or temp dirs into project metadata', () => {
+    const result: ExtractionResult = {
+      engine: 'godot',
+      detection: { engine: 'godot', familyLabel: 'Godot', confidence: 'high', evidence: ['project.godot'] },
+      entries: [{
+        id: 'dialogue:0:text',
+        key: 'line_0',
+        order: 0,
+        sourceText: 'Hello',
+        classification: 'Dialogue',
+        classificationConfidence: 'high',
+        context: { speaker: 'Mira' },
+        origin: { engine: 'godot', containerPath: 'Data/dialogue.json', fieldPath: '0.text' },
+        protectedSegments: [],
+        protectionProfile: 'godot',
+      }],
+      diagnostics: [],
+      stats: { filesScanned: 1, candidateFiles: 1, entriesFound: 1, byClassification: { Dialogue: 1 }, protectedTokenCount: 0, entriesWithSpeaker: 1, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 1, conversationGroups: 0, warnings: 0, errors: 0 },
+    }
+    const project = buildProjectFromExtraction(result, 'game.extracted')
+    const json = JSON.stringify(project)
+
+    expect(json).not.toContain('C:\\')
+    expect(json).not.toContain('C:/')
+    expect(json).not.toContain('TestPerson')
+    expect(json).not.toContain('AppData')
+    expect(json).not.toContain('Users\\')
+  })
+})
+
+describe('scanGame path separation', () => {
+  it('reads by absolutePath but stores relativePath as provenance', async () => {
+    const files: ScanFile[] = [{
+      name: 'dialogue.json',
+      relativePath: 'Data/dialogue.json',
+      absolutePath: 'C:/Users/TestPerson/Game/Data/dialogue.json',
+      size: 10,
+    }]
+    const reader = {
+      readText: async (file: ScanFile) => {
+        // Prove the reader received the absolute path.
+        expect(file.absolutePath).toContain('C:/Users/TestPerson')
+        return JSON.stringify([{ speaker: 'Mira', text: 'Hello' }])
+      },
+      readBinary: async () => new Uint8Array(),
+    }
+    const result = await scanGame({ files, reader })
+    expect(result.entries[0].origin.containerPath).toBe('Data/dialogue.json')
+    expect(result.entries[0].origin.containerPath).not.toContain('TestPerson')
+    expect(result.entries[0].origin.containerPath).not.toContain('C:')
+  })
+})

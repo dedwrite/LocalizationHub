@@ -8,24 +8,28 @@ import {
   matchesReviewFilter,
   type ReviewFilterId,
   type ContextFieldMapping,
+  type ContextFieldRole,
 } from '@localizationhub/core'
 import VirtualList from './VirtualList'
 import './ExtractionReview.css'
 
 type Props = {
   result: ExtractionResult
-  onCreateProject: (includedEntryIds: Set<string>) => void
+  onCreateProject: (includedEntryIds: Set<string>, sourceLocale?: string) => void
+  onApplyMappings: (mappings: ContextFieldMapping[]) => void
   onCancel: () => void
 }
 
 const ROW_HEIGHT = 148
 
-export default function ExtractionReview({ result, onCreateProject, onCancel }: Props) {
+export default function ExtractionReview({ result, onCreateProject, onApplyMappings, onCancel }: Props) {
   const [filter, setFilter] = useState<ReviewFilterId>('all')
   const [search, setSearch] = useState('')
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
   const [excludedFiles, setExcludedFiles] = useState<Set<string>>(new Set())
   const [mappingsOpen, setMappingsOpen] = useState(false)
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false)
+  const [sourceLocale, setSourceLocale] = useState<string | undefined>(undefined)
 
   // Effective entry list: apply filter + search + file exclusion.
   const filteredEntries = useMemo(() => {
@@ -100,10 +104,22 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
         .filter((e) => !excludedIds.has(e.id) && !excludedFiles.has(e.origin.containerPath ?? ''))
         .map((e) => e.id),
     )
-    onCreateProject(included)
+    onCreateProject(included, sourceLocale)
   }
 
-  const { stats, detection } = result
+  const { stats, detection, localizationTargets } = result
+
+  // Aggregated culture list across all targets.
+  const cultures = useMemo(() => {
+    const set = new Set<string>()
+    for (const target of localizationTargets ?? []) {
+      for (const culture of target.availableCultures) set.add(culture)
+      if (target.nativeCulture) set.add(target.nativeCulture)
+    }
+    return [...set].sort()
+  }, [localizationTargets])
+
+  const nativeCulture = localizationTargets?.find((t) => t.nativeCulture)?.nativeCulture
 
   return (
     <main className="extraction-review">
@@ -138,6 +154,28 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
             <span key={index} className="er-evidence-chip">{item}</span>
           ))}
         </div>
+      )}
+
+      {cultures.length > 0 && (
+        <section className="er-cultures">
+          <span className="er-cultures-label">Languages detected: {cultures.length}</span>
+          <div className="er-cultures-list">
+            {cultures.map((culture) => (
+              <span key={culture} className="er-culture-chip">{culture}</span>
+            ))}
+          </div>
+          <label className="er-source-locale">
+            Source language
+            <select
+              value={sourceLocale ?? nativeCulture ?? cultures[0] ?? ''}
+              onChange={(event) => setSourceLocale(event.target.value)}
+              aria-label="Source language"
+            >
+              {cultures.map((culture) => <option key={culture} value={culture}>{culture}</option>)}
+            </select>
+            {nativeCulture && <span className="er-native-hint">Native: {nativeCulture}</span>}
+          </label>
+        </section>
       )}
 
       <section className="er-stats">
@@ -177,10 +215,24 @@ export default function ExtractionReview({ result, onCreateProject, onCancel }: 
           <button className="er-button er-small" onClick={excludeVisible}>Exclude visible</button>
           <button className="er-button er-small" onClick={includeVisible}>Include visible</button>
           <button className="er-button er-small" onClick={() => setMappingsOpen((v) => !v)}>Context mapping</button>
+          <button className="er-button er-small" onClick={() => setDiagnosticsOpen((v) => !v)}>Diagnostics ({result.diagnostics.length})</button>
         </div>
       </div>
 
-      {mappingsOpen && <ContextMappingPanel />}
+      {mappingsOpen && <ContextMappingPanel onApply={onApplyMappings} />}
+
+      {diagnosticsOpen && (
+        <div className="er-diagnostics">
+          {result.diagnostics.length === 0 && <p className="er-empty">No diagnostics.</p>}
+          {result.diagnostics.map((diagnostic, index) => (
+            <div key={index} className={`er-diagnostic er-diag-${diagnostic.kind}`}>
+              <span className="er-diag-kind">{diagnostic.kind}</span>
+              <span className="er-diag-message">{diagnostic.message}</span>
+              {diagnostic.path && <span className="er-diag-path">{diagnostic.path}</span>}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="er-files" aria-label="Files">
         {files.map(([path, item]) => (
@@ -266,27 +318,23 @@ function EntryRow({ entry, excluded, onToggle }: { entry: ExtractedEntry; exclud
   )
 }
 
-/*
- * Context field mapping preview. The actual re-run applies mappings through the
- * core structured analyzer. This panel lets users map unknown fields.
- */
-function ContextMappingPanel() {
+const CONTEXT_ROLES: ContextFieldRole[] = [
+  'translatableText', 'speaker', 'listener', 'speakerGender', 'listenerGender',
+  'grammaticalGender', 'scene', 'conversationId', 'dialogueId', 'nodeId',
+  'parentNodeId', 'choiceGroup', 'voiceId', 'audioAsset', 'developerNote', 'translatorNote',
+]
+
+function ContextMappingPanel({ onApply }: { onApply: (mappings: ContextFieldMapping[]) => void }) {
   const [mappings, setMappings] = useState<ContextFieldMapping[]>([])
   const [field, setField] = useState('')
-  const [role, setRole] = useState<ContextFieldMapping['role']>('translatableText')
-
-  const roles: ContextFieldMapping['role'][] = [
-    'translatableText', 'speaker', 'listener', 'speakerGender', 'listenerGender',
-    'grammaticalGender', 'scene', 'conversationId', 'dialogueId', 'nodeId',
-    'parentNodeId', 'choiceGroup', 'voiceId', 'audioAsset', 'developerNote', 'translatorNote',
-  ]
+  const [role, setRole] = useState<ContextFieldRole>('translatableText')
 
   return (
     <div className="er-mapping">
       <div className="er-mapping-row">
         <input value={field} onChange={(e) => setField(e.target.value)} placeholder="Field name (e.g. who)" aria-label="Field name" />
-        <select value={role} onChange={(e) => setRole(e.target.value as ContextFieldMapping['role'])} aria-label="Map to role">
-          {roles.map((r) => <option key={r} value={r}>{r}</option>)}
+        <select value={role} onChange={(e) => setRole(e.target.value as ContextFieldRole)} aria-label="Map to role">
+          {CONTEXT_ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
         <button
           className="er-button er-small"
@@ -300,14 +348,19 @@ function ContextMappingPanel() {
         </button>
       </div>
       {mappings.length > 0 && (
-        <div className="er-mapping-chips">
-          {mappings.map((m) => (
-            <span key={m.fieldName} className="er-mapping-chip">
-              {m.fieldName} → {m.role}
-              <button onClick={() => setMappings((current) => current.filter((x) => x.fieldName !== m.fieldName))} aria-label={`Remove ${m.fieldName}`}>×</button>
-            </span>
-          ))}
-        </div>
+        <>
+          <div className="er-mapping-chips">
+            {mappings.map((m) => (
+              <span key={m.fieldName} className="er-mapping-chip">
+                {m.fieldName} → {m.role}
+                <button onClick={() => setMappings((current) => current.filter((x) => x.fieldName !== m.fieldName))} aria-label={`Remove ${m.fieldName}`}>×</button>
+              </span>
+            ))}
+          </div>
+          <div className="er-mapping-actions">
+            <button className="er-button er-small er-primary" onClick={() => onApply(mappings)}>Apply &amp; Rerun</button>
+          </div>
+        </>
       )}
     </div>
   )
