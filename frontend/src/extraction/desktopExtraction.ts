@@ -9,7 +9,6 @@
  */
 
 import { invoke } from '@tauri-apps/api/core'
-import { readFile, readTextFile } from '@tauri-apps/plugin-fs'
 import {
   orchestrateExtraction,
   type ExtractionPrimitives,
@@ -26,6 +25,14 @@ type ToolRunResult = { code: number; stdout: string; stderr: string; timed_out: 
 
 export type { ToolPaths }
 
+/*
+ * Extraction resource reads go through guarded native commands rather than
+ * @tauri-apps/plugin-fs. The Tauri fs scope does NOT grant read access to the
+ * OS temp directory where extraction jobs unpack, so plugin-fs reads of
+ * %TEMP%\LocalizationHub\job-* are denied. The native reader (`read_extraction_text`
+ * / `read_extraction_binary`) only accepts paths under an authorized root — an
+ * active temp job dir (auto-authorized on creation) or a registered scan root.
+ */
 function buildPrimitives(): ExtractionPrimitives {
   return {
     runTool: (executable, args, timeoutMs) =>
@@ -39,8 +46,26 @@ function buildPrimitives(): ExtractionPrimitives {
       }
     },
     scanDirectory: (root) => invoke<ScanDiscovery>('scan_directory', { root }),
-    readText: (absolutePath) => readTextFile(absolutePath),
-    readBinary: async (absolutePath) => new Uint8Array(await readFile(absolutePath)),
+    readText: (absolutePath) => invoke<string>('read_extraction_text', { path: absolutePath }),
+    readBinary: async (absolutePath) =>
+      new Uint8Array(await invoke<number[]>('read_extraction_binary', { path: absolutePath })),
+  }
+}
+
+/*
+ * Register / unregister a user-selected scan root so loose resources (files the
+ * user picked directly, outside any temp job dir) can be read by the guarded
+ * native reader. Authorization should be dropped when the scan flow ends.
+ */
+export async function registerExtractionRoot(root: string): Promise<void> {
+  await invoke('register_extraction_root', { root })
+}
+
+export async function unregisterExtractionRoot(root: string): Promise<void> {
+  try {
+    await invoke('unregister_extraction_root', { root })
+  } catch {
+    // Best-effort cleanup.
   }
 }
 

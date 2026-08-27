@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
 import {
@@ -10,7 +10,7 @@ import {
   type LocalizationProjectV3,
   type ContextFieldMapping,
 } from '@localizationhub/core'
-import { runDesktopExtraction, loadToolPaths } from './desktopExtraction'
+import { runDesktopExtraction, loadToolPaths, registerExtractionRoot, unregisterExtractionRoot } from './desktopExtraction'
 import ExtractionReview from './ExtractionReview'
 import './ScanGameFlow.css'
 
@@ -32,6 +32,14 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const cancelledRef = useRef(false)
   // Retained so "Apply & Rerun" can re-run extraction against the same input.
   const discoveryRef = useRef<{ files: ScanFile[]; directories: string[] } | null>(null)
+  // The authorized scan root (user-selected folder or file), dropped on unmount.
+  const scanRootRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (scanRootRef.current) void unregisterExtractionRoot(scanRootRef.current)
+    }
+  }, [])
 
   const runScan = useCallback(async (discovery: { files: ScanFile[]; directories: string[] }, mappings?: ContextFieldMapping[]) => {
     setPhase('scanning')
@@ -58,6 +66,8 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
 
   const beginFolderScan = useCallback(async (root: string) => {
     setPhase('scanning')
+    await registerExtractionRoot(root)
+    scanRootRef.current = root
     const discovery = await invoke<ScanDiscovery>('scan_directory', { root })
     const files: ScanFile[] = discovery.files.map((file) => ({
       name: file.path.split('/').pop() ?? file.path,
@@ -71,6 +81,8 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
 
   const beginFileScan = useCallback(async (filePath: string) => {
     setPhase('scanning')
+    await registerExtractionRoot(filePath)
+    scanRootRef.current = filePath
     const name = filePath.split(/[\\/]/u).pop() ?? filePath
     const file: ScanFile = { name, relativePath: name, absolutePath: filePath, size: 0 }
     discoveryRef.current = { files: [file], directories: [] }

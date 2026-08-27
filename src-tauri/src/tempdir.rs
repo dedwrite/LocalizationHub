@@ -1,6 +1,9 @@
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
+use tauri::State;
+
+use crate::extraction_io::{authorize_root, deauthorize_root, ExtractionAuthorizedRoots};
 
 /*
  * Isolated temp-directory management for the extraction pipeline.
@@ -9,7 +12,10 @@ use std::path::PathBuf;
  *   <temp>/LocalizationHub/job-<uuid>/
  *
  * Cleanup is recursive and only ever operates on directories created under the
- * LocalizationHub temp root (never arbitrary paths).
+ * LocalizationHub temp root (never arbitrary paths). Job dirs are also
+ * authorized as extraction read roots so the guarded native reader can serve
+ * extracted resources to the pipeline (the WebView fs-plugin cannot read the
+ * OS temp directory).
  */
 
 #[derive(Serialize, Clone)]
@@ -18,7 +24,7 @@ pub struct TempDir {
 }
 
 #[tauri::command]
-pub fn create_temp_job_dir() -> Result<TempDir, String> {
+pub fn create_temp_job_dir(state: State<ExtractionAuthorizedRoots>) -> Result<TempDir, String> {
     let base = std::env::temp_dir().join("LocalizationHub");
     fs::create_dir_all(&base).map_err(|e| e.to_string())?;
 
@@ -26,13 +32,19 @@ pub fn create_temp_job_dir() -> Result<TempDir, String> {
     let dir = base.join(format!("job-{id}"));
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
+    // Authorize reads under this new job dir for the guarded extraction reader.
+    authorize_root(&state, &dir).map_err(|e| e.to_string())?;
+
     Ok(TempDir {
         path: dir.to_string_lossy().into_owned(),
     })
 }
 
 #[tauri::command]
-pub fn remove_temp_dir(path: String) -> Result<(), String> {
+pub fn remove_temp_dir(
+    path: String,
+    state: State<ExtractionAuthorizedRoots>,
+) -> Result<(), String> {
     // Safety guard: only delete directories under the LocalizationHub temp root.
     let base = std::env::temp_dir().join("LocalizationHub");
     let target = PathBuf::from(&path);
@@ -46,6 +58,9 @@ pub fn remove_temp_dir(path: String) -> Result<(), String> {
     if !target_canonical.starts_with(&base_canonical) {
         return Err("Refusing to remove a directory outside the LocalizationHub temp root.".into());
     }
+
+    // De-authorize reads for this job dir (best-effort, before removal).
+    deauthorize_root(&state, &target_canonical);
 
     fs::remove_dir_all(&target_canonical).map_err(|e| e.to_string())
 }
