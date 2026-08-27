@@ -325,6 +325,23 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   const withNative = applyNativeCulture(aggregated, nativeByTarget)
   stats.entriesFound = withNative.entries.length
 
+  // Recompute the classification/context stats from the LOGICAL entries so the
+  // review shows one entry per identity, not N per locale.
+  stats.byClassification = {}
+  for (const entry of withNative.entries) {
+    stats.byClassification[entry.classification] = (stats.byClassification[entry.classification] ?? 0) + 1
+  }
+  stats.protectedTokenCount = withNative.entries.reduce((sum, e) => sum + e.protectedSegments.length, 0)
+  stats.entriesWithSpeaker = withNative.entries.filter((e) => e.context?.speaker).length
+  stats.entriesWithListener = withNative.entries.filter((e) => e.context?.listener || e.context?.listeners?.length).length
+  stats.entriesWithExplicitGender = withNative.entries.filter((e) => e.context?.speakerGender && e.context.speakerGender !== 'unknown').length
+  stats.entriesWithInferredContext = withNative.entries.filter((e) => e.context?.speaker || e.context?.scene || e.context?.conversationId).length
+  stats.conversationGroups = withNative.entries.filter((e) => e.context?.conversationId).reduce((acc, e) => {
+    const id = e.context?.conversationId ?? ''
+    acc.add(id)
+    return acc
+  }, new Set<string>()).size
+
   // --- Zero-entry safety: a scan with thousands of resources and no text is
   // not a successful scan; surface it prominently. ---
   if (withNative.entries.length === 0 && files.length > 0) {

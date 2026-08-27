@@ -54,6 +54,7 @@ export type BuildEntryInput = {
   classificationConfidence: Confidence
   context?: ExtractedEntry['context']
   origin: SourceLocator
+  cultureIdentity?: string
   protectedSegments: ProtectedSegment[]
   protectionProfile: string
   rawMetadata?: Record<string, unknown>
@@ -73,6 +74,7 @@ export function buildEntry(input: BuildEntryInput): ExtractedEntry {
     classificationConfidence: input.classificationConfidence,
     context: input.context,
     origin: input.origin,
+    cultureIdentity: input.cultureIdentity,
     protectedSegments: mergeCustomProtectedSegments(input.sourceText, input.protectedSegments),
     protectionProfile: input.protectionProfile,
     rawMetadata: input.rawMetadata,

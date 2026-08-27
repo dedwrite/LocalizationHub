@@ -87,7 +87,7 @@ describe('inkb dialogue extraction', () => {
     expect(result.entries[0].context?.speaker).toBe('Mark')
     expect(result.entries[0].context?.speakerId).toBe('MarkBorja')
     expect(result.entries[0].context?.scene).toBe('ch1/1c')
-    expect(result.entries[0].context?.conversationId).toBe('inkb:ch1/1c.inkb')
+    expect(result.entries[0].context?.conversationId).toBe('inkb:ch1/1c')
 
     // Thought ("char_key == ':'") has no speaker.
     expect(result.entries[2].context?.speaker).toBeUndefined()

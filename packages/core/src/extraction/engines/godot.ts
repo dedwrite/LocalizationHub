@@ -18,6 +18,7 @@ import { extractGodotTokens } from '../../tokens/godot'
 import { detectEngine } from '../engineDetection'
 import { analyzeRecord, structuralEntryId, walkStructuredData } from '../structuredData'
 import { extractPo } from './gettext'
+import { detectGodotJsonLocale } from '../godotLocales'
 import type {
   EngineFamily,
   ExtractedEntry,
@@ -296,6 +297,25 @@ function extractGodotStructuredJson(fileName: string, text: string, mappings: Ar
       onRecord: (record) => extract(record.record, record.path),
       order,
     })
+  }
+
+  // --- Multi-locale Godot JSON databases -----------------------------------
+  // `fb.json` + `fb_ja.json` + … are locale variants of ONE database. Detect
+  // the locale from the filename, mark the culture-independent identity, and
+  // let the universal aggregator collapse them into one logical entry.
+  const dbLocale = detectGodotJsonLocale(fileName)
+  if (dbLocale.locale || dbLocale.isBase) {
+    for (const entry of entries) {
+      entry.sourceLocale = dbLocale.locale ?? 'en'
+      entry.cultureIdentity = `godot-db:${dbLocale.baseName}:${entry.id}`
+      entry.rawMetadata = {
+        ...entry.rawMetadata,
+        dbBase: dbLocale.baseName,
+        dbLocale: dbLocale.locale,
+        // The unsuffixed base file is the source/native language.
+        isSourceLocale: dbLocale.isBase,
+      }
+    }
   }
 
   return {

@@ -18,6 +18,12 @@ export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanPr
 export { buildProjectFromExtraction } from './projectFromExtraction'
 export { aggregateCultures, applyNativeCulture, overrideSourceCulture } from './cultureAggregation'
 export {
+  detectGodotJsonLocale,
+  detectGodotInkbLocale,
+  type GodotJsonLocale,
+  type GodotInkbLocale,
+} from './godotLocales'
+export {
   orchestrateExtraction,
   buildArchivePlan,
   OrchestrationError,

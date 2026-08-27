@@ -17,19 +17,36 @@ import type {
 } from './types'
 
 /*
- * Group extracted entries by a culture-independent identity. For LOCRES the
- * identity is `target::namespace::key`; for other engines it falls back to the
- * native key/namespace. Entries whose identity is a path-stable ID (Godot CSV,
- * Unity StringTable) are already unique and are left untouched.
+ * Group extracted entries by a culture-independent identity. This is the
+ * UNIVERSAL culture-aggregation interface:
+ *
+ *   - Any entry with an explicit `cultureIdentity` (Godot JSON databases, Godot
+ *     `.inkb` stories) is grouped by that identity.
+ *   - Unreal LOCRES falls back to `target::namespace::key`.
+ *   - Entries without a multi-locale identity pass through unchanged.
  */
 function identityOf(entry: ExtractedEntry): string | undefined {
+  if (entry.cultureIdentity) return entry.cultureIdentity
   if (entry.origin.engine !== 'unreal') return undefined
   if (entry.origin.namespace == null || entry.key == null) return undefined
   const target = entry.rawMetadata?.localizationTarget ?? entry.origin.resourceName ?? ''
   return `unreal:${target}:${entry.origin.namespace}:${entry.key}`
 }
 
+/*
+ * The localization "target" (surface) an entry belongs to. Used to build
+ * `LocalizationTarget` metadata for the review's culture controls.
+ *
+ * For culture-identity'd entries, the target is the identity prefix
+ * (e.g. `godot-db:fb`, `godot-inkb:1/1c/1c`); for Unreal it is the LOCRES
+ * target.
+ */
 function targetOf(entry: ExtractedEntry): string {
+  if (entry.cultureIdentity) {
+    const first = entry.cultureIdentity.indexOf(':')
+    const second = entry.cultureIdentity.indexOf(':', first + 1)
+    return second === -1 ? entry.cultureIdentity : entry.cultureIdentity.slice(0, second)
+  }
   return String(entry.rawMetadata?.localizationTarget ?? entry.origin.resourceName ?? 'unknown')
 }
 
@@ -75,10 +92,17 @@ export function aggregateCultures(
     merged.set(identity, entry)
 
     const variants = groups.get(identity) ?? [entry]
-    // Sort by locale for determinism.
-    variants.sort((a, b) => (a.sourceLocale ?? '').localeCompare(b.sourceLocale ?? ''))
+    // Sort deterministically, but ALWAYS put the source/native entry first when
+    // one is marked (`rawMetadata.isSourceLocale` — e.g. the unsuffixed base
+    // Godot JSON database). Otherwise sort by locale for determinism.
+    variants.sort((a, b) => {
+      const aSource = a.rawMetadata?.isSourceLocale ? 0 : 1
+      const bSource = b.rawMetadata?.isSourceLocale ? 0 : 1
+      if (aSource !== bSource) return aSource - bSource
+      return (a.sourceLocale ?? '').localeCompare(b.sourceLocale ?? '')
+    })
 
-    // The first-discovered (or native, when later applied) becomes the source.
+    // The source (native, or first-discovered) becomes the source text.
     // `localeVariants` holds every OTHER culture (never the source culture).
     const first = variants[0]
     const localeVariants = variants

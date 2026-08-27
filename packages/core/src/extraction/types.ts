@@ -217,6 +217,15 @@ export type ExtractedEntry = {
 
   origin: SourceLocator
 
+  /*
+   * Culture-independent identity used by the UNIVERSAL culture aggregation.
+   * When set, entries sharing this identity (across locale resources) collapse
+   * into ONE logical entry with `localeVariants`. Unreal uses
+   * target/namespace/key; Godot JSON uses database + structural path; Godot
+   * `.inkb` uses story path + line identity.
+   */
+  cultureIdentity?: string
+
   protectedSegments: ProtectedSegment[]
   protectionProfile: string
 

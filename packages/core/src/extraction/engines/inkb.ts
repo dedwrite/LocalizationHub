@@ -35,6 +35,7 @@
 import { extractGodotTokens } from '../../tokens/godot'
 import { detectEngine } from '../engineDetection'
 import { structuralEntryId } from '../structuredData'
+import { detectGodotInkbLocale } from '../godotLocales'
 import type {
   ExtractedEntry,
   ExtractionResult,
@@ -161,10 +162,15 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   const strings = readInkbTextStrings(buffer)
   const metadata = parseInkbMetadata(strings)
 
+  // Culture-independent story identity: strip `locales/<culture>/` so locale
+  // variants of the same story share one logical identity.
+  const localeInfo = detectGodotInkbLocale(fileName)
+  const storyId = localeInfo.storyPath
+  const sourceLocale = localeInfo.locale
+
   const entries: ExtractedEntry[] = []
   let order = 0
-  const conversationId = `inkb:${fileName}`
-  const storyId = fileName.replace(/\.inkb$/u, '')
+  const conversationId = `inkb:${storyId}`
 
   for (const str of strings) {
     // Commands and metadata are not translatable.
@@ -196,8 +202,10 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       key: `${storyId}:${order}`,
       order: order++,
       sourceText: text,
+      sourceLocale,
       classification: 'Dialogue',
       classificationConfidence: 'high',
+      cultureIdentity: `godot-inkb:${storyId}:${entries.length}`,
       context: {
         speaker,
         speakerId: characterId,
