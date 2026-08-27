@@ -27,13 +27,16 @@ describe('external tool adapter', () => {
     expect(result.kind).toBe('not-found')
   })
 
-  it('builds repak unpack args with an optional AES key', () => {
+  it('builds repak unpack args with an optional AES key (verified CLI contract)', () => {
     const args = repakUnpackArgs('C:/game/Data.pak', 'C:/tmp/out', 'secretkey')
-    expect(args).toEqual(['unpack', 'C:/game/Data.pak', '--output', 'C:/tmp/out', '--aes-key', 'secretkey'])
+    expect(args).toEqual(['--aes-key', 'secretkey', 'unpack', 'C:/game/Data.pak', '--output', 'C:/tmp/out'])
   })
 
-  it('builds retoc unpack args without key', () => {
-    const args = retocUnpackArgs('C:/game/Data.utoc', 'C:/tmp/out')
-    expect(args).toEqual(['unpack', '--input', 'C:/game/Data.utoc', '--output-dir', 'C:/tmp/out'])
+  it('builds retoc unpack args positionally with an optional AES key (verified CLI contract)', () => {
+    const withKey = retocUnpackArgs('C:/game/Data.utoc', 'C:/tmp/out', 'secretkey')
+    expect(withKey).toEqual(['--aes-key', 'secretkey', 'unpack', 'C:/game/Data.utoc', 'C:/tmp/out'])
+
+    const noKey = retocUnpackArgs('C:/game/Data.utoc', 'C:/tmp/out')
+    expect(noKey).toEqual(['unpack', 'C:/game/Data.utoc', 'C:/tmp/out'])
   })
 })

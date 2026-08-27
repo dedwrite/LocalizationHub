@@ -68,18 +68,28 @@ export function createProcessRunner(
 /*
  * Build a safe argument list for repak `unpack` with an optional AES key.
  * The key is passed as a single argument (never via shell interpolation).
+ *
+ * Verified CLI contract (repak_cli 0.2.3):
+ *   repak [--aes-key KEY] unpack [--output DIR] [INPUT]...
  */
 export function repakUnpackArgs(pakPath: string, outDir: string, aesKey?: string): string[] {
-  const args = ['unpack', pakPath, '--output', outDir]
+  const args: string[] = []
   if (aesKey) args.push('--aes-key', aesKey)
+  args.push('unpack', pakPath, '--output', outDir)
   return args
 }
 
 /*
  * Build a safe argument list for retoc IoStore `unpack`.
+ *
+ * Verified CLI contract (retoc_cli 0.1.5):
+ *   retoc [--aes-key KEY] unpack <UTOC> <OUTPUT>
+ * `--aes-key` is a global option placed before the subcommand; `<UTOC>` and
+ * `<OUTPUT>` are positional.
  */
 export function retocUnpackArgs(utocPath: string, outDir: string, aesKey?: string): string[] {
-  const args = ['unpack', '--input', utocPath, '--output-dir', outDir]
+  const args: string[] = []
   if (aesKey) args.push('--aes-key', aesKey)
+  args.push('unpack', utocPath, outDir)
   return args
 }
