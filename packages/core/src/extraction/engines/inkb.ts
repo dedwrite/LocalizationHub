@@ -183,6 +183,11 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   let currentSpeaker: string | undefined
   let currentSpeakerId: string | undefined
 
+  // Timed player choices: `$ push_timed_choices [duration] [n]` is followed by
+  // parenthesized `(option)` strings until the next `$` command. These are
+  // structural player choices, NOT narration continuation.
+  let timedChoicesActive = false
+
   // Structural fingerprint: the sequence of speaker keys (or ":" for thought).
   // This is culture-independent (speaker aliases like Mark/Ryan/Louise do not
   // change across locales) and is used to detect cross-locale structural
@@ -245,16 +250,60 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   }
 
   for (const str of strings) {
-    // Commands: track `$ F <char>` focus commands for implicit speaker.
+    // Commands: track `$ F <char>` focus commands for implicit speaker, and
+    // `$ push_timed_choices` for timed player choices.
     if (str.startsWith('$')) {
       const focusMatch = str.match(/^\$\s*F\s+([A-Za-z0-9_]+)/u)
       if (focusMatch) {
         currentSpeaker = focusMatch[1]
         currentSpeakerId = metadata.characters[focusMatch[1]] ?? focusMatch[1]
+        timedChoicesActive = false
+      }
+      if (/^\$\s*push_timed_choices\b/u.test(str)) {
+        timedChoicesActive = true
+      }
+      // Any other `$` command ends the timed-choice block.
+      if (!/^\$\s*push_timed_choices\b/u.test(str)) {
+        timedChoicesActive = false
       }
       continue
     }
     if (METADATA_HEADER_PATTERN.test(str)) continue
+
+    // Timed player choice: parenthesized `(option)` strings following
+    // `$ push_timed_choices`. Structurally proven player choices, not narration.
+    if (timedChoicesActive) {
+      const optionMatch = str.trim().match(/^\((.+)\)$/u)
+      if (optionMatch) {
+        const optionText = optionMatch[1].trim()
+        if (optionText) {
+          entries.push(buildEntry({
+            id: structuralEntryId(['inkb', storyId, 'choice', String(order)]),
+            key: `${storyId}:choice:${order}`,
+            order: order++,
+            sourceText: optionText,
+            sourceLocale,
+            classification: 'Choice',
+            classificationConfidence: 'high',
+            cultureIdentity: `godot-inkb:${storyId}:${entries.length}`,
+            context: { conversationId, scene: storyId, choiceGroup: `${storyId}:timed` },
+            origin: {
+              engine: 'godot',
+              containerPath: fileName,
+              objectType: 'inkb-choice',
+              resourceName: storyId,
+              key: `timed-choice-${order}`,
+            },
+            protectedSegments: toProtectedSegments(extractGodotTokens(optionText)),
+            protectionProfile: 'godot',
+            rawMetadata: { storyType: metadata.type, timedChoice: true, isSourceLocale },
+          }))
+        }
+        continue
+      }
+      // A non-parenthesized string ends the timed-choice block.
+      timedChoicesActive = false
+    }
 
     const match = str.match(DIALOGUE_PATTERN)
     if (match) {
@@ -303,7 +352,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       filesScanned: 1,
       candidateFiles: 1,
       entriesFound: entries.length,
-      byClassification: { Dialogue: entries.length },
+      byClassification: entries.reduce<Record<string, number>>((acc, e) => { acc[e.classification] = (acc[e.classification] ?? 0) + 1; return acc }, {}),
       protectedTokenCount: entries.reduce((sum, e) => sum + e.protectedSegments.length, 0),
       entriesWithSpeaker: entries.filter((e) => e.context?.speaker).length,
       entriesWithListener: 0,

@@ -109,6 +109,27 @@ describe('inkb dialogue extraction', () => {
     expect(result.entries[0].sourceText).toBe('Hello')
   })
 
+  it('extracts timed player choices from $ push_timed_choices', () => {
+    const buffer = buildInkb([
+      'type: "dialogue"',
+      'characters: { "Mark": "MarkBorja" }',
+      'player: "Mark"',
+      '$ push_timed_choices 4.0 0',
+      '(Get it!)',
+      '(Run away!)',
+      '$ wait 0.5',
+      'Mark: I grabbed it.',
+    ])
+    const result = extractInkb('1d.inkb', buffer)
+    const choices = result.entries.filter((e) => e.classification === 'Choice')
+    expect(choices.map((c) => c.sourceText)).toEqual(['Get it!', 'Run away!'])
+    expect(choices.every((c) => c.rawMetadata?.timedChoice === true)).toBe(true)
+    // The dialogue after the choice block is still extracted.
+    expect(result.entries.some((e) => e.classification === 'Dialogue' && e.sourceText === 'I grabbed it.')).toBe(true)
+    // Choices are NOT misclassified as narration dialogue.
+    expect(result.entries.some((e) => e.classification === 'Dialogue' && e.sourceText === 'Get it!')).toBe(false)
+  })
+
   it('protects control markers [.] [..] [$cmd]', () => {
     const buffer = buildInkb([
       'type: "dialogue"',
