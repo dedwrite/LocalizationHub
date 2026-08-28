@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DEFAULT_GEMINI_MODEL, GEMINI_MODELS, LANGUAGE_OPTIONS, PROVIDER_API_KEY_LABELS, PROVIDER_API_KEY_PLACEHOLDERS, PROVIDER_LABELS, translateWithGemini, type GeminiModelId, type TranslationProviderId } from './translationProviders'
+import { buildTranslationContext, DEFAULT_GEMINI_MODEL, GEMINI_MODELS, LANGUAGE_OPTIONS, PROVIDER_API_KEY_LABELS, PROVIDER_API_KEY_PLACEHOLDERS, PROVIDER_LABELS, translateWithGemini, type GeminiModelId, type TranslationProviderId } from './translationProviders'
 
 /*
  * Machine Translation Reference panel (Web).
@@ -12,10 +12,12 @@ export default function MachineTranslationPanel({
   sourceText,
   sourceLocale,
   targetLocale,
+  context,
 }: {
   sourceText?: string
   sourceLocale?: string
   targetLocale?: string
+  context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string; listenerGender?: string; scene?: string; conversationId?: string; previous?: string; next?: string }
 }) {
   const [open, setOpen] = useState(false)
   const [provider] = useState<TranslationProviderId>('gemini')
@@ -49,7 +51,7 @@ export default function MachineTranslationPanel({
     setElapsedMs(null)
     const started = performance.now()
     try {
-      const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model })
+      const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model, context: buildTranslationContext(context) })
       setResult(res.translatedText)
       setElapsedMs(Math.round(performance.now() - started))
     } catch (failure) {

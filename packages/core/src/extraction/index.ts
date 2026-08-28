@@ -50,6 +50,7 @@ export {
   retocUnpackArgs,
   gdreExtractArgs,
   gdreBinToTxtArgs,
+  gdreDecompileArgs,
   unitypyExtractArgs,
   uassetdumperToJsonArgs,
   type ToolId,
@@ -62,6 +63,8 @@ export { extractInkb, readInkbTextStrings, parseInkbMetadata, type InkbStoryType
 export { extractUnity, extractUnityStringTable, extractUnityStructuredJson } from './engines/unity'
 export { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta, detectEncryptedUnrealContainer } from './engines/unreal'
 export { extractInk } from './engines/ink'
+export { extractYarn } from './engines/yarn'
+export { extractXml, extractYaml } from './engines/xmlYaml'
 export { readLocres, isLocresBuffer, LOCRES_MAGIC, ELocResVersion, type LocResVersion } from './engines/locres'
 export { readLocmeta, LOCMETA_MAGIC } from './engines/locmeta'
 export { buildEntry, toProtectedSegments } from './engines/shared'

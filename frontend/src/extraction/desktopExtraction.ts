@@ -59,6 +59,7 @@ function buildPrimitives(): ExtractionPrimitives {
     readText: (absolutePath) => invoke<string>('read_extraction_text', { path: absolutePath }),
     readBinary: async (absolutePath) =>
       new Uint8Array(await invoke<number[]>('read_extraction_binary', { path: absolutePath })),
+    copyFile: (src, dst) => invoke('copy_extraction_file', { src, dst }),
     readTextBatch: (paths) => invoke<BatchTextResult[]>('read_extraction_text_batch', { paths }),
     readBinaryBatch: async (paths) => {
       const results = await invoke<BatchBinaryResult[]>('read_extraction_binary_batch', { paths })

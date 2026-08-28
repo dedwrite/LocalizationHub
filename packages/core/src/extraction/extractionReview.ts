@@ -101,7 +101,7 @@ export function matchesReviewFilter(
   entry: {
     classification: EntryClassification
     classificationConfidence: string
-    context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string }
+    context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string; listenerGender?: string; grammaticalGender?: string; scene?: string; conversationId?: string }
     protectedSegments: unknown[]
     contentAudience?: string
     excludedByDefault?: boolean
@@ -128,10 +128,25 @@ export function matchesReviewFilter(
     case 'has-listener':
       return Boolean(entry.context?.listener || (entry.context?.listeners?.length ?? 0) > 0)
     case 'has-gender':
-      return Boolean(entry.context?.speakerGender && entry.context.speakerGender !== 'unknown')
+      // Role-scoped, explicit-only: speakerGender OR listenerGender OR a
+      // grammatical/contextual gender. Never inferred from names/language.
+      return hasExplicitGender(entry.context)
     case 'has-protected-tokens':
       return entry.protectedSegments.length > 0
     case 'warnings':
       return entry.classificationConfidence === 'low' || entry.classification === 'Unknown'
   }
+}
+
+/*
+ * A gender is present only when EXPLICIT (speaker/listener/grammatical), never
+ * inferred. Unknown is treated as absent.
+ */
+function hasExplicitGender(context?: {
+  speakerGender?: string
+  listenerGender?: string
+  grammaticalGender?: string
+}): boolean {
+  const values = [context?.speakerGender, context?.listenerGender, context?.grammaticalGender]
+  return values.some((value) => typeof value === 'string' && value !== '' && value !== 'unknown')
 }

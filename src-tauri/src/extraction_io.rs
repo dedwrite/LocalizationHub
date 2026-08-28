@@ -121,6 +121,44 @@ pub fn read_extraction_binary(
 }
 
 /*
+ * Guarded file COPY for the derived-copy conversion pipeline.
+ *
+ * `src` must be inside an authorized root (a registered scan root or an active
+ * temp job dir); `dst` must be inside an authorized root too (an active temp
+ * job dir). This lets the pipeline copy a binary Godot resource into a temp
+ * dir and convert it there, never modifying the original source file.
+ */
+pub(crate) fn copy_file_guarded(
+    state: &ExtractionAuthorizedRoots,
+    src: String,
+    dst: String,
+) -> Result<(), String> {
+    let src_path = PathBuf::from(&src);
+    let dst_path = PathBuf::from(&dst);
+    if !is_authorized(state, &src_path) {
+        return Err("Copy denied: source is outside authorized extraction roots.".into());
+    }
+    // The destination may not exist yet, so canonicalize its PARENT (after
+    // creating it) and verify the parent is inside an authorized root.
+    let parent = dst_path.parent().unwrap_or(dst_path.as_path());
+    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    if !is_authorized(state, parent) {
+        return Err("Copy denied: destination is outside authorized extraction roots.".into());
+    }
+    fs::copy(&src_path, &dst_path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn copy_extraction_file(
+    src: String,
+    dst: String,
+    state: State<ExtractionAuthorizedRoots>,
+) -> Result<(), String> {
+    copy_file_guarded(state.inner(), src, dst)
+}
+
+/*
  * Guarded BATCH reads.
  *
  * A large game ships tens of thousands of text resources; reading them one
@@ -445,5 +483,38 @@ mod tests {
         let paths: Vec<String> = (0..(MAX_BATCH_SIZE + 1)).map(|i| format!("{i}.txt")).collect();
         let result = read_text_batch(&state, paths);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn copy_extraction_file_serves_authorized_to_authorized_and_denies_otherwise() {
+        let state = ExtractionAuthorizedRoots::default();
+        let root = unique_root("copyfile");
+        let src = root.join("a.scn");
+        let dst = root.join("out").join("a.scn");
+        let outside = std::env::temp_dir().join("lhub-copy-secret.scn");
+        write(&src, "binary-scene");
+
+        authorize_root(&state, &root).unwrap();
+
+        // Authorized src + authorized dst → allowed.
+        let result = copy_file_guarded(
+            &state,
+            src.to_string_lossy().to_string(),
+            dst.to_string_lossy().to_string(),
+        );
+        assert!(result.is_ok());
+        assert!(dst.exists());
+
+        // Authorized src + UNauthorized dst → denied.
+        let denied = copy_file_guarded(
+            &state,
+            src.to_string_lossy().to_string(),
+            outside.to_string_lossy().to_string(),
+        );
+        assert!(denied.is_err());
+        assert!(!outside.exists());
+
+        fs::remove_file(&outside).ok();
+        fs::remove_dir_all(&root).ok();
     }
 }

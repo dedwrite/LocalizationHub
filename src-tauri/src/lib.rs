@@ -28,6 +28,7 @@ pub fn run() {
                 extraction_io::read_extraction_binary,
                 extraction_io::read_extraction_text_batch,
                 extraction_io::read_extraction_binary_batch,
+                extraction_io::copy_extraction_file,
             ],
         )
         .setup(|app| {

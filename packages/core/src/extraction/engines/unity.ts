@@ -76,9 +76,13 @@ function extractUnityStringTable(fileName: string, text: string): ExtractionResu
   const entries: ExtractedEntry[] = []
   let order = 0
 
-  // The first locale is treated as the source locale.
+  // NEVER choose the source locale by object-key order (Object.keys()[0]).
+  // Determine it from explicit Unity Localization metadata where available:
+  //   - a `Locale` / `SourceLocale` / `default_locale` object or field
+  //   - SharedTableData / collection metadata carrying a source/default locale
+  // Otherwise the source locale stays UNKNOWN (the Review requires user choice).
   const locales = Object.keys(table)
-  const sourceLocale = locales[0]
+  const sourceLocale = inferUnitySourceLocale(obj, locales)
 
   // Collect every key across locales.
   const allKeys = new Set<string>()
@@ -87,10 +91,11 @@ function extractUnityStringTable(fileName: string, text: string): ExtractionResu
   }
 
   for (const key of allKeys) {
-    const sourceText = table[sourceLocale]?.[key] ?? ''
+    const sourceText = sourceLocale ? (table[sourceLocale]?.[key] ?? '') : ''
     if (!sourceText || !sourceText.trim()) continue
 
-    const existingTranslation = locales.slice(1)
+    const existingTranslation = locales
+      .filter((locale) => locale !== sourceLocale)
       .map((locale) => table[locale]?.[key])
       .find((value) => value && value.trim()) ?? undefined
 
@@ -121,9 +126,72 @@ function extractUnityStringTable(fileName: string, text: string): ExtractionResu
     engine: 'unity',
     detection: detectEngine({ files: [{ name: fileName, lower: fileName.toLowerCase() }], directories: [] }),
     entries,
-    diagnostics: [],
-    stats: { filesScanned: 1, candidateFiles: 1, entriesFound: entries.length, byClassification: { UI: entries.length }, protectedTokenCount: entries.reduce((sum, e) => sum + e.protectedSegments.length, 0), entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: 0, errors: 0 },
+    diagnostics: sourceLocale ? [] : [{ kind: 'low-confidence', message: 'Unity String Table source locale is unknown; select it in Review.', path: fileName }],
+    stats: { filesScanned: 1, candidateFiles: 1, entriesFound: entries.length, byClassification: { UI: entries.length }, protectedTokenCount: entries.reduce((sum, e) => sum + e.protectedSegments.length, 0), entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: sourceLocale ? 0 : 1, errors: 0 },
   }
+}
+
+/*
+ * Infer the Unity Localization source/native locale from explicit metadata.
+ * Returns undefined when no structural evidence exists — never falls back to
+ * object-key order.
+ */
+function inferUnitySourceLocale(obj: Record<string, unknown>, tableLocales: string[]): string | undefined {
+  // 1. Explicit source/default-locale fields at the top level.
+  const explicit = obj['SourceLocale'] ?? obj['sourceLocale'] ?? obj['source_locale'] ?? obj['DefaultLocale'] ?? obj['default_locale'] ?? obj['NativeLocale'] ?? obj['nativeLocale']
+  if (typeof explicit === 'string' && explicit.trim()) {
+    const match = findTableLocale(tableLocales, normalizeUnityLocale(explicit))
+    if (match) return match
+  }
+
+  // 2. A `Locale` object with an Identifier code.
+  const localeObj = obj['Locale'] ?? obj['locale']
+  if (localeObj && typeof localeObj === 'object' && !Array.isArray(localeObj)) {
+    const rec = localeObj as Record<string, unknown>
+    const code = rec['Code'] ?? rec['Identifier'] ?? rec['identifier'] ?? rec['code']
+    if (typeof code === 'string' && code.trim()) {
+      const match = findTableLocale(tableLocales, normalizeUnityLocale(code))
+      if (match) return match
+    }
+    // Nested Identifier: { Code: "en" }
+    const identifier = rec['Identifier']
+    if (identifier && typeof identifier === 'object' && !Array.isArray(identifier)) {
+      const inner = identifier as Record<string, unknown>
+      const innerCode = inner['Code'] ?? inner['code']
+      if (typeof innerCode === 'string' && innerCode.trim()) {
+        const match = findTableLocale(tableLocales, normalizeUnityLocale(innerCode))
+        if (match) return match
+      }
+    }
+  }
+
+  // 3. SharedTableData / collection metadata.
+  const shared = obj['SharedTableData'] ?? obj['sharedTableData']
+  if (shared && typeof shared === 'object' && !Array.isArray(shared)) {
+    const rec = shared as Record<string, unknown>
+    const def = rec['defaultLocale'] ?? rec['DefaultLocale'] ?? rec['sourceLocale'] ?? rec['SourceLocale']
+    if (typeof def === 'string' && def.trim()) {
+      const match = findTableLocale(tableLocales, normalizeUnityLocale(def))
+      if (match) return match
+    }
+  }
+
+  return undefined
+}
+
+function normalizeUnityLocale(locale: string): string {
+  return locale.trim().replace(/_/g, '-')
+}
+
+/*
+ * Find the table key matching a normalized locale, case-insensitively. Unity
+ * metadata may write `en-US`/`en_US` while the table key is `en`.
+ */
+function findTableLocale(tableLocales: string[], candidate: string): string | undefined {
+  const exact = tableLocales.find((l) => l === candidate)
+  if (exact) return exact
+  const folded = tableLocales.find((l) => l.toLowerCase() === candidate.toLowerCase())
+  return folded
 }
 
 function extractUnityStructuredJson(fileName: string, text: string, mappings: Array<{ fieldName: string; role: any }>): ExtractionResult {

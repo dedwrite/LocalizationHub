@@ -37,7 +37,7 @@ const CANDIDATE_EXTENSIONS: &[&str] = &[
     // Unity
     "assets", "unity3d", "bundle", "sharedassets",
     // Text / structured
-    "json", "csv", "po", "pot", "txt", "ink",
+    "json", "csv", "po", "pot", "txt", "ink", "yarn", "xml", "yaml",
     // Ink story (Until Then compiled Ink — must reach the native reader)
     "inkb",
 ];

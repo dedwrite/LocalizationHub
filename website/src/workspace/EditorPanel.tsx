@@ -71,6 +71,17 @@ export default function EditorPanel(props: EditorPanelProps) {
   const source = entry?.source ?? ''
   const translation = entry?.translation ?? ''
 
+  // Concise, proven context for the MT reference request (never paths/guessed).
+  const mtContext = {
+    speaker: entry?.dialogueContext?.speaker,
+    listener: entry?.dialogueContext?.listener,
+    listeners: entry?.dialogueContext?.listeners,
+    speakerGender: entry?.dialogueContext?.speakerGender,
+    listenerGender: entry?.dialogueContext?.listenerGender,
+    scene: entry?.dialogueContext?.scene,
+    conversationId: entry?.dialogueContext?.conversationId,
+  }
+
   useEffect(() => {
     if (entry) setJumpValue(String(position + 1))
   }, [entry, position])
@@ -207,7 +218,12 @@ export default function EditorPanel(props: EditorPanelProps) {
           </div>
         )}
 
-        <MachineTranslationPanel sourceText={source} sourceLocale={sourceLocale} targetLocale={targetLocale} />
+        <MachineTranslationPanel
+          sourceText={source}
+          sourceLocale={sourceLocale}
+          targetLocale={targetLocale}
+          context={mtContext}
+        />
       </div>
 
       <div className="editor-footer">

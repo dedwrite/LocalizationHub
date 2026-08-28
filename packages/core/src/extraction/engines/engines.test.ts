@@ -19,6 +19,7 @@ const ARABIC_DIALOGUE = JSON.stringify([
 ])
 
 const UNITY_STRING_TABLE = JSON.stringify({
+  SourceLocale: "en",
   Locale: { en: { Code: "en", Name: "English" }, ar: { Code: "ar", Name: "Arabic" } },
   Table: {
     en: { "menu_start": "Start", "menu_quit": "Quit" },

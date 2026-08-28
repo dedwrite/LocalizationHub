@@ -91,6 +91,7 @@ export function createNodePrimitives(): ExtractionPrimitives {
     scanDirectory,
     readText: (p) => fs.readFile(p, 'utf8'),
     readBinary: (p) => fs.readFile(p),
+    copyFile: (src, dst) => fs.copyFile(src, dst),
   }
 }
 

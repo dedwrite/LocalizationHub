@@ -52,8 +52,25 @@ export function gdreExtractArgs(pckPath: string, outDir: string, aesKey?: string
   return args
 }
 
-export function gdreBinToTxtArgs(filePath: string): string[] {
-  return ['--headless', `--bin-to-txt=${filePath}`]
+/*
+ * Convert a binary Godot resource (.res/.scn/.translation) to its text form.
+ * GDRE writes the converted output to `--output` and leaves the INPUT
+ * untouched, so this is read-only-safe against the original game file (verified
+ * against a real OptimizedTranslation: input SHA unchanged, text output written
+ * to --output).
+ */
+export function gdreBinToTxtArgs(filePath: string, outDir: string): string[] {
+  return ['--headless', `--bin-to-txt=${filePath}`, `--output=${outDir}`]
+}
+
+/*
+ * Decompile a GDScript bytecode file (.gdc) to source text. Requires the
+ * matching bytecode version; without it GDRE cannot decode the bytecode.
+ */
+export function gdreDecompileArgs(filePath: string, outDir: string, bytecodeVersion?: string): string[] {
+  const args: string[] = ['--headless', `--decompile=${filePath}`, `--output=${outDir}`]
+  if (bytecodeVersion) args.push(`--bytecode=${bytecodeVersion}`)
+  return args
 }
 
 export function unitypyExtractArgs(scriptPath: string, inputPath: string, outDir: string): string[] {

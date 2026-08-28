@@ -17,6 +17,8 @@ import { extractPo } from './engines/gettext'
 import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
+import { extractYarn } from './engines/yarn'
+import { extractXml, extractYaml } from './engines/xmlYaml'
 import { extractInkb, readInkbTextStrings } from './engines/inkb'
 import { stripBom } from './engines/shared'
 import { readLocmeta } from './engines/locmeta'
@@ -123,7 +125,7 @@ export type ResourceKind =
   | 'structural'         // .import/.remap/.godot/.uid/.md5 sidecar — never text
   | 'unknown'            // not localizable, skipped silently
 
-export const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.txt', '.ink'])
+export const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.txt', '.ink', '.yarn', '.xml', '.yaml'])
 export const SCRIPT_EXTENSIONS = new Set(['.gd'])
 export const UNREAL_BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
 export const GODOT_BINARY_RESOURCE_EXTENSIONS = new Set(['.res', '.scn', '.translation', '.gdc'])
@@ -696,8 +698,18 @@ function dispatchText(
 
   if (engine === 'unreal') return extractUnrealText({ fileName: name, text, mappings })
   if (engine === 'godot') return extractGodot({ fileName: name, text, mappings })
-  if (engine === 'unity') return extractUnity({ fileName: name, text, mappings })
+  if (engine === 'unity') {
+    // Narrative / structured TextAsset payloads reach dedicated adapters.
+    if (ext === '.yarn') return extractYarn({ fileName: name, text })
+    if (ext === '.ink') return extractInk({ fileName: name, text })
+    if (ext === '.xml') return extractXml(name, text)
+    if (ext === '.yaml') return extractYaml(name, text)
+    return extractUnity({ fileName: name, text, mappings })
+  }
   if (engine === 'ink' || ext === '.ink') return extractInk({ fileName: name, text })
+  if (ext === '.yarn') return extractYarn({ fileName: name, text })
+  if (ext === '.xml') return extractXml(name, text)
+  if (ext === '.yaml') return extractYaml(name, text)
 
   // Engine-specific dispatch fallback when detection is generic:
   if (ext === '.tscn' || ext === '.tres' || ext === '.scn' || ext === '.gd' || ext === '.pck') {

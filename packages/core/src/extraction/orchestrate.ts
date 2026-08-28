@@ -22,6 +22,8 @@ import type { ExtractionResult, EngineFamily, ExtractionDiagnostic } from './typ
 import type { ContextFieldMapping } from './contextInference'
 import {
   gdreExtractArgs,
+  gdreBinToTxtArgs,
+  gdreDecompileArgs,
   repakUnpackArgs,
   retocUnpackArgs,
   uassetdumperToJsonArgs,
@@ -50,6 +52,12 @@ export type ExtractionPrimitives = {
   scanDirectory: (root: string) => Promise<ScanDirectoryResult>
   readText: (absolutePath: string) => Promise<string>
   readBinary: (absolutePath: string) => Promise<Uint8Array>
+  /*
+   * Guarded file copy for the derived-copy conversion pipeline. Both src and
+   * dst must be inside authorized roots (scan root / active temp job dir), so
+   * the original source is never modified.
+   */
+  copyFile?: (src: string, dst: string) => Promise<void>
   /*
    * Optional guarded BATCH reads. When present, scanGame reads files in bounded
    * chunks (one native call per chunk) instead of one invoke per file — this
@@ -90,10 +98,16 @@ export class OrchestrationError extends Error {
 
 export type ArchiveJob = {
   file: ScanFile
-  kind: 'pak' | 'iostore' | 'pck' | 'unity' | 'uasset'
+  kind: 'pak' | 'iostore' | 'pck' | 'unity' | 'uasset' | 'godot-binary'
   toolId: ToolId
   executable: string
   buildArgs: (outDir: string, aesKey?: string) => string[]
+  /*
+   * For `godot-binary`: the target extension to re-emit converted output under
+   * so it routes to the correct text parser (.scn → .tscn, .res → .tres,
+   * .gdc → .gd).
+   */
+  convertTo?: string
 }
 
 /*
@@ -149,7 +163,7 @@ function engineHintFor(jobs: ArchiveJob[]): EngineFamily | undefined {
   const counts = { unreal: 0, godot: 0, unity: 0 }
   for (const job of jobs) {
     if (job.kind === 'pak' || job.kind === 'iostore' || job.kind === 'uasset') counts.unreal += 1
-    else if (job.kind === 'pck') counts.godot += 1
+    else if (job.kind === 'pck' || job.kind === 'godot-binary') counts.godot += 1
     else if (job.kind === 'unity') counts.unity += 1
   }
   const best = (Object.entries(counts) as Array<[EngineFamily, number]>).reduce((a, b) => (b[1] > a[1] ? b : a))
@@ -206,6 +220,27 @@ export function buildArchivePlan(files: ScanFile[], tools: ToolPaths): { looseFi
         executable: tools.gdre,
         buildArgs: (outDir, aesKey) => gdreExtractArgs(file.absolutePath, outDir, aesKey),
       })
+    } else if ((ext === '.res' || ext === '.scn') && tools.gdre) {
+      // Binary Godot resource → GDRE --bin-to-txt on a TEMP COPY (read-only-safe;
+      // the original is never modified). Output re-emitted as text .tres/.tscn.
+      jobs.push({
+        file,
+        kind: 'godot-binary',
+        toolId: 'gdre',
+        executable: tools.gdre,
+        buildArgs: (outDir) => gdreBinToTxtArgs(`${outDir}/${file.name}`, outDir),
+        convertTo: ext === '.scn' ? '.tscn' : '.tres',
+      })
+    } else if (ext === '.gdc' && tools.gdre) {
+      // GDScript bytecode → GDRE --decompile on a TEMP COPY.
+      jobs.push({
+        file,
+        kind: 'godot-binary',
+        toolId: 'gdre',
+        executable: tools.gdre,
+        buildArgs: (outDir) => gdreDecompileArgs(`${outDir}/${file.name}`, outDir),
+        convertTo: '.gd',
+      })
     } else if ((UNITY_ARCHIVE_EXTENSIONS.has(ext) || ext === '.assets') && tools.unitypy) {
       jobs.push({
         file,
@@ -260,6 +295,23 @@ export async function orchestrateExtraction(
     const tempDir = await primitives.createTempDir()
     tempDirs.push(tempDir)
 
+    // Derived-copy pipeline for binary Godot resources: copy the original into
+    // the temp job dir, then convert the COPY (never the original). Proven
+    // read-only-safe (GDRE --bin-to-txt writes to --output, leaving input
+    // untouched).
+    if (job.kind === 'godot-binary') {
+      if (!primitives.copyFile) {
+        jobDiagnostics.push({ kind: 'binary-resource-not-converted', message: `Binary Godot resource ${job.file.name} requires a copy primitive to convert safely.`, path: job.file.relativePath })
+        continue
+      }
+      try {
+        await primitives.copyFile(job.file.absolutePath, `${tempDir}/${job.file.name}`)
+      } catch (error) {
+        jobDiagnostics.push({ kind: 'binary-resource-not-converted', message: `Could not copy ${job.file.name} for conversion: ${error instanceof Error ? error.message : 'copy failed'}.`, path: job.file.relativePath })
+        continue
+      }
+    }
+
     const args = job.buildArgs(tempDir, options.aesKey)
     const result = await primitives.runTool(job.executable, args, timeoutMs)
 
@@ -288,6 +340,27 @@ export async function orchestrateExtraction(
         name: `${job.file.name}.json`,
         relativePath: `${job.file.relativePath}.json`,
         absolutePath: `${tempDir}/${job.file.name}.json`,
+        size: 0,
+      })
+      continue
+    }
+
+    if (job.kind === 'godot-binary') {
+      // Converted output: GDRE writes the text form into the temp dir under the
+      // original name (e.g. binary .scn → text .scn). Re-emit it under the text
+      // extension so it routes to the Godot text parser.
+      const convertedName = `${job.file.name}`
+      const remappedName = job.convertTo
+        ? convertedName.replace(/\.[^.]*$/, job.convertTo)
+        : convertedName
+      // GDRE writes the converted file under --output (nested) or beside the
+      // input; discover it.
+      const discovered = await primitives.scanDirectory(tempDir)
+      const convertedRel = discovered.files.map((f) => f.path).find((p) => p.includes(convertedName))
+      allFiles.push({
+        name: remappedName.split('/').pop() ?? remappedName,
+        relativePath: `${job.file.relativePath}::converted/${remappedName}`,
+        absolutePath: `${tempDir}/${convertedRel ?? convertedName}`,
         size: 0,
       })
       continue
