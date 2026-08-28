@@ -21,7 +21,7 @@ import { extractInkb, readInkbTextStrings } from './engines/inkb'
 import { stripBom } from './engines/shared'
 import { readLocmeta } from './engines/locmeta'
 import { aggregateCultures, applyNativeCulture, inferNativeCultures } from './cultureAggregation'
-import { GodotAudienceIndex, classifyScriptAudience, type AudienceResult } from './godotAudience'
+import { GodotAudienceIndex, classifyScriptAudience, scriptScenePreloads, type AudienceResult } from './godotAudience'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
@@ -449,7 +449,16 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
       for (const file of chunk) {
         const read = textMap.get(file.absolutePath)
         const content = read && !read.error ? (read.text ?? '') : ''
-        audienceIndex.registerScript(file.relativePath, classifyScriptAudience(content))
+        const audience = classifyScriptAudience(content)
+        audienceIndex.registerScript(file.relativePath, audience)
+        // An editor script's preloaded SCENES are the plugin's own UI; mark
+        // them editor. `.gd` preloads are NOT propagated (a panel may reuse a
+        // runtime helper script).
+        if (audience.audience === 'editor') {
+          for (const scenePath of scriptScenePreloads(content)) {
+            audienceIndex.registerEditorScene(scenePath)
+          }
+        }
       }
     }
   }

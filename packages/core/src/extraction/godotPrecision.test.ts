@@ -81,4 +81,78 @@ describe('Godot runtime-vs-editor precision (scanGame)', () => {
     expect(entry?.excludedByDefault).toBe(true)
     expect(entry?.exclusionReason).toBe('test-resource')
   })
+
+  // §12 counterexample fixtures: weak evidence must NEVER auto-exclude.
+
+  it('A) runtime @tool script is NOT auto-excluded (uncertain/included)', async () => {
+    const gd = '@tool\nextends Control\nfunc _ready(): pass'
+    const tscn = '[gd_scene load_steps=2]\n\n[ext_resource type="Script" path="res://ui/thing.gd" id="1"]\n\n[node name="Button" type="Button"]\ntext = "Continue"'
+    const files: ScanFile[] = [
+      file('ui/thing.gd', '/a/thing.gd'),
+      file('ui/Thing.tscn', '/a/Thing.tscn'),
+    ]
+    const reader = {
+      readText: async (f: ScanFile) => (f.name.endsWith('.gd') ? gd : tscn),
+      readBinary: async () => new Uint8Array(0),
+    }
+    const result = await scanGame({ files, reader })
+    const entry = result.entries.find((e) => e.sourceText === 'Continue')
+    expect(entry).toBeTruthy()
+    expect(entry?.excludedByDefault).toBe(false)
+  })
+
+  it('B) runtime ui/panel path is NOT auto-excluded', async () => {
+    const tscn = '[gd_scene]\n\n[node name="Button" type="Button"]\ntext = "Graphics"'
+    const files: ScanFile[] = [file('ui/panel/settings/Panel.tscn', '/b/Panel.tscn')]
+    const reader = { readText: async () => tscn, readBinary: async () => new Uint8Array(0) }
+    const result = await scanGame({ files, reader })
+    const entry = result.entries.find((e) => e.sourceText === 'Graphics')
+    expect(entry).toBeTruthy()
+    expect(entry?.excludedByDefault).toBeFalsy()
+  })
+
+  it('C) runtime web/pages path is NOT auto-excluded', async () => {
+    const tscn = '[gd_scene]\n\n[node name="Button" type="Button"]\ntext = "Profile"'
+    const files: ScanFile[] = [file('web/pages/profile.tscn', '/c/profile.tscn')]
+    const reader = { readText: async () => tscn, readBinary: async () => new Uint8Array(0) }
+    const result = await scanGame({ files, reader })
+    const entry = result.entries.find((e) => e.sourceText === 'Profile')
+    expect(entry).toBeTruthy()
+    expect(entry?.excludedByDefault).toBeFalsy()
+  })
+
+  it('D) real EditorPlugin is still excluded', async () => {
+    const gd = 'extends EditorPlugin\nfunc _enter_tree(): pass'
+    const tscn = '[gd_scene load_steps=2]\n\n[ext_resource type="Script" path="res://addons/x/plugin.gd" id="1"]\n\n[node name="Button" type="Button"]\ntext = "Generate"'
+    const files: ScanFile[] = [
+      file('addons/x/plugin.gd', '/d/plugin.gd'),
+      file('addons/x/plugin.tscn', '/d/plugin.tscn'),
+    ]
+    const reader = {
+      readText: async (f: ScanFile) => (f.name.endsWith('.gd') ? gd : tscn),
+      readBinary: async () => new Uint8Array(0),
+    }
+    const result = await scanGame({ files, reader })
+    const entry = result.entries.find((e) => e.sourceText === 'Generate')
+    expect(entry).toBeTruthy()
+    expect(entry?.excludedByDefault).toBe(true)
+    expect(entry?.exclusionReason).toBe('godot-editor-plugin')
+  })
+
+  it('E) EditorInterface script is still excluded', async () => {
+    const gd = '@tool\nextends Control\nvar e = get_editor_interface()'
+    const tscn = '[gd_scene load_steps=2]\n\n[ext_resource type="Script" path="res://addons/x/panel.gd" id="1"]\n\n[node name="Button" type="Button"]\ntext = "Regenerate"'
+    const files: ScanFile[] = [
+      file('addons/x/panel.gd', '/e/panel.gd'),
+      file('addons/x/panel.tscn', '/e/panel.tscn'),
+    ]
+    const reader = {
+      readText: async (f: ScanFile) => (f.name.endsWith('.gd') ? gd : tscn),
+      readBinary: async () => new Uint8Array(0),
+    }
+    const result = await scanGame({ files, reader })
+    const entry = result.entries.find((e) => e.sourceText === 'Regenerate')
+    expect(entry).toBeTruthy()
+    expect(entry?.excludedByDefault).toBe(true)
+  })
 })

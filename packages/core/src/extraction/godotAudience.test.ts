@@ -1,24 +1,23 @@
 /*
  * Godot runtime-vs-editor audience classifier tests.
  *
- * Pins the precision behaviour required by the human acceptance:
- *   - editor plugin scenes (`@tool` / EditorPlugin) are excluded by default
- *   - runtime addons (no editor signals) are kept
- *   - short runtime strings are NOT excluded merely for being short
- *   - test/demo content is excluded
+ * Pins the precision-safety behaviour: auto-exclusion requires HIGH-CONFIDENCE
+ * evidence. `@tool` alone and generic path segments (panel/dock/inspector/
+ * pages) are only WEAK evidence and never auto-exclude player text.
  */
 
 import { describe, expect, it } from 'vitest'
 import {
   classifyScriptAudience,
   sceneScriptReferences,
+  scriptScenePreloads,
   GodotAudienceIndex,
   normalizeGodotPath,
 } from './godotAudience'
 
 describe('classifyScriptAudience', () => {
-  it('flags @tool scripts as editor tooling', () => {
-    expect(classifyScriptAudience('@tool\nextends Control')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  it('flags @tool ALONE as uncertain (NOT editor, NOT auto-excluded)', () => {
+    expect(classifyScriptAudience('@tool\nextends Control')).toEqual({ audience: 'unknown', reason: 'godot-tool-script' })
   })
 
   it('flags EditorPlugin-derived scripts as editor', () => {
@@ -29,12 +28,20 @@ describe('classifyScriptAudience', () => {
     expect(classifyScriptAudience('extends EditorInspectorPlugin')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
   })
 
-  it('flags EditorInterface usage as editor', () => {
-    expect(classifyScriptAudience('var e = get_editor_interface()')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  it('flags EditorNode3DGizmoPlugin-derived scripts as editor', () => {
+    expect(classifyScriptAudience('@tool\nextends EditorNode3DGizmoPlugin')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
   })
 
-  it('does NOT flag a runtime script without editor signals', () => {
-    expect(classifyScriptAudience('extends Node\nfunc _ready(): pass')).toBeNull()
+  it('flags EditorInterface usage as editor even with @tool', () => {
+    expect(classifyScriptAudience('@tool\nextends Control\nvar e = get_editor_interface()')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  })
+
+  it('classifies a runtime script without editor signals as runtime', () => {
+    expect(classifyScriptAudience('extends Node\nfunc _ready(): pass')).toEqual({ audience: 'runtime' })
+  })
+
+  it('classifies @tool extends Node3D (runtime node w/ editor preview) as uncertain', () => {
+    expect(classifyScriptAudience('@tool\nextends Node3D')).toEqual({ audience: 'unknown', reason: 'godot-tool-script' })
   })
 })
 
@@ -45,15 +52,40 @@ describe('sceneScriptReferences', () => {
   })
 })
 
+describe('scriptScenePreloads', () => {
+  it('extracts preloaded SCENE paths but not .gd helper scripts', () => {
+    const content = '@tool\nextends Control\nvar a = preload("res://addons/x/Panel.tscn")\nvar b = preload("res://scenes/AnimRandomizer.gd")'
+    expect(scriptScenePreloads(content)).toEqual(['res://addons/x/Panel.tscn'])
+  })
+})
+
 describe('GodotAudienceIndex', () => {
   it('classifies a scene referencing an editor script as editor', () => {
     const index = new GodotAudienceIndex()
-    index.registerScript('UntilThen.pck::addons/animpaper3dgen/Panel.gd', classifyScriptAudience('@tool\nextends Control'))
+    index.registerScript('addons/animpaper3dgen/Panel.gd', classifyScriptAudience('@tool\nextends Control\nvar e = get_editor_interface()'))
     const result = index.classifyScene(
-      'UntilThen.pck::addons/animpaper3dgen/Panel.tscn',
+      'addons/animpaper3dgen/Panel.tscn',
       '[ext_resource type="Script" path="res://addons/animpaper3dgen/Panel.gd" id="1"]',
     )
     expect(result).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  })
+
+  it('classifies a scene preloaded by an editor script as editor', () => {
+    const index = new GodotAudienceIndex()
+    index.registerScript('addons/animpaper3dgen/plugin.gd', classifyScriptAudience('extends EditorPlugin'))
+    index.registerEditorScene('res://addons/animpaper3dgen/Panel.tscn')
+    const result = index.classifyScene('addons/animpaper3dgen/Panel.tscn', '[gd_scene]')
+    expect(result).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  })
+
+  it('keeps a scene referencing a @tool-only script as uncertain (INCLUDED)', () => {
+    const index = new GodotAudienceIndex()
+    index.registerScript('addons/x/thing.gd', classifyScriptAudience('@tool\nextends Control'))
+    const result = index.classifyScene(
+      'addons/x/Thing.tscn',
+      '[ext_resource type="Script" path="res://addons/x/thing.gd" id="1"]',
+    )
+    expect(result.audience).toBe('unknown')
   })
 
   it('keeps a runtime addon scene without editor references as runtime', () => {
@@ -66,14 +98,23 @@ describe('GodotAudienceIndex', () => {
     expect(result.audience).toBe('runtime')
   })
 
-  it('flags test/demo paths as test content', () => {
+  it('flags tests/ paths as test content', () => {
     const index = new GodotAudienceIndex()
     expect(index.classifyScene('addons/x/tests/debug_action.tscn', '[gd_scene]').audience).toBe('test')
   })
 
-  it('flags editor-ish paths as editor even without script refs', () => {
+  it('flags inspector_plugin/ paths as editor', () => {
     const index = new GodotAudienceIndex()
     expect(index.classifyScene('addons/proton_scatter/src/stack/inspector_plugin/ui/stack_panel.tscn', '[gd_scene]')).toEqual({ audience: 'editor', reason: 'godot-editor-plugin' })
+  })
+
+  it('does NOT auto-exclude generic panel/ dock/ inspector/ pages/ paths', () => {
+    const index = new GodotAudienceIndex()
+    expect(index.classifyScene('ui/panel/settings/Panel.tscn', '[gd_scene]').audience).toBe('runtime')
+    expect(index.classifyScene('inventory/panel/Inventory.tscn', '[gd_scene]').audience).toBe('runtime')
+    expect(index.classifyScene('web/pages/profile.tscn', '[gd_scene]').audience).toBe('runtime')
+    expect(index.classifyScene('ui/dock/Hotbar.tscn', '[gd_scene]').audience).toBe('runtime')
+    expect(index.classifyPath('ui/inspector/details.tscn').audience).toBe('runtime')
   })
 })
 
