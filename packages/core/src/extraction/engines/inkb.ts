@@ -35,7 +35,7 @@
 import { extractGodotTokens } from '../../tokens/godot'
 import { detectEngine } from '../engineDetection'
 import { structuralEntryId } from '../structuredData'
-import { detectGodotInkbLocale } from '../godotLocales'
+import { detectGodotInkbLocale, GODOT_NATIVE_FALLBACK_LOCALE } from '../godotLocales'
 import type {
   ExtractedEntry,
   ExtractionResult,
@@ -169,7 +169,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   // language. Until Then's runtime default is English (`Constants.DEFAULT_LOCALE
   // = "en"`); the base `.inkb` files are English. This is documented Until
   // Then-specific behavior, consistent with the JSON database base ("en").
-  const sourceLocale = localeInfo.locale ?? 'en'
+  const sourceLocale = localeInfo.locale ?? GODOT_NATIVE_FALLBACK_LOCALE
   const isSourceLocale = localeInfo.isBase === true
 
   const entries: ExtractedEntry[] = []

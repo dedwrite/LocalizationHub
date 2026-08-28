@@ -26,6 +26,8 @@ pub fn run() {
                 extraction_io::unregister_extraction_root,
                 extraction_io::read_extraction_text,
                 extraction_io::read_extraction_binary,
+                extraction_io::read_extraction_text_batch,
+                extraction_io::read_extraction_binary_batch,
             ],
         )
         .setup(|app| {

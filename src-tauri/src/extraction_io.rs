@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::State;
+use serde::Serialize;
 
 /*
  * Purpose-built read-only IO boundary for the extraction pipeline.
@@ -113,6 +114,141 @@ pub fn read_extraction_binary(
         return Err("Read denied: path is outside authorized extraction roots.".into());
     }
     fs::read(&p).map_err(|e| e.to_string())
+}
+
+/*
+ * Guarded BATCH reads.
+ *
+ * A large game ships tens of thousands of text resources; reading them one
+ * Tauri invoke per file means tens of thousands of IPC round-trips (the
+ * "Not Responding" minute-long scan). The batch commands below read up to
+ * `MAX_BATCH_SIZE` files in a single guarded call — every path still goes
+ * through the SAME canonicalize + authorized-root check, so there is no
+ * weakening of the boundary. Per-file errors are returned in-band so one bad
+ * file never aborts the batch.
+ */
+
+/// Bounded batch size: caps per-call latency, IPC payload, and memory peak.
+const MAX_BATCH_SIZE: usize = 256;
+
+#[derive(Serialize)]
+pub struct BatchTextResult {
+    pub path: String,
+    pub text: Option<String>,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct BatchBinaryResult {
+    pub path: String,
+    /// base64-encoded bytes (compact IPC vs. a nested number[] JSON array).
+    pub data: Option<String>,
+    pub error: Option<String>,
+}
+
+/// Core batch-text logic, testable without a Tauri `State`.
+pub(crate) fn read_text_batch(
+    state: &ExtractionAuthorizedRoots,
+    paths: Vec<String>,
+) -> Result<Vec<BatchTextResult>, String> {
+    if paths.len() > MAX_BATCH_SIZE {
+        return Err(format!(
+            "Batch size {} exceeds the maximum of {MAX_BATCH_SIZE}.",
+            paths.len()
+        ));
+    }
+    let mut out = Vec::with_capacity(paths.len());
+    for path in paths {
+        let p = PathBuf::from(&path);
+        if !is_authorized(state, &p) {
+            out.push(BatchTextResult {
+                path,
+                text: None,
+                error: Some("Read denied: path is outside authorized extraction roots.".into()),
+            });
+            continue;
+        }
+        match fs::read_to_string(&p) {
+            Ok(text) => out.push(BatchTextResult { path, text: Some(text), error: None }),
+            Err(e) => out.push(BatchTextResult { path, text: None, error: Some(e.to_string()) }),
+        }
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+pub fn read_extraction_text_batch(
+    paths: Vec<String>,
+    state: State<ExtractionAuthorizedRoots>,
+) -> Result<Vec<BatchTextResult>, String> {
+    read_text_batch(state.inner(), paths)
+}
+
+/// Core batch-binary logic, testable without a Tauri `State`.
+pub(crate) fn read_binary_batch(
+    state: &ExtractionAuthorizedRoots,
+    paths: Vec<String>,
+) -> Result<Vec<BatchBinaryResult>, String> {
+    if paths.len() > MAX_BATCH_SIZE {
+        return Err(format!(
+            "Batch size {} exceeds the maximum of {MAX_BATCH_SIZE}.",
+            paths.len()
+        ));
+    }
+    let mut out = Vec::with_capacity(paths.len());
+    for path in paths {
+        let p = PathBuf::from(&path);
+        if !is_authorized(state, &p) {
+            out.push(BatchBinaryResult {
+                path,
+                data: None,
+                error: Some("Read denied: path is outside authorized extraction roots.".into()),
+            });
+            continue;
+        }
+        match fs::read(&p) {
+            Ok(bytes) => out.push(BatchBinaryResult {
+                path,
+                data: Some(base64_encode(&bytes)),
+                error: None,
+            }),
+            Err(e) => out.push(BatchBinaryResult { path, data: None, error: Some(e.to_string()) }),
+        }
+    }
+    Ok(out)
+}
+
+#[tauri::command]
+pub fn read_extraction_binary_batch(
+    paths: Vec<String>,
+    state: State<ExtractionAuthorizedRoots>,
+) -> Result<Vec<BatchBinaryResult>, String> {
+    read_binary_batch(state.inner(), paths)
+}
+
+const BASE64_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+fn base64_encode(data: &[u8]) -> String {
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
+        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
+        let n = (b0 << 16) | (b1 << 8) | b2;
+        out.push(BASE64_ALPHABET[(n >> 18) as usize & 63] as char);
+        out.push(BASE64_ALPHABET[(n >> 12) as usize & 63] as char);
+        out.push(if chunk.len() > 1 {
+            BASE64_ALPHABET[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            BASE64_ALPHABET[n as usize & 63] as char
+        } else {
+            '='
+        });
+    }
+    out
 }
 
 #[cfg(test)]
@@ -226,5 +362,78 @@ mod tests {
         assert!(!is_authorized(&state, &other));
 
         fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn base64_round_trips_bytes() {
+        assert_eq!(base64_encode(b""), "");
+        assert_eq!(base64_encode(b"f"), "Zg==");
+        assert_eq!(base64_encode(b"fo"), "Zm8=");
+        assert_eq!(base64_encode(b"foo"), "Zm9v");
+        assert_eq!(base64_encode(b"foob"), "Zm9vYg==");
+        assert_eq!(base64_encode(b"fooba"), "Zm9vYmE=");
+        assert_eq!(base64_encode(b"foobar"), "Zm9vYmFy");
+    }
+
+    #[test]
+    fn batch_text_serves_authorized_and_denies_others_per_file() {
+        let state = ExtractionAuthorizedRoots::default();
+        let root = unique_root("batchtext");
+        let inside = root.join("a.txt");
+        let outside = std::env::temp_dir().join("lhub-batch-secret.txt");
+        write(&inside, "hello");
+        write(&outside, "secret");
+
+        authorize_root(&state, &root).unwrap();
+
+        let results = read_text_batch(
+            &state,
+            vec![inside.to_string_lossy().to_string(), outside.to_string_lossy().to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].text.as_deref(), Some("hello"));
+        assert!(results[0].error.is_none());
+        assert!(results[1].text.is_none());
+        assert!(results[1].error.as_deref().unwrap().contains("denied"));
+
+        fs::remove_file(&outside).ok();
+        fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn batch_binary_serves_authorized_and_denies_others_per_file() {
+        let state = ExtractionAuthorizedRoots::default();
+        let root = unique_root("batchbin");
+        let inside = root.join("a.inkb");
+        let outside = std::env::temp_dir().join("lhub-batch-bin-secret.inkb");
+        write(&inside, "hello");
+        write(&outside, "secret");
+
+        authorize_root(&state, &root).unwrap();
+
+        let results = read_binary_batch(
+            &state,
+            vec![inside.to_string_lossy().to_string(), outside.to_string_lossy().to_string()],
+        )
+        .unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].data.as_deref(), Some("aGVsbG8=")); // "hello"
+        assert!(results[0].error.is_none());
+        assert!(results[1].data.is_none());
+        assert!(results[1].error.as_deref().unwrap().contains("denied"));
+
+        fs::remove_file(&outside).ok();
+        fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn batch_read_rejects_oversized_requests() {
+        let state = ExtractionAuthorizedRoots::default();
+        let paths: Vec<String> = (0..(MAX_BATCH_SIZE + 1)).map(|i| format!("{i}.txt")).collect();
+        let result = read_text_batch(&state, paths);
+        assert!(result.is_err());
     }
 }

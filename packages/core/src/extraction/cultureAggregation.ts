@@ -192,6 +192,43 @@ export function applyNativeCulture(
 }
 
 /*
+ * Infer each target's native/source culture from explicit base-content
+ * evidence, without guessing alphabetically.
+ *
+ * Godot engines mark the unsuffixed base content with
+ * `rawMetadata.isSourceLocale = true` (the file that is NOT a
+ * `locales/<culture>/` overlay). That base content is the project's native
+ * language. For every target whose native culture is not already known (e.g.
+ * from Unreal LOCMETA), infer it from the source locale of those base entries.
+ *
+ * When no base evidence exists, the target's native culture stays unset — the
+ * UI then shows an explicit "unknown/select" state instead of defaulting to the
+ * first locale alphabetically.
+ */
+export function inferNativeCultures(
+  entries: ExtractedEntry[],
+  targets: LocalizationTarget[],
+): LocalizationTarget[] {
+  const sourceByTarget = new Map<string, Map<string, number>>()
+  for (const entry of entries) {
+    if (entry.rawMetadata?.isSourceLocale !== true) continue
+    if (!entry.sourceLocale) continue
+    const target = targetOf(entry)
+    const counts = sourceByTarget.get(target) ?? new Map<string, number>()
+    counts.set(entry.sourceLocale, (counts.get(entry.sourceLocale) ?? 0) + 1)
+    sourceByTarget.set(target, counts)
+  }
+
+  return targets.map((target) => {
+    if (target.nativeCulture) return target
+    const counts = sourceByTarget.get(target.name)
+    if (!counts || counts.size === 0) return target
+    const native = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0]
+    return { ...target, nativeCulture: native }
+  })
+}
+
+/*
  * Override the source culture for every logical entry.
  *
  * For each entry with locale variants, the selected culture becomes the source

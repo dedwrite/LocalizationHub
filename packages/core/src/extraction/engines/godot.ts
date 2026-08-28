@@ -18,7 +18,7 @@ import { extractGodotTokens } from '../../tokens/godot'
 import { detectEngine } from '../engineDetection'
 import { analyzeRecord, structuralEntryId, walkStructuredData } from '../structuredData'
 import { extractPo } from './gettext'
-import { detectGodotJsonLocale } from '../godotLocales'
+import { detectGodotJsonLocale, GODOT_NATIVE_FALLBACK_LOCALE } from '../godotLocales'
 import type {
   EngineFamily,
   ExtractedEntry,
@@ -306,7 +306,7 @@ function extractGodotStructuredJson(fileName: string, text: string, mappings: Ar
   const dbLocale = detectGodotJsonLocale(fileName)
   if (dbLocale.locale || dbLocale.isBase) {
     for (const entry of entries) {
-      entry.sourceLocale = dbLocale.locale ?? 'en'
+      entry.sourceLocale = dbLocale.locale ?? GODOT_NATIVE_FALLBACK_LOCALE
       entry.cultureIdentity = `godot-db:${dbLocale.baseName}:${entry.id}`
       entry.rawMetadata = {
         ...entry.rawMetadata,

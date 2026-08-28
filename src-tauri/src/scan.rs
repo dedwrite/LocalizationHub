@@ -33,11 +33,13 @@ const CANDIDATE_EXTENSIONS: &[&str] = &[
     // Unreal
     "pak", "utoc", "ucas", "uasset", "uexp", "ubulk", "locres", "locmeta", "umap",
     // Godot
-    "pck", "godot", "tres", "res", "tscn", "scn", "translation", "gd",
+    "pck", "godot", "tres", "res", "tscn", "scn", "translation", "gd", "gdc",
     // Unity
     "assets", "unity3d", "bundle", "sharedassets",
     // Text / structured
     "json", "csv", "po", "pot", "txt", "ink",
+    // Ink story (Until Then compiled Ink — must reach the native reader)
+    "inkb",
 ];
 
 // Unity serialized files often have no extension and must be matched by exact
@@ -139,4 +141,81 @@ fn walk(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /*
+     * DISCOVERY PARITY CONTRACT.
+     *
+     * `packages/core/src/extraction/scanGame.ts` (`classifyFileKind`) routes
+     * every one of these extensions to a PARSER (not "unknown"/"structural"),
+     * and `packages/core/src/extraction/orchestrate.ts` (`buildArchivePlan`)
+     * turns the archive ones into external-tool jobs. If a file type is
+     * recognized by core but NOT discovered here, the desktop scan silently
+     * drops localizable content — this is exactly the `.inkb` → Dialogue=0
+     * regression and the missing `.gdc` binary-resource reporting.
+     *
+     * Keep this list in sync with the core lists in scanGame.ts /
+     * orchestrate.ts. A counterpart Vitest (`discoveryParity.test.ts`) asserts
+     * the same matrix from the TypeScript side.
+     */
+    const CORE_ROUTEABLE_EXTENSIONS: &[&str] = &[
+        // text-resource
+        "json", "csv", "po", "pot", "tscn", "tres", "txt", "ink",
+        // script
+        "gd",
+        // unreal-binary
+        "locres", "locmeta",
+        // godot-binary
+        "res", "scn", "translation", "gdc",
+        // inkb-story
+        "inkb",
+        // archive (scanGame)
+        "pak", "utoc", "ucas", "pck", "assets", "unity3d", "bundle",
+        // archive jobs (orchestrate buildArchivePlan)
+        "uasset", "uexp", "ubulk",
+    ];
+
+    #[test]
+    fn native_discovery_covers_every_core_routeable_extension() {
+        for ext in CORE_ROUTEABLE_EXTENSIONS {
+            let name = format!("sample.{ext}");
+            let path = std::path::Path::new(&name);
+            assert!(
+                is_candidate(path),
+                "core recognizes .{ext} but native scan_directory drops it — add it to CANDIDATE_EXTENSIONS"
+            );
+        }
+    }
+
+    #[test]
+    fn scan_directory_returns_inkb_and_gdc_files() {
+        let base = std::env::temp_dir().join(format!(
+            "lhub-scan-test-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&base).unwrap();
+        fs::write(base.join("story.inkb"), b"x").unwrap();
+        fs::write(base.join("shader.gdc"), b"y").unwrap();
+        fs::write(base.join("noise.zzz"), b"z").unwrap();
+
+        let discovery = scan_directory(base.to_string_lossy().to_string()).unwrap();
+        let exts: Vec<&str> = discovery
+            .files
+            .iter()
+            .map(|f| f.path.rsplit('.').next().unwrap_or(""))
+            .collect();
+
+        assert!(exts.contains(&"inkb"), "discovered: {exts:?}");
+        assert!(exts.contains(&"gdc"), "discovered: {exts:?}");
+        assert!(!exts.contains(&"zzz"), "unknown extension should be skipped: {exts:?}");
+
+        fs::remove_dir_all(&base).ok();
+    }
 }

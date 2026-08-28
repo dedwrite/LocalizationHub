@@ -16,10 +16,11 @@ export * from './engineDetection'
 export * from './extractionReview'
 export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanProgress } from './scanGame'
 export { buildProjectFromExtraction } from './projectFromExtraction'
-export { aggregateCultures, applyNativeCulture, overrideSourceCulture, computeLocaleCoverage, detectStructuralMismatches, type LocaleCoverage } from './cultureAggregation'
+export { aggregateCultures, applyNativeCulture, overrideSourceCulture, computeLocaleCoverage, detectStructuralMismatches, inferNativeCultures, type LocaleCoverage } from './cultureAggregation'
 export {
   detectGodotJsonLocale,
   detectGodotInkbLocale,
+  GODOT_NATIVE_FALLBACK_LOCALE,
   type GodotJsonLocale,
   type GodotInkbLocale,
 } from './godotLocales'

@@ -22,6 +22,16 @@ import {
 type ScannedFileResult = { path: string; size: number }
 type ScanDiscovery = { files: ScannedFileResult[]; directories: string[] }
 type ToolRunResult = { code: number; stdout: string; stderr: string; timed_out: boolean; output_truncated: boolean }
+type BatchTextResult = { path: string; text?: string; error?: string }
+type BatchBinaryResult = { path: string; data?: string; error?: string }
+
+/* Decode the base64 bytes returned by the native binary batch command. */
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
 
 export type { ToolPaths }
 
@@ -49,6 +59,15 @@ function buildPrimitives(): ExtractionPrimitives {
     readText: (absolutePath) => invoke<string>('read_extraction_text', { path: absolutePath }),
     readBinary: async (absolutePath) =>
       new Uint8Array(await invoke<number[]>('read_extraction_binary', { path: absolutePath })),
+    readTextBatch: (paths) => invoke<BatchTextResult[]>('read_extraction_text_batch', { paths }),
+    readBinaryBatch: async (paths) => {
+      const results = await invoke<BatchBinaryResult[]>('read_extraction_binary_batch', { paths })
+      return results.map((result) => ({
+        path: result.path,
+        data: result.data ? base64ToBytes(result.data) : undefined,
+        error: result.error,
+      }))
+    },
   }
 }
 

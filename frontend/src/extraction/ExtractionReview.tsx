@@ -104,7 +104,7 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
         .filter((e) => !excludedIds.has(e.id) && !excludedFiles.has(e.origin.containerPath ?? ''))
         .map((e) => e.id),
     )
-    onCreateProject(included, sourceLocale)
+    onCreateProject(included, effectiveSource)
   }
 
   const { stats, detection, localizationTargets } = result
@@ -120,6 +120,14 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
   }, [localizationTargets])
 
   const nativeCulture = localizationTargets?.find((t) => t.nativeCulture)?.nativeCulture
+  // A single detected culture is unambiguous; auto-select it as the source.
+  // Multiple cultures with no native culture require an explicit choice — the
+  // source must NEVER default to the first locale alphabetically.
+  const singleCulture = cultures.length === 1 ? cultures[0] : undefined
+  const defaultSource = nativeCulture ?? singleCulture
+  const effectiveSource = sourceLocale ?? defaultSource
+  const sourceRequired = !nativeCulture && cultures.length > 1
+  const sourceMissing = sourceRequired && !sourceLocale
 
   return (
     <main className="extraction-review">
@@ -141,7 +149,7 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
           <button
             className="er-button er-primary"
             onClick={handleCreate}
-            disabled={includedCount === 0}
+            disabled={includedCount === 0 || sourceMissing}
           >
             Create Project ({includedCount})
           </button>
@@ -167,13 +175,15 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
           <label className="er-source-locale">
             Source language
             <select
-              value={sourceLocale ?? nativeCulture ?? cultures[0] ?? ''}
+              value={effectiveSource ?? ''}
               onChange={(event) => setSourceLocale(event.target.value)}
               aria-label="Source language"
             >
+              {sourceRequired && <option value="" disabled>Select…</option>}
               {cultures.map((culture) => <option key={culture} value={culture}>{culture}</option>)}
             </select>
             {nativeCulture && <span className="er-native-hint">Native: {nativeCulture}</span>}
+            {sourceMissing && <span className="er-native-hint">Select a source language to continue.</span>}
           </label>
         </section>
       )}

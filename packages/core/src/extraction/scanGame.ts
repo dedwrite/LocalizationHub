@@ -19,7 +19,7 @@ import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './
 import { extractInk } from './engines/ink'
 import { extractInkb } from './engines/inkb'
 import { readLocmeta } from './engines/locmeta'
-import { aggregateCultures, applyNativeCulture, detectStructuralMismatches } from './cultureAggregation'
+import { aggregateCultures, applyNativeCulture, detectStructuralMismatches, inferNativeCultures } from './cultureAggregation'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
@@ -44,6 +44,13 @@ export type ScanFile = {
   size: number
 }
 
+/*
+ * A single batched-read result, keyed by the file's absolute path. Errors are
+ * per-file (one bad/unauthorized file never aborts the batch).
+ */
+export type BatchTextRead = { path: string; text?: string; error?: string }
+export type BatchBinaryRead = { path: string; data?: Uint8Array; error?: string }
+
 export type FileReader = {
   /*
    * Reads by ABSOLUTE path (desktop runtime IO). The returned content is then
@@ -51,6 +58,13 @@ export type FileReader = {
    */
   readText: (file: ScanFile) => Promise<string>
   readBinary: (file: ScanFile) => Promise<Uint8Array>
+  /*
+   * Optional batched equivalents. When present, scanGame reads files in
+   * bounded chunks (one native call per chunk) instead of one invoke per file,
+   * avoiding tens of thousands of IPC round-trips on large games.
+   */
+  readTextBatch?: (files: ScanFile[]) => Promise<BatchTextRead[]>
+  readBinaryBatch?: (files: ScanFile[]) => Promise<BatchBinaryRead[]>
 }
 
 export type ScanOptions = {
@@ -75,6 +89,18 @@ export type ScanProgress = {
   candidateFiles: number
   entriesFound: number
   phase: 'discovering' | 'analyzing' | 'done'
+  /* Human-readable sub-phase (Reading resources / Aggregating languages / …). */
+  message?: string
+  /*
+   * Categorized resource accounting so the UI can distinguish "88k resources
+   * discovered" from "how many were actually localizable text / story /
+   * binary / excluded". `candidateFiles` remains the count of files that will
+   * actually be read and parsed.
+   */
+  textCandidates?: number
+  storyCandidates?: number
+  binaryCandidates?: number
+  excluded?: number
 }
 
 /*
@@ -93,16 +119,35 @@ export type ResourceKind =
   | 'structural'         // .import/.remap/.godot/.uid/.md5 sidecar — never text
   | 'unknown'            // not localizable, skipped silently
 
-const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.txt', '.ink'])
-const SCRIPT_EXTENSIONS = new Set(['.gd'])
-const UNREAL_BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
-const GODOT_BINARY_RESOURCE_EXTENSIONS = new Set(['.res', '.scn', '.translation', '.gdc'])
-const INKB_STORY_EXTENSIONS = new Set(['.inkb'])
-const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.bundle'])
-const STRUCTURAL_EXTENSIONS = new Set(['.import', '.remap', '.godot', '.uid', '.md5', '.meta', '.cfg'])
+export const TEXT_EXTENSIONS = new Set(['.json', '.csv', '.po', '.pot', '.tscn', '.tres', '.txt', '.ink'])
+export const SCRIPT_EXTENSIONS = new Set(['.gd'])
+export const UNREAL_BINARY_EXTENSIONS = new Set(['.locres', '.locmeta'])
+export const GODOT_BINARY_RESOURCE_EXTENSIONS = new Set(['.res', '.scn', '.translation', '.gdc'])
+export const INKB_STORY_EXTENSIONS = new Set(['.inkb'])
+export const ARCHIVE_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.pck', '.assets', '.unity3d', '.bundle'])
+export const STRUCTURAL_EXTENSIONS = new Set(['.import', '.remap', '.godot', '.uid', '.md5', '.meta', '.cfg'])
 
 // Extensionless Unity serialized files are discovered by exact/pattern name.
-const EXTENSIONLESS_NAMES = new Set(['globalgamemanagers', 'globalgamemanagers.assets', 'data.unity3d', 'level0', 'projectsettings', 'unitydefaultresources'])
+export const EXTENSIONLESS_NAMES = new Set(['globalgamemanagers', 'globalgamemanagers.assets', 'data.unity3d', 'level0', 'projectsettings', 'unitydefaultresources'])
+
+/*
+ * Every extension that a PARSER can act on (not "unknown"/"structural"). These
+ * MUST be discoverable by the native `scan_directory` command
+ * (src-tauri/src/scan.rs CANDIDATE_EXTENSIONS / EXTENSIONLESS_CANDIDATE_NAMES),
+ * otherwise the desktop scan silently drops localizable content. This is the
+ * canonical list the discovery-parity tests (Rust + Vitest) enforce.
+ */
+export const CORE_ROUTEABLE_EXTENSIONS: ReadonlySet<string> = new Set([
+  ...TEXT_EXTENSIONS,
+  ...SCRIPT_EXTENSIONS,
+  ...UNREAL_BINARY_EXTENSIONS,
+  ...GODOT_BINARY_RESOURCE_EXTENSIONS,
+  ...INKB_STORY_EXTENSIONS,
+  ...ARCHIVE_EXTENSIONS,
+  // Archive jobs handled by orchestrate.ts buildArchivePlan (never parseable
+  // directly, but discovered so they can be routed to an external tool).
+  '.uasset', '.uexp', '.ubulk',
+])
 
 function extensionOf(name: string): string {
   const dot = name.lastIndexOf('.')
@@ -156,6 +201,132 @@ function combineStats(parts: ExtractionStats[]): ExtractionStats {
   return combined
 }
 
+/*
+ * Number of files read in a single chunk. Large enough to collapse ~87k text
+ * resources into ~340 native batch calls, small enough to bound the IPC
+ * payload and memory peak. Keep in sync with the Rust MAX_BATCH_SIZE.
+ */
+const READ_CHUNK_SIZE = 256
+
+/*
+ * Yield to the event loop so a long scan never wedges the UI (Windows "Not
+ * Responding"). `setTimeout(0)` schedules a macrotask, which lets the browser
+ * render between chunks.
+ */
+function yieldToEventLoop(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+/*
+ * Bounded-concurrency map. Used as the fallback when a reader has no batched
+ * primitive (e.g. the Node harness), and never as an unbounded `Promise.all`.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let next = 0
+  async function worker() {
+    while (next < items.length) {
+      const index = next
+      next += 1
+      results[index] = await fn(items[index])
+    }
+  }
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () => worker())
+  await Promise.all(workers)
+  return results
+}
+
+async function readTextChunk(
+  reader: FileReader,
+  files: ScanFile[],
+): Promise<Map<string, BatchTextRead>> {
+  const map = new Map<string, BatchTextRead>()
+  if (files.length === 0) return map
+  if (reader.readTextBatch) {
+    for (const result of await reader.readTextBatch(files)) map.set(result.path, result)
+    return map
+  }
+  await mapWithConcurrency(files, 16, async (file) => {
+    try {
+      map.set(file.absolutePath, { path: file.absolutePath, text: await reader.readText(file) })
+    } catch (error) {
+      map.set(file.absolutePath, {
+        path: file.absolutePath,
+        error: error instanceof Error ? error.message : 'Read error.',
+      })
+    }
+  })
+  return map
+}
+
+async function readBinaryChunk(
+  reader: FileReader,
+  files: ScanFile[],
+): Promise<Map<string, BatchBinaryRead>> {
+  const map = new Map<string, BatchBinaryRead>()
+  if (files.length === 0) return map
+  if (reader.readBinaryBatch) {
+    for (const result of await reader.readBinaryBatch(files)) map.set(result.path, result)
+    return map
+  }
+  await mapWithConcurrency(files, 16, async (file) => {
+    try {
+      map.set(file.absolutePath, { path: file.absolutePath, data: await reader.readBinary(file) })
+    } catch (error) {
+      map.set(file.absolutePath, {
+        path: file.absolutePath,
+        error: error instanceof Error ? error.message : 'Read error.',
+      })
+    }
+  })
+  return map
+}
+
+function parseTextResource(
+  file: ScanFile,
+  text: string,
+  engine: EngineFamily,
+  mappings?: Array<{ fieldName: string; role: any }>,
+): ExtractionResult {
+  const ext = extensionOf(file.name)
+  if (ext === '.po' || ext === '.pot') return extractPo(file.relativePath, text)
+  return dispatchText(file, text, engine, mappings)
+}
+
+function parseUnrealBinary(
+  file: ScanFile,
+  buffer: Uint8Array,
+  nativeByTarget: Map<string, string>,
+): ExtractionResult {
+  if (extensionOf(file.name) === '.locres') {
+    return extractUnrealLocres({ fileName: file.relativePath, buffer })
+  }
+  // LOCMETA is metadata only; capture native culture for aggregation.
+  const meta = readLocmeta(buffer)
+  if (meta.nativeCulture && meta.nativeLocRes) {
+    nativeByTarget.set(meta.nativeLocRes, meta.nativeCulture)
+  }
+  return extractUnrealLocmeta({ fileName: file.relativePath, buffer })
+}
+
+function parserErrorResult(
+  detection: ExtractionResult['detection'],
+  file: ScanFile,
+  error: unknown,
+): ExtractionResult {
+  return {
+    engine: detection.engine,
+    detection,
+    entries: [],
+    diagnostics: [{ kind: 'parser-error', message: error instanceof Error ? error.message : 'Parser error.', path: file.relativePath }],
+    stats: { filesScanned: 1, candidateFiles: 1, entriesFound: 0, byClassification: {}, protectedTokenCount: 0, entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: 0, errors: 1 },
+  }
+}
+
 export async function scanGame(options: ScanOptions): Promise<ExtractionResult> {
   const { files, reader, mappings, signal, directories } = options
 
@@ -168,7 +339,6 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     detection = { ...detection, engine: options.engineHint }
   }
 
-  const candidates = files.filter((f) => classifyFileKind(f) !== 'unknown')
   const diagnostics: ExtractionDiagnostic[] = []
   const entries: ExtractionResult['entries'] = []
   const statsParts: ExtractionStats[] = []
@@ -189,27 +359,13 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   const archivePaths: string[] = []
   const godotBinaryPaths: string[] = []
 
-  let filesAnalyzed = 0
-  options.onProgress?.({
-    filesDiscovered: files.length,
-    filesAnalyzed: 0,
-    candidateFiles: candidates.length,
-    entriesFound: 0,
-    phase: 'analyzing',
-  })
-
+  // --- Phase 1: classify (no IO). Route every file into exactly one bucket so
+  // binary resources are never mistaken for UTF-8 text and containers are
+  // reported once (aggregated). Only "actionable" files are read+parsed. ---
+  const actionable: Array<{ file: ScanFile; kind: ResourceKind }> = []
   for (const file of files) {
-    if (signal?.cancelled) {
-      diagnostics.push({ kind: 'cancelled', message: 'Scan cancelled.', path: file.relativePath })
-      break
-    }
-
     const kind = classifyFileKind(file)
     kindCounts[kind] += 1
-    if (kind === 'unknown' || kind === 'structural') continue
-
-    // Containers / binary resources are reported as aggregate diagnostics at
-    // the end — never one card per file, never read as text.
     if (kind === 'archive') {
       if (archivePaths.length < 5) archivePaths.push(file.relativePath)
       continue
@@ -218,65 +374,102 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
       if (godotBinaryPaths.length < 5) godotBinaryPaths.push(file.relativePath)
       continue
     }
+    if (kind === 'unknown' || kind === 'structural') continue
+    actionable.push({ file, kind })
+  }
 
-    let result: ExtractionResult
-    try {
-      if (kind === 'text-resource') {
-        const ext = extensionOf(file.name)
-        if (ext === '.po' || ext === '.pot') {
-          result = extractPo(file.relativePath, await reader.readText(file))
-        } else {
-          const text = await reader.readText(file)
-          result = dispatchText(file, text, detection.engine, mappings)
-        }
-      } else if (kind === 'script') {
-        result = extractGodotScript(file.relativePath, await reader.readText(file))
-      } else if (kind === 'inkb-story') {
-        result = extractInkb(file.relativePath, await reader.readBinary(file))
-        if (result.entries.length === 0) {
-          result = {
-            ...result,
-            diagnostics: [{ kind: 'unsupported-format', message: 'Unrecognized .inkb story format (not an Until Then story).', path: file.relativePath }],
-          }
-        }
-      } else if (kind === 'unreal-binary') {
-        const buffer = await reader.readBinary(file)
-        if (extensionOf(file.name) === '.locres') {
-          result = extractUnrealLocres({ fileName: file.relativePath, buffer })
-        } else {
-          // LOCMETA is metadata only; capture native culture for aggregation.
-          const meta = readLocmeta(buffer)
-          if (meta.nativeCulture && meta.nativeLocRes) {
-            nativeByTarget.set(meta.nativeLocRes, meta.nativeCulture)
-          }
-          result = extractUnrealLocmeta({ fileName: file.relativePath, buffer })
-        }
-      } else {
-        continue
-      }
-    } catch (error) {
-      result = {
-        engine: detection.engine,
-        detection,
-        entries: [],
-        diagnostics: [{ kind: 'parser-error', message: error instanceof Error ? error.message : 'Parser error.', path: file.relativePath }],
-        stats: { filesScanned: 1, candidateFiles: 1, entriesFound: 0, byClassification: {}, protectedTokenCount: 0, entriesWithSpeaker: 0, entriesWithListener: 0, entriesWithExplicitGender: 0, entriesWithInferredContext: 0, conversationGroups: 0, warnings: 0, errors: 1 },
-      }
-    }
+  // Categorized accounting: "candidate" = a file that will actually be read and
+  // parsed, not every discovered resource.
+  const candidateFiles = actionable.length
+  const textCandidates = kindCounts['text-resource'] + kindCounts.script
+  const storyCandidates = kindCounts['inkb-story']
+  const binaryCandidates = kindCounts['unreal-binary'] + kindCounts['godot-binary']
+  const excluded = kindCounts.structural + kindCounts.unknown
 
-    entries.push(...result.entries)
-    diagnostics.push(...result.diagnostics)
-    statsParts.push(result.stats)
-    filesAnalyzed += 1
-
+  let filesAnalyzed = 0
+  const emitProgress = (phase: ScanProgress['phase'], message?: string) => {
     options.onProgress?.({
       filesDiscovered: files.length,
       filesAnalyzed,
-      candidateFiles: candidates.length,
+      candidateFiles,
       entriesFound: entries.length,
-      phase: 'analyzing',
+      phase,
+      message,
+      textCandidates,
+      storyCandidates,
+      binaryCandidates,
+      excluded,
     })
   }
+  emitProgress('analyzing', 'Reading resources')
+
+  // --- Phase 2: chunked read + parse. Bounded chunks + batched native reads
+  // (one invoke per chunk, not per file) + a yield between chunks so a large
+  // scan never wedges the UI ("Not Responding"). ---
+  for (let index = 0; index < actionable.length; index += READ_CHUNK_SIZE) {
+    if (signal?.cancelled) {
+      diagnostics.push({ kind: 'cancelled', message: 'Scan cancelled.', path: actionable[index]?.file.relativePath })
+      break
+    }
+    // Yield to the event loop so the UI can paint between chunks.
+    await yieldToEventLoop()
+
+    const chunk = actionable.slice(index, index + READ_CHUNK_SIZE)
+    const textFiles = chunk
+      .filter((item) => item.kind === 'text-resource' || item.kind === 'script')
+      .map((item) => item.file)
+    const binaryFiles = chunk
+      .filter((item) => item.kind === 'inkb-story' || item.kind === 'unreal-binary')
+      .map((item) => item.file)
+
+    const [textMap, binaryMap] = await Promise.all([
+      readTextChunk(reader, textFiles),
+      readBinaryChunk(reader, binaryFiles),
+    ])
+
+    for (const { file, kind } of chunk) {
+      if (signal?.cancelled) break
+      let result: ExtractionResult
+      try {
+        if (kind === 'text-resource' || kind === 'script') {
+          const read = textMap.get(file.absolutePath)
+          if (!read || read.error) throw new Error(read?.error ?? 'Read error.')
+          if (kind === 'script') {
+            result = extractGodotScript(file.relativePath, read.text ?? '')
+          } else {
+            result = parseTextResource(file, read.text ?? '', detection.engine, mappings)
+          }
+        } else if (kind === 'inkb-story') {
+          const read = binaryMap.get(file.absolutePath)
+          if (!read || read.error) throw new Error(read?.error ?? 'Read error.')
+          result = extractInkb(file.relativePath, read.data ?? new Uint8Array(0))
+          if (result.entries.length === 0) {
+            result = {
+              ...result,
+              diagnostics: [{ kind: 'unsupported-format', message: 'Unrecognized .inkb story format (not an Until Then story).', path: file.relativePath }],
+            }
+          }
+        } else if (kind === 'unreal-binary') {
+          const read = binaryMap.get(file.absolutePath)
+          if (!read || read.error) throw new Error(read?.error ?? 'Read error.')
+          result = parseUnrealBinary(file, read.data ?? new Uint8Array(0), nativeByTarget)
+        } else {
+          continue
+        }
+      } catch (error) {
+        result = parserErrorResult(detection, file, error)
+      }
+
+      entries.push(...result.entries)
+      diagnostics.push(...result.diagnostics)
+      statsParts.push(result.stats)
+      filesAnalyzed += 1
+    }
+
+    emitProgress('analyzing', 'Reading resources')
+  }
+
+  emitProgress('analyzing', 'Aggregating languages')
 
   // --- Aggregated diagnostics (one card per class, not per file) ---
   if (archivePaths.length > 0) {
@@ -299,17 +492,9 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   // --- Aggregate repeated diagnostics so 88k files become a handful of cards. ---
   const aggregatedDiagnostics = aggregateDiagnostics(diagnostics)
 
-  options.onProgress?.({
-    filesDiscovered: files.length,
-    filesAnalyzed,
-    candidateFiles: candidates.length,
-    entriesFound: entries.length,
-    phase: 'done',
-  })
-
   const stats = combineStats(statsParts)
   stats.filesScanned = files.length
-  stats.candidateFiles = candidates.length
+  stats.candidateFiles = candidateFiles
   stats.resourcesDiscovered = files.length
   stats.resourcesAnalyzed = filesAnalyzed
   stats.textResources = kindCounts['text-resource']
@@ -323,6 +508,10 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   // logical entry per localization identity, using LOCMETA native culture.
   const aggregated = aggregateCultures(entries)
   const withNative = applyNativeCulture(aggregated, nativeByTarget)
+  // Infer each target's native/source culture from explicit base-content
+  // evidence (Godot unsuffixed base) so the review never falls back to the
+  // first locale alphabetically.
+  const targets = inferNativeCultures(withNative.entries, withNative.targets)
   stats.entriesFound = withNative.entries.length
 
   // Recompute the classification/context stats from the LOGICAL entries so the
@@ -363,13 +552,15 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     })
   }
 
+  emitProgress('done', 'Preparing review')
+
   return {
     engine: detection.engine,
     detection,
     entries: withNative.entries,
     diagnostics: aggregatedDiagnostics,
     stats,
-    localizationTargets: withNative.targets,
+    localizationTargets: targets,
   }
 }
 

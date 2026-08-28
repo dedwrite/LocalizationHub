@@ -17,7 +17,7 @@
  *   → cleanup
  */
 
-import { scanGame, type ScanFile, type ScanProgress } from './scanGame'
+import { scanGame, type ScanFile, type ScanProgress, type BatchTextRead, type BatchBinaryRead } from './scanGame'
 import type { ExtractionResult, EngineFamily } from './types'
 import type { ContextFieldMapping } from './contextInference'
 import {
@@ -50,6 +50,14 @@ export type ExtractionPrimitives = {
   scanDirectory: (root: string) => Promise<ScanDirectoryResult>
   readText: (absolutePath: string) => Promise<string>
   readBinary: (absolutePath: string) => Promise<Uint8Array>
+  /*
+   * Optional guarded BATCH reads. When present, scanGame reads files in bounded
+   * chunks (one native call per chunk) instead of one invoke per file — this
+   * avoids tens of thousands of IPC round-trips on large games. Every path is
+   * still authorized/canonicalized by the native command; errors are per-file.
+   */
+  readTextBatch?: (absolutePaths: string[]) => Promise<BatchTextRead[]>
+  readBinaryBatch?: (absolutePaths: string[]) => Promise<BatchBinaryRead[]>
 }
 
 export type OrchestratorProgress = {
@@ -250,6 +258,12 @@ export async function orchestrateExtraction(
     const reader = {
       readText: (file: ScanFile) => primitives.readText(file.absolutePath),
       readBinary: (file: ScanFile) => primitives.readBinary(file.absolutePath),
+      readTextBatch: primitives.readTextBatch
+        ? (files: ScanFile[]) => primitives.readTextBatch!(files.map((file) => file.absolutePath))
+        : undefined,
+      readBinaryBatch: primitives.readBinaryBatch
+        ? (files: ScanFile[]) => primitives.readBinaryBatch!(files.map((file) => file.absolutePath))
+        : undefined,
     }
 
     const result = await scanGame({

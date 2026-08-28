@@ -17,6 +17,22 @@
  * Locale is only ever reported when the path itself proves it — never guessed.
  */
 
+/*
+ * Godot's source/native language fallback.
+ *
+ * Godot projects mark the source language with the
+ * `internationalization/locale/fallback` project setting, which defaults to
+ * "en" in the engine. Base (unsuffixed) content in a multi-locale Godot
+ * project is written in this fallback language. When a base file has no
+ * explicit locale marker in its path, we label it with this engine default.
+ *
+ * This is GENERIC Godot behaviour, not an Until Then special case: any Godot
+ * project that ships unsuffixed base content plus `locales/<culture>/` overlays
+ * follows the same convention, and the real source language can be proven or
+ * overridden by project.godot `locale/fallback` evidence in the future.
+ */
+export const GODOT_NATIVE_FALLBACK_LOCALE = 'en'
+
 export type GodotJsonLocale = {
   /* Culture-independent database name (e.g. "fb", "email"). */
   baseName: string

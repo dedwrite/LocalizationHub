@@ -27,6 +27,7 @@ type Phase = 'choosing' | 'scanning' | 'reviewing' | 'error'
 export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const [phase, setPhase] = useState<Phase>('choosing')
   const [progress, setProgress] = useState<ScanProgress | null>(null)
+  const [phaseMessage, setPhaseMessage] = useState('')
   const [result, setResult] = useState<ExtractionResult | null>(null)
   const [error, setError] = useState('')
   const cancelledRef = useRef(false)
@@ -45,6 +46,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
     setPhase('scanning')
     setError('')
     setProgress(null)
+    setPhaseMessage('')
 
     try {
       // The orchestrator handles loose resources directly and unpacks engine
@@ -53,7 +55,11 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
         mappings,
         signal: { get cancelled() { return cancelledRef.current } },
         onProgress: (p) => {
-          if (p.scan) setProgress(p.scan)
+          if (p.message) setPhaseMessage(p.message)
+          if (p.scan) {
+            setProgress(p.scan)
+            if (p.scan.message) setPhaseMessage(p.scan.message)
+          }
         },
       })
       setResult(scanResult)
@@ -141,12 +147,15 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
       <main className="scan-flow">
         <div className="scan-progress">
           <h1>Scanning resources (read-only)…</h1>
+          {phaseMessage && <p className="scan-phase">{phaseMessage}</p>}
           {progress && (
             <div className="scan-progress-line">
-              <span>{progress.filesDiscovered} files discovered</span>
-              <span>{progress.filesAnalyzed} analyzed</span>
-              <span>{progress.candidateFiles} candidates</span>
-              <span>{progress.entriesFound} entries found</span>
+              <span>{progress.filesDiscovered} discovered</span>
+              <span>{progress.textCandidates ?? 0} text</span>
+              <span>{progress.storyCandidates ?? 0} story</span>
+              <span>{progress.binaryCandidates ?? 0} binary</span>
+              <span>{progress.filesAnalyzed} parsed</span>
+              <span>{progress.entriesFound} entries</span>
             </div>
           )}
           <div className="scan-progress-track">
