@@ -19,12 +19,13 @@ import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './
 import { extractInk } from './engines/ink'
 import { extractInkb } from './engines/inkb'
 import { readLocmeta } from './engines/locmeta'
-import { aggregateCultures, applyNativeCulture, detectStructuralMismatches, inferNativeCultures } from './cultureAggregation'
+import { aggregateCultures, applyNativeCulture, inferNativeCultures } from './cultureAggregation'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
   ExtractionResult,
   ExtractionStats,
+  ExtractionPhaseTiming,
 } from './types'
 
 export type ScanFile = {
@@ -329,6 +330,11 @@ function parserErrorResult(
 
 export async function scanGame(options: ScanOptions): Promise<ExtractionResult> {
   const { files, reader, mappings, signal, directories } = options
+  const totalStarted = Date.now()
+  const phases: ExtractionPhaseTiming[] = []
+  const markPhase = (phase: string, started: number) => {
+    phases.push({ phase, durationMs: Date.now() - started })
+  }
 
   const detectionInput: DetectionInput = {
     files: files.map((file) => ({ name: file.name, lower: file.name.toLowerCase() })),
@@ -362,6 +368,7 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   // --- Phase 1: classify (no IO). Route every file into exactly one bucket so
   // binary resources are never mistaken for UTF-8 text and containers are
   // reported once (aggregated). Only "actionable" files are read+parsed. ---
+  const classifyStarted = Date.now()
   const actionable: Array<{ file: ScanFile; kind: ResourceKind }> = []
   for (const file of files) {
     const kind = classifyFileKind(file)
@@ -377,6 +384,7 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     if (kind === 'unknown' || kind === 'structural') continue
     actionable.push({ file, kind })
   }
+  markPhase('classify', classifyStarted)
 
   // Categorized accounting: "candidate" = a file that will actually be read and
   // parsed, not every discovered resource.
@@ -406,6 +414,7 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   // --- Phase 2: chunked read + parse. Bounded chunks + batched native reads
   // (one invoke per chunk, not per file) + a yield between chunks so a large
   // scan never wedges the UI ("Not Responding"). ---
+  const readParseStarted = Date.now()
   for (let index = 0; index < actionable.length; index += READ_CHUNK_SIZE) {
     if (signal?.cancelled) {
       diagnostics.push({ kind: 'cancelled', message: 'Scan cancelled.', path: actionable[index]?.file.relativePath })
@@ -468,6 +477,7 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
 
     emitProgress('analyzing', 'Reading resources')
   }
+  markPhase('read-and-parse', readParseStarted)
 
   emitProgress('analyzing', 'Aggregating languages')
 
@@ -505,14 +515,21 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   stats.skipped = kindCounts.structural + kindCounts.unknown
 
   // Culture aggregation: collapse duplicate per-culture entries into one
-  // logical entry per localization identity, using LOCMETA native culture.
+  // logical entry per localization identity (inkb stories are line-aligned;
+  // JSON DBs / Unreal use identity grouping), then apply LOCMETA native culture.
+  const aggregateStarted = Date.now()
   const aggregated = aggregateCultures(entries)
   const withNative = applyNativeCulture(aggregated, nativeByTarget)
   // Infer each target's native/source culture from explicit base-content
   // evidence (Godot unsuffixed base) so the review never falls back to the
   // first locale alphabetically.
   const targets = inferNativeCultures(withNative.entries, withNative.targets)
+  markPhase('aggregate-and-align', aggregateStarted)
   stats.entriesFound = withNative.entries.length
+  // Raw vs logical accounting: how many per-locale strings were discovered,
+  // and how many locale variants were collapsed into logical entries.
+  stats.rawLocalizedStrings = entries.length
+  stats.localizedVariants = withNative.entries.reduce((sum, e) => sum + (e.localeVariants?.length ?? 0), 0)
 
   // Recompute the classification/context stats from the LOGICAL entries so the
   // review shows one entry per identity, not N per locale.
@@ -532,11 +549,13 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   }, new Set<string>()).size
 
   // --- Cross-locale structural mismatch diagnostic -----------------------
-  const mismatches = detectStructuralMismatches(entries)
+  // Reported per story from the line-level alignment: how many base lines had
+  // no overlay counterpart and how many overlay lines were isolated.
+  const mismatches = aggregated.mismatchStories
   if (mismatches.length > 0) {
     aggregatedDiagnostics.push({
       kind: 'locale-structure-mismatch',
-      message: 'Some story locale copies have different line structure (translation merged/split lines); kept separate instead of merging.',
+      message: 'Some story locale copies diverge in line structure; matching lines were merged and divergent lines were kept isolated.',
       count: mismatches.length,
       examplePaths: mismatches.slice(0, 5).map((m) => `${m.storyPath} (${m.locales.join(', ')})`),
     })
@@ -561,6 +580,10 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
     diagnostics: aggregatedDiagnostics,
     stats,
     localizationTargets: targets,
+    performance: {
+      totalMs: Date.now() - totalStarted,
+      phases,
+    },
   }
 }
 

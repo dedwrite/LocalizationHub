@@ -280,6 +280,15 @@ export type ExtractionStats = {
   structuralResources?: number
   unsupportedResources?: number
   skipped?: number
+  /*
+   * Raw vs logical accounting for multi-locale aggregation: the number of
+   * per-locale strings discovered BEFORE aggregation, and how many locale
+   * variants were collapsed into logical entries. The review's primary
+   * "Entries"/"Dialogue" counts are LOGICAL; these fields keep the useful
+   * "we found N translations" fact visible.
+   */
+  rawLocalizedStrings?: number
+  localizedVariants?: number
 }
 
 export type ExtractionResult = {
@@ -295,6 +304,22 @@ export type ExtractionResult = {
    * culture-aware aggregation and the Extraction Review culture controls.
    */
   localizationTargets?: LocalizationTarget[]
+
+  /*
+   * Optional wall-clock phase timings. Used for the objective "how long did
+   * each phase take" reporting; never contains game text, paths, or secrets.
+   */
+  performance?: ExtractionPerformance
+}
+
+export type ExtractionPhaseTiming = {
+  phase: string
+  durationMs: number
+}
+
+export type ExtractionPerformance = {
+  totalMs: number
+  phases: ExtractionPhaseTiming[]
 }
 
 export type LocalizationTarget = {

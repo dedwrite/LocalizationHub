@@ -28,7 +28,20 @@ pub struct ToolRunResult {
 }
 
 #[tauri::command]
-pub fn run_external_tool(
+pub async fn run_external_tool(
+    executable: String,
+    args: Vec<String>,
+    timeout_ms: Option<u64>,
+) -> Result<ToolRunResult, String> {
+    // Archive extraction (repak/retoc/gdre/UnityPy) can run for minutes; the
+    // polling loop must NOT run on Tauri's main thread (Windows would show
+    // "Not Responding"). Offload the whole run to a blocking worker.
+    tauri::async_runtime::spawn_blocking(move || run_external_tool_sync(executable, args, timeout_ms))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn run_external_tool_sync(
     executable: String,
     args: Vec<String>,
     timeout_ms: Option<u64>,

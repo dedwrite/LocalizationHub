@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::State;
 use serde::Serialize;
 
@@ -25,11 +25,15 @@ use serde::Serialize;
  */
 
 /// Canonicalized paths that extraction reads are permitted from.
-pub struct ExtractionAuthorizedRoots(Mutex<HashSet<PathBuf>>);
+///
+/// Wrapped in an `Arc` so blocking-worker tasks can clone the handle cheaply
+/// and check authorization off Tauri's main thread.
+#[derive(Clone)]
+pub struct ExtractionAuthorizedRoots(Arc<Mutex<HashSet<PathBuf>>>);
 
 impl Default for ExtractionAuthorizedRoots {
     fn default() -> Self {
-        Self(Mutex::new(HashSet::new()))
+        Self(Arc::new(Mutex::new(HashSet::new())))
     }
 }
 
@@ -177,11 +181,14 @@ pub(crate) fn read_text_batch(
 }
 
 #[tauri::command]
-pub fn read_extraction_text_batch(
+pub async fn read_extraction_text_batch(
     paths: Vec<String>,
-    state: State<ExtractionAuthorizedRoots>,
+    state: State<'_, ExtractionAuthorizedRoots>,
 ) -> Result<Vec<BatchTextResult>, String> {
-    read_text_batch(state.inner(), paths)
+    let roots = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || read_text_batch(&roots, paths))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 /// Core batch-binary logic, testable without a Tauri `State`.
@@ -219,11 +226,14 @@ pub(crate) fn read_binary_batch(
 }
 
 #[tauri::command]
-pub fn read_extraction_binary_batch(
+pub async fn read_extraction_binary_batch(
     paths: Vec<String>,
-    state: State<ExtractionAuthorizedRoots>,
+    state: State<'_, ExtractionAuthorizedRoots>,
 ) -> Result<Vec<BatchBinaryResult>, String> {
-    read_binary_batch(state.inner(), paths)
+    let roots = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || read_binary_batch(&roots, paths))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 const BASE64_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

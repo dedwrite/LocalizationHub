@@ -190,6 +190,8 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
 
       <section className="er-stats">
         <Stat label="Entries" value={stats.entriesFound} />
+        <Stat label="Raw strings" value={stats.rawLocalizedStrings ?? stats.entriesFound} />
+        <Stat label="Localized variants" value={stats.localizedVariants ?? 0} />
         <Stat label="Dialogue" value={stats.byClassification['Dialogue'] ?? 0} />
         <Stat label="UI" value={(stats.byClassification['UI'] ?? 0) + (stats.byClassification['Menu'] ?? 0)} />
         <Stat label="With speaker" value={stats.entriesWithSpeaker} />

@@ -17,6 +17,7 @@ export * from './extractionReview'
 export { scanGame, type ScanFile, type FileReader, type ScanOptions, type ScanProgress } from './scanGame'
 export { buildProjectFromExtraction } from './projectFromExtraction'
 export { aggregateCultures, applyNativeCulture, overrideSourceCulture, computeLocaleCoverage, detectStructuralMismatches, inferNativeCultures, type LocaleCoverage } from './cultureAggregation'
+export { alignInkbStories, isInkbEntry, type InkStoryMismatch, type InkAlignmentResult } from './inkbAlignment'
 export {
   detectGodotJsonLocale,
   detectGodotInkbLocale,

@@ -41,10 +41,19 @@ pub fn create_temp_job_dir(state: State<ExtractionAuthorizedRoots>) -> Result<Te
 }
 
 #[tauri::command]
-pub fn remove_temp_dir(
+pub async fn remove_temp_dir(
     path: String,
-    state: State<ExtractionAuthorizedRoots>,
+    state: State<'_, ExtractionAuthorizedRoots>,
 ) -> Result<(), String> {
+    let roots = state.inner().clone();
+    // `remove_dir_all` on a large extracted tree (tens of thousands of files)
+    // is slow; offload it so the main thread stays responsive during cleanup.
+    tauri::async_runtime::spawn_blocking(move || remove_temp_dir_sync(&roots, path))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn remove_temp_dir_sync(state: &ExtractionAuthorizedRoots, path: String) -> Result<(), String> {
     // Safety guard: only delete directories under the LocalizationHub temp root.
     let base = std::env::temp_dir().join("LocalizationHub");
     let target = PathBuf::from(&path);
@@ -60,7 +69,7 @@ pub fn remove_temp_dir(
     }
 
     // De-authorize reads for this job dir (best-effort, before removal).
-    deauthorize_root(&state, &target_canonical);
+    deauthorize_root(state, &target_canonical);
 
     fs::remove_dir_all(&target_canonical).map_err(|e| e.to_string())
 }

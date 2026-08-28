@@ -15,6 +15,7 @@ import type {
   ExtractedEntry,
   LocalizationTarget,
 } from './types'
+import { alignInkbStories, isInkbEntry, type InkStoryMismatch } from './inkbAlignment'
 
 /*
  * Group extracted entries by a culture-independent identity. This is the
@@ -53,11 +54,35 @@ function targetOf(entry: ExtractedEntry): string {
 /*
  * Aggregate a scan's entries and produce localization-target metadata.
  *
- * - Unreal LOCRES entries are grouped by target/namespace/key; the native
- *   culture becomes the source and the rest become locale variants.
+ * - Godot `.inkb` story entries are routed through `alignInkbStories`, which
+ *   performs line-level cross-locale alignment (matching lines merge, divergent
+ *   lines stay isolated) — never a story-wide all-or-nothing guard.
+ * - Godot JSON databases / Unreal LOCRES entries are grouped by their
+ *   culture-independent identity; the native culture becomes the source and the
+ *   rest become locale variants.
  * - All other entries pass through unchanged.
  */
 export function aggregateCultures(
+  entries: ExtractedEntry[],
+): { entries: ExtractedEntry[]; targets: LocalizationTarget[]; mismatchStories: InkStoryMismatch[] } {
+  const inkbEntries: ExtractedEntry[] = []
+  const others: ExtractedEntry[] = []
+  for (const entry of entries) {
+    if (isInkbEntry(entry)) inkbEntries.push(entry)
+    else others.push(entry)
+  }
+
+  const aligned = alignInkbStories(inkbEntries)
+  const generic = aggregateGenericCultures(others)
+
+  return {
+    entries: [...generic.entries, ...aligned.entries],
+    targets: [...generic.targets, ...aligned.targets],
+    mismatchStories: aligned.mismatchStories,
+  }
+}
+
+function aggregateGenericCultures(
   entries: ExtractedEntry[],
 ): { entries: ExtractedEntry[]; targets: LocalizationTarget[] } {
   const targetCultures = new Map<string, Set<string>>()
@@ -92,28 +117,6 @@ export function aggregateCultures(
     merged.set(identity, entry)
 
     const variants = groups.get(identity) ?? [entry]
-
-    // --- Cross-locale structural-mismatch guard -------------------------
-    // Godot `.inkb` entries carry a `structuralFingerprint` (the sequence of
-    // speaker keys / thoughts). Translators may merge/split lines, so two
-    // locale copies of the SAME story can have different line counts/order.
-    // Index-based identities would silently mispair those. When the
-    // fingerprints diverge, we do NOT merge — each locale stays a separate
-    // entry and the caller reports a `locale-structure-mismatch` diagnostic.
-    const fingerprints = new Set(
-      variants
-        .map((v) => v.rawMetadata?.structuralFingerprint)
-        .filter((fp): fp is string => typeof fp === 'string' && fp.length > 0),
-    )
-    if (fingerprints.size > 1) {
-      for (const v of variants) {
-        if (!merged.has(identity)) merged.set(identity, v)
-        // Remove the culture identity so each locale becomes an independent
-        // entry (the caller reports the mismatch instead of a wrong merge).
-        output.push({ ...v, cultureIdentity: undefined })
-      }
-      continue
-    }
 
     // Sort deterministically, but ALWAYS put the source/native entry first when
     // one is marked (`rawMetadata.isSourceLocale` — e.g. the unsuffixed base

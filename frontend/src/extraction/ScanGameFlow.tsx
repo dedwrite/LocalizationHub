@@ -24,6 +24,14 @@ type Props = {
 
 type Phase = 'choosing' | 'scanning' | 'reviewing' | 'error'
 
+function formatElapsed(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  if (minutes > 0) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
+}
+
 export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const [phase, setPhase] = useState<Phase>('choosing')
   const [progress, setProgress] = useState<ScanProgress | null>(null)
@@ -35,12 +43,25 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const discoveryRef = useRef<{ files: ScanFile[]; directories: string[] } | null>(null)
   // The authorized scan root (user-selected folder or file), dropped on unmount.
   const scanRootRef = useRef<string | null>(null)
+  // Objective wall-clock timer shown during scanning.
+  const startedAtRef = useRef<number>(0)
+  const [elapsedMs, setElapsedMs] = useState(0)
 
   useEffect(() => {
     return () => {
       if (scanRootRef.current) void unregisterExtractionRoot(scanRootRef.current)
     }
   }, [])
+
+  // Update the elapsed timer ~4×/second while scanning (never per file).
+  useEffect(() => {
+    if (phase !== 'scanning') return
+    const started = Date.now()
+    startedAtRef.current = started
+    setElapsedMs(0)
+    const timer = setInterval(() => setElapsedMs(Date.now() - started), 250)
+    return () => clearInterval(timer)
+  }, [phase])
 
   const runScan = useCallback(async (discovery: { files: ScanFile[]; directories: string[] }, mappings?: ContextFieldMapping[]) => {
     setPhase('scanning')
@@ -147,6 +168,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
       <main className="scan-flow">
         <div className="scan-progress">
           <h1>Scanning resources (read-only)…</h1>
+          <p className="scan-elapsed">Elapsed: {formatElapsed(elapsedMs)}</p>
           {phaseMessage && <p className="scan-phase">{phaseMessage}</p>}
           {progress && (
             <div className="scan-progress-line">

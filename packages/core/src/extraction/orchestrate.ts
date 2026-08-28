@@ -206,11 +206,14 @@ export async function orchestrateExtraction(
   const allFiles: ScanFile[] = [...looseFiles]
   const tempDirs: string[] = []
   const timeoutMs = options.toolTimeoutMs ?? 300_000
+  const totalStarted = Date.now()
+  let archiveExtractionMs = 0
 
   for (const job of jobs) {
     if (options.signal?.cancelled) break
     options.onProgress?.({ phase: 'extracting', message: `Extracting ${job.file.name}` })
 
+    const jobStarted = Date.now()
     const tempDir = await primitives.createTempDir()
     tempDirs.push(tempDir)
 
@@ -250,6 +253,7 @@ export async function orchestrateExtraction(
         size: f.size,
       })
     }
+    archiveExtractionMs += Date.now() - jobStarted
   }
 
   try {
@@ -277,7 +281,19 @@ export async function orchestrateExtraction(
     })
 
     options.onProgress?.({ phase: 'done', message: 'Extraction complete' })
-    return result
+
+    // Prepend the archive-extraction phase to scanGame's phase timings and
+    // rebase the total to cover the whole pipeline.
+    const phases: Array<{ phase: string; durationMs: number }> = []
+    if (archiveExtractionMs > 0) phases.push({ phase: 'archive-extraction', durationMs: archiveExtractionMs })
+    if (result.performance) phases.push(...result.performance.phases)
+    return {
+      ...result,
+      performance: {
+        totalMs: Date.now() - totalStarted,
+        phases,
+      },
+    }
   } finally {
     // Clean up temp dirs after parsing, regardless of success/failure/cancel.
     await Promise.all(tempDirs.map((dir) => primitives.removeTempDir(dir)))

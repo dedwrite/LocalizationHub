@@ -80,7 +80,16 @@ fn is_candidate(path: &Path) -> bool {
 }
 
 #[tauri::command]
-pub fn scan_directory(root: String) -> Result<ScanDiscovery, String> {
+pub async fn scan_directory(root: String) -> Result<ScanDiscovery, String> {
+    // The recursive walk can touch tens of thousands of files and take seconds;
+    // running it synchronously would block Tauri's main thread and make Windows
+    // report "Not Responding". Offload it to a blocking worker.
+    tauri::async_runtime::spawn_blocking(move || scan_directory_sync(root))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+fn scan_directory_sync(root: String) -> Result<ScanDiscovery, String> {
     let root_path = Path::new(&root);
     if !root_path.is_dir() {
         return Err("Scan root is not a directory.".into());
@@ -205,7 +214,7 @@ mod tests {
         fs::write(base.join("shader.gdc"), b"y").unwrap();
         fs::write(base.join("noise.zzz"), b"z").unwrap();
 
-        let discovery = scan_directory(base.to_string_lossy().to_string()).unwrap();
+        let discovery = scan_directory_sync(base.to_string_lossy().to_string()).unwrap();
         let exts: Vec<&str> = discovery
             .files
             .iter()
