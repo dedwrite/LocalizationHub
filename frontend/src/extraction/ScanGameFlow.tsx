@@ -49,6 +49,11 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   // Objective wall-clock timer shown during scanning.
   const startedAtRef = useRef<number>(0)
   const [elapsedMs, setElapsedMs] = useState(0)
+  // Optional AES key for encrypted Unreal (.pak/.utoc) or Godot (.pck) archives.
+  // Held in a ref so runScan reads the current value without recreating its
+  // callback; the input is only editable during the 'choosing' phase anyway.
+  const aesKeyRef = useRef('')
+  const [aesKey, setAesKey] = useState('')
 
   useEffect(() => {
     return () => {
@@ -77,6 +82,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
       // archives (.pak via repak, .utoc via retoc) through configured tools.
       const scanResult = await runDesktopExtraction(discovery, loadToolPaths(), {
         mappings,
+        aesKey: aesKeyRef.current || undefined,
         signal: { get cancelled() { return cancelledRef.current } },
         onProgress: (p) => {
           if (p.message) setPhaseMessage(p.message)
@@ -161,6 +167,22 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
             <button className="scan-choice" onClick={chooseFolder}>Select Game Folder</button>
             <button className="scan-choice" onClick={chooseFile}>Select Resource / File</button>
             <button className="scan-cancel" onClick={onCancel}>Cancel</button>
+          </div>
+          <div className="scan-aes">
+            <label htmlFor="scan-aes-key">AES key (encrypted archives, optional)</label>
+            <input
+              id="scan-aes-key"
+              type="password"
+              value={aesKey}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="Only for encrypted .pak / .utoc / .pck"
+              onChange={(event) => {
+                setAesKey(event.target.value)
+                aesKeyRef.current = event.target.value
+              }}
+            />
+            <p className="scan-hint">Never saved or logged — passed to the unpacker for this scan only.</p>
           </div>
         </div>
       </main>

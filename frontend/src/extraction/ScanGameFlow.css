@@ -66,3 +66,24 @@
 .scan-choice:hover { background: #1f2630; }
 
 .scan-error { color: #ff9c9c; }
+
+.scan-aes {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  text-align: left;
+}
+.scan-aes label { font-size: 12px; color: #8b93a7; }
+.scan-aes input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #3b4350;
+  background: #171c24;
+  color: #f5f7fa;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+.scan-aes input:focus { border-color: #4f3db5; outline: none; }
+.scan-aes .scan-hint { text-align: left; }

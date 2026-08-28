@@ -120,6 +120,7 @@ export async function runDesktopExtraction(
     mappings?: ContextFieldMapping[]
     onProgress?: (progress: OrchestratorProgress) => void
     signal?: { cancelled: boolean }
+    aesKey?: string
   } = {},
 ): Promise<ExtractionResult> {
   return orchestrateExtraction(discovery, tools, buildPrimitives(), options)
