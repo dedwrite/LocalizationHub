@@ -152,6 +152,12 @@ export type EntryContext = {
   listenerGenders?: GenderValue[]
   grammaticalGender?: GenderValue
   grammaticalNumber?: 'singular' | 'plural' | 'unknown'
+  /*
+   * Explicit pronouns for the speaker/listener (e.g. "he/him", "she/her",
+   * "they/them"). Never inferred from names, language, or stereotypes.
+   */
+  speakerPronouns?: string
+  listenerPronouns?: string
   characterId?: string
   speakerId?: string
   listenerId?: string
@@ -162,8 +168,15 @@ export type EntryContext = {
   parentNodeId?: string
   previousEntryId?: string
   nextEntryId?: string
+  /*
+   * Plural neighbours for branchy/choice dialogue (multiple potential next or
+   * previous lines). Kept alongside the single-link form for compatibility.
+   */
+  previousEntryIds?: string[]
+  nextEntryIds?: string[]
   choiceGroup?: string
   voiceId?: string
+  voice?: string
   audioAsset?: string
   portrait?: string
   animationCue?: string

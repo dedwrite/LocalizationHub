@@ -11,6 +11,13 @@ import type {
   TextDirection,
 } from './types'
 
+import {
+  buildCharacterDatabase,
+  detectContextFields,
+  detectDialogueContext,
+  type CharacterDatabase,
+} from './contextDetection'
+
 const KEY_FIELDS = [
   'key',
   'string_key',
@@ -408,7 +415,6 @@ function detectRecordArraySchema(
     )
 
   if (
-    !keyField ||
     !sourceField
   ) {
     return null
@@ -974,6 +980,8 @@ function parseRecordArray(
     unknown[],
   sourceText:
     string,
+  characterDb?:
+    CharacterDatabase,
 ): ParsedLocalizationDocument | null {
   const schema =
     detectRecordArraySchema(
@@ -983,6 +991,19 @@ function parseRecordArray(
   if (!schema) {
     return null
   }
+
+  const sampleRecords =
+    getSampleRecords(
+      value,
+    )
+
+  // Detect explicit structured-context fields (speaker/listener/gender/…)
+  // so the Import UI can show a lightweight mapping review, and so each
+  // entry carries its dialogue context.
+  schema.contextFields =
+    detectContextFields(
+      sampleRecords,
+    )
 
   const parsedEntries:
     ParsedLocalizationEntry[] = []
@@ -1001,9 +1022,11 @@ function parseRecordArray(
       }
 
       const rawKeyValue =
-        item[
-          schema.keyField
-        ]
+        schema.keyField
+          ? item[
+              schema.keyField
+            ]
+          : index
 
       const sourceValue =
         item[
@@ -1013,11 +1036,9 @@ function parseRecordArray(
       const keyValue =
         scalarToString(
           rawKeyValue,
-        )
+        ) ?? String(index)
 
       if (
-        keyValue ===
-          undefined ||
         typeof sourceValue !==
           'string'
       ) {
@@ -1065,6 +1086,12 @@ function parseRecordArray(
           ? translationValue
           : ''
 
+      const dialogueContext =
+        detectDialogueContext(
+          item,
+          characterDb,
+        )
+
       /*
        * index داخل id يضمن أن
        * entry_id المكرر في scenes
@@ -1089,10 +1116,15 @@ function parseRecordArray(
         context,
         notes,
 
-        keyPath: [
-          index,
-          schema.keyField,
-        ],
+        dialogueContext,
+
+        keyPath:
+          schema.keyField
+            ? [
+                index,
+                schema.keyField,
+              ]
+            : [index],
 
         sourcePath: [
           index,
@@ -1117,11 +1149,6 @@ function parseRecordArray(
     return null
   }
 
-  const sampleRecords =
-    getSampleRecords(
-      value,
-    )
-
   const language =
     detectLanguageInfo(
       sampleRecords,
@@ -1144,6 +1171,66 @@ function parseRecordArray(
 
     language,
   }
+}
+
+/*
+ * A top-level object shaped like:
+ *
+ *   { "characters": { "mark": { "name": "Mark", "gender": "male" } },
+ *     "dialogue": [ { "speaker": "mark", "text": "..." } ] }
+ *
+ * (or `lines` / `entries` / `rows` / `texts`) is resolved by building the
+ * character database and parsing the dialogue array with character resolution.
+ * This preserves speaker→character ID→name/gender linkage explicitly present
+ * in the file.
+ */
+function parseNestedDialogueObject(
+  value:
+    Record<string, unknown>,
+  sourceText:
+    string,
+): ParsedLocalizationDocument | null {
+  const characterDb =
+    buildCharacterDatabase(
+      value,
+    )
+
+  const arrayFieldNames = [
+    'lines',
+    'dialogue',
+    'entries',
+    'texts',
+    'rows',
+  ]
+
+  for (
+    const fieldName
+    of arrayFieldNames
+  ) {
+    const candidate =
+      value[fieldName]
+
+    if (
+      Array.isArray(
+        candidate,
+      )
+    ) {
+      const document =
+        parseRecordArray(
+          candidate,
+          sourceText,
+          characterDb,
+        )
+
+      if (
+        document
+      ) {
+        return document
+      }
+    }
+  }
+
+  return null
 }
 
 export function parseJsonLocalization(
@@ -1207,6 +1294,24 @@ export function parseJsonLocalization(
       parsed,
     )
   ) {
+    const nestedDocument =
+      parseNestedDialogueObject(
+        parsed,
+        text,
+      )
+
+    if (
+      nestedDocument
+    ) {
+      return {
+        ok:
+          true,
+
+        document:
+          nestedDocument,
+      }
+    }
+
     const document =
       parseFlatObject(
         parsed,

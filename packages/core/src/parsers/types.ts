@@ -53,6 +53,44 @@ export type LocalizationLanguageInfo = {
     TextDirection
 }
 
+/*
+ * Structured dialogue context detected from an ordinary data file (JSON/CSV/PO).
+ *
+ * Every value is EXPLICITLY present in the source file — never inferred from
+ * names, language, prose, or stereotypes. Unknown is absent (undefined), not
+ * guessed. This is separate from the plain `context` string and carries the
+ * richer speaker/listener/gender/scene/voice/portrait model the translators
+ * need.
+ *
+ * `speaker`/`listener` hold the display name (or the raw id when a name is not
+ * available); `speakerId`/`listenerId` hold the stable identifier when present.
+ * Genders are normalized to the shared `GenderValue` vocabulary.
+ */
+export type ParsedDialogueContext = {
+  speaker?: string
+  speakerId?: string
+  listener?: string
+  listenerId?: string
+
+  speakerGender?: string
+  listenerGender?: string
+
+  scene?: string
+  conversationId?: string
+  dialogueId?: string
+  nodeId?: string
+  choiceGroup?: string
+
+  voice?: string
+  portrait?: string
+
+  /*
+   * Original (unnormalized) source values, preserved losslessly so a custom
+   * schema's own gender vocabulary ("M"/"F", "masc"/"fem", numbers) survives.
+   */
+  raw?: Record<string, unknown>
+}
+
 export type ParsedLocalizationEntry = {
   id: string
 
@@ -62,6 +100,12 @@ export type ParsedLocalizationEntry = {
 
   context?: string
   notes?: string
+
+  /*
+   * Structured dialogue context (speaker/listener/genders/scene/…). Optional
+   * so older projects and simple key-value files stay compatible.
+   */
+  dialogueContext?: ParsedDialogueContext
 
   keyPath:
     JsonPathSegment[]
@@ -74,12 +118,24 @@ export type ParsedLocalizationEntry = {
 }
 
 export type RecordArraySchema = {
-  keyField: string
+  /*
+   * The key field. Optional: a dialogue record array (e.g. `lines: [{ text,
+   * speaker, ... }]`) may have no stable key, in which case the array index is
+   * used as the key.
+   */
+  keyField?: string
   sourceField: string
 
   translationField?: string
   contextField?: string
   notesField?: string
+
+  /*
+   * Detected structured-context field names (speaker, listener, genders, …).
+   * Present only when the parser found explicit context columns/fields, so the
+   * Import UI can show a lightweight "Context Mapping" review.
+   */
+  contextFields?: Array<{ field: string; role: string }>
 }
 
 export type ParsedLocalizationDocument = {

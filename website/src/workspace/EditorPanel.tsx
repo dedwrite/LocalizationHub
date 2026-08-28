@@ -43,6 +43,24 @@ function ProtectedSource({ text, profileId }: { text: string; profileId: TokenPr
   return <>{spans}</>
 }
 
+/*
+ * Compact context strip for the translator: only the fields that are present,
+ * never guessed values.
+ */
+function DialogueContextStrip({ context }: { context: any }) {
+  const parts: string[] = []
+  if (context.speaker) {
+    parts.push(`Speaker: ${context.speaker}${context.speakerGender && context.speakerGender !== 'unknown' ? ` (${context.speakerGender})` : ''}`)
+  }
+  if (context.listener) {
+    parts.push(`→ Listener: ${context.listener}${context.listenerGender && context.listenerGender !== 'unknown' ? ` (${context.listenerGender})` : ''}`)
+  }
+  if (context.scene) parts.push(`Scene: ${context.scene}`)
+  if (context.conversationId) parts.push(`Conversation: ${context.conversationId}`)
+  if (parts.length === 0) return null
+  return <p className="dialogue-context-strip">{parts.join(' · ')}</p>
+}
+
 export default function EditorPanel(props: EditorPanelProps) {
   const { entry, status, writable, tokenProfileId, issues, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale, mobile = false, onNext, onPrev } = props
   const [jumpOpen, setJumpOpen] = useState(false)
@@ -141,8 +159,9 @@ export default function EditorPanel(props: EditorPanelProps) {
           <div className="source-text" dir={direction === 'auto' ? undefined : direction}>
             <ProtectedSource text={source} profileId={tokenProfileId} />
           </div>
-          {(entry?.context || entry?.notes) && (
+          {(entry?.context || entry?.notes || entry?.dialogueContext) && (
             <div className="source-context">
+              {entry.dialogueContext && <DialogueContextStrip context={entry.dialogueContext} />}
               {entry.context && <p><strong>Context:</strong> {entry.context}</p>}
               {entry.notes && <p><strong>Notes:</strong> {entry.notes}</p>}
             </div>

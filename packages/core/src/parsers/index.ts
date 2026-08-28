@@ -18,9 +18,19 @@ export type {
   LocalizationParseResult,
   ParsedLocalizationDocument,
   ParsedLocalizationEntry,
+  ParsedDialogueContext,
   RecordArraySchema,
   TextDirection,
 } from './types'
+
+export {
+  buildCharacterDatabase,
+  detectDialogueContext,
+  detectContextFields,
+  normalizeContextFieldName,
+  type CharacterDatabase,
+  type CharacterValue,
+} from './contextDetection'
 
 export function parseLocalizationFile(
   text: string,
@@ -82,7 +92,7 @@ export function describeParsedDocument(
 
         `${document.entries.length.toLocaleString()} entries`,
 
-        `key: ${schema.keyField}`,
+        `key: ${schema.keyField ?? 'index'}`,
 
         `source: ${schema.sourceField}`,
 

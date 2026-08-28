@@ -4769,6 +4769,41 @@ try {
                   }
 
                   {
+                    selectedEntry.dialogueContext &&
+                    (
+                      <div className="editor-section">
+                        <label>
+                          Context
+                        </label>
+
+                        <div
+                          className="source-text"
+                          dir="auto"
+                        >
+                          {
+                            [
+                              selectedEntry.dialogueContext.speaker
+                                ? `Speaker: ${selectedEntry.dialogueContext.speaker}${selectedEntry.dialogueContext.speakerGender && selectedEntry.dialogueContext.speakerGender !== 'unknown' ? ` (${selectedEntry.dialogueContext.speakerGender})` : ''}`
+                                : null,
+                              selectedEntry.dialogueContext.listener
+                                ? `→ Listener: ${selectedEntry.dialogueContext.listener}${selectedEntry.dialogueContext.listenerGender && selectedEntry.dialogueContext.listenerGender !== 'unknown' ? ` (${selectedEntry.dialogueContext.listenerGender})` : ''}`
+                                : null,
+                              selectedEntry.dialogueContext.scene
+                                ? `Scene: ${selectedEntry.dialogueContext.scene}`
+                                : null,
+                              selectedEntry.dialogueContext.conversationId
+                                ? `Conversation: ${selectedEntry.dialogueContext.conversationId}`
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
+                          }
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  {
                     selectedFullyProtected
                       ? (
                         <div className="editor-section translation-section">
