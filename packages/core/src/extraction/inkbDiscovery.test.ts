@@ -80,6 +80,34 @@ describe('scanGame discovery parity (synthetic Godot set)', () => {
     // .gdc is reported once as a grouped binary diagnostic, not read as text.
     expect(result.diagnostics.some((d) => d.kind === 'binary-resource-not-converted')).toBe(true)
   })
+
+  it('does NOT flag a valid scene-type .inkb (no dialogue) as unrecognized format', async () => {
+    // A "scene" story has metadata + commands but no `char_key: text` dialogue.
+    const sceneBytes = buildInkb(['type: "scene"', '$ fade_in', '$ wait 1'])
+    const files: ScanFile[] = [
+      { name: 'scene.inkb', relativePath: 'scene.inkb', absolutePath: '/tmp/scene.inkb', size: sceneBytes.length },
+    ]
+    const reader = {
+      readText: async () => '',
+      readBinary: async () => sceneBytes,
+    }
+    const result = await scanGame({ files, reader })
+    expect(result.diagnostics.some((d) => d.kind === 'unsupported-format')).toBe(false)
+  })
+
+  it('flags a truly-unrecognized .inkb (no text section) as unsupported', async () => {
+    // No NUL-terminated text section at all → not an Until Then story.
+    const garbage = new Uint8Array([0x00, 0x01, 0xff, 0xfe, 0xfd, 0xfc, 0x00])
+    const files: ScanFile[] = [
+      { name: 'bad.inkb', relativePath: 'bad.inkb', absolutePath: '/tmp/bad.inkb', size: garbage.length },
+    ]
+    const reader = {
+      readText: async () => '',
+      readBinary: async () => garbage,
+    }
+    const result = await scanGame({ files, reader })
+    expect(result.diagnostics.some((d) => d.kind === 'unsupported-format')).toBe(true)
+  })
 })
 
 describe('scanGame chunked batch reads', () => {

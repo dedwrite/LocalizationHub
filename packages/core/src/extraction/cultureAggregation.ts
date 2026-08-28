@@ -14,8 +14,11 @@
 import type {
   ExtractedEntry,
   LocalizationTarget,
+  ProtectedSegment,
 } from './types'
 import { alignInkbStories, isInkbEntry, type InkStoryMismatch } from './inkbAlignment'
+import { extractProtectedTokens, type TokenProfileId } from '../tokens'
+import { toProtectedSegments } from './engines/shared'
 
 /*
  * Group extracted entries by a culture-independent identity. This is the
@@ -264,8 +267,21 @@ export function overrideSourceCulture(
       sourceText: selectedVariant.text,
       sourceLocale: selectedCulture,
       localeVariants: variants.length > 0 ? variants : undefined,
+      // The protected segments correspond to the SOURCE text, so re-derive them
+      // from the newly-selected locale's text (the entry's protection profile
+      // is preserved). Falls back to the previous segments on any failure.
+      protectedSegments: recomputeProtectedSegments(selectedVariant.text, entry),
     }
   })
+}
+
+function recomputeProtectedSegments(text: string, entry: ExtractedEntry): ProtectedSegment[] {
+  try {
+    const profileId = (entry.protectionProfile || 'generic') as TokenProfileId
+    return toProtectedSegments(extractProtectedTokens(text, profileId))
+  } catch {
+    return entry.protectedSegments
+  }
 }
 
 /*

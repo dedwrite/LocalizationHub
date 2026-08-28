@@ -17,7 +17,7 @@ import { extractPo } from './engines/gettext'
 import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
-import { extractInkb } from './engines/inkb'
+import { extractInkb, readInkbTextStrings } from './engines/inkb'
 import { readLocmeta } from './engines/locmeta'
 import { aggregateCultures, applyNativeCulture, inferNativeCultures } from './cultureAggregation'
 import type {
@@ -451,8 +451,12 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
         } else if (kind === 'inkb-story') {
           const read = binaryMap.get(file.absolutePath)
           if (!read || read.error) throw new Error(read?.error ?? 'Read error.')
-          result = extractInkb(file.relativePath, read.data ?? new Uint8Array(0))
-          if (result.entries.length === 0) {
+          const buffer = read.data ?? new Uint8Array(0)
+          result = extractInkb(file.relativePath, buffer)
+          // A valid `.inkb` with a NUL-terminated text section but no dialogue
+          // is a "scene"/navigation story, not an unrecognized format. Only
+          // files with NO text section at all are genuinely unsupported.
+          if (result.entries.length === 0 && readInkbTextStrings(buffer).length === 0) {
             result = {
               ...result,
               diagnostics: [{ kind: 'unsupported-format', message: 'Unrecognized .inkb story format (not an Until Then story).', path: file.relativePath }],
