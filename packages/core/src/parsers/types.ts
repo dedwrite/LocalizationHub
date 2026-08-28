@@ -72,8 +72,22 @@ export type ParsedDialogueContext = {
   listener?: string
   listenerId?: string
 
+  /*
+   * Multiple listeners/targets (e.g. a line addressed to a group). Kept
+   * alongside the single-listener form for compatibility — never forced into
+   * one listener.
+   */
+  listeners?: string[]
+  listenerIds?: string[]
+
   speakerGender?: string
   listenerGender?: string
+
+  /*
+   * Explicit pronouns (e.g. "he/him", "she/her"). Never inferred.
+   */
+  speakerPronouns?: string
+  listenerPronouns?: string
 
   scene?: string
   conversationId?: string
@@ -131,11 +145,11 @@ export type RecordArraySchema = {
   notesField?: string
 
   /*
-   * Detected structured-context field names (speaker, listener, genders, …).
-   * Present only when the parser found explicit context columns/fields, so the
-   * Import UI can show a lightweight "Context Mapping" review.
+   * Detected structured-context fields (speaker, listener, genders, …) with
+   * confidence tiers, occurrence counts and sample values, for the Import
+   * "Context Mapping" review.
    */
-  contextFields?: Array<{ field: string; role: string }>
+  contextFields?: Array<{ field: string; role: string; confidence?: string; occurrenceCount?: number; sampleValues?: string[] }>
 }
 
 export type ParsedLocalizationDocument = {

@@ -10,6 +10,9 @@ import type {
   ParsedLocalizationEntry,
   RecordArraySchema,
 } from './types'
+import type {
+  GenericContextMapping,
+} from './contextDetection'
 
 export type {
   JsonPathSegment,
@@ -27,14 +30,21 @@ export {
   buildCharacterDatabase,
   detectDialogueContext,
   detectContextFields,
+  inspectUnmappedFields,
   normalizeContextFieldName,
   type CharacterDatabase,
   type CharacterValue,
+  type GenericContextRole,
+  type GenericContextMapping,
+  type ContextDetectionConfidence,
+  type DetectedContextField,
+  type UnmappedField,
 } from './contextDetection'
 
 export function parseLocalizationFile(
   text: string,
   fileName: string,
+  mappings?: GenericContextMapping[],
 ): LocalizationParseResult {
   const extension =
     fileName
@@ -48,10 +58,11 @@ export function parseLocalizationFile(
   ) {
     return parseJsonLocalization(
       text,
+      mappings,
     )
   }
 
-  if (extension === 'csv') return parseCsvLocalization(text)
+  if (extension === 'csv') return parseCsvLocalization(text, mappings)
   if (extension === 'po') return parsePoLocalization(text)
 
   return {

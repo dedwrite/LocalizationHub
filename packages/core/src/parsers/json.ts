@@ -16,6 +16,7 @@ import {
   detectContextFields,
   detectDialogueContext,
   type CharacterDatabase,
+  type GenericContextMapping,
 } from './contextDetection'
 
 const KEY_FIELDS = [
@@ -982,6 +983,8 @@ function parseRecordArray(
     string,
   characterDb?:
     CharacterDatabase,
+  mappings?:
+    GenericContextMapping[],
 ): ParsedLocalizationDocument | null {
   const schema =
     detectRecordArraySchema(
@@ -1090,6 +1093,7 @@ function parseRecordArray(
         detectDialogueContext(
           item,
           characterDb,
+          mappings,
         )
 
       /*
@@ -1189,6 +1193,8 @@ function parseNestedDialogueObject(
     Record<string, unknown>,
   sourceText:
     string,
+  mappings?:
+    GenericContextMapping[],
 ): ParsedLocalizationDocument | null {
   const characterDb =
     buildCharacterDatabase(
@@ -1220,6 +1226,7 @@ function parseNestedDialogueObject(
           candidate,
           sourceText,
           characterDb,
+          mappings,
         )
 
       if (
@@ -1235,6 +1242,7 @@ function parseNestedDialogueObject(
 
 export function parseJsonLocalization(
   text: string,
+  mappings?: GenericContextMapping[],
 ): LocalizationParseResult {
   let parsed:
     unknown
@@ -1267,6 +1275,8 @@ export function parseJsonLocalization(
       parseRecordArray(
         parsed,
         text,
+        undefined,
+        mappings,
       )
 
     if (
@@ -1298,6 +1308,7 @@ export function parseJsonLocalization(
       parseNestedDialogueObject(
         parsed,
         text,
+        mappings,
       )
 
     if (
