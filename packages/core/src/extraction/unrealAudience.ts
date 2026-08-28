@@ -16,7 +16,6 @@
  * auto-excluded (never deleted), runtime/unknown stay included.
  */
 
-import type { ContentAudience } from './types'
 import type { AudienceResult } from './godotAudience'
 
 /* A path segment named `engine` (the engine's own content root, plus every
