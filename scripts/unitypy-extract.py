@@ -33,11 +33,38 @@ def sanitize(name: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]+", "_", name or "object")
 
 
+# Objects that are almost never localization-relevant and are expensive to
+# deserialize. They are enumerated (pathId/classId/type/name) in the manifest
+# but NOT deeply read — inventory first, avoid heavy serialized payloads.
+HEAVY_TYPES = {
+    "Texture2D", "Texture3D", "Sprite", "Cubemap", "RenderTexture", "MovieTexture",
+    "Mesh", "SkinnedMeshRenderer", "MeshFilter",
+    "AudioClip", "VideoClip", "AnimationClip", "AnimatorController",
+    "Shader", "Material", "Font", "LightmapSettings", "LightingDataAsset",
+    "NavMeshData", "TerrainData", "PhysicMaterial", "PhysicsMaterial2D",
+}
+
+# Types we DO read deeply and extract payloads from.
+EXTRACT_TYPES = {"TextAsset", "MonoBehaviour", "ScriptableObject", "GameObject", "LocalizationTable"}
+
+
 def guess_extension(raw: bytes) -> str:
     if raw.startswith(b"{") or raw.startswith(b"["):
         return "json"
-    if b"," in raw[:256]:
+    if b"," in raw[:256] or (b"\n" in raw[:256] and b"," in raw[:512]):
         return "csv"
+    head = raw[:512].lstrip()
+    if head.startswith(b"<?xml") or head.startswith(b"<"):
+        return "xml"
+    if head.startswith(b"---"):
+        return "yaml"
+    # Ink source: knots/stitches (=== / =), choices (* / +), diverts (->),
+    # VAR/knitted text markers, tags (#).
+    if re.search(rb"(?m)^\s*(===|==)\s+", raw[:2048]) or re.search(rb"(?m)^\s*[*+-]\s+", raw[:2048]) or b"-> " in raw[:2048]:
+        return "ink"
+    # Yarn Spinner: <<command>>, -> jump, --- header, title:.
+    if re.search(rb"<<[^>]+>>", raw[:2048]) and (b"->" in raw[:2048] or b"title:" in raw[:2048].lower()):
+        return "yarn"
     return "txt"
 
 
@@ -115,6 +142,16 @@ def main() -> int:
         except Exception:
             entry["name"] = None
 
+        # Inventory-first: heavy binary types are enumerated but never read.
+        if class_name in HEAVY_TYPES:
+            manifest["objects"].append(entry)
+            continue
+
+        # Only types that can carry text are deserialized.
+        if class_name not in EXTRACT_TYPES:
+            manifest["objects"].append(entry)
+            continue
+
         try:
             data = obj.read()
         except Exception as exc:  # noqa: BLE001
@@ -137,8 +174,9 @@ def main() -> int:
             except Exception as exc:  # noqa: BLE001
                 entry["error"] = f"textasset: {exc}"
 
-        # MonoBehaviour / ScriptableObject: dump typed tree when available.
-        elif class_name in ("MonoBehaviour", "ScriptableObject"):
+        # MonoBehaviour / ScriptableObject / GameObject: dump typed tree when
+        # available.
+        elif class_name in ("MonoBehaviour", "ScriptableObject", "GameObject"):
             tree = dump_type_tree(obj, entry.get("name") or "object")
             if tree is not None:
                 file_name = f"{mb_index:05d}_{sanitize(entry.get('name') or 'mono')}.json"
