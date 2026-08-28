@@ -83,4 +83,26 @@ describe('scanGame orchestrator', () => {
     })
     expect(result.diagnostics.some((d) => d.kind === 'cancelled')).toBe(true)
   })
+
+  it('handles non-ASCII file names and CJK/Arabic content without mangling', async () => {
+    const fixtures = new Map<string, { content: string }>()
+    const jpName = '対話/台詞.json'
+    const arName = 'حوار/سيناريو.json'
+    const jp = makeFile(jpName, JSON.stringify([{ speaker: '葵', text: 'ここはどこ？' }]))
+    const ar = makeFile(arName, JSON.stringify([{ speaker: 'سالم', text: 'أين أنا؟' }]))
+    fixtures.set(jp.file.name, { content: jp.content })
+    fixtures.set(ar.file.name, { content: ar.content })
+
+    const result = await scanGame({
+      files: [jp.file, ar.file],
+      reader: memoryReader(fixtures),
+    })
+
+    expect(result.entries.some((e) => e.sourceText === 'ここはどこ？')).toBe(true)
+    expect(result.entries.some((e) => e.sourceText === 'أين أنا؟')).toBe(true)
+    // Provenance keeps the non-ASCII path intact (project-relative).
+    expect(result.entries.some((e) => e.origin?.containerPath === jpName)).toBe(true)
+    // Entry ids stay stable and ASCII-safe (non-ASCII chars are normalized).
+    for (const e of result.entries) expect(e.id).toMatch(/^[A-Za-z0-9_.:-]+$/)
+  })
 })

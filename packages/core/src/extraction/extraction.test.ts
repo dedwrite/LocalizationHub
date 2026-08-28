@@ -55,6 +55,8 @@ describe('context inference', () => {
     expect(recognizeContextField('target_actor')).toBe('listener')
     expect(recognizeContextField('sex_code')).toBe('speakerGender')
     expect(recognizeContextField('text')).toBe('translatableText')
+    expect(recognizeContextField('portrait_id')).toBe('portrait')
+    expect(recognizeContextField('voice_id')).toBe('voiceId')
     expect(recognizeContextField('assetGuid')).toBeUndefined()
   })
 

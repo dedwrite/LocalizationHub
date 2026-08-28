@@ -32,6 +32,7 @@ export type ContextFieldRole =
   | 'choiceGroup'
   | 'voiceId'
   | 'audioAsset'
+  | 'portrait'
   | 'developerNote'
   | 'translatorNote'
   | 'translatableText'
@@ -48,7 +49,7 @@ export type ContextFieldMapping = {
 }
 
 const ALIASES: Record<ContextFieldRole, RegExp> = {
-  speaker: /^(speaker|speaker_id|speakerid|talker|actor|actor_id|actorid|character|character_id|characterid|charactername|character_name|owner|from|sourceactor|voice|voice_id|who)$/iu,
+  speaker: /^(speaker|speaker_id|speakerid|talker|actor|actor_id|actorid|character|character_id|characterid|charactername|character_name|owner|from|sourceactor|who)$/iu,
   listener: /^(listener|listeners|listener_id|listenerid|target|targets|recipient|recipients|to|directedat|directed_at|audience|target_actor|targetactor)$/iu,
   speakerGender: /^(gender|sex|grammaticalgender|grammatical_gender|speakergender|speaker_gender|sex_code)$/iu,
   listenerGender: /^(listenergender|listener_gender|targetgender|target_gender|audiencegender)$/iu,
@@ -61,6 +62,7 @@ const ALIASES: Record<ContextFieldRole, RegExp> = {
   choiceGroup: /^(choicegroup|choice_group|choice-group|option_group|optiongroup)$/iu,
   voiceId: /^(voice|voiceid|voice_id|voiceline)$/iu,
   audioAsset: /^(audio|audioasset|audio_asset|sound|voice_clip|voiceclip)$/iu,
+  portrait: /^(portrait|portrait_id|portraitid|portrait_asset|portraitasset)$/iu,
   developerNote: /^(note|notes|comment|devnote|developer_note|commentary)$/iu,
   translatorNote: /^(translator_note|translatornote|context_note|contextnote)$/iu,
   translatableText: /^(text|message|line|content|subtitle|spokentext|spoken_text|caption|localizedtext|localized_text|displaytext|display_text|value|choice|response|reply|answer|option|quote|utterance)$/iu,
@@ -191,6 +193,9 @@ export function inferContextFromRecord(
         break
       case 'audioAsset':
         context.audioAsset = text
+        break
+      case 'portrait':
+        context.portrait = text
         break
       case 'developerNote':
         context.developerNote = text
