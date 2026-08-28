@@ -18,7 +18,7 @@
  */
 
 import { scanGame, type ScanFile, type ScanProgress, type BatchTextRead, type BatchBinaryRead } from './scanGame'
-import type { ExtractionResult, EngineFamily } from './types'
+import type { ExtractionResult, EngineFamily, ExtractionDiagnostic } from './types'
 import type { ContextFieldMapping } from './contextInference'
 import {
   gdreExtractArgs,
@@ -72,6 +72,11 @@ export type OrchestratorOptions = {
   signal?: { cancelled: boolean }
   /* Per-tool timeout in milliseconds. */
   toolTimeoutMs?: number
+  /*
+   * User-provided AES key for encrypted archives. Passed to repak/retoc/GDRE
+   * as an explicit argument only; never logged, persisted, or uploaded.
+   */
+  aesKey?: string
 }
 
 export class OrchestrationError extends Error {
@@ -88,7 +93,44 @@ export type ArchiveJob = {
   kind: 'pak' | 'iostore' | 'pck' | 'unity' | 'uasset'
   toolId: ToolId
   executable: string
-  buildArgs: (outDir: string) => string[]
+  buildArgs: (outDir: string, aesKey?: string) => string[]
+}
+
+/*
+ * Classify an external-tool failure from its stderr/stdout so we emit an
+ * accurate diagnostic instead of a generic "tool failed":
+ *
+ *   - encrypted-container      — AES/encryption signature (never brute-forced)
+ *   - unsupported-engine-version — serialization/version header mismatch
+ *   - external-tool-failed     — anything else
+ */
+export function classifyToolFailure(
+  kind: ArchiveJob['kind'],
+  stderr: string,
+  stdout: string,
+): ExtractionDiagnostic['kind'] {
+  const output = `${stderr}\n${stdout}`.toLowerCase()
+  if (
+    /aes|encrypt|decrypt|invalid key|crypto|wrong key|bad key/iu.test(output) ||
+    // repak/retoc report an encrypted/unsupported footer or unknown magic.
+    /(invalid|unknown|unsupported) (aes|footer|encryption|magic)/iu.test(output)
+  ) {
+    return 'encrypted-container'
+  }
+  if (
+    /(unsupported|unknown|invalid|mismatched) (asset|serialization|package|engine)? ?version/iu.test(output) ||
+    /version (header|mismatch)|serialization version|ue5|unreal engine 5/iu.test(output)
+  ) {
+    return 'unsupported-engine-version'
+  }
+  if (kind === 'uasset') {
+    // A UAssetDumper failure is a version/format limitation unless it was an
+    // encryption error above.
+    return /version|header|read|parse|deserialize/iu.test(output)
+      ? 'unsupported-engine-version'
+      : 'external-tool-failed'
+  }
+  return 'external-tool-failed'
 }
 
 function extensionOf(name: string): string {
@@ -143,7 +185,7 @@ export function buildArchivePlan(files: ScanFile[], tools: ToolPaths): { looseFi
         kind: 'pak',
         toolId: 'repak',
         executable: tools.repak,
-        buildArgs: (outDir) => repakUnpackArgs(file.absolutePath, outDir),
+        buildArgs: (outDir, aesKey) => repakUnpackArgs(file.absolutePath, outDir, aesKey),
       })
     } else if (ext === '.utoc' && tools.retoc) {
       jobs.push({
@@ -151,7 +193,7 @@ export function buildArchivePlan(files: ScanFile[], tools: ToolPaths): { looseFi
         kind: 'iostore',
         toolId: 'retoc',
         executable: tools.retoc,
-        buildArgs: (outDir) => retocUnpackArgs(file.absolutePath, outDir),
+        buildArgs: (outDir, aesKey) => retocUnpackArgs(file.absolutePath, outDir, aesKey),
       })
     } else if (ext === '.ucas' && handledUtocBases.has(file.name.slice(0, -ext.length))) {
       // Companion container of a .utoc already being unpacked — skip it.
@@ -162,7 +204,7 @@ export function buildArchivePlan(files: ScanFile[], tools: ToolPaths): { looseFi
         kind: 'pck',
         toolId: 'gdre',
         executable: tools.gdre,
-        buildArgs: (outDir) => gdreExtractArgs(file.absolutePath, outDir),
+        buildArgs: (outDir, aesKey) => gdreExtractArgs(file.absolutePath, outDir, aesKey),
       })
     } else if ((UNITY_ARCHIVE_EXTENSIONS.has(ext) || ext === '.assets') && tools.unitypy) {
       jobs.push({
@@ -205,6 +247,7 @@ export async function orchestrateExtraction(
 
   const allFiles: ScanFile[] = [...looseFiles]
   const tempDirs: string[] = []
+  const jobDiagnostics: ExtractionDiagnostic[] = []
   const timeoutMs = options.toolTimeoutMs ?? 300_000
   const totalStarted = Date.now()
   let archiveExtractionMs = 0
@@ -217,17 +260,25 @@ export async function orchestrateExtraction(
     const tempDir = await primitives.createTempDir()
     tempDirs.push(tempDir)
 
-    const args = job.buildArgs(tempDir)
+    const args = job.buildArgs(tempDir, options.aesKey)
     const result = await primitives.runTool(job.executable, args, timeoutMs)
 
     if (result.timed_out) {
-      throw new OrchestrationError(`${job.file.name} extraction timed out.`, 'timeout')
+      jobDiagnostics.push({ kind: 'external-tool-failed', message: `${job.file.name} extraction timed out.`, path: job.file.relativePath })
+      continue
     }
     if (result.code !== 0) {
-      throw new OrchestrationError(
-        `${job.file.name} extraction failed (${job.kind}): ${(result.stderr || result.stdout).slice(0, 500)}`,
-        'external-tool-failed',
-      )
+      // Classify the failure (encrypted / unsupported version / generic) so the
+      // user gets an accurate, actionable diagnostic — and isolate it so one
+      // bad archive never aborts the whole scan.
+      const failureKind = classifyToolFailure(job.kind, result.stderr, result.stdout)
+      const message = failureKind === 'encrypted-container'
+        ? `${job.file.name} is an encrypted ${job.kind} archive; provide the AES key to extract it.`
+        : failureKind === 'unsupported-engine-version'
+          ? `${job.file.name} uses an unsupported engine/asset serialization version (${job.kind}).`
+          : `${job.file.name} extraction failed (${job.kind}): ${(result.stderr || result.stdout).slice(0, 300)}`
+      jobDiagnostics.push({ kind: failureKind, message, path: job.file.relativePath })
+      continue
     }
 
     // Collect the parseable resources this job produced.
@@ -289,6 +340,9 @@ export async function orchestrateExtraction(
     if (result.performance) phases.push(...result.performance.phases)
     return {
       ...result,
+      // Isolated archive-tool failures (encrypted/version/generic) are merged
+      // into the diagnostics without aborting the scan.
+      diagnostics: [...jobDiagnostics, ...result.diagnostics],
       performance: {
         totalMs: Date.now() - totalStarted,
         phases,

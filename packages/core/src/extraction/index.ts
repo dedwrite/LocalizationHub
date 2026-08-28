@@ -36,6 +36,7 @@ export {
 export {
   orchestrateExtraction,
   buildArchivePlan,
+  classifyToolFailure,
   OrchestrationError,
   type ExtractionPrimitives,
   type OrchestratorProgress,
