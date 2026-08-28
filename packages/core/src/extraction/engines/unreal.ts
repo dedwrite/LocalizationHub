@@ -20,9 +20,11 @@ import type {
   ExtractionResult,
   SourceLocator,
 } from '../types'
+import { EXCLUDED_AUDIENCES } from '../types'
 import { buildEntry, toProtectedSegments } from './shared'
 import { readLocres } from './locres'
 import { readLocmeta } from './locmeta'
+import { classifyUnrealLocresAudience } from '../unrealAudience'
 
 type UnrealTextInput = {
   fileName: string
@@ -206,7 +208,20 @@ export function extractUnrealText(input: UnrealTextInput): ExtractionResult {
 
 export function extractUnrealLocres(input: UnrealBufferInput): ExtractionResult {
   const result = readLocres(input.buffer, { containerPath: input.fileName })
-  return emptyResult('unreal', input.fileName, result.diagnostics, result.entries)
+  // Audience precision: engine/plugin stock (Unreal Editor, Niagara, MetaSound,
+  // marketplace plugins) and test markers are auto-excluded from the default
+  // project; game-authored runtime content stays included.
+  const entries = result.entries.map((entry) => {
+    const audience = classifyUnrealLocresAudience(input.fileName, entry.namespace, entry.key)
+    if (audience.audience === 'runtime') return entry
+    return {
+      ...entry,
+      contentAudience: audience.audience,
+      exclusionReason: audience.reason,
+      excludedByDefault: EXCLUDED_AUDIENCES.has(audience.audience),
+    }
+  })
+  return emptyResult('unreal', input.fileName, result.diagnostics, entries)
 }
 
 /*

@@ -26,6 +26,7 @@ export {
   godotPathKeys,
   type AudienceResult,
 } from './godotAudience'
+export { classifyUnrealLocresAudience } from './unrealAudience'
 export {
   detectGodotJsonLocale,
   detectGodotInkbLocale,
