@@ -18,8 +18,10 @@ import { extractUnity } from './engines/unity'
 import { extractUnrealText, extractUnrealLocres, extractUnrealLocmeta } from './engines/unreal'
 import { extractInk } from './engines/ink'
 import { extractInkb, readInkbTextStrings } from './engines/inkb'
+import { stripBom } from './engines/shared'
 import { readLocmeta } from './engines/locmeta'
 import { aggregateCultures, applyNativeCulture, inferNativeCultures } from './cultureAggregation'
+import { GodotAudienceIndex, classifyScriptAudience, type AudienceResult } from './godotAudience'
 import type {
   EngineFamily,
   ExtractionDiagnostic,
@@ -27,6 +29,7 @@ import type {
   ExtractionStats,
   ExtractionPhaseTiming,
 } from './types'
+import { EXCLUDED_AUDIENCES } from './types'
 
 export type ScanFile = {
   name: string
@@ -314,6 +317,26 @@ function parseUnrealBinary(
   return extractUnrealLocmeta({ fileName: file.relativePath, buffer })
 }
 
+/*
+ * Attach the content-audience classification to every entry of a result.
+ * Proven editor/test/debug/developer tooling is marked `excludedByDefault` so
+ * the review auto-excludes it (without deleting it); runtime/unknown stay
+ * included. Text classification (Dialogue/UI/…) is untouched.
+ */
+function applyAudience(result: ExtractionResult, audience: AudienceResult): ExtractionResult {
+  if (audience.audience === 'runtime') return result
+  const excludedByDefault = EXCLUDED_AUDIENCES.has(audience.audience)
+  return {
+    ...result,
+    entries: result.entries.map((entry) => ({
+      ...entry,
+      contentAudience: audience.audience,
+      exclusionReason: audience.reason,
+      excludedByDefault,
+    })),
+  }
+}
+
 function parserErrorResult(
   detection: ExtractionResult['detection'],
   file: ScanFile,
@@ -411,6 +434,26 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   }
   emitProgress('analyzing', 'Reading resources')
 
+  // --- Godot audience pre-pass (editor tooling detection). -----------------
+  // Read every `.gd` script once to build the editor-script index so scenes
+  // referencing editor scripts inherit an editor audience. Cheap (scripts are
+  // small) and cached per resource; no O(N²) scene-vs-scene comparisons.
+  const audienceIndex = new GodotAudienceIndex()
+  const isGodot = detection.engine === 'godot' || options.engineHint === 'godot'
+  if (isGodot) {
+    const scriptFiles = actionable.filter((a) => a.kind === 'script').map((a) => a.file)
+    for (let i = 0; i < scriptFiles.length; i += READ_CHUNK_SIZE) {
+      if (signal?.cancelled) break
+      const chunk = scriptFiles.slice(i, i + READ_CHUNK_SIZE)
+      const textMap = await readTextChunk(reader, chunk)
+      for (const file of chunk) {
+        const read = textMap.get(file.absolutePath)
+        const content = read && !read.error ? (read.text ?? '') : ''
+        audienceIndex.registerScript(file.relativePath, classifyScriptAudience(content))
+      }
+    }
+  }
+
   // --- Phase 2: chunked read + parse. Bounded chunks + batched native reads
   // (one invoke per chunk, not per file) + a yield between chunks so a large
   // scan never wedges the UI ("Not Responding"). ---
@@ -443,10 +486,19 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
         if (kind === 'text-resource' || kind === 'script') {
           const read = textMap.get(file.absolutePath)
           if (!read || read.error) throw new Error(read?.error ?? 'Read error.')
+          const content = read.text ?? ''
           if (kind === 'script') {
-            result = extractGodotScript(file.relativePath, read.text ?? '')
+            result = extractGodotScript(file.relativePath, content)
+            if (isGodot) result = applyAudience(result, audienceIndex.scriptAudience(file.relativePath))
           } else {
-            result = parseTextResource(file, read.text ?? '', detection.engine, mappings)
+            result = parseTextResource(file, content, detection.engine, mappings)
+            if (isGodot) {
+              const ext = extensionOf(file.name)
+              const audience = ext === '.tscn' || ext === '.tres'
+                ? audienceIndex.classifyScene(file.relativePath, content)
+                : audienceIndex.classifyPath(file.relativePath)
+              result = applyAudience(result, audience)
+            }
           }
         } else if (kind === 'inkb-story') {
           const read = binaryMap.get(file.absolutePath)
@@ -534,6 +586,10 @@ export async function scanGame(options: ScanOptions): Promise<ExtractionResult> 
   // and how many locale variants were collapsed into logical entries.
   stats.rawLocalizedStrings = entries.length
   stats.localizedVariants = withNative.entries.reduce((sum, e) => sum + (e.localeVariants?.length ?? 0), 0)
+  // Audience precision: auto-excluded tooling vs included runtime vs uncertain.
+  stats.developerExcluded = withNative.entries.filter((e) => e.excludedByDefault).length
+  stats.runtimeEntries = withNative.entries.filter((e) => !e.excludedByDefault && (e.contentAudience === 'runtime' || e.contentAudience === undefined)).length
+  stats.uncertainEntries = withNative.entries.filter((e) => !e.excludedByDefault && e.contentAudience === 'unknown').length
 
   // Recompute the classification/context stats from the LOGICAL entries so the
   // review shows one entry per identity, not N per locale.
@@ -642,7 +698,7 @@ function dispatchText(
     // Heuristic: if it looks like a Unity String Table (has Table + Locale), use Unity.
     if (ext === '.json') {
       try {
-        const parsed = JSON.parse(text)
+        const parsed = JSON.parse(stripBom(text))
         if (parsed && typeof parsed === 'object' && ('Table' in parsed || 'SharedTableData' in parsed)) {
           return extractUnity({ fileName: name, text, mappings })
         }

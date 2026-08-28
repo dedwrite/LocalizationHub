@@ -19,6 +19,14 @@ export { buildProjectFromExtraction } from './projectFromExtraction'
 export { aggregateCultures, applyNativeCulture, overrideSourceCulture, computeLocaleCoverage, detectStructuralMismatches, inferNativeCultures, type LocaleCoverage } from './cultureAggregation'
 export { alignInkbStories, isInkbEntry, type InkStoryMismatch, type InkAlignmentResult } from './inkbAlignment'
 export {
+  GodotAudienceIndex,
+  classifyScriptAudience,
+  sceneScriptReferences,
+  normalizeGodotPath,
+  godotPathKeys,
+  type AudienceResult,
+} from './godotAudience'
+export {
   detectGodotJsonLocale,
   detectGodotInkbLocale,
   GODOT_NATIVE_FALLBACK_LOCALE,

@@ -75,20 +75,59 @@ export type SourceGroup = {
   path: string
   count: number
   excluded: boolean
+  /* Dominant content audience of the source (editor/test vs runtime). */
+  audience?: string
+  /* Human-readable exclusion reason when the source is editor/test tooling. */
+  exclusionReason?: string
 }
 
 export function groupSources(
   entries: ExtractedEntry[],
   excludedFiles: Set<string>,
 ): SourceGroup[] {
-  const map = new Map<string, number>()
+  const map = new Map<string, { count: number; audiences: Map<string, number>; reason?: string }>()
   for (const entry of entries) {
     const path = entry.origin.containerPath ?? '(unknown)'
-    map.set(path, (map.get(path) ?? 0) + 1)
+    const item = map.get(path) ?? { count: 0, audiences: new Map<string, number>() }
+    item.count += 1
+    const audience = entry.contentAudience ?? 'runtime'
+    item.audiences.set(audience, (item.audiences.get(audience) ?? 0) + 1)
+    if (entry.exclusionReason) item.reason = entry.exclusionReason
+    map.set(path, item)
   }
   return [...map.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([path, count]) => ({ path, count, excluded: excludedFiles.has(path) }))
+    .sort((a, b) => b[1].count - a[1].count)
+    .map(([path, item]) => {
+      let audience = 'runtime'
+      let best = 0
+      for (const [a, count] of item.audiences) {
+        if (count > best) {
+          best = count
+          audience = a
+        }
+      }
+      return { path, count: item.count, excluded: excludedFiles.has(path), audience, exclusionReason: item.reason }
+    })
+}
+
+/*
+ * Counts of auto-excluded (developer/editor/test) vs runtime vs uncertain
+ * entries, used for the review's secondary stats.
+ */
+export function computeAudienceCounts(entries: ExtractedEntry[]): {
+  developerExcluded: number
+  runtime: number
+  uncertain: number
+} {
+  let developerExcluded = 0
+  let runtime = 0
+  let uncertain = 0
+  for (const entry of entries) {
+    if (entry.excludedByDefault) developerExcluded += 1
+    else if (entry.contentAudience === 'unknown') uncertain += 1
+    else runtime += 1
+  }
+  return { developerExcluded, runtime, uncertain }
 }
 
 export function previewSourceCulture(

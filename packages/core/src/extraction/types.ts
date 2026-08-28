@@ -60,6 +60,34 @@ export type GenderValue =
   | 'unknown'
   | 'custom'
 
+/*
+ * The audience a localization string is FOR, independent of its text
+ * classification. Distinguishes player-facing runtime text from developer /
+ * editor / test tooling so the review can exclude proven tooling by default
+ * without deleting it.
+ *
+ *   runtime    player-facing game content (menus, dialogue, runtime UI)
+ *   editor     Godot editor/plugin tooling (@tool, EditorPlugin, inspector UI)
+ *   test       test/demo/sample/example fixtures
+ *   debug      debug/development surfaces
+ *   developer  other developer-only content
+ *   unknown    could not be determined (treated as runtime for inclusion)
+ */
+export type ContentAudience =
+  | 'runtime'
+  | 'editor'
+  | 'test'
+  | 'debug'
+  | 'developer'
+  | 'unknown'
+
+export const EXCLUDED_AUDIENCES: ReadonlySet<ContentAudience> = new Set([
+  'editor',
+  'test',
+  'debug',
+  'developer',
+])
+
 export type ExtractionDiagnosticKind =
   | 'unsupported-format'
   | 'unsupported-engine-version'
@@ -231,6 +259,21 @@ export type ExtractedEntry = {
   protectionProfile: string
 
   /*
+   * Content-audience classification (runtime vs editor/test/debug tooling).
+   * Entries with an audience in `EXCLUDED_AUDIENCES` are auto-excluded from the
+   * default project but remain in the review model and can be re-included.
+   */
+  contentAudience?: ContentAudience
+  /*
+   * Stable, human-readable reason for the auto-exclusion (e.g.
+   * "godot-editor-plugin", "godot-tool-script", "test-resource").
+   */
+  exclusionReason?: string
+  /* True when this entry is excluded from the default project by the audience
+   * classifier (not by the user). */
+  excludedByDefault?: boolean
+
+  /*
    * Safe structured information preserved losslessly (engine-specific but
    * non-secret, already-normalized). Never includes raw binary blobs, paths to
    * private user directories, or keys.
@@ -289,6 +332,14 @@ export type ExtractionStats = {
    */
   rawLocalizedStrings?: number
   localizedVariants?: number
+  /*
+   * Audience-precision accounting: how many logical entries were auto-excluded
+   * by default as proven editor/developer/test tooling, and how many were
+   * classified runtime (included) vs uncertain.
+   */
+  developerExcluded?: number
+  runtimeEntries?: number
+  uncertainEntries?: number
 }
 
 export type ExtractionResult = {

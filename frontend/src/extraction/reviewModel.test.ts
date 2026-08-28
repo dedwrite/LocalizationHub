@@ -81,7 +81,9 @@ describe('computeIncludedExcluded', () => {
 describe('groupSources', () => {
   it('groups and sorts by count', () => {
     const groups = groupSources(entries, new Set())
-    expect(groups[0]).toEqual({ path: 'story/1.inkb', count: 2, excluded: false })
+    expect(groups[0].path).toBe('story/1.inkb')
+    expect(groups[0].count).toBe(2)
+    expect(groups[0].excluded).toBe(false)
     expect(groups).toHaveLength(3)
   })
 })

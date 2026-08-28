@@ -26,7 +26,7 @@ import type {
   ExtractionResult,
   SourceLocator,
 } from '../types'
-import { buildEntry, toProtectedSegments } from './shared'
+import { buildEntry, toProtectedSegments, stripBom } from './shared'
 
 type GodotInput = {
   fileName: string
@@ -250,7 +250,7 @@ function extractGodotScene(fileName: string, text: string): ExtractionResult {
 function extractGodotStructuredJson(fileName: string, text: string, mappings: Array<{ fieldName: string; role: any }>): ExtractionResult {
   let parsed: unknown
   try {
-    parsed = JSON.parse(text)
+    parsed = JSON.parse(stripBom(text))
   } catch {
     return {
       engine: 'godot',

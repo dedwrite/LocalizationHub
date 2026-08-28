@@ -15,6 +15,7 @@ import {
   filterEntries,
   computeFilterCounts,
   computeIncludedExcluded,
+  computeAudienceCounts,
   groupSources,
   previewSourceCulture,
   categorizeDiagnostics,
@@ -34,7 +35,6 @@ const ROW_HEIGHT = 148
 export default function ExtractionReview({ result, onCreateProject, onApplyMappings, onCancel }: Props) {
   const [filter, setFilter] = useState<ReviewFilterId>('all')
   const [search, setSearch] = useState('')
-  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
   const [excludedFiles, setExcludedFiles] = useState<Set<string>>(new Set())
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const [mappingsOpen, setMappingsOpen] = useState(false)
@@ -44,6 +44,13 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { stats, detection, localizationTargets } = result
+
+  // Proven developer/editor/test tooling is excluded by default. The component
+  // is keyed by scan run (see ScanGameFlow), so this lazy initializer runs once
+  // per result and the user can re-include anything via the review controls.
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(
+    () => new Set(result.entries.filter((e) => e.excludedByDefault).map((e) => e.id)),
+  )
 
   // Aggregated culture list across all targets.
   const cultures = useMemo(() => {
@@ -92,6 +99,8 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
     () => groupSources(previewEntries, excludedFiles),
     [previewEntries, excludedFiles],
   )
+
+  const audienceCounts = useMemo(() => computeAudienceCounts(previewEntries), [previewEntries])
 
   const diagnosticGroups = useMemo(() => categorizeDiagnostics(result.diagnostics), [result.diagnostics])
   const diagnosticSummary = useMemo(() => summarizeDiagnostics(diagnosticGroups), [diagnosticGroups])
@@ -211,16 +220,19 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
 
         <div className="er-stats">
           <Stat label="Entries" value={stats.entriesFound} />
-          <Stat label="Raw strings" value={stats.rawLocalizedStrings ?? stats.entriesFound} />
-          <Stat label="Variants" value={stats.localizedVariants ?? 0} />
+          <Stat label="Included" value={audienceCounts.runtime} />
+          <Stat label="Developer" value={audienceCounts.developerExcluded} />
+          <Stat label="Uncertain" value={audienceCounts.uncertain} />
           <Stat label="Dialogue" value={stats.byClassification['Dialogue'] ?? 0} />
           <Stat label="UI" value={(stats.byClassification['UI'] ?? 0) + (stats.byClassification['Menu'] ?? 0)} />
           <Stat label="Speaker" value={stats.entriesWithSpeaker} />
-          <Stat label="Protected" value={stats.protectedTokenCount} />
           <Stat label="Errors" value={stats.errors} />
           <details className="er-stats-more">
             <summary>More</summary>
             <div className="er-stats-more-grid">
+              <Stat label="Raw strings" value={stats.rawLocalizedStrings ?? stats.entriesFound} />
+              <Stat label="Variants" value={stats.localizedVariants ?? 0} />
+              <Stat label="Protected" value={stats.protectedTokenCount} />
               <Stat label="Listener" value={stats.entriesWithListener} />
               <Stat label="Gender" value={stats.entriesWithExplicitGender} />
               <Stat label="Resources" value={stats.resourcesDiscovered ?? stats.filesScanned} />
@@ -364,6 +376,14 @@ function Stat({ label, value }: { label: string; value: number }) {
   )
 }
 
+const EXCLUSION_REASON_LABELS: Record<string, string> = {
+  'godot-editor-plugin': 'Editor plugin UI',
+  'godot-tool-script': 'Tool script',
+  'test-resource': 'Test / demo content',
+  'debug-resource': 'Debug content',
+  'developer-addon': 'Developer addon',
+}
+
 function EntryRow({ entry, excluded, onToggle }: { entry: ExtractedEntry; excluded: boolean; onToggle: () => void }) {
   return (
     <div className={`er-row ${excluded ? 'excluded' : ''}`} role="listitem">
@@ -376,6 +396,11 @@ function EntryRow({ entry, excluded, onToggle }: { entry: ExtractedEntry; exclud
       <span className={`er-cat er-cat-${entry.classification.toLowerCase()}`}>{entry.classification}</span>
       <div className="er-row-body">
         <p className="er-source-text" dir="auto">{entry.sourceText}</p>
+        {entry.excludedByDefault && (
+          <span className="er-exclusion-reason" title="Excluded by default">
+            {EXCLUSION_REASON_LABELS[entry.exclusionReason ?? ''] ?? 'Developer / editor tooling'}
+          </span>
+        )}
         {entry.context && (
           <div className="er-context">
             {entry.context.speaker && <span className="er-ctx">Speaker: {entry.context.speaker}</span>}
@@ -459,15 +484,18 @@ function ContextMappingPanel({ onApply }: { onApply: (mappings: ContextFieldMapp
 }
 
 function SourcesPanel({ sources, onToggleFile, onIncludeAll, onExcludeAll }: {
-  sources: Array<{ path: string; count: number; excluded: boolean }>
+  sources: Array<{ path: string; count: number; excluded: boolean; audience?: string; exclusionReason?: string }>
   onToggleFile: (path: string) => void
   onIncludeAll: () => void
   onExcludeAll: () => void
 }) {
   const [query, setQuery] = useState('')
-  const filtered = query.trim()
-    ? sources.filter((s) => s.path.toLowerCase().includes(query.trim().toLowerCase()))
-    : sources
+  const [showTooling, setShowTooling] = useState(false)
+  const filtered = sources.filter((s) => {
+    if (query.trim() && !s.path.toLowerCase().includes(query.trim().toLowerCase())) return false
+    if (!showTooling && (s.audience === 'editor' || s.audience === 'test' || s.audience === 'debug' || s.audience === 'developer')) return false
+    return true
+  })
 
   return (
     <div className="er-sources">
@@ -482,6 +510,10 @@ function SourcesPanel({ sources, onToggleFile, onIncludeAll, onExcludeAll }: {
         />
         <button className="er-button er-small" onClick={onIncludeAll}>Include all</button>
         <button className="er-button er-small" onClick={onExcludeAll}>Exclude all</button>
+        <label className="er-source-toggle">
+          <input type="checkbox" checked={showTooling} onChange={(e) => setShowTooling(e.target.checked)} />
+          Show editor/developer sources
+        </label>
       </div>
       <div className="er-sources-list" role="list">
         {filtered.map((source) => (
@@ -493,6 +525,9 @@ function SourcesPanel({ sources, onToggleFile, onIncludeAll, onExcludeAll }: {
               aria-label={`${source.excluded ? 'Include' : 'Exclude'} ${source.path}`}
             />
             <span className="er-source-path">{source.path}</span>
+            {source.audience && source.audience !== 'runtime' && (
+              <span className="er-source-audience">{source.audience}</span>
+            )}
             <span className="er-source-count">{source.count.toLocaleString()} entries</span>
           </label>
         ))}

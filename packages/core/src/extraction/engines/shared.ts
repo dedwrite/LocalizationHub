@@ -24,6 +24,20 @@ export function toProtectedSegments(
 }
 
 /*
+ * Strip a leading UTF-8/UTF-16 byte-order mark. Games sometimes ship
+ * BOM-prefixed text (Until Then's `*_fil.json` / `*_zh-CN.json` databases);
+ * `JSON.parse` rejects a leading `\uFEFF`. The desktop guarded reader (Rust
+ * `read_to_string`) preserves the BOM while Node's `readFile(..., 'utf8')`
+ * strips it, so stripping here makes desktop and Node behaviour identical.
+ */
+export function stripBom(text: string): string {
+  if (text.length === 0) return text
+  const code = text.charCodeAt(0)
+  if (code === 0xfeff || code === 0xfffe) return text.slice(1)
+  return text
+}
+
+/*
  * Merge user-defined custom-pattern tokens into an entry's protected segments,
  * de-duplicating by position so engine tokens and custom tokens never overlap.
  * This is the single chokepoint through which custom protection patterns flow

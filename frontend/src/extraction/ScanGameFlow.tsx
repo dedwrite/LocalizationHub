@@ -38,6 +38,9 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   const [phaseMessage, setPhaseMessage] = useState('')
   const [result, setResult] = useState<ExtractionResult | null>(null)
   const [error, setError] = useState('')
+  // Increments per successful scan so ExtractionReview remounts (fresh filters
+  // + default exclusions) on each new result.
+  const [scanRunId, setScanRunId] = useState(0)
   const cancelledRef = useRef(false)
   // Retained so "Apply & Rerun" can re-run extraction against the same input.
   const discoveryRef = useRef<{ files: ScanFile[]; directories: string[] } | null>(null)
@@ -58,7 +61,6 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
     if (phase !== 'scanning') return
     const started = Date.now()
     startedAtRef.current = started
-    setElapsedMs(0)
     const timer = setInterval(() => setElapsedMs(Date.now() - started), 250)
     return () => clearInterval(timer)
   }, [phase])
@@ -68,6 +70,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
     setError('')
     setProgress(null)
     setPhaseMessage('')
+    setElapsedMs(0)
 
     try {
       // The orchestrator handles loose resources directly and unpacks engine
@@ -84,6 +87,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
         },
       })
       setResult(scanResult)
+      setScanRunId((n) => n + 1)
       setPhase('reviewing')
     } catch (scanError) {
       setError(scanError instanceof Error ? scanError.message : 'Scan failed.')
@@ -202,7 +206,7 @@ export default function ScanGameFlow({ onProjectCreated, onCancel }: Props) {
   }
 
   if (phase === 'reviewing' && result) {
-    return <ExtractionReview result={result} onCreateProject={handleCreate} onApplyMappings={handleApplyMappings} onCancel={onCancel} />
+    return <ExtractionReview key={scanRunId} result={result} onCreateProject={handleCreate} onApplyMappings={handleApplyMappings} onCancel={onCancel} />
   }
 
   return null

@@ -75,6 +75,7 @@ export type ReviewFilterId =
   | 'ui'
   | 'uncertain'
   | 'excluded'
+  | 'developer'
   | 'has-speaker'
   | 'has-listener'
   | 'has-gender'
@@ -88,6 +89,7 @@ export const REVIEW_FILTERS: Array<{ id: ReviewFilterId; label: string }> = [
   { id: 'ui', label: 'UI' },
   { id: 'uncertain', label: 'Uncertain' },
   { id: 'excluded', label: 'Excluded' },
+  { id: 'developer', label: 'Developer / Tooling' },
   { id: 'has-speaker', label: 'Has Speaker' },
   { id: 'has-listener', label: 'Has Listener' },
   { id: 'has-gender', label: 'Has Gender' },
@@ -96,7 +98,14 @@ export const REVIEW_FILTERS: Array<{ id: ReviewFilterId; label: string }> = [
 ]
 
 export function matchesReviewFilter(
-  entry: { classification: EntryClassification; classificationConfidence: string; context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string }; protectedSegments: unknown[] },
+  entry: {
+    classification: EntryClassification
+    classificationConfidence: string
+    context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string }
+    protectedSegments: unknown[]
+    contentAudience?: string
+    excludedByDefault?: boolean
+  },
   filter: ReviewFilterId,
 ): boolean {
   switch (filter) {
@@ -112,6 +121,8 @@ export function matchesReviewFilter(
       return entry.classificationConfidence === 'low'
     case 'excluded':
       return entry.classification === 'NonTranslatable'
+    case 'developer':
+      return Boolean(entry.excludedByDefault || (entry.contentAudience && entry.contentAudience !== 'runtime' && entry.contentAudience !== 'unknown'))
     case 'has-speaker':
       return Boolean(entry.context?.speaker)
     case 'has-listener':
