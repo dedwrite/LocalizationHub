@@ -1,7 +1,7 @@
 {
   "name": "localizationhub-website",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.7.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@localizationhub/core": "0.6.1",
+    "@localizationhub/core": "0.7.0",
     "@vitejs/plugin-react": "^6.0.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",

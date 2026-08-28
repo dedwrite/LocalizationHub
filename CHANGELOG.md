@@ -2,6 +2,27 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.7.0] - 2026-08-28
+
+### Added
+
+- **Game Text Extraction** — point LocalizationHub at a supported game project folder, scan it read-only, review the discovered text, and create a LocalizationHub Project.
+- **Godot** — `.pck` extraction (GDRE-assisted), native CSV/PO/`.tscn`/`.tres`/`.gd` parsing, JSON database locale aggregation, and native `.inkb` story dialogue with speaker resolution and timed player-Choice extraction.
+- **Unreal** — native `.locres`/`.locmeta` readers, verified PAK (repak) and IoStore (retoc) orchestration, an optional user-supplied AES key for encrypted archives, and runtime-vs-engine precision filtering.
+- **Unity** — UnityPy-assisted serialized-asset extraction, TextAsset routing, MonoBehaviour/ScriptableObject structured extraction, Unity Localization string tables, and Dialogue System (`MasterDialogueDatabase`) support.
+- **Extraction Review** — virtualized entries, a searchable Sources panel, a Diagnostics panel, Context Mapping (including an Ignore role), locale/source switching, filters, and Create Project.
+- **Generic Open File context** — opening JSON/CSV/PO preserves speaker, listener, gender, pronouns, scene/conversation, multiple listeners, voice, and portrait when explicitly present.
+
+### Changed
+
+- Proven editor/developer/test tooling is excluded from the default extracted project (with a visible reason), while uncertain and runtime content stays included.
+- Multi-language game files aggregate into logical entries with locale variants instead of one duplicate per culture.
+
+### Notes
+
+- All extraction is read-only: source game files are never modified.
+- Some deep binary formats remain partial or external-tool-required; see `docs/dev/v0.7-engine-compatibility.md` for the honest per-format status.
+
 ## [0.6.1] - 2026-08-27
 
 ### Added

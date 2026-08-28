@@ -6,14 +6,17 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.6.1 — Web Workspace Parity & Translator Experience**
+**LocalizationHub v0.7.0 — Game Text Extraction**
 
-v0.6.1 brings the browser workspace to full parity with the desktop application and adds a purpose-built mobile experience:
+v0.7.0 adds read-only extraction from supported game-engine projects, alongside everything already in the workspace:
 
+- **Game Text Extraction** — point LocalizationHub at a Godot, Unreal, or Unity project folder, scan it read-only, review the discovered text, and create a LocalizationHub Project with dialogue context (speaker/listener/gender) and protected-token preservation.
 - **Desktop** — a structured localization editor for local `.lhproj` projects with workflow states, QA tools, glossary and Translation Memory, protected-token validation, and optional Cloud integration.
 - **Web (desktop/tablet)** — a three-pane Entries / Translator / Inspector workspace in the browser with Cloud Projects, browser-local import/export, and the same workflow and QA tooling.
 - **Web (mobile)** — a dedicated Entries / Editor / Tools workspace built for phones, with a touch-first editor and iPhone Safari support.
 - **Machine Translation Reference** — advisory Gemini translation with session-only API keys held in browser memory.
+
+LocalizationHub works with both ordinary localization files (JSON, CSV, gettext PO) and read-only extraction from supported game projects. Per-format compatibility boundaries are documented in [docs/dev/v0.7-engine-compatibility.md](docs/dev/v0.7-engine-compatibility.md).
 
 Existing administration and account-security functionality remains intact.
 
@@ -417,8 +420,8 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.6.1**
+**LocalizationHub v0.7.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.6.1 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.6.1).
+Download the current release: [LocalizationHub v0.7.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.7.0).

@@ -593,7 +593,7 @@ function Toolbar(props: {
   const saveLabel = props.saveState === 'saving' ? 'Saving…' : props.saveState === 'failed' ? 'Save failed' : props.saveState === 'unsaved' ? 'Unsaved' : 'Saved'
   return (
     <header className="workspace-toolbar">
-      <button className="toolbar-brand" onClick={props.onHome} title="Back to projects">LH</button>
+      <button className="toolbar-brand" onClick={props.onHome} title="Back to projects" aria-label="LocalizationHub — back to projects"><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
       <div className="toolbar-title">
         <strong>{props.projectName}</strong>
         <span className={`save-state save-${props.saveState}`}>{saveLabel}</span>

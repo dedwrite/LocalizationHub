@@ -1,6 +1,6 @@
 [package]
 name = "localizationhub"
-version = "0.6.1"
+version = "0.7.0"
 description = "Desktop localization editor for structured game text and protected-token workflows."
 authors = ["LocalizationHub Contributors"]
 edition = "2021"
