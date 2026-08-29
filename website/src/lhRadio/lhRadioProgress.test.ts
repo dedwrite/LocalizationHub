@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { playbackProgressPercent } from './lhRadioProgress'
+import { capsuleProgressPath, playbackProgressPercent } from './lhRadioProgress'
 
 describe('collapsed Radio playback progress', () => {
   it('uses an inactive ring when duration is unavailable', () => {
@@ -16,5 +16,11 @@ describe('collapsed Radio playback progress', () => {
     expect(playbackProgressPercent(119.9, 120)).toBeCloseTo(99.9167, 3)
     expect(playbackProgressPercent(160, 120)).toBe(100)
     expect(playbackProgressPercent(-1, 120)).toBe(0)
+  })
+
+  it('starts the capsule path at the bottom-left and closes the full perimeter', () => {
+    const path = capsuleProgressPath(320, 60)
+    expect(path.startsWith('M 30 59 A 29 29 0 0 1 1 30')).toBe(true)
+    expect(path.endsWith('H 30 Z')).toBe(true)
   })
 })

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { fetchRadioCatalog, type PublicRadioTrack } from '../radioApi'
 import {
@@ -9,7 +9,7 @@ import {
   saveVolumePreference,
 } from './lhRadioState'
 import './LhRadio.css'
-import { playbackProgressPercent } from './lhRadioProgress'
+import { capsuleProgressPath, playbackProgressPercent } from './lhRadioProgress'
 
 /*
  * The single global native LH Radio player. Mounted once at the app shell level
@@ -22,11 +22,13 @@ export default function LhRadio() {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(lhRadioReducer, undefined, createInitialState)
   const [taglineIndex, setTaglineIndex] = useState(0)
+  const [capsuleSize, setCapsuleSize] = useState({ width: 0, height: 0 })
   const audioRef = useRef<HTMLAudioElement>(null)
   const seekRef = useRef<HTMLInputElement>(null)
   const currentTimeRef = useRef<HTMLSpanElement>(null)
   const durationRef = useRef<HTMLSpanElement>(null)
-  const progressRef = useRef<HTMLSpanElement>(null)
+  const progressRef = useRef<SVGPathElement>(null)
+  const capsuleRef = useRef<HTMLDivElement>(null)
   const seekingRef = useRef(false)
 
   const isAppSurface = typeof window !== 'undefined' && window.location.pathname.startsWith('/app')
@@ -61,7 +63,7 @@ export default function LhRadio() {
     if (durationRef.current) durationRef.current.textContent = formatTime(audio?.duration ?? 0)
     if (progressRef.current) {
       const percent = audio ? playbackProgressPercent(audio.currentTime, audio.duration) : 0
-      progressRef.current.style.setProperty('--lh-radio-progress', `${percent}%`)
+      progressRef.current.setAttribute('stroke-dashoffset', String(100 - percent))
     }
   }
 
@@ -75,6 +77,19 @@ export default function LhRadio() {
     }, 5000)
     return () => window.clearInterval(timer)
   }, [state.isOpen])
+
+  useEffect(() => {
+    const capsule = capsuleRef.current
+    if (!capsule || typeof ResizeObserver === 'undefined') return
+    const updateSize = () => {
+      const { width, height } = capsule.getBoundingClientRect()
+      setCapsuleSize({ width, height })
+    }
+    updateSize()
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(capsule)
+    return () => observer.disconnect()
+  }, [])
 
   function playTrack(trackId: string) {
     const audio = audioRef.current
@@ -122,7 +137,7 @@ export default function LhRadio() {
   // Keep the structural audio element in sync with selection and preferences.
   useEffect(() => {
     const audio = audioRef.current
-    progressRef.current?.style.setProperty('--lh-radio-progress', '0%')
+    progressRef.current?.setAttribute('stroke-dashoffset', '100')
     if (!audio || !currentTrack) return
     const url = new URL(currentTrack.audioUrl, window.location.origin).href
     if (audio.src !== url) {
@@ -194,6 +209,8 @@ export default function LhRadio() {
 
   const discArt = currentTrack?.artworkUrl ?? null
   const nextUp = state.catalog.slice(0, 50)
+  const svgWidth = Math.max(capsuleSize.width, 1)
+  const svgHeight = Math.max(capsuleSize.height, 1)
 
   return (
     <div
@@ -311,22 +328,30 @@ export default function LhRadio() {
       </section>
 
       {/* ---- Collapsed capsule ---- */}
-      <div className="lh-radio-capsule">
-        <button type="button" className="lh-radio-capsule-main" onClick={() => dispatch({ type: 'open' })} aria-label="Open LH Radio">
-          <span
+      <div ref={capsuleRef} className="lh-radio-capsule">
+        <svg
+          className="lh-radio-capsule-progress"
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
             ref={progressRef}
-            className="lh-radio-disc-progress"
-            style={{ '--lh-radio-progress': '0%' } as CSSProperties}
-            aria-hidden="true"
-          >
-            <span className="lh-radio-disc lh-radio-disc-small">
-              {discArt ? (
-                <img className="lh-radio-disc-art" src={discArt} alt="" />
-              ) : (
-                <span className="lh-radio-disc-fallback">♪</span>
-              )}
-              <span className="lh-radio-disc-hub" />
-            </span>
+            className="lh-radio-capsule-progress-path"
+            d={capsuleProgressPath(svgWidth, svgHeight)}
+            pathLength="100"
+            strokeDasharray="100"
+            strokeDashoffset="100"
+          />
+        </svg>
+        <button type="button" className="lh-radio-capsule-main" onClick={() => dispatch({ type: 'open' })} aria-label="Open LH Radio">
+          <span className="lh-radio-disc lh-radio-disc-small" aria-hidden="true">
+            {discArt ? (
+              <img className="lh-radio-disc-art" src={discArt} alt="" />
+            ) : (
+              <span className="lh-radio-disc-fallback">♪</span>
+            )}
+            <span className="lh-radio-disc-hub" />
           </span>
           <span className="lh-radio-capsule-text">
             <strong className="lh-radio-capsule-title" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.title ?? 'LH RADIO'}</strong>
