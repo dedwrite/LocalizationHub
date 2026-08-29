@@ -12,6 +12,7 @@ Visual Batch 3 Web App + Workspace deep polish is implemented and ready for huma
 
 - Updated the public FAQ answer from the historical v0.4.0 reference to the current stable `v0.7.0` release.
 - Audited current-facing landing release copy; historical release/checkpoint documentation was not rewritten.
+- Refined the existing protected-token context demo with the personality-driven but product-relevant Friday hotfix example: Developer → Translator, `Friday · 11:59 PM`, RTL Arabic translation, and highlighted `{new_strings}` / `<color=#A86BFF>` tokens.
 
 ## Projects and Web App shell
 
@@ -63,4 +64,3 @@ Visual Batch 3 Web App + Workspace deep polish is implemented and ready for huma
 - `duration_seconds` remains the documented Radio backend limitation.
 - Cloud Projects screenshots depend on an authenticated review session; automated fixtures provide deterministic multi-project coverage without changing real user content.
 - v0.8 release preparation and merge to main were intentionally not started.
-
