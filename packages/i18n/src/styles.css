@@ -47,8 +47,8 @@ html[dir='rtl'] samp { direction: ltr; unicode-bidi: isolate; text-align: start;
 .lh-radio-volume,
 .lh-radio-capsule { direction: ltr; }
 
-@media (max-width: 720px) {
-  /* Keep the app header's back/save controls reachable on compact screens. */
+@media (max-width: 1300px) {
+  /* Keep page/header controls reachable when the compact layout is active. */
   .lh-language-switcher { inset-block-start: 56px; inset-inline-end: 8px; }
   .lh-language-switcher select { min-block-size: 32px; max-inline-size: 112px; }
 }

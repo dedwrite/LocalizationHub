@@ -36,11 +36,11 @@ async function mockRadio(page: Page, catalog = tracks) {
 async function stubPlayback(page: Page) {
   await page.addInitScript(() => {
     HTMLMediaElement.prototype.play = function () {
-      this.dispatchEvent(new Event('play'))
+      queueMicrotask(() => this.dispatchEvent(new Event('play')))
       return Promise.resolve()
     }
     HTMLMediaElement.prototype.pause = function () {
-      this.dispatchEvent(new Event('pause'))
+      queueMicrotask(() => this.dispatchEvent(new Event('pause')))
     }
   })
 }

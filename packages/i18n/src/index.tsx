@@ -124,14 +124,23 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const current = node.data
       const priorOriginal = originalTexts.current.get(node)
       const priorLocalized = priorOriginal == null ? null : translateUiText('ar', priorOriginal.trim())
+      if (locale === 'en') {
+        // React is allowed to update dynamic English labels (for example
+        // Play/Pause or Show/Hide). Only restore a value when it is the
+        // Arabic translation left behind by a previous locale.
+        if (priorOriginal == null) {
+          originalTexts.current.set(node, current)
+        } else if (current === priorLocalized && current !== priorOriginal) {
+          node.data = priorOriginal
+        } else if (current !== priorOriginal) {
+          originalTexts.current.set(node, current)
+        }
+        return
+      }
       let original = priorOriginal
-      if (original == null || (locale === 'ar' && current.trim() !== priorLocalized && current !== priorOriginal)) {
+      if (original == null || (current.trim() !== priorLocalized && current !== priorOriginal)) {
         original = current
         originalTexts.current.set(node, original)
-      }
-      if (locale === 'en') {
-        if (current !== original) node.data = original
-        return
       }
       const trimmed = original.trim()
       if (!trimmed) return
@@ -154,12 +163,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         if (current == null) continue
         const priorOriginal = originals.get(attribute)
         const priorLocalized = priorOriginal == null ? null : translateUiText('ar', priorOriginal)
+        if (locale === 'en') {
+          if (priorOriginal == null) originals.set(attribute, current)
+          else if (current === priorLocalized && current !== priorOriginal) element.setAttribute(attribute, priorOriginal)
+          else if (current !== priorOriginal) originals.set(attribute, current)
+          continue
+        }
         let original = priorOriginal
-        if (original == null || (locale === 'ar' && current !== priorLocalized && current !== priorOriginal)) {
+        if (original == null || (current !== priorLocalized && current !== priorOriginal)) {
           original = current
           originals.set(attribute, original)
         }
-        const next = locale === 'ar' ? translateUiText('ar', original) : original
+        const next = translateUiText('ar', original)
         if (current !== next) element.setAttribute(attribute, next)
       }
     }
