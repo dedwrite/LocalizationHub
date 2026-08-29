@@ -12,7 +12,7 @@ batch after human visual review of LH Radio.
 
 - Branch: `feature/v0.8-web-experience`
 - Starting commit: `604ed44ec1462c2ac8c704b55e58915d3d97dd3b` (origin/main, v0.7.0 base)
-- Final commit: `fc6d1ce` (implementation + checkpoint)
+- Final commit: `030ea44ef51f6094c83554db18417bf19f473c4` (implementation + checkpoint)
 
 ## What was implemented
 
