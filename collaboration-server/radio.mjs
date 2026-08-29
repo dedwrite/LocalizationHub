@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { getDatabasePool } from './database.mjs'
+import { analyzeRadioAudio } from './radio-analysis.mjs'
 
 /*
  * Native first-party LH Radio library.
@@ -112,7 +113,9 @@ function looksLikeImage(buffer, mime) {
 export async function listRadioTracks({ includeUnpublished = true } = {}) {
   const rows = await getDatabasePool().query(
     `SELECT id, title, artist, album, position, published, audio_mime, audio_size_bytes,
-            artwork_mime, artwork_size_bytes, duration_seconds, created_at, updated_at
+            artwork_mime, artwork_size_bytes, duration_seconds, audio_codec,
+            audio_bitrate_kbps, audio_sample_rate_hz, audio_channels, audio_bitrate_mode,
+            audio_optimized, audio_encoding_profile, created_at, updated_at
      FROM radio_tracks
      ORDER BY position ASC, created_at ASC`,
   )
@@ -141,7 +144,9 @@ export async function listPublishedRadioTracks() {
 export async function getRadioTrack(trackId) {
   const rows = await getDatabasePool().query(
     `SELECT id, title, artist, album, position, published, audio_mime, audio_size_bytes,
-            artwork_mime, artwork_size_bytes, duration_seconds, created_at, updated_at
+            artwork_mime, artwork_size_bytes, duration_seconds, audio_codec,
+            audio_bitrate_kbps, audio_sample_rate_hz, audio_channels, audio_bitrate_mode,
+            audio_optimized, audio_encoding_profile, created_at, updated_at
      FROM radio_tracks WHERE id = $1`,
     [trackId],
   )
@@ -169,8 +174,9 @@ export async function updateRadioTrack(trackId, metadata) {
   return getRadioTrack(trackId)
 }
 
-export async function setRadioTrackAudio(trackId, buffer, mime) {
+export async function setRadioTrackAudio(trackId, buffer, mime, { optimized = false, profile = null } = {}) {
   validateAudioBuffer(buffer, mime)
+  const analysis = await analyzeRadioAudio(buffer)
   const result = await getDatabasePool().query(
     `INSERT INTO radio_track_audio (track_id, data, mime, size_bytes)
      VALUES ($1, $2, $3, $4)
@@ -178,8 +184,13 @@ export async function setRadioTrackAudio(trackId, buffer, mime) {
     [trackId, buffer, mime === 'audio/mp3' ? 'audio/mpeg' : mime, buffer.length],
   )
   await getDatabasePool().query(
-    `UPDATE radio_tracks SET audio_mime = $2, audio_size_bytes = $3, updated_at = NOW() WHERE id = $1`,
-    [trackId, mime === 'audio/mp3' ? 'audio/mpeg' : mime, buffer.length],
+    `UPDATE radio_tracks
+     SET audio_mime = $2, audio_size_bytes = $3, duration_seconds = $4,
+         audio_codec = $5, audio_bitrate_kbps = $6, audio_sample_rate_hz = $7,
+         audio_channels = $8, audio_bitrate_mode = $9, audio_optimized = $10,
+         audio_encoding_profile = $11, updated_at = NOW()
+     WHERE id = $1`,
+    [trackId, mime === 'audio/mp3' ? 'audio/mpeg' : mime, buffer.length, analysis.durationSeconds, analysis.codec, analysis.bitrateKbps, analysis.sampleRateHz, analysis.channels, analysis.bitrateMode, optimized === true, optimized === true ? profile : null],
   )
   return getRadioTrack(trackId)
 }
@@ -261,6 +272,18 @@ export async function getRadioMetrics() {
   }
 }
 
+export async function updateRadioTrackAnalysis(trackId, analysis) {
+  const result = await getDatabasePool().query(
+    `UPDATE radio_tracks
+     SET duration_seconds = $2, audio_codec = $3, audio_bitrate_kbps = $4,
+         audio_sample_rate_hz = $5, audio_channels = $6, audio_bitrate_mode = $7,
+         updated_at = NOW()
+     WHERE id = $1`,
+    [trackId, analysis.durationSeconds, analysis.codec, analysis.bitrateKbps, analysis.sampleRateHz, analysis.channels, analysis.bitrateMode],
+  )
+  return result.rowCount > 0 ? getRadioTrack(trackId) : null
+}
+
 // ---- Public binary access (published only) ----
 
 export async function getPublishedRadioAudio(trackId) {
@@ -274,6 +297,15 @@ export async function getPublishedRadioAudio(trackId) {
   const row = rows.rows[0]
   if (!row || !row.published) return null
   return { data: row.data, mime: row.mime, size: Number(row.size_bytes) }
+}
+
+export async function getRadioAudioForAdmin(trackId) {
+  const rows = await getDatabasePool().query(
+    `SELECT data, mime, size_bytes FROM radio_track_audio WHERE track_id = $1`,
+    [trackId],
+  )
+  const row = rows.rows[0]
+  return row ? { data: row.data, mime: row.mime, size: Number(row.size_bytes) } : null
 }
 
 export async function getPublishedRadioArtwork(trackId) {
@@ -302,6 +334,13 @@ function serializeTrack(row) {
     artworkMime: row.artwork_mime ?? null,
     artworkSizeBytes: databaseNumber(row.artwork_size_bytes ?? 0, 'artwork_size_bytes'),
     durationSeconds: databaseNumber(row.duration_seconds, 'duration_seconds', { nullable: true }),
+    audioCodec: row.audio_codec ?? null,
+    audioBitrateKbps: databaseNumber(row.audio_bitrate_kbps, 'audio_bitrate_kbps', { nullable: true }),
+    audioSampleRateHz: databaseNumber(row.audio_sample_rate_hz, 'audio_sample_rate_hz', { nullable: true }),
+    audioChannels: databaseNumber(row.audio_channels, 'audio_channels', { nullable: true }),
+    audioBitrateMode: row.audio_bitrate_mode ?? null,
+    audioOptimized: row.audio_optimized === true,
+    audioEncodingProfile: row.audio_encoding_profile ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

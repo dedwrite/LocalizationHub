@@ -261,6 +261,13 @@ export type RadioTrack = {
   artworkMime: string | null
   artworkSizeBytes: number
   durationSeconds: number | null
+  audioCodec: string | null
+  audioBitrateKbps: number | null
+  audioSampleRateHz: number | null
+  audioChannels: number | null
+  audioBitrateMode: string | null
+  audioOptimized: boolean
+  audioEncodingProfile: string | null
   createdAt: string
   updatedAt: string
 }
@@ -280,6 +287,44 @@ export type RadioTrackInput = {
   published?: boolean
 }
 
+export type RadioAudioAnalysis = {
+  sizeBytes: number
+  durationSeconds: number | null
+  codec: string | null
+  bitrateKbps: number | null
+  bitrateMode: string | null
+  sampleRateHz: number | null
+  channels: number | null
+  title: string | null
+  artist: string | null
+  album: string | null
+  trackNumber: number | null
+  year: number | null
+  embeddedArtwork: { mime: string; data: string | Uint8Array; description?: string | null } | null
+  filenameSuggestion: { title: string | null; artist: string | null; inferred: boolean }
+  source: string
+}
+
+export type RadioImportedMetadata = {
+  provider: 'spotify' | 'youtube'
+  sourceUrl: string
+  externalId: string | null
+  title: string | null
+  artist: string | null
+  album: string | null
+  artworkUrl: string | null
+  durationSeconds: number | null
+  year: number | null
+  evidence: string[]
+  inferredArtist?: string | null
+}
+
+export type RadioSmartMatch = {
+  level: 'High' | 'Medium' | 'Low' | 'Insufficient evidence'
+  score: number
+  evidence: { state: 'pass' | 'warn' | 'fail'; text: string }[]
+}
+
 function radioNumber(value: unknown, field: string, nullable = false): number | null {
   if (value == null && nullable) return null
   if (typeof value === 'string' && value.trim() === '') throw new Error(`Radio API returned invalid ${field}.`)
@@ -295,6 +340,9 @@ function normalizeRadioTrack(value: RadioTrack): RadioTrack {
     audioSizeBytes: radioNumber(value.audioSizeBytes, 'audio size') as number,
     artworkSizeBytes: radioNumber(value.artworkSizeBytes, 'artwork size') as number,
     durationSeconds: radioNumber(value.durationSeconds, 'track duration', true),
+    audioBitrateKbps: radioNumber(value.audioBitrateKbps, 'audio bitrate', true),
+    audioSampleRateHz: radioNumber(value.audioSampleRateHz, 'audio sample rate', true),
+    audioChannels: radioNumber(value.audioChannels, 'audio channels', true),
   }
 }
 
@@ -320,6 +368,20 @@ export async function createRadioTrackAdmin(input: RadioTrackInput) {
     method: 'POST',
     body: JSON.stringify(input),
   })
+}
+
+export async function resolveRadioMetadataAdmin(url: string) {
+  const result = await api<{ metadata: RadioImportedMetadata }>('/api/admin/radio/metadata/resolve', { method: 'POST', body: JSON.stringify({ url }) })
+  return result.metadata
+}
+
+export async function importRadioArtworkAdmin(url: string) {
+  return api<{ mime: string; data: string }>('/api/admin/radio/metadata/artwork', { method: 'POST', body: JSON.stringify({ url }) })
+}
+
+export async function smartMatchRadioMetadataAdmin(metadata: RadioImportedMetadata, analysis: RadioAudioAnalysis) {
+  const result = await api<{ match: RadioSmartMatch }>('/api/admin/radio/metadata/match', { method: 'POST', body: JSON.stringify({ metadata, analysis }) })
+  return result.match
 }
 export async function updateRadioTrackAdmin(trackId: string, input: RadioTrackInput) {
   return api<{ track: RadioTrack }>(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}`, {
@@ -362,9 +424,37 @@ async function uploadRadioMedia(path: string, file: File, mime: string) {
   return body as { track: RadioTrack }
 }
 
-export async function uploadRadioAudioAdmin(trackId: string, file: File) {
-  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/audio`, file, file.type || 'audio/mpeg')
+export async function uploadRadioAudioAdmin(trackId: string, file: File, options: { optimized?: boolean; profile?: string } = {}) {
+  const query = options.optimized ? `?optimized=1&profile=${encodeURIComponent(options.profile || 'high')}` : ''
+  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/audio${query}`, file, file.type || 'audio/mpeg')
 }
 export async function uploadRadioArtworkAdmin(trackId: string, file: File) {
   return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/artwork`, file, file.type || 'image/jpeg')
+}
+
+async function postRadioMedia<T>(path: string, file: File) {
+  const response = await fetch(path, { method: 'POST', headers: { ...headers(), 'Content-Type': file.type || 'audio/mpeg' }, body: file })
+  const text = await response.text()
+  let body: any = null
+  try { body = text ? JSON.parse(text) : null } catch { body = { message: text } }
+  if (!response.ok) {
+    const error = new Error(body?.message || body?.error || `Analysis failed (${response.status})`) as Error & { code?: string; status?: number }
+    error.code = body?.error; error.status = response.status; throw error
+  }
+  return body as T
+}
+
+export async function analyzeRadioAudioAdmin(file: File, trackId?: string) {
+  const query = new URLSearchParams({ filename: file.name })
+  if (trackId) query.set('trackId', trackId)
+  return postRadioMedia<{ analysis: RadioAudioAnalysis; optimization: { recommended: boolean; reason: string; targetBitrateKbps?: number; estimatedBytes?: number; estimatedSavingsPercent?: number } }>(`/api/admin/radio/audio/analyze?${query.toString()}`, file)
+}
+
+export async function analyzeExistingRadioTrackAdmin(trackId: string) {
+  const result = await api<{ analysis: RadioAudioAnalysis; track: RadioTrack }>(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/analyze`, { method: 'POST' })
+  return result
+}
+
+export async function optimizeRadioAudioAdmin(file: File, profile: 'high' | 'saver' = 'high') {
+  return postRadioMedia<{ analysis: RadioAudioAnalysis; originalSizeBytes: number; newSizeBytes: number; profile: string; data: string }>(`/api/admin/radio/audio/optimize?profile=${profile}`, file)
 }

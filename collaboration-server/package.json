@@ -16,6 +16,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "music-metadata": "^11.15.0",
     "pg": "^8.23.0",
     "ws": "^8.18.0"
   }

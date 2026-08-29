@@ -65,6 +65,11 @@ const radioTracks = {
 }
 
 const radioMetrics = { track_count: 2, published_count: 1, total_audio_bytes: 12345, total_duration_seconds: 180 }
+const radioAnalysis = {
+  sizeBytes: 2048, durationSeconds: 398, codec: 'MP3', bitrateKbps: 128, bitrateMode: null, sampleRateHz: 44100, channels: 2,
+  title: 'Cemeteries', artist: 'Sodus', album: 'Cemeteries', trackNumber: null, year: null, embeddedArtwork: null,
+  filenameSuggestion: { title: 'Cemeteries', artist: 'Sodus', inferred: true }, source: 'id3',
+}
 
 async function mockAdminApi(
   page: Page,
@@ -84,6 +89,18 @@ async function mockAdminApi(
       return
     }
     if (method === 'POST') {
+      if (path === 'radio/metadata/resolve') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ metadata: { provider: 'spotify', sourceUrl: 'https://open.spotify.com/track/test', externalId: 'test', title: 'Cemeteries', artist: 'Sodus', album: 'Cemeteries', artworkUrl: null, durationSeconds: null, year: null, evidence: ['Spotify metadata retrieved'] } }) })
+        return
+      }
+      if (path === 'radio/metadata/match') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ match: { level: 'High', score: 100, evidence: [{ state: 'pass', text: 'Title matches' }, { state: 'pass', text: 'Artist matches' }] } }) })
+        return
+      }
+      if (path.startsWith('radio/audio/analyze')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ analysis: radioAnalysis, optimization: { recommended: false, reason: 'already-efficient' } }) })
+        return
+      }
       if (path.startsWith('auth/totp/enroll')) {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(enrollment) })
         return
@@ -243,6 +260,40 @@ test.describe('admin console routing and views', () => {
     await expect(page.getByText('Radio data could not be loaded completely.')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Retry Radio library' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
+  })
+
+  test('opens the smart upload flow and shows ID3 audio analysis', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await expect(page.getByRole('tab', { name: /Upload MP3/ })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Import Link/ })).toBeVisible()
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByText('Audio analysis')).toBeVisible()
+    await expect(page.getByText('ID3 + frame data')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Cemeteries"]')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Sodus"]')).toBeVisible()
+  })
+
+  test('resolves provider links as metadata-only suggestions', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
+    await page.getByRole('button', { name: 'Resolve metadata' }).click()
+    await expect(page.getByText('Metadata retrieved')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Cemeteries"]')).toBeVisible()
+    await expect(page.getByText(/Links import metadata only/)).toBeVisible()
+  })
+
+  test('shows Smart Match evidence after a link and attached MP3', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
+    await page.getByRole('button', { name: 'Resolve metadata' }).click()
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByText('Smart Match · High')).toBeVisible()
+    await expect(page.getByText('✓ Title matches')).toBeVisible()
   })
 
   test('turns malformed Radio numeric payloads into an inline contract error', async ({ page }) => {
