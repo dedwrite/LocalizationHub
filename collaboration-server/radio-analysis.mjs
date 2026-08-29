@@ -64,7 +64,6 @@ function pictureToResult(picture) {
 
 export async function analyzeRadioAudio(buffer, { filename = '' } = {}) {
   if (!Buffer.isBuffer(buffer) || buffer.length === 0) throw new Error('Audio is required.')
-  const fallback = frameInfo(buffer)
   let parsed = null
   try {
     parsed = await parseBuffer(buffer, { mimeType: 'audio/mpeg', size: buffer.length })
@@ -73,6 +72,11 @@ export async function analyzeRadioAudio(buffer, { filename = '' } = {}) {
   }
   const common = parsed?.common ?? {}
   const format = parsed?.format ?? {}
+  // music-metadata already reads the MP3 frame facts needed by the normal
+  // path. Only scan the buffer ourselves when parsing failed or left a fact
+  // unavailable; this avoids doing the same frame discovery twice.
+  const needsFallback = !parsed || !Number.isFinite(format.duration) || !Number.isFinite(format.bitrate) || !Number.isFinite(format.sampleRate) || !Number.isInteger(format.numberOfChannels) || !format.codec
+  const fallback = needsFallback ? frameInfo(buffer) : null
   const embeddedArtwork = pictureToResult(common.picture?.[0])
   const suggestion = filenameSuggestion(filename)
   const durationSeconds = Number.isFinite(format.duration) ? format.duration : fallback?.duration ?? null

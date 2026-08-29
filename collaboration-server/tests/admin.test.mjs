@@ -4,6 +4,7 @@ import { createCipheriv, createHash, randomBytes } from 'node:crypto'
 import { resetDatabasePoolForTests, setDatabasePoolForTests } from '../database.mjs'
 import {
   AdminSecurityError,
+  authenticateAdminSession,
   base32Decode,
   base32Encode,
   bootstrapSuperAdmin,
@@ -203,6 +204,32 @@ describe('super admin bootstrap and lookup', () => {
     const result = await bootstrapSuperAdmin('OPERATOR')
     assert.equal(result.username, 'operator')
     assert.ok(client.calls[0].sql.includes("site_role = 'super_admin'"))
+  })
+})
+
+describe('admin session authentication', () => {
+  it('validates and refreshes an active Admin session in one database round trip', async () => {
+    const client = new FakeClient({
+      'UPDATE admin_sessions AS session': row({
+        user_id: ADMIN_ID,
+        last_used_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        site_role: 'super_admin',
+        suspended_at: null,
+      }),
+    })
+    setDatabasePoolForTests(pool(client))
+    const session = await authenticateAdminSession('admin-token', ADMIN_ID)
+    assert.equal(session.user_id, ADMIN_ID)
+    assert.equal(client.calls.length, 1)
+    assert.equal(client.calls[0].params[2], 20 * 60 * 1000)
+  })
+
+  it('returns null when the atomic Admin session refresh matches no active session', async () => {
+    const client = new FakeClient({ 'UPDATE admin_sessions AS session': empty() })
+    setDatabasePoolForTests(pool(client))
+    assert.equal(await authenticateAdminSession('expired-token', ADMIN_ID), null)
+    assert.equal(client.calls.length, 1)
   })
 })
 

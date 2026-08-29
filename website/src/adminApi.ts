@@ -432,8 +432,8 @@ export async function uploadRadioArtworkAdmin(trackId: string, file: File) {
   return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/artwork`, file, file.type || 'image/jpeg')
 }
 
-async function postRadioMedia<T>(path: string, file: File) {
-  const response = await fetch(path, { method: 'POST', headers: { ...headers(), 'Content-Type': file.type || 'audio/mpeg' }, body: file })
+async function postRadioMedia<T>(path: string, file: File, options: { signal?: AbortSignal } = {}) {
+  const response = await fetch(path, { method: 'POST', headers: { ...headers(), 'Content-Type': file.type || 'audio/mpeg' }, body: file, signal: options.signal })
   const text = await response.text()
   let body: any = null
   try { body = text ? JSON.parse(text) : null } catch { body = { message: text } }
@@ -444,10 +444,37 @@ async function postRadioMedia<T>(path: string, file: File) {
   return body as T
 }
 
-export async function analyzeRadioAudioAdmin(file: File, trackId?: string) {
+export const RADIO_AUDIO_ANALYSIS_TIMEOUT_MS = 15_000
+
+export async function analyzeRadioAudioAdmin(
+  file: File,
+  trackId?: string,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
+) {
   const query = new URLSearchParams({ filename: file.name })
   if (trackId) query.set('trackId', trackId)
-  return postRadioMedia<{ analysis: RadioAudioAnalysis; optimization: { recommended: boolean; reason: string; targetBitrateKbps?: number; estimatedBytes?: number; estimatedSavingsPercent?: number } }>(`/api/admin/radio/audio/analyze?${query.toString()}`, file)
+  const controller = new AbortController()
+  const timeoutMs = options.timeoutMs ?? RADIO_AUDIO_ANALYSIS_TIMEOUT_MS
+  let timedOut = false
+  const relayAbort = () => controller.abort(options.signal?.reason)
+  options.signal?.addEventListener('abort', relayAbort, { once: true })
+  const timeout = globalThis.setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, timeoutMs)
+  try {
+    return await postRadioMedia<{ analysis: RadioAudioAnalysis; optimization: { recommended: boolean; reason: string; targetBitrateKbps?: number; estimatedBytes?: number; estimatedSavingsPercent?: number } }>(`/api/admin/radio/audio/analyze?${query.toString()}`, file, { signal: controller.signal })
+  } catch (error) {
+    if (timedOut) {
+      const timeoutError = new Error('Audio analysis took too long. Retry analysis.') as Error & { code?: string }
+      timeoutError.code = 'audio-analysis-timeout'
+      throw timeoutError
+    }
+    throw error
+  } finally {
+    globalThis.clearTimeout(timeout)
+    options.signal?.removeEventListener('abort', relayAbort)
+  }
 }
 
 export async function analyzeExistingRadioTrackAdmin(trackId: string) {

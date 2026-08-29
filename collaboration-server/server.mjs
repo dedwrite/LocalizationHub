@@ -71,7 +71,6 @@ import {
   beginTotpEnrollment,
   confirmAdminTotpAndCreateSession,
   getAdminTotpStatus,
-  getSuperAdmin,
   hasRecentAdminEmailVerification,
   requestAdminEmailCode,
   revokeAdminSession,
@@ -2687,8 +2686,8 @@ async function getAuthenticatedRequest(
   }
 }
 
-async function getAdminRequest(request) {
-  const authentication = await getAuthenticatedRequest(request)
+async function getAdminRequest(request, existingAuthentication = null) {
+  const authentication = existingAuthentication ?? await getAuthenticatedRequest(request)
   if (!authentication) return null
   const adminToken = request.headers['x-admin-session']
   if (!adminToken) return null
@@ -2829,11 +2828,11 @@ const httpServer =
           sendJson(response, 401, { error: 'unauthorized', message: 'Authentication is required.' })
           return
         }
-        const superAdmin = await getSuperAdmin(authentication.user.id)
-        if (!superAdmin) {
+        if (authentication.user.siteRole !== 'super_admin') {
           sendJson(response, 403, { error: 'admin-forbidden', message: 'Super Admin access is required.' })
           return
         }
+        const superAdmin = authentication.user
         try {
           if (request.method === 'POST' && request.url === '/api/admin/auth/email/request') {
             const challenge = await requestAdminEmailCode(superAdmin.id)
@@ -2874,7 +2873,7 @@ const httpServer =
             sendJson(response, 200, { ok: true, adminToken })
             return
           }
-          const adminRequest = await getAdminRequest(request)
+          const adminRequest = await getAdminRequest(request, authentication)
           if (!adminRequest) {
             sendJson(response, 403, { error: 'admin-session-required', message: 'A valid Admin session is required.' })
             return
