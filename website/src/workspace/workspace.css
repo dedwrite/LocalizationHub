@@ -10,6 +10,75 @@
   overflow: hidden;
 }
 
+/* Keep workspace scroll surfaces quiet and consistent with the dark UI.
+   The explicit width preserves a usable hit target while the Firefox fallback
+   keeps the thumb visible without forcing a layout change. */
+.workspace-shell .virtual-list,
+.workspace-shell .editor-scroll,
+.workspace-shell .inspector-content,
+.workspace-shell .overview-panel,
+.workspace-shell .workspace-body,
+.workspace-shell .mob-entries,
+.local-editor-page .entries-panel {
+  scrollbar-width: auto;
+  scrollbar-color: #514b73 #0d1117;
+  scrollbar-gutter: stable;
+}
+
+.workspace-shell .virtual-list::-webkit-scrollbar,
+.workspace-shell .editor-scroll::-webkit-scrollbar,
+.workspace-shell .inspector-content::-webkit-scrollbar,
+.workspace-shell .overview-panel::-webkit-scrollbar,
+.workspace-shell .workspace-body::-webkit-scrollbar,
+.workspace-shell .mob-entries::-webkit-scrollbar,
+.local-editor-page .entries-panel::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.workspace-shell .virtual-list::-webkit-scrollbar-track,
+.workspace-shell .editor-scroll::-webkit-scrollbar-track,
+.workspace-shell .inspector-content::-webkit-scrollbar-track,
+.workspace-shell .overview-panel::-webkit-scrollbar-track,
+.workspace-shell .workspace-body::-webkit-scrollbar-track,
+.workspace-shell .mob-entries::-webkit-scrollbar-track,
+.local-editor-page .entries-panel::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.workspace-shell .virtual-list::-webkit-scrollbar-thumb,
+.workspace-shell .editor-scroll::-webkit-scrollbar-thumb,
+.workspace-shell .inspector-content::-webkit-scrollbar-thumb,
+.workspace-shell .overview-panel::-webkit-scrollbar-thumb,
+.workspace-shell .workspace-body::-webkit-scrollbar-thumb,
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb,
+.local-editor-page .entries-panel::-webkit-scrollbar-thumb {
+  min-height: 42px;
+  background: #514b73;
+  border: 3px solid #0d1117;
+  border-radius: 999px;
+}
+
+.workspace-shell .virtual-list::-webkit-scrollbar-thumb:hover,
+.workspace-shell .editor-scroll::-webkit-scrollbar-thumb:hover,
+.workspace-shell .inspector-content::-webkit-scrollbar-thumb:hover,
+.workspace-shell .overview-panel::-webkit-scrollbar-thumb:hover,
+.workspace-shell .workspace-body::-webkit-scrollbar-thumb:hover,
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb:hover,
+.local-editor-page .entries-panel::-webkit-scrollbar-thumb:hover {
+  background: #6a6094;
+}
+
+.workspace-shell .virtual-list::-webkit-scrollbar-thumb:active,
+.workspace-shell .editor-scroll::-webkit-scrollbar-thumb:active,
+.workspace-shell .inspector-content::-webkit-scrollbar-thumb:active,
+.workspace-shell .overview-panel::-webkit-scrollbar-thumb:active,
+.workspace-shell .workspace-body::-webkit-scrollbar-thumb:active,
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb:active,
+.local-editor-page .entries-panel::-webkit-scrollbar-thumb:active {
+  background: #7b70ad;
+}
+
 .workspace-toolbar {
   display: flex;
   align-items: center;
