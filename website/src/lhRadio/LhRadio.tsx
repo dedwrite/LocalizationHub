@@ -1,4 +1,5 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer, useRef, useState, type CSSProperties } from 'react'
+import { useI18n } from '@localizationhub/i18n'
 import { fetchRadioCatalog, type PublicRadioTrack } from '../radioApi'
 import {
   createInitialState,
@@ -8,6 +9,7 @@ import {
   saveVolumePreference,
 } from './lhRadioState'
 import './LhRadio.css'
+import { playbackProgressPercent } from './lhRadioProgress'
 
 /*
  * The single global native LH Radio player. Mounted once at the app shell level
@@ -17,12 +19,14 @@ import './LhRadio.css'
  * Admin-configured `position`.
  */
 export default function LhRadio() {
+  const { t } = useI18n()
   const [state, dispatch] = useReducer(lhRadioReducer, undefined, createInitialState)
+  const [taglineIndex, setTaglineIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
   const seekRef = useRef<HTMLInputElement>(null)
   const currentTimeRef = useRef<HTMLSpanElement>(null)
   const durationRef = useRef<HTMLSpanElement>(null)
-  const progressRef = useRef<HTMLDivElement>(null)
+  const progressRef = useRef<HTMLSpanElement>(null)
   const seekingRef = useRef(false)
 
   const isAppSurface = typeof window !== 'undefined' && window.location.pathname.startsWith('/app')
@@ -55,11 +59,22 @@ export default function LhRadio() {
     }
     if (currentTimeRef.current) currentTimeRef.current.textContent = formatTime(audio?.currentTime ?? 0)
     if (durationRef.current) durationRef.current.textContent = formatTime(audio?.duration ?? 0)
-    if (progressRef.current && audio) {
-      const ratio = audio.duration > 0 ? audio.currentTime / audio.duration : 0
-      progressRef.current.style.width = `${Math.min(100, Math.max(0, ratio * 100))}%`
+    if (progressRef.current) {
+      const percent = audio ? playbackProgressPercent(audio.currentTime, audio.duration) : 0
+      progressRef.current.style.setProperty('--lh-radio-progress', `${percent}%`)
     }
   }
+
+  useEffect(() => {
+    if (!state.isOpen) {
+      setTaglineIndex(0)
+      return
+    }
+    const timer = window.setInterval(() => {
+      setTaglineIndex((current) => (current + 1) % 4)
+    }, 5000)
+    return () => window.clearInterval(timer)
+  }, [state.isOpen])
 
   function playTrack(trackId: string) {
     const audio = audioRef.current
@@ -107,6 +122,7 @@ export default function LhRadio() {
   // Keep the structural audio element in sync with selection and preferences.
   useEffect(() => {
     const audio = audioRef.current
+    progressRef.current?.style.setProperty('--lh-radio-progress', '0%')
     if (!audio || !currentTrack) return
     const url = new URL(currentTrack.audioUrl, window.location.origin).href
     if (audio.src !== url) {
@@ -191,7 +207,7 @@ export default function LhRadio() {
         <header className="lh-radio-panel-head">
           <div className="lh-radio-panel-title">
             <span className="lh-radio-kicker">LH RADIO</span>
-            <span className="lh-radio-sub">LOCALIZATIONHUB / FOCUS MODE</span>
+            <span key={taglineIndex} className="lh-radio-sub lh-radio-tagline" data-i18n-content aria-hidden="true">{t((['radio.player.tagline.one', 'radio.player.tagline.two', 'radio.player.tagline.three', 'radio.player.tagline.four'] as const)[taglineIndex])}</span>
           </div>
           <button type="button" className="lh-radio-icon-btn" onClick={() => dispatch({ type: 'close' })} aria-label="Collapse LH Radio">
             ×
@@ -297,22 +313,26 @@ export default function LhRadio() {
       {/* ---- Collapsed capsule ---- */}
       <div className="lh-radio-capsule">
         <button type="button" className="lh-radio-capsule-main" onClick={() => dispatch({ type: 'open' })} aria-label="Open LH Radio">
-          <span className="lh-radio-disc lh-radio-disc-small" aria-hidden="true">
-            {discArt ? (
-              <img className="lh-radio-disc-art" src={discArt} alt="" />
-            ) : (
-              <span className="lh-radio-disc-fallback">♪</span>
-            )}
-            <span className="lh-radio-disc-hub" />
+          <span
+            ref={progressRef}
+            className="lh-radio-disc-progress"
+            style={{ '--lh-radio-progress': '0%' } as CSSProperties}
+            aria-hidden="true"
+          >
+            <span className="lh-radio-disc lh-radio-disc-small">
+              {discArt ? (
+                <img className="lh-radio-disc-art" src={discArt} alt="" />
+              ) : (
+                <span className="lh-radio-disc-fallback">♪</span>
+              )}
+              <span className="lh-radio-disc-hub" />
+            </span>
           </span>
           <span className="lh-radio-capsule-text">
             <strong className="lh-radio-capsule-title" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.title ?? 'LH RADIO'}</strong>
             <small className="lh-radio-capsule-artist" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.artist ?? 'FOCUS MODE'}</small>
           </span>
         </button>
-        <span className="lh-radio-capsule-progress" aria-hidden="true">
-          <span ref={progressRef} className="lh-radio-capsule-progress-fill" />
-        </span>
         <button type="button" className="lh-radio-capsule-btn" onClick={previous} aria-label="Previous track">◀</button>
         <button type="button" className="lh-radio-capsule-btn lh-radio-capsule-play" onClick={togglePlay} aria-label={state.isPlaying ? 'Pause' : 'Play'}>
           {state.isPlaying ? '❚❚' : '▶'}

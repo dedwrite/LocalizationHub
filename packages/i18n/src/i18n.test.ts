@@ -37,4 +37,20 @@ describe('LocalizationHub UI message catalog', () => {
     expect(translateUiText('ar', '5 — Untranslated')).toBe('5 — غير مترجم')
     expect(translateUiText('ar', 'Detected Unity · 86 confidence')).toBe('تم اكتشاف Unity · ثقة 86%')
   })
+
+  it('keeps Radio taglines bilingual and in the intended order', () => {
+    const keys = ['radio.player.tagline.one', 'radio.player.tagline.two', 'radio.player.tagline.three', 'radio.player.tagline.four'] as const
+    expect(keys.map((key) => translate('en', key))).toEqual([
+      'LOCALIZATIONHUB / JUST ONE MORE STRING',
+      "LOCALIZATIONHUB / DON'T BREAK THE TOKENS",
+      'LOCALIZATIONHUB / DEFINITELY THE LAST STRING',
+      'LOCALIZATIONHUB / PLEASE KEEP THE TAGS',
+    ])
+    expect(keys.map((key) => translate('ar', key))).toEqual([
+      'LOCALIZATIONHUB / بس سطر زيادة',
+      'LOCALIZATIONHUB / لا تكسر التوكنز',
+      'LOCALIZATIONHUB / آخر سطر… أكيد',
+      'LOCALIZATIONHUB / تكفى خلّ التاقات',
+    ])
+  })
 })
