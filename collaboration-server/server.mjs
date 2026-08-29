@@ -66,16 +66,15 @@ import {
   sendVerificationEmail,
 } from './email-delivery.mjs'
 import {
-  AdminSecurityError,
   authenticateAdminSession,
   beginTotpEnrollment,
-  createAdminSession,
+  confirmAdminTotpAndCreateSession,
+  getAdminTotpStatus,
   getSuperAdmin,
   hasRecentAdminEmailVerification,
   requestAdminEmailCode,
   revokeAdminSession,
   verifyAdminEmailCode,
-  verifyAdminTotp,
   changeProjectMemberRole,
   deleteProject,
   deleteUser,
@@ -100,6 +99,7 @@ import {
   verifyUserEmail,
   writeAdminAudit,
 } from './admin.mjs'
+import { formatAdminRequestError } from './admin-http-errors.mjs'
 import {
   EMAIL_VERIFICATION_PAGE,
 } from './email-verification-page.mjs'
@@ -107,7 +107,6 @@ import {
 import {
   ARTWORK_MAX_BYTES,
   MP3_MAX_BYTES,
-  RadioValidationError,
   createRadioTrack,
   deleteRadioTrack,
   getPublishedRadioArtwork,
@@ -3055,6 +3054,14 @@ const httpServer =
             sendJson(response, 200, { ok: true })
             return
           }
+          if (request.method === 'GET' && request.url === '/api/admin/auth/totp/status') {
+            if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
+              sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
+              return
+            }
+            sendJson(response, 200, await getAdminTotpStatus(superAdmin.id))
+            return
+          }
           if (request.method === 'POST' && request.url === '/api/admin/auth/totp/enroll') {
             if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
               sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
@@ -3070,8 +3077,7 @@ const httpServer =
               return
             }
             const body = await readJsonBody(request)
-            await verifyAdminTotp(superAdmin.id, body?.code)
-            const adminToken = await createAdminSession(superAdmin.id)
+            const adminToken = await confirmAdminTotpAndCreateSession(superAdmin.id, body?.code)
             sendJson(response, 200, { ok: true, adminToken })
             return
           }
@@ -3288,20 +3294,9 @@ const httpServer =
 
           sendJson(response, 404, { error: 'not-found' })
         } catch (error) {
-          if (error instanceof AdminSecurityError) {
-            sendJson(response, 403, { error: error.code, message: error.message })
-            return
-          }
-          if (error instanceof RadioValidationError) {
-            sendJson(response, 400, { error: error.code, message: error.message })
-            return
-          }
-          if (error?.code === 'payload-too-large') {
-            sendJson(response, 413, { error: 'payload-too-large', message: 'Upload exceeds the size limit.' })
-            return
-          }
-          console.error('Admin request failed:', error)
-          sendJson(response, 500, { error: 'internal-error' })
+          const failure = formatAdminRequestError(error)
+          if (failure.unexpected) console.error('Admin request failed:', error)
+          sendJson(response, failure.status, failure.body)
         }
         return
       }

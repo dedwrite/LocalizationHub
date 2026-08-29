@@ -134,6 +134,21 @@
   margin: 14px 0;
 }
 
+.admin-mfa-status {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid rgba(134, 239, 172, 0.24);
+  background: rgba(22, 101, 52, 0.12);
+  color: var(--admin-text);
+}
+
+.admin-mfa-status span {
+  color: var(--admin-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .admin-qr-box {
   display: inline-block;
   padding: 14px;

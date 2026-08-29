@@ -66,7 +66,10 @@ const radioTracks = {
 
 const radioMetrics = { track_count: 2, published_count: 1, total_audio_bytes: 12345, total_duration_seconds: 180 }
 
-async function mockAdminApi(page: Page) {
+async function mockAdminApi(
+  page: Page,
+  options: { totpStatus?: { enrolled: boolean; confirmed: boolean } } = {},
+) {
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace(/^\/api\/admin\/?/, '')
@@ -97,6 +100,7 @@ async function mockAdminApi(page: Page) {
     }
     let body: unknown = {}
     if (path === '') body = dashboard
+    else if (path === 'auth/totp/status') body = options.totpStatus ?? { enrolled: false, confirmed: false }
     else if (path === 'auth') body = {}
     else if (path.startsWith('radio/metrics')) body = radioMetrics
     else if (path.startsWith('radio/tracks')) body = radioTracks
@@ -335,5 +339,18 @@ test.describe('admin TOTP enrollment QR', () => {
     expect(await page.locator('body').innerText()).not.toContain('otpauth://totp/')
     expect(await page.locator('body').innerText()).not.toContain('JBSWY3DPEHPK3PXP')
     await expect(page.locator('.admin-qr-box svg')).toHaveCount(0)
+  })
+
+  test('already-enrolled state uses the existing Authenticator without offering setup', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, { totpStatus: { enrolled: true, confirmed: true } })
+    await signInOnly(page)
+    await page.goto('/app/admin')
+    await page.getByLabel('Email code').fill('123456')
+    await page.getByRole('button', { name: 'Verify email' }).click()
+    await expect(page.getByText('Authenticator already configured')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Setup Authenticator' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Continue Authenticator setup' })).toHaveCount(0)
+    await expect(page.getByLabel('Authenticator code')).toBeVisible()
   })
 })

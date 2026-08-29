@@ -23,6 +23,7 @@ import {
   getAdminProjects,
   getAdminUser,
   getAdminUsers,
+  getAdminTotpStatus,
   getAuditLog,
   getRadioMetricsAdmin,
   getStorageMetrics,
@@ -194,6 +195,7 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
   const [code, setCode] = useState('')
   const [totp, setTotp] = useState('')
   const [setup, setSetup] = useState<{ uri: string; secret: string } | null>(null)
+  const [totpStatus, setTotpStatus] = useState<{ enrolled: boolean; confirmed: boolean } | null>(null)
   const [showKey, setShowKey] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -232,20 +234,42 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
             <button
               className="admin-btn admin-btn-primary"
               disabled={busy || code.length !== 6}
-              onClick={() => handle(() => verifyEmailCode(code).then(() => { setMessage('Email verified.'); setStep('totp') }))}
+              onClick={() => handle(async () => {
+                await verifyEmailCode(code)
+                const status = await getAdminTotpStatus()
+                setTotpStatus(status)
+                setMessage('Email verified.')
+                setStep('totp')
+              })}
             >
               Verify email
             </button>
           </>
         ) : (
           <>
-            <button
-              className="admin-btn"
-              disabled={busy || Boolean(setup)}
-              onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => { setSetup(enrollment); setShowKey(false) }))}
-            >
-              {setup ? 'Authenticator configured' : 'Setup Authenticator'}
-            </button>
+            {totpStatus?.confirmed ? (
+              <div className="admin-mfa-status" role="status">
+                <strong>Authenticator already configured</strong>
+                <span>Enter the current six-digit code from your existing Authenticator app.</span>
+              </div>
+            ) : (
+              <>
+                {totpStatus?.enrolled && !setup && (
+                  <p className="admin-lede">Authenticator setup is incomplete. Continue setup to generate a fresh QR code.</p>
+                )}
+                <button
+                  className="admin-btn"
+                  disabled={busy || Boolean(setup)}
+                  onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => {
+                    setSetup(enrollment)
+                    setTotpStatus({ enrolled: true, confirmed: false })
+                    setShowKey(false)
+                  }))}
+                >
+                  {setup ? 'Authenticator setup ready' : totpStatus?.enrolled ? 'Continue Authenticator setup' : 'Setup Authenticator'}
+                </button>
+              </>
+            )}
             {setup && (
               <div className="admin-qr">
                 <p className="admin-lede">Scan with Google Authenticator:</p>

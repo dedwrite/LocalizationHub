@@ -60,6 +60,11 @@ export type AdminDashboard = {
   recentActivity: AdminAuditLog[]
 }
 
+export type AdminTotpStatus = {
+  enrolled: boolean
+  confirmed: boolean
+}
+
 const ADMIN_TOKEN_KEY = 'localizationhub.admin.session'
 
 function adminToken() {
@@ -124,6 +129,9 @@ export async function requestEmailCode() {
 }
 export async function verifyEmailCode(code: string) {
   return api('/api/admin/auth/email/verify', { method: 'POST', body: JSON.stringify({ code }) })
+}
+export async function getAdminTotpStatus() {
+  return api<AdminTotpStatus>('/api/admin/auth/totp/status')
 }
 export async function beginTotpEnrollment() {
   return api<{ secret: string; uri: string }>('/api/admin/auth/totp/enroll', { method: 'POST' })
