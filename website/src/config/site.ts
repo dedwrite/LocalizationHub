@@ -1,9 +1,9 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.7.0',
-  releaseTitle: 'Game Text Extraction',
+  version: '0.8.0',
+  releaseTitle: 'Web Experience Update',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.8.0',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*

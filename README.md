@@ -6,10 +6,14 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.7.0 — Game Text Extraction**
+**LocalizationHub v0.8.0 — Web Experience Update**
 
-v0.7.0 adds read-only extraction from supported game-engine projects, alongside everything already in the workspace:
+v0.8.0 refreshes the browser experience and adds first-party LH Radio and smarter track administration, while preserving the read-only Game Text Extraction introduced in v0.7:
 
+- **Native LH Radio** — Admin-managed first-party MP3 playback with a persistent custom player across the public website and Web App.
+- **Smarter Radio ingestion** — ID3/audio analysis, embedded artwork recovery, metadata-only Spotify/YouTube suggestions, Smart Match evidence, and optional ffmpeg optimization when available.
+- **Web Experience** — refreshed landing pages, Cloud/Local project flows, responsive Web App surfaces, and a polished Translation Workspace with context and protected-token safety visible.
+- **Workspace polish** — RTL/Arabic presentation, SPA navigation with persistent Radio playback, responsive/mobile behavior, accessibility hardening, and dark-theme scrollbars.
 - **Game Text Extraction** — point LocalizationHub at a Godot, Unreal, or Unity project folder, scan it read-only, review the discovered text, and create a LocalizationHub Project with dialogue context (speaker/listener/gender) and protected-token preservation.
 - **Desktop** — a structured localization editor for local `.lhproj` projects with workflow states, QA tools, glossary and Translation Memory, protected-token validation, and optional Cloud integration.
 - **Web (desktop/tablet)** — a three-pane Entries / Translator / Inspector workspace in the browser with Cloud Projects, browser-local import/export, and the same workflow and QA tooling.
@@ -420,8 +424,8 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.7.0**
+**LocalizationHub v0.8.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.7.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.7.0).
+Download the current release: [LocalizationHub v0.8.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.8.0).
