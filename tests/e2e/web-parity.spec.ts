@@ -60,6 +60,18 @@ test.describe('web workspace parity', () => {
     await expect(page.locator('.editor-pane')).toBeVisible()
     await expect(page.locator('.inspector-pane')).toBeVisible()
     await expect(page.locator('.entry-key').filter({ hasText: 'menu.start' })).toBeVisible()
+    await expect(page.locator('.editor-content-column')).toBeVisible()
+    await expect(page.locator('.section-label').filter({ hasText: 'Reference' })).toBeVisible()
+    await expect(page.locator('.translation-section')).toBeVisible()
+  })
+
+  test('entry rows expose status semantics and keyboard selection', async ({ page }) => {
+    await page.goto('/app/projects/proj-1')
+    const row = page.locator('.entry-row[tabindex="0"]').first()
+    await expect(row).toHaveAttribute('aria-label', /Translated|Untranslated|Review/)
+    await row.focus()
+    await page.keyboard.press('Enter')
+    await expect(row).toHaveClass(/selected/)
   })
 
   test('shows entry counts and filters', async ({ page }) => {
@@ -76,6 +88,16 @@ test.describe('web workspace parity', () => {
     await page.getByRole('button', { name: 'Entries' }).click()
     await expect(page.locator('.entries-pane')).toHaveCount(0)
     await page.getByRole('button', { name: 'Entries' }).click()
+    await expect(page.locator('.entries-pane')).toBeVisible()
+  })
+
+  test('focus mode keeps the editor centered while reducing distractions', async ({ page }) => {
+    await page.goto('/app/projects/proj-1')
+    await page.getByRole('button', { name: 'Focus' }).click()
+    await expect(page.locator('.workspace-shell')).toHaveClass(/focus-mode/)
+    await expect(page.locator('.entries-pane')).toHaveCount(0)
+    await expect(page.locator('.inspector-pane')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Exit Focus' }).click()
     await expect(page.locator('.entries-pane')).toBeVisible()
   })
 

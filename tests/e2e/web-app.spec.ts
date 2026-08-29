@@ -49,7 +49,15 @@ test.describe('public routing and accessibility', () => {
     await page.goto('/#context')
     await expect(page.getByRole('heading', { name: 'The words arrive with their guardrails.' })).toBeVisible()
     await expect(page.getByText('TOKENS VALID')).toBeVisible()
-    await expect(page.getByText('{item_name}').first()).toBeVisible()
+    await expect(page.getByText('{new_strings}').first()).toBeVisible()
+    await expect(page.getByText('Friday · 11:59 PM')).toBeVisible()
+  })
+
+  test('Landing FAQ reflects the current v0.7 release', async ({ page }) => {
+    await page.goto('/#faq')
+    const answer = page.locator('.faq-list details').first().locator('p')
+    await expect(answer).toContainText('v0.7.0')
+    await expect(answer).not.toContainText('v0.4.0')
   })
 
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
@@ -83,6 +91,24 @@ test.describe('Visual Batch 2 project surfaces', () => {
     await expect(page.getByText('No Cloud Projects yet.')).toBeVisible()
     await expect(page.getByRole('button', { name: '+ Create your first project' })).toBeVisible()
     await expect(page.locator('.empty-graphic')).toBeVisible()
+  })
+
+  test('gives a single real project useful context and actions', async ({ page }) => {
+    await mockCloudWorkspace(page, [{ id: 'p1', name: 'RPG Localization', role: 'owner', revision: 8, updatedAt: '2026-08-28T09:00:00Z', sourceFileName: 'dialogue.json', entryCount: 120, translatedCount: 30, memberCount: 2 }])
+    await page.goto('/app/projects')
+    await expect(page.locator('.single-project-layout')).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Project quick actions' })).toContainText('30 of 120 entries translated')
+    await expect(page.getByRole('button', { name: 'Open project' })).toBeVisible()
+  })
+
+  test('uses a balanced grid for several real projects', async ({ page }) => {
+    const projects = Array.from({ length: 4 }, (_, index) => ({ id: `p${index}`, name: `Project ${index + 1}`, role: 'editor', revision: index + 1, updatedAt: '2026-08-28T09:00:00Z', sourceFileName: `file-${index}.json`, entryCount: 40 + index, translatedCount: index * 4, memberCount: 2 }))
+    await mockCloudWorkspace(page, projects)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/app/projects')
+    await expect(page.locator('.project-layout:not(.single-project-layout) .project-card')).toHaveCount(4)
+    const widths = await page.locator('.project-card').evaluateAll((cards) => cards.map((card) => Math.round((card as HTMLElement).getBoundingClientRect().width)))
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(2)
   })
 })
 

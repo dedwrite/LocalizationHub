@@ -112,7 +112,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
         <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
         <span className="result-count">{loading ? 'SYNCING' : `${filtered.length} OF ${projects.length} PROJECTS`}</span>
       </div>
-      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} />)}</div>}
+      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
     <MobileNav />
@@ -136,6 +136,18 @@ function ProjectCard({ project, onOpen }: { project: ProjectSummary; onOpen: () 
       <small>Updated {new Date(project.updatedAt).toLocaleDateString()}</small>
     </button>
   )
+}
+
+function ProjectSupportPanel({ project, onOpen, onNew }: { project: ProjectSummary; onOpen: () => void; onNew: () => void }) {
+  const total = project.entryCount ?? 0
+  const translated = project.translatedCount ?? 0
+  return <aside className="project-support" aria-label="Project quick actions">
+    <span className="support-kicker">ONE PROJECT / KEEP MOVING</span>
+    <h2>A clear next step.</h2>
+    <p>Open the editor to continue this project, or keep the next file on-device until it is ready for Cloud.</p>
+    <div className="support-facts"><div><span>Source</span><strong>{project.sourceFileName || 'LocalizationHub Project'}</strong></div><div><span>Coverage</span><strong>{translated.toLocaleString()} of {total.toLocaleString()} entries translated</strong></div><div><span>Access</span><strong>{friendlyStatus(project.role)} · Rev {project.revision}</strong></div></div>
+    <div className="support-actions"><button className="primary-button" onClick={onOpen}>Open project <span aria-hidden="true">↗</span></button><button onClick={onNew}>+ New Cloud Project</button><button onClick={() => navigate('/app/local')}>Open Local Project</button></div>
+  </aside>
 }
 
 function MobileNav() { const onLocal = window.location.pathname === '/app/local'; return <nav className="mobile-nav" aria-label="Projects"><button className={onLocal ? '' : 'active'} aria-current={onLocal ? undefined : 'page'} onClick={() => navigate('/app/projects')}>Cloud projects</button><button className={onLocal ? 'active' : ''} aria-current={onLocal ? 'page' : undefined} onClick={() => navigate('/app/local')}>Local browser</button></nav> }
