@@ -6,26 +6,44 @@ import type {
   AdminProject,
   AdminSession,
   AdminUser,
+  RadioAudioAnalysis,
+  RadioImportedMetadata,
+  RadioSmartMatch,
+  RadioMetrics,
+  RadioTrack,
+  RadioTrackInput,
 } from './adminApi'
 import {
   beginTotpEnrollment,
   changeProjectRoleAdmin,
   confirmTotp,
+  createRadioTrackAdmin,
   deleteProjectAdmin,
+  deleteRadioTrackAdmin,
   deleteUserAdmin,
   getAdminDashboard,
   getAdminProject,
   getAdminProjects,
   getAdminUser,
   getAdminUsers,
+  getAdminTotpStatus,
   getAuditLog,
+  getRadioMetricsAdmin,
   getStorageMetrics,
   getUserSessions,
   hasAdminSession,
   hasNormalSession,
+  listRadioTracksAdmin,
+  analyzeRadioAudioAdmin,
+  analyzeExistingRadioTrackAdmin,
+  importRadioArtworkAdmin,
+  optimizeRadioAudioAdmin,
+  resolveRadioMetadataAdmin,
+  smartMatchRadioMetadataAdmin,
   logoutAdmin,
   reconfirmTotp,
   removeProjectMemberAdmin,
+  reorderRadioTracksAdmin,
   requestEmailCode,
   revokeAllSessionsAdmin,
   revokeSessionAdmin,
@@ -33,12 +51,15 @@ import {
   transferOwnershipAdmin,
   unsuspendUserAdmin,
   unverifyUserEmailAdmin,
+  updateRadioTrackAdmin,
+  uploadRadioArtworkAdmin,
+  uploadRadioAudioAdmin,
   verifyEmailCode,
   verifyUserEmailAdmin,
 } from './adminApi'
 import './admin-console.css'
 
-type Page = 'security' | 'dashboard' | 'users' | 'user-detail' | 'projects' | 'project-detail' | 'audit'
+type Page = 'security' | 'dashboard' | 'users' | 'user-detail' | 'projects' | 'project-detail' | 'audit' | 'radio'
 type RunAction = (action: () => Promise<unknown>) => Promise<void>
 type Navigate = (to: string) => void
 
@@ -59,6 +80,7 @@ function parseRoute(pathname: string): { page: Page; id?: string } {
   if (parts[0] === 'users') return parts[1] ? { page: 'user-detail', id: parts[1] } : { page: 'users' }
   if (parts[0] === 'projects') return parts[1] ? { page: 'project-detail', id: parts[1] } : { page: 'projects' }
   if (parts[0] === 'audit') return { page: 'audit' }
+  if (parts[0] === 'radio') return { page: 'radio' }
   return { page: 'dashboard' }
 }
 
@@ -182,6 +204,7 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
   const [code, setCode] = useState('')
   const [totp, setTotp] = useState('')
   const [setup, setSetup] = useState<{ uri: string; secret: string } | null>(null)
+  const [totpStatus, setTotpStatus] = useState<{ enrolled: boolean; confirmed: boolean } | null>(null)
   const [showKey, setShowKey] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -220,20 +243,42 @@ function SecurityGate({ onSuccess }: { onSuccess: () => void }) {
             <button
               className="admin-btn admin-btn-primary"
               disabled={busy || code.length !== 6}
-              onClick={() => handle(() => verifyEmailCode(code).then(() => { setMessage('Email verified.'); setStep('totp') }))}
+              onClick={() => handle(async () => {
+                await verifyEmailCode(code)
+                const status = await getAdminTotpStatus()
+                setTotpStatus(status)
+                setMessage('Email verified.')
+                setStep('totp')
+              })}
             >
               Verify email
             </button>
           </>
         ) : (
           <>
-            <button
-              className="admin-btn"
-              disabled={busy || Boolean(setup)}
-              onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => { setSetup(enrollment); setShowKey(false) }))}
-            >
-              {setup ? 'Authenticator configured' : 'Setup Authenticator'}
-            </button>
+            {totpStatus?.confirmed ? (
+              <div className="admin-mfa-status" role="status">
+                <strong>Authenticator already configured</strong>
+                <span>Enter the current six-digit code from your existing Authenticator app.</span>
+              </div>
+            ) : (
+              <>
+                {totpStatus?.enrolled && !setup && (
+                  <p className="admin-lede">Authenticator setup is incomplete. Continue setup to generate a fresh QR code.</p>
+                )}
+                <button
+                  className="admin-btn"
+                  disabled={busy || Boolean(setup)}
+                  onClick={() => handle(() => beginTotpEnrollment().then((enrollment) => {
+                    setSetup(enrollment)
+                    setTotpStatus({ enrolled: true, confirmed: false })
+                    setShowKey(false)
+                  }))}
+                >
+                  {setup ? 'Authenticator setup ready' : totpStatus?.enrolled ? 'Continue Authenticator setup' : 'Setup Authenticator'}
+                </button>
+              </>
+            )}
             {setup && (
               <div className="admin-qr">
                 <p className="admin-lede">Scan with Google Authenticator:</p>
@@ -924,6 +969,16 @@ function AuditView() {
             <option value="admin.project.member_role_change">Role changed</option>
             <option value="admin.project.member_remove">Member removed</option>
             <option value="admin.project.ownership_transfer">Ownership transferred</option>
+            <option value="admin.radio.track_create">Radio track created</option>
+            <option value="admin.radio.track_update">Radio track updated</option>
+            <option value="admin.radio.track_publish">Radio track published</option>
+            <option value="admin.radio.track_unpublish">Radio track unpublished</option>
+            <option value="admin.radio.track_reorder">Radio tracks reordered</option>
+            <option value="admin.radio.track_delete">Radio track deleted</option>
+            <option value="admin.radio.metadata_import">Radio metadata imported</option>
+            <option value="admin.radio.artwork_import">Radio artwork imported</option>
+            <option value="admin.radio.audio_analyze">Radio audio analyzed</option>
+            <option value="admin.radio.audio_optimize">Radio audio optimized</option>
           </select>
         </label>
       </div>
@@ -961,6 +1016,470 @@ function AuditView() {
       )}
       <Pagination total={total} offset={offset} onChange={setOffset} />
     </section>
+  )
+}
+
+function formatDuration(seconds?: number | null): string {
+  if (!seconds || !Number.isFinite(seconds) || seconds <= 0) return '—'
+  const total = Math.round(seconds)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  if (m >= 60) return `${Math.floor(m / 60)}h ${m % 60}m`
+  return `${m}m ${s}s`
+}
+
+type RadioModalState = { mode: 'add' } | { mode: 'edit'; track: RadioTrack }
+
+function formatBitrate(value?: number | null): string {
+  return Number.isFinite(value) && value! > 0 ? `${value} kbps` : '—'
+}
+
+function formatSampleRate(value?: number | null): string {
+  return Number.isFinite(value) && value! > 0 ? `${(value! / 1000).toFixed(1)} kHz` : '—'
+}
+
+function base64File(data: string, mime: string, filename: string): File {
+  const binary = atob(data)
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+  return new File([bytes], filename, { type: mime })
+}
+
+async function fetchRadioAdminData() {
+  const [trackResult, metricResult] = await Promise.allSettled([
+    listRadioTracksAdmin(),
+    getRadioMetricsAdmin(),
+  ])
+  const errors: string[] = []
+  if (trackResult.status === 'rejected') {
+    errors.push(`Track catalog: ${trackResult.reason instanceof Error ? trackResult.reason.message : 'Request failed.'}`)
+  }
+  if (metricResult.status === 'rejected') {
+    errors.push(`Metrics: ${metricResult.reason instanceof Error ? metricResult.reason.message : 'Request failed.'}`)
+  }
+  return {
+    tracks: trackResult.status === 'fulfilled' ? trackResult.value.tracks : null,
+    metrics: metricResult.status === 'fulfilled' ? metricResult.value : null,
+    error: errors.join(' '),
+  }
+}
+
+function RadioView({ run }: { run: RunAction }) {
+  const [tracks, setTracks] = useState<RadioTrack[]>([])
+  const [metrics, setMetrics] = useState<RadioMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
+  const [modal, setModal] = useState<RadioModalState | null>(null)
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+
+  async function load() {
+    setLoading(true)
+    setError('')
+    try {
+      const result = await fetchRadioAdminData()
+      if (result.tracks) setTracks(result.tracks)
+      if (result.metrics) setMetrics(result.metrics)
+      setError(result.error)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    fetchRadioAdminData()
+      .then((result) => {
+        if (alive) {
+          if (result.tracks) setTracks(result.tracks)
+          if (result.metrics) setMetrics(result.metrics)
+          setError(result.error)
+        }
+      })
+      .catch((e) => {
+        if (alive) setError((e as Error).message)
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  async function act(action: () => Promise<unknown>) {
+    setActionError('')
+    try {
+      await run(action)
+      await load()
+    } catch (e) {
+      setActionError((e as Error).message)
+    }
+  }
+
+  function move(trackId: string, direction: -1 | 1) {
+    const index = tracks.findIndex((t) => t.id === trackId)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= tracks.length) return
+    const next = [...tracks]
+    const [moved] = next.splice(index, 1)
+    next.splice(target, 0, moved)
+    setTracks(next)
+    act(() => reorderRadioTracksAdmin(next.map((t) => t.id)))
+  }
+
+  async function togglePublish(track: RadioTrack) {
+    const input: RadioTrackInput = {
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      position: track.position,
+      published: !track.published,
+    }
+    await act(() => updateRadioTrackAdmin(track.id, input))
+  }
+
+  function requestDelete(track: RadioTrack) {
+    setConfirm({
+      title: 'Delete track',
+      body: `Permanently delete "${track.title}" and its audio and artwork? This cannot be undone.`,
+      confirmLabel: 'Delete track',
+      danger: true,
+      onConfirm: () => act(() => deleteRadioTrackAdmin(track.id)),
+    })
+  }
+
+  return (
+    <section className="admin-section">
+      <div className="admin-detail-head">
+        <div>
+          <h2>LH Radio Library</h2>
+          <p className="admin-lede">Manage the first-party radio catalog published across the public site and Web App.</p>
+        </div>
+        <button className="admin-btn admin-btn-primary" onClick={() => setModal({ mode: 'add' })}>+ Add track</button>
+      </div>
+
+      {metrics && (
+        <div className="metric-cards" style={{ marginBottom: 18 }}>
+          <MetricCard label="Tracks" value={metrics.track_count} />
+          <MetricCard label="Published" value={metrics.published_count} />
+          <MetricCard label="Audio storage" value={formatBytes(metrics.total_audio_bytes)} />
+          <MetricCard label="Total duration" value={formatDuration(metrics.total_duration_seconds)} />
+        </div>
+      )}
+
+      <ActionError message={actionError} />
+
+      {error && (
+        <div className="admin-inline-error" role="alert">
+          <div>
+            <strong>Radio data could not be loaded completely.</strong>
+            <span>{error}</span>
+          </div>
+          <button type="button" className="admin-btn" disabled={loading} onClick={load}>Retry Radio library</button>
+        </div>
+      )}
+
+      {loading ? (
+        <p className="admin-message">Loading…</p>
+      ) : !error && tracks.length === 0 ? (
+        <div className="admin-empty">
+          <strong>No tracks yet.</strong>
+          <p>Add your first track to start the radio.</p>
+        </div>
+      ) : tracks.length > 0 ? (
+        <div className="admin-table-wrap" tabIndex={0}>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Cover</th>
+                <th>Track</th>
+                <th>Album</th>
+                <th>Duration</th>
+                <th>Audio</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {tracks.map((track, index) => (
+                <tr key={track.id}>
+                  <td>{track.position}</td>
+                  <td>
+                    {track.artworkMime ? (
+                      <img
+                        className="radio-cover-thumb"
+                        src={`/api/radio/tracks/${track.id}/artwork`}
+                        alt=""
+                        width={40}
+                        height={40}
+                      />
+                    ) : (
+                      <span className="radio-cover-empty" aria-hidden="true">♪</span>
+                    )}
+                  </td>
+                  <td>
+                    <strong>{track.title}</strong>
+                    <span className="radio-track-artist"> · {track.artist}</span>
+                  </td>
+                  <td>{track.album || '—'}</td>
+                  <td>{formatDuration(track.durationSeconds)}</td>
+                  <td><span>{track.audioSizeBytes > 0 ? formatBytes(track.audioSizeBytes) : '—'}</span>{track.audioBitrateKbps && <small className="radio-audio-meta">{formatBitrate(track.audioBitrateKbps)} · {track.audioOptimized ? 'Optimized' : 'Original'}</small>}</td>
+                  <td>
+                    <span className={`radio-status ${track.published ? 'is-published' : ''}`}>
+                      {track.published ? 'Published' : 'Unpublished'}
+                    </span>
+                  </td>
+                  <td className="member-actions">
+                    <button className="admin-btn" onClick={() => move(track.id, -1)} disabled={index === 0} aria-label={`Move ${track.title} up`}>↑</button>
+                    <button className="admin-btn" onClick={() => move(track.id, 1)} disabled={index === tracks.length - 1} aria-label={`Move ${track.title} down`}>↓</button>
+                    <button className="admin-btn" onClick={() => setModal({ mode: 'edit', track })}>Edit</button>
+                    <button className="admin-btn" onClick={() => togglePublish(track)}>
+                      {track.published ? 'Unpublish' : 'Publish'}
+                    </button>
+                    {track.audioSizeBytes > 0 && (!track.durationSeconds || !track.audioBitrateKbps) && <button className="admin-btn" onClick={() => act(() => analyzeExistingRadioTrackAdmin(track.id))}>Analyze</button>}
+                    <button className="admin-btn admin-btn-danger" onClick={() => requestDelete(track)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+
+      {modal && <RadioTrackModal state={modal} onClose={() => setModal(null)} onSaved={load} run={run} />}
+      {confirm && <ConfirmModal state={confirm} onCancel={() => setConfirm(null)} />}
+    </section>
+  )
+}
+
+function RadioTrackModal({ state, onClose, onSaved, run }: { state: RadioModalState; onClose: () => void; onSaved: () => Promise<void>; run: RunAction }) {
+  const editing = state.mode === 'edit' ? state.track : null
+  const [mode, setMode] = useState<'upload' | 'link'>('upload')
+  const [title, setTitle] = useState(editing?.title ?? '')
+  const [artist, setArtist] = useState(editing?.artist ?? '')
+  const [album, setAlbum] = useState(editing?.album ?? '')
+  const [editedFields, setEditedFields] = useState({ title: Boolean(editing), artist: Boolean(editing), album: Boolean(editing) })
+  const [position, setPosition] = useState(String(editing?.position ?? 0))
+  const [published, setPublished] = useState(editing?.published ?? false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [linkMetadata, setLinkMetadata] = useState<RadioImportedMetadata | null>(null)
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [analysis, setAnalysis] = useState<RadioAudioAnalysis | null>(null)
+  const [smartMatch, setSmartMatch] = useState<RadioSmartMatch | null>(null)
+  const [optimizedProfile, setOptimizedProfile] = useState<string | null>(null)
+  const [optimization, setOptimization] = useState<{ recommended: boolean; reason: string; targetBitrateKbps?: number; estimatedBytes?: number; estimatedSavingsPercent?: number } | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(editing?.artworkMime ? `/api/radio/tracks/${editing.id}/artwork` : null)
+  const [coverSourceUrl, setCoverSourceUrl] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!linkMetadata || !analysis) return
+    let active = true
+    smartMatchRadioMetadataAdmin(linkMetadata, analysis)
+      .then((result) => { if (active) setSmartMatch(result) })
+      .catch(() => { if (active) setSmartMatch(null) })
+    return () => { active = false }
+  }, [analysis, linkMetadata])
+
+  function onCoverSelect(file: File | undefined) {
+    if (!file) return
+    setCoverFile(file)
+    setCoverSourceUrl(null)
+    setCoverPreview(URL.createObjectURL(file))
+  }
+
+  async function onAudioSelect(file: File | undefined) {
+    if (!file) return
+    setAudioFile(file)
+    setOptimizedProfile(null)
+    setBusy(true)
+    setError('')
+    try {
+      const result = await analyzeRadioAudioAdmin(file, editing?.id)
+      setAnalysis(result.analysis)
+      setOptimization(result.optimization)
+      setSmartMatch(null)
+      if (!editedFields.title && !linkMetadata?.title && result.analysis.title) setTitle(result.analysis.title)
+      if (!editedFields.artist && !linkMetadata?.artist && result.analysis.artist) setArtist(result.analysis.artist)
+      if (!editedFields.album && !linkMetadata?.album && result.analysis.album) setAlbum(result.analysis.album)
+      if (!coverFile && result.analysis.embeddedArtwork) {
+        setCoverPreview(`data:${result.analysis.embeddedArtwork.mime};base64,${result.analysis.embeddedArtwork.data}`)
+        setCoverSourceUrl(null)
+      }
+    } catch (e) {
+      setError((e as Error).message)
+      setAnalysis(null)
+      setOptimization(null)
+      setSmartMatch(null)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function resolveLink() {
+    if (!linkUrl.trim()) return
+    setBusy(true)
+    setError('')
+    try {
+      const metadata = await resolveRadioMetadataAdmin(linkUrl.trim())
+      setLinkMetadata(metadata)
+      setSmartMatch(null)
+      if (metadata.title && !editedFields.title) setTitle(metadata.title)
+      if (metadata.artist && !editedFields.artist) setArtist(metadata.artist)
+      if (metadata.album && !editedFields.album) setAlbum(metadata.album)
+      if (metadata.artworkUrl && !coverFile) {
+        setCoverPreview(metadata.artworkUrl)
+        setCoverSourceUrl(metadata.artworkUrl)
+      }
+    } catch (e) {
+      setLinkMetadata(null)
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function optimizeAudio() {
+    if (!audioFile || !optimization?.recommended) return
+    setBusy(true)
+    setError('')
+    try {
+      const result = await optimizeRadioAudioAdmin(audioFile, 'high')
+      const optimized = base64File(result.data, 'audio/mpeg', `${audioFile.name.replace(/\.mp3$/iu, '')}-optimized.mp3`)
+      setAudioFile(optimized)
+      setAnalysis(result.analysis)
+      setOptimizedProfile(result.profile)
+      setOptimization({ recommended: false, reason: 'optimized' })
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function selectedArtwork(): Promise<File | null> {
+    if (coverFile) return coverFile
+    if (analysis?.embeddedArtwork && typeof analysis.embeddedArtwork.data === 'string') return base64File(analysis.embeddedArtwork.data, analysis.embeddedArtwork.mime, 'embedded-cover')
+    if (coverSourceUrl) {
+      const imported = await importRadioArtworkAdmin(coverSourceUrl)
+      return base64File(imported.data, imported.mime, 'provider-cover')
+    }
+    return null
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    let createdTrackId: string | null = null
+    try {
+      if (!title.trim() || !artist.trim()) throw new Error('Title and artist are required.')
+      if (!editing && !audioFile) throw new Error('Choose an MP3 so LocalizationHub can inspect it before adding the track.')
+      const input: RadioTrackInput = {
+        title: title.trim(),
+        artist: artist.trim(),
+        album: album.trim() || null,
+        position: Number(position) || 0,
+        published,
+      }
+      let trackId: string
+      if (editing) {
+        const result = await updateRadioTrackAdmin(editing.id, input)
+        trackId = result.track.id
+      } else {
+        const result = await createRadioTrackAdmin(input)
+        trackId = result.track.id
+        createdTrackId = trackId
+      }
+      const artwork = await selectedArtwork()
+      // Media replacement/upload via the `run` wrapper so TOTP re-confirmation works.
+      await run(async () => {
+        if (audioFile) await uploadRadioAudioAdmin(trackId, audioFile, { optimized: Boolean(optimizedProfile), profile: optimizedProfile || undefined })
+        if (artwork) await uploadRadioArtworkAdmin(trackId, artwork)
+      })
+      await onSaved()
+      onClose()
+    } catch (e) {
+      if (createdTrackId) await deleteRadioTrackAdmin(createdTrackId).catch(() => {})
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={editing ? 'Edit track' : 'Add track'}>
+      <form className="modal-card radio-modal" onSubmit={submit}>
+        <div className="radio-modal-head"><div><span className="admin-kicker">LH RADIO / INGESTION</span><h3>{editing ? 'Edit track' : 'Add track'}</h3></div><span className="radio-step-label">{analysis ? 'Review' : mode === 'link' ? 'Import metadata' : 'Choose source'}</span></div>
+        {!editing && <div className="radio-source-tabs" role="tablist" aria-label="Add track source">
+          <button type="button" role="tab" aria-selected={mode === 'upload'} className={mode === 'upload' ? 'active' : ''} onClick={() => setMode('upload')}>Upload MP3 <small>Primary</small></button>
+          <button type="button" role="tab" aria-selected={mode === 'link'} className={mode === 'link' ? 'active' : ''} onClick={() => setMode('link')}>Import Link <small>Metadata only</small></button>
+        </div>}
+        {mode === 'link' && !editing && <div className="radio-link-import">
+          <label className="admin-field">Spotify or YouTube link<input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://open.spotify.com/track/..." inputMode="url" /></label>
+          <button type="button" className="admin-btn" disabled={busy || !linkUrl.trim()} onClick={resolveLink}>Resolve metadata</button>
+          <p className="radio-link-note">Links import metadata only. Attach audio you have the rights to stream.</p>
+          {linkMetadata && <div className="radio-link-preview">{linkMetadata.artworkUrl && <img src={linkMetadata.artworkUrl} alt="" /> }<div><strong>{linkMetadata.title || 'Untitled'}</strong><span>{linkMetadata.artist || linkMetadata.inferredArtist || 'Artist needs review'}</span><small>{linkMetadata.provider === 'spotify' ? 'Spotify' : 'YouTube'} · Metadata retrieved</small></div></div>}
+        </div>}
+        <div className="radio-form-grid">
+          <label className="admin-field">
+            Track title * {analysis?.title || linkMetadata?.title ? <small className="radio-suggestion">suggested · editable</small> : null}
+            <input value={title} onChange={(e) => { setEditedFields((fields) => ({ ...fields, title: true })); setTitle(e.target.value) }} maxLength={200} required />
+          </label>
+          <label className="admin-field">
+            Artist * {analysis?.artist || linkMetadata?.artist ? <small className="radio-suggestion">suggested · editable</small> : null}
+            <input value={artist} onChange={(e) => { setEditedFields((fields) => ({ ...fields, artist: true })); setArtist(e.target.value) }} maxLength={200} required />
+          </label>
+          <label className="admin-field">
+            Album
+            <input value={album} onChange={(e) => { setEditedFields((fields) => ({ ...fields, album: true })); setAlbum(e.target.value) }} maxLength={200} />
+          </label>
+          <label className="admin-field">
+            Order
+            <input type="number" min={0} value={position} onChange={(e) => setPosition(e.target.value)} />
+          </label>
+          <label className="admin-field">
+            Audio file (MP3) {editing ? '(optional to replace)' : '*'}
+            <input
+              type="file"
+              accept="audio/mpeg,.mp3"
+              onChange={(e) => void onAudioSelect(e.target.files?.[0])}
+            />
+            {audioFile && <span className="radio-file-note">{audioFile.name} · {formatBytes(audioFile.size)}</span>}
+          </label>
+          <label className="admin-field">
+            Cover artwork (JPEG / PNG / WebP) {editing ? '(optional to replace)' : '(optional)'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => onCoverSelect(e.target.files?.[0])}
+            />
+            {coverPreview && <img className="radio-cover-preview" src={coverPreview} alt="Cover preview" />}
+            {coverPreview && <button type="button" className="radio-remove-cover" onClick={() => { setCoverFile(null); setCoverPreview(null); setCoverSourceUrl(null) }}>Remove proposed artwork</button>}
+            {!coverPreview && <span className="radio-file-note">Optional — embedded or provider artwork will be proposed when available.</span>}
+          </label>
+        </div>
+        {analysis && <div className="radio-analysis" aria-live="polite"><div className="radio-analysis-head"><strong>Audio analysis</strong><span>{analysis.source === 'id3' ? 'ID3 + frame data' : 'Frame data'}</span></div><dl><div><dt>Duration</dt><dd>{formatDuration(analysis.durationSeconds)}</dd></div><div><dt>Codec</dt><dd>{analysis.codec || '—'}</dd></div><div><dt>Bitrate</dt><dd>{formatBitrate(analysis.bitrateKbps)}</dd></div><div><dt>Sample rate</dt><dd>{formatSampleRate(analysis.sampleRateHz)}</dd></div><div><dt>Channels</dt><dd>{analysis.channels === 2 ? 'Stereo' : analysis.channels === 1 ? 'Mono' : '—'}</dd></div><div><dt>Size</dt><dd>{formatBytes(analysis.sizeBytes)}</dd></div><div><dt>Track</dt><dd>{analysis.trackNumber ?? '—'}</dd></div><div><dt>Year</dt><dd>{analysis.year ?? '—'}</dd></div></dl>{smartMatch && <div className="radio-smart-match"><strong>Smart Match · {smartMatch.level}</strong>{smartMatch.evidence.map((item, index) => <span key={`${item.text}-${index}`} className={`match-${item.state}`}>{item.state === 'pass' ? '✓' : item.state === 'fail' ? '!' : '?'} {item.text}</span>)}</div>}{optimization?.reason === 'already-efficient' && <p className="radio-optimization-good">Already efficient ✓ Re-encoding is unlikely to meaningfully reduce storage.</p>}{optimization?.recommended && <div className="radio-optimization-note"><p>Optimization available: estimated storage saving ~{optimization.estimatedSavingsPercent}%. Re-encoding an MP3 can reduce storage at the cost of some audio quality.</p><button type="button" className="admin-btn" disabled={busy} onClick={() => void optimizeAudio()}>Optimize High Quality</button></div>}{optimization?.reason === 'optimized' && <p className="radio-optimization-good">Optimized copy analyzed; measured output will be published only after review.</p>}</div>}
+        <label className="admin-checkbox">
+          <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+          Publish immediately
+        </label>
+        <p className="radio-rights-note">Only upload audio and artwork you have the rights to stream publicly.</p>
+        {error && <p className="admin-error" role="alert">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="admin-btn" disabled={busy} onClick={onClose}>Cancel</button>
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={busy}>
+            {busy ? 'Saving…' : editing ? 'Save changes' : 'Add track'}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
 
@@ -1130,6 +1649,8 @@ export default function AdminConsole() {
     view = <ProjectDetailView projectId={route.id} run={run} onNavigate={navigate} />
   } else if (route.page === 'audit') {
     view = <AuditView />
+  } else if (route.page === 'radio') {
+    view = <RadioView run={run} />
   } else {
     view = <DashboardView data={dashboard} />
   }
@@ -1142,6 +1663,7 @@ export default function AdminConsole() {
           <NavButton active={route.page === 'dashboard'} onClick={() => navigate('/app/admin')}>Dashboard</NavButton>
           <NavButton active={route.page === 'users' || route.page === 'user-detail'} onClick={() => navigate('/app/admin/users')}>Users</NavButton>
           <NavButton active={route.page === 'projects' || route.page === 'project-detail'} onClick={() => navigate('/app/admin/projects')}>Projects</NavButton>
+          <NavButton active={route.page === 'radio'} onClick={() => navigate('/app/admin/radio')}>Radio</NavButton>
           <NavButton active={route.page === 'audit'} onClick={() => navigate('/app/admin/audit')}>Audit</NavButton>
         </nav>
         <button className="admin-btn" onClick={logout}>Logout</button>

@@ -1,0 +1,120 @@
+/* Visual Batch 3 — focused application and translator polish. */
+
+/* Projects: give the one-project state a useful anchor without stretching a
+   single card across the canvas. */
+.project-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+.project-layout .project-grid { min-width: 0; }
+.project-layout:not(.single-project-layout) .project-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.single-project-layout .project-grid { grid-template-columns: minmax(300px, 440px); }
+.single-project-layout { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); }
+.project-support {
+  display: grid;
+  gap: 14px;
+  min-height: 282px;
+  padding: 24px;
+  border: 1px solid #303747;
+  background: linear-gradient(155deg, rgba(29, 28, 45, .8), rgba(14, 17, 24, .92));
+  box-shadow: 14px 16px 0 rgba(13, 15, 22, .65);
+}
+.support-kicker { color: #897ccc; font: 700 .56rem 'DM Mono', monospace; letter-spacing: .1em; }
+.project-support h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.03em; }
+.project-support > p { margin: 0; color: #9ea6b3; font-size: .8rem; line-height: 1.7; }
+.support-facts { display: grid; gap: 9px; padding-top: 4px; }
+.support-facts div { display: grid; gap: 3px; }
+.support-facts span { color: #727a87; font: .54rem 'DM Mono', monospace; letter-spacing: .07em; text-transform: uppercase; }
+.support-facts strong { color: #d4d1df; font-size: .74rem; font-weight: 600; }
+.support-actions { display: grid; gap: 7px; margin-top: auto; }
+.support-actions button { border: 1px solid #3b4350; background: #171c24; color: #dfe2ea; padding: 9px 11px; border-radius: 3px; cursor: pointer; text-align: left; font: inherit; font-size: .72rem; }
+.support-actions .primary-button { background: #4f3db5; border-color: #6f61d8; font-weight: 700; }
+.support-actions button:hover { border-color: #7569b4; transform: translateY(-1px); }
+
+/* Application shell: compact, connected header and intentional canvas depth. */
+.workspace-page.projects-page .app-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+.workspace-page.projects-page .account { justify-self: end; }
+.projects-page .dashboard { max-width: 1480px; }
+.projects-page .dashboard-heading { padding-bottom: 8px; border-bottom: 1px solid rgba(103, 96, 142, .18); }
+.projects-page .project-card:focus-visible,
+.project-support button:focus-visible { outline: 2px solid #a69aff; outline-offset: 3px; }
+
+/* Workspace center: readable text column, clear reference/working-copy
+   distinction, and an editor surface that earns attention. */
+.workspace-shell .editor-scroll { padding-inline: clamp(18px, 4vw, 64px); }
+.editor-content-column { width: min(100%, 920px); margin: 0 auto; }
+.workspace-shell .source-section,
+.workspace-shell .translation-section { position: relative; }
+.workspace-shell .section-label { display: inline-flex; align-items: baseline; gap: 8px; color: #b3aaff; }
+.workspace-shell .section-label small { color: #9197a5; font: 700 .5rem 'DM Mono', monospace; letter-spacing: .12em; }
+.workspace-shell .source-text { border-color: #343a49; background: linear-gradient(145deg, #121720, #0c1016); color: #d0d5df; }
+.workspace-shell .translation-section { padding: 18px 20px 20px; border: 1px solid #3d3761; background: linear-gradient(145deg, rgba(31, 27, 52, .54), rgba(14, 16, 24, .72)); box-shadow: 0 12px 30px rgba(0, 0, 0, .14); }
+.workspace-shell .translation-section .section-label { color: #e0dcff; }
+.workspace-shell .translation-editor { min-height: 240px; border-color: #5f55a0; background: #0b0d14; font-size: 16px; line-height: 1.85; padding: 18px 20px; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.workspace-shell .translation-editor:focus { outline: none; border-color: #9b8df2; box-shadow: 0 0 0 3px rgba(139, 122, 233, .16), 0 12px 34px rgba(0, 0, 0, .18); }
+.workspace-shell .direction-rtl { letter-spacing: .005em; }
+.workspace-shell .source-context { padding: 10px 12px; border-left: 2px solid #4a4569; background: rgba(27, 28, 39, .42); line-height: 1.7; }
+.workspace-shell .source-context strong { color: #a9a2d2; }
+
+/* Dense but legible entry list: state is visible in text/ARIA as well as color. */
+.workspace-shell .entries-pane { border-right: 1px solid #252a37; }
+.workspace-shell .entries-head { padding: 12px 14px; background: rgba(20, 23, 32, .6); }
+.workspace-shell .entries-counts .count-pill { border: 1px solid #2e3544; background: #171c26; }
+.workspace-shell .entry-row { transition: background 140ms ease, border-color 140ms ease, padding 140ms ease; }
+.workspace-shell .entry-row[role='button']:focus-visible { outline: 2px solid #9b8df2; outline-offset: -2px; }
+.workspace-shell .entry-row.selected { border-left: 3px solid #9585ee; padding-left: 7px; background: linear-gradient(90deg, #262448, #1a1d31); }
+.workspace-shell .entry-status-dot[aria-label] { box-shadow: 0 0 0 3px rgba(255,255,255,.025); }
+
+/* Toolbar grouping: retain every action while giving Save and navigation a
+   clear visual hierarchy. */
+.workspace-shell .workspace-toolbar { padding-inline: clamp(10px, 2vw, 22px); gap: 14px; }
+.workspace-shell .toolbar-group { padding-left: 10px; border-left: 1px solid #2b3040; }
+.workspace-shell .toolbar-group:first-of-type { margin-left: auto; }
+.workspace-shell .toolbar-button { color: #bfc5d0; }
+.workspace-shell .toolbar-button:hover { color: #f5f7fa; border-color: #6e63a8; }
+.workspace-shell .toolbar-save { color: #fff; box-shadow: 0 5px 18px rgba(79, 61, 181, .25); }
+
+/* Inspector hierarchy and empty states. */
+.workspace-shell .inspector-pane { border-left: 1px solid #252a37; }
+.workspace-shell .inspector-tabs { padding: 9px 10px; background: rgba(18, 21, 29, .75); }
+.workspace-shell .inspector-tab { padding: 7px 9px; }
+.workspace-shell .inspector-tab.active { color: #eeeaff; background: #302a57; box-shadow: inset 0 -2px #998cf3; }
+.workspace-shell .inspector-section h3 { color: #ddd9ed; letter-spacing: .1em; }
+.workspace-shell .detail-list { padding: 12px; border: 1px solid #262d39; background: rgba(16, 19, 26, .6); }
+.workspace-shell .muted { line-height: 1.65; }
+.workspace-shell .comment-item,
+.workspace-shell .history-item,
+.workspace-shell .memory-item,
+.workspace-shell .glossary-item,
+.workspace-shell .qa-item { background: rgba(21, 24, 32, .72); border-color: #2d3441; }
+
+/* Focus mode should feel deliberate, not like missing panels. */
+.workspace-shell.focus-mode .editor-pane { max-width: 1120px; margin: 0 auto; }
+
+@media (max-width: 1050px) {
+  .single-project-layout { grid-template-columns: 1fr; }
+  .project-support { min-height: 0; }
+  .workspace-shell .workspace-toolbar { gap: 8px; }
+  .workspace-shell .toolbar-group:first-of-type { margin-left: 0; }
+}
+
+@media (max-width: 767px) {
+  .workspace-page.projects-page .app-header { display: flex; }
+  .workspace-page.projects-page .account { justify-self: auto; }
+  .project-layout { gap: 14px; }
+  .project-support { padding: 20px; box-shadow: 8px 10px 0 rgba(13, 15, 22, .6); }
+  .workspace-shell .editor-scroll { padding-inline: 14px; }
+  .editor-content-column { width: 100%; }
+  .workspace-shell .translation-section { padding: 14px; }
+  .workspace-shell .translation-editor { min-height: 180px; padding: 14px; }
+  .workspace-shell .toolbar-group { border-left: 0; padding-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell .entry-row,
+  .workspace-shell .translation-editor,
+  .support-actions button { transition: none; }
+  .support-actions button:hover { transform: none; }
+}

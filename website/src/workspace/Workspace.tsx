@@ -424,7 +424,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   }
 
   return (
-    <main className="workspace-page workspace-shell">
+    <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''}`}>
       <Toolbar
         projectName={snapshot.name}
         role={snapshot.role}

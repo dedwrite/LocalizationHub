@@ -60,6 +60,11 @@ export type AdminDashboard = {
   recentActivity: AdminAuditLog[]
 }
 
+export type AdminTotpStatus = {
+  enrolled: boolean
+  confirmed: boolean
+}
+
 const ADMIN_TOKEN_KEY = 'localizationhub.admin.session'
 
 function adminToken() {
@@ -124,6 +129,9 @@ export async function requestEmailCode() {
 }
 export async function verifyEmailCode(code: string) {
   return api('/api/admin/auth/email/verify', { method: 'POST', body: JSON.stringify({ code }) })
+}
+export async function getAdminTotpStatus() {
+  return api<AdminTotpStatus>('/api/admin/auth/totp/status')
 }
 export async function beginTotpEnrollment() {
   return api<{ secret: string; uri: string }>('/api/admin/auth/totp/enroll', { method: 'POST' })
@@ -238,4 +246,215 @@ export async function getAuditLog(limit = 50, offset = 0, action?: string) {
 export async function getStorageMetrics(userId?: string) {
   const url = userId ? `/api/admin/storage?userId=${encodeURIComponent(userId)}` : '/api/admin/storage'
   return api<{ owned_storage?: number; owned_projects?: { projectId: string; projectName: string; bytes: number }[]; platform?: AdminMetrics }>(url)
+}
+
+// ---- LH Radio ----
+export type RadioTrack = {
+  id: string
+  title: string
+  artist: string
+  album: string | null
+  position: number
+  published: boolean
+  audioMime: string | null
+  audioSizeBytes: number
+  artworkMime: string | null
+  artworkSizeBytes: number
+  durationSeconds: number | null
+  audioCodec: string | null
+  audioBitrateKbps: number | null
+  audioSampleRateHz: number | null
+  audioChannels: number | null
+  audioBitrateMode: string | null
+  audioOptimized: boolean
+  audioEncodingProfile: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type RadioMetrics = {
+  track_count: number
+  published_count: number
+  total_audio_bytes: number
+  total_duration_seconds: number
+}
+
+export type RadioTrackInput = {
+  title: string
+  artist: string
+  album?: string | null
+  position: number
+  published?: boolean
+}
+
+export type RadioAudioAnalysis = {
+  sizeBytes: number
+  durationSeconds: number | null
+  codec: string | null
+  bitrateKbps: number | null
+  bitrateMode: string | null
+  sampleRateHz: number | null
+  channels: number | null
+  title: string | null
+  artist: string | null
+  album: string | null
+  trackNumber: number | null
+  year: number | null
+  embeddedArtwork: { mime: string; data: string | Uint8Array; description?: string | null } | null
+  filenameSuggestion: { title: string | null; artist: string | null; inferred: boolean }
+  source: string
+}
+
+export type RadioImportedMetadata = {
+  provider: 'spotify' | 'youtube'
+  sourceUrl: string
+  externalId: string | null
+  title: string | null
+  artist: string | null
+  album: string | null
+  artworkUrl: string | null
+  durationSeconds: number | null
+  year: number | null
+  evidence: string[]
+  inferredArtist?: string | null
+}
+
+export type RadioSmartMatch = {
+  level: 'High' | 'Medium' | 'Low' | 'Insufficient evidence'
+  score: number
+  evidence: { state: 'pass' | 'warn' | 'fail'; text: string }[]
+}
+
+function radioNumber(value: unknown, field: string, nullable = false): number | null {
+  if (value == null && nullable) return null
+  if (typeof value === 'string' && value.trim() === '') throw new Error(`Radio API returned invalid ${field}.`)
+  const normalized = Number(value)
+  if (!Number.isFinite(normalized)) throw new Error(`Radio API returned invalid ${field}.`)
+  return normalized
+}
+
+function normalizeRadioTrack(value: RadioTrack): RadioTrack {
+  return {
+    ...value,
+    position: radioNumber(value.position, 'track position') as number,
+    audioSizeBytes: radioNumber(value.audioSizeBytes, 'audio size') as number,
+    artworkSizeBytes: radioNumber(value.artworkSizeBytes, 'artwork size') as number,
+    durationSeconds: radioNumber(value.durationSeconds, 'track duration', true),
+    audioBitrateKbps: radioNumber(value.audioBitrateKbps, 'audio bitrate', true),
+    audioSampleRateHz: radioNumber(value.audioSampleRateHz, 'audio sample rate', true),
+    audioChannels: radioNumber(value.audioChannels, 'audio channels', true),
+  }
+}
+
+function normalizeRadioMetrics(value: RadioMetrics): RadioMetrics {
+  return {
+    track_count: radioNumber(value.track_count, 'track count') as number,
+    published_count: radioNumber(value.published_count, 'published count') as number,
+    total_audio_bytes: radioNumber(value.total_audio_bytes, 'total audio bytes') as number,
+    total_duration_seconds: radioNumber(value.total_duration_seconds, 'total duration') as number,
+  }
+}
+
+export async function getRadioMetricsAdmin() {
+  return normalizeRadioMetrics(await api<RadioMetrics>('/api/admin/radio/metrics'))
+}
+export async function listRadioTracksAdmin() {
+  const result = await api<{ tracks: RadioTrack[] }>('/api/admin/radio/tracks')
+  if (!Array.isArray(result.tracks)) throw new Error('Radio API returned an invalid track catalog.')
+  return { tracks: result.tracks.map(normalizeRadioTrack) }
+}
+export async function createRadioTrackAdmin(input: RadioTrackInput) {
+  return api<{ track: RadioTrack }>('/api/admin/radio/tracks', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function resolveRadioMetadataAdmin(url: string) {
+  const result = await api<{ metadata: RadioImportedMetadata }>('/api/admin/radio/metadata/resolve', { method: 'POST', body: JSON.stringify({ url }) })
+  return result.metadata
+}
+
+export async function importRadioArtworkAdmin(url: string) {
+  return api<{ mime: string; data: string }>('/api/admin/radio/metadata/artwork', { method: 'POST', body: JSON.stringify({ url }) })
+}
+
+export async function smartMatchRadioMetadataAdmin(metadata: RadioImportedMetadata, analysis: RadioAudioAnalysis) {
+  const result = await api<{ match: RadioSmartMatch }>('/api/admin/radio/metadata/match', { method: 'POST', body: JSON.stringify({ metadata, analysis }) })
+  return result.match
+}
+export async function updateRadioTrackAdmin(trackId: string, input: RadioTrackInput) {
+  return api<{ track: RadioTrack }>(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+export async function reorderRadioTracksAdmin(orderedIds: string[]) {
+  return api('/api/admin/radio/tracks/reorder', {
+    method: 'POST',
+    body: JSON.stringify({ orderedIds }),
+  })
+}
+export async function deleteRadioTrackAdmin(trackId: string) {
+  return api(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}`, { method: 'DELETE' })
+}
+
+// Raw binary media uploads. These intentionally bypass the JSON `api()` helper
+// so the request body is the file bytes with the correct Content-Type.
+async function uploadRadioMedia(path: string, file: File, mime: string) {
+  const response = await fetch(path, {
+    method: 'PUT',
+    headers: { ...headers(), 'Content-Type': mime },
+    body: file,
+  })
+  const text = await response.text()
+  let body: unknown = null
+  try {
+    body = text ? JSON.parse(text) : null
+  } catch {
+    body = { message: text }
+  }
+  if (!response.ok) {
+    const payload = body as { message?: string; error?: string } | null
+    const error = new Error(payload?.message || payload?.error || `Upload failed (${response.status})`) as Error & { code?: string; status?: number }
+    error.code = payload?.error
+    error.status = response.status
+    throw error
+  }
+  return body as { track: RadioTrack }
+}
+
+export async function uploadRadioAudioAdmin(trackId: string, file: File, options: { optimized?: boolean; profile?: string } = {}) {
+  const query = options.optimized ? `?optimized=1&profile=${encodeURIComponent(options.profile || 'high')}` : ''
+  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/audio${query}`, file, file.type || 'audio/mpeg')
+}
+export async function uploadRadioArtworkAdmin(trackId: string, file: File) {
+  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/artwork`, file, file.type || 'image/jpeg')
+}
+
+async function postRadioMedia<T>(path: string, file: File) {
+  const response = await fetch(path, { method: 'POST', headers: { ...headers(), 'Content-Type': file.type || 'audio/mpeg' }, body: file })
+  const text = await response.text()
+  let body: any = null
+  try { body = text ? JSON.parse(text) : null } catch { body = { message: text } }
+  if (!response.ok) {
+    const error = new Error(body?.message || body?.error || `Analysis failed (${response.status})`) as Error & { code?: string; status?: number }
+    error.code = body?.error; error.status = response.status; throw error
+  }
+  return body as T
+}
+
+export async function analyzeRadioAudioAdmin(file: File, trackId?: string) {
+  const query = new URLSearchParams({ filename: file.name })
+  if (trackId) query.set('trackId', trackId)
+  return postRadioMedia<{ analysis: RadioAudioAnalysis; optimization: { recommended: boolean; reason: string; targetBitrateKbps?: number; estimatedBytes?: number; estimatedSavingsPercent?: number } }>(`/api/admin/radio/audio/analyze?${query.toString()}`, file)
+}
+
+export async function analyzeExistingRadioTrackAdmin(trackId: string) {
+  const result = await api<{ analysis: RadioAudioAnalysis; track: RadioTrack }>(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/analyze`, { method: 'POST' })
+  return result
+}
+
+export async function optimizeRadioAudioAdmin(file: File, profile: 'high' | 'saver' = 'high') {
+  return postRadioMedia<{ analysis: RadioAudioAnalysis; originalSizeBytes: number; newSizeBytes: number; profile: string; data: string }>(`/api/admin/radio/audio/optimize?profile=${profile}`, file)
 }

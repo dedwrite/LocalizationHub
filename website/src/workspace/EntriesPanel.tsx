@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
 import { ENTRY_FILTERS, type BulkSelection, type EntryFilterId, type EntryView } from './entryCollection'
 import VirtualList from './VirtualList'
 
@@ -55,13 +55,22 @@ export default function EntriesPanel(props: EntriesPanelProps) {
     const commentCount = commentEntryIds.has(view.entry.id) ? 1 : 0
     const assignee = assigneeOf(view.entry.id)
     const key = view.entry.key || view.entry.id
+    const selectOnKey = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        onSelect(view.index)
+      }
+    }
 
     if (mobile) {
       return (
         <div
           className={`entry-row mob-entry-row ${isSelected ? 'selected' : ''}`}
           onClick={() => onSelect(view.index)}
+          onKeyDown={selectOnKey}
           role="listitem"
+          tabIndex={0}
+          aria-label={`${key} — ${statusLabel(view)}`}
         >
           {selectionMode && (
             <input
@@ -91,7 +100,10 @@ export default function EntriesPanel(props: EntriesPanelProps) {
       <div
         className={`entry-row ${isSelected ? 'selected' : ''}`}
         onClick={() => onSelect(view.index)}
+        onKeyDown={selectOnKey}
         role="listitem"
+        tabIndex={0}
+        aria-label={`${key} — ${statusLabel(view)}`}
       >
         <input
           type="checkbox"
@@ -101,7 +113,7 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           onChange={() => onToggleSelection(view.index)}
           aria-label={`Select ${view.entry.key || view.entry.id}`}
         />
-        <span className={`entry-status-dot ${statusDotClass(view)}`} aria-hidden="true" />
+        <span className={`entry-status-dot ${statusDotClass(view)}`} title={statusLabel(view)} aria-hidden="true" />
         <div className="entry-row-main">
           <span className="entry-key">{view.entry.key || view.entry.id}</span>
           <span className="entry-preview">{view.entry.translation || 'Untranslated'}</span>

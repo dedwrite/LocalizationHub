@@ -2,6 +2,42 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.8.0] - 2026-08-29
+
+### Web Experience
+
+- Refreshed public Landing, Download, FAQ, and release-facing website copy.
+- Polished Cloud/Local Projects, responsive Web App, RTL/Arabic presentation,
+  and Translation Workspace flows.
+
+### Native LH Radio
+
+- Added first-party Admin-managed MP3 playback across the public website and Web
+  App, with a persistent custom player, playlist, seek, volume, mute, and
+  previous/next controls.
+
+### Smart Radio Ingestion
+
+- Added ID3 metadata and audio analysis, embedded artwork recovery, metadata-only
+  Spotify/YouTube suggestions, Smart Match evidence, and optional ffmpeg-based
+  optimization when available.
+
+### Workspace
+
+- Added SPA navigation persistence, responsive/mobile improvements, protected
+  token and context presentation polish, and dark-theme scrollbars.
+
+### Reliability & Security
+
+- Hardened Admin MFA error handling and existing-enrollment UX.
+- Preserved safe provider boundaries, media Range/HEAD behavior, and inline
+  recoverable Radio error states.
+
+### Fixes
+
+- Closed Playwright Web App/Safari regression coverage and release-config
+  leakage checks.
+
 ## [0.7.0] - 2026-08-28
 
 ### Added

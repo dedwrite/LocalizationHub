@@ -57,22 +57,79 @@ const enrollment = {
   uri: 'otpauth://totp/LocalizationHub:operator?secret=JBSWY3DPEHPK3PXP&issuer=LocalizationHub&algorithm=SHA1&digits=6&period=30',
 }
 
-async function mockAdminApi(page: Page) {
+const radioTracks = {
+  tracks: [
+    { id: '11111111-1111-4111-8111-111111111111', title: 'First Light', artist: 'Aurora Field', album: 'Dawn', position: 0, published: true, audioMime: 'audio/mpeg', audioSizeBytes: 12345, artworkMime: 'image/png', artworkSizeBytes: 678, durationSeconds: 180, createdAt: '2026-08-26T09:00:00Z', updatedAt: '2026-08-26T09:00:00Z' },
+    { id: '22222222-2222-4222-8222-222222222222', title: 'Second Bloom', artist: 'Mica', album: null, position: 1, published: false, audioMime: null, audioSizeBytes: 0, artworkMime: null, artworkSizeBytes: 0, durationSeconds: null, createdAt: '2026-08-26T09:00:00Z', updatedAt: '2026-08-26T09:00:00Z' },
+  ],
+}
+
+const radioMetrics = { track_count: 2, published_count: 1, total_audio_bytes: 12345, total_duration_seconds: 180 }
+const radioAnalysis = {
+  sizeBytes: 2048, durationSeconds: 398, codec: 'MP3', bitrateKbps: 128, bitrateMode: null, sampleRateHz: 44100, channels: 2,
+  title: 'Cemeteries', artist: 'Sodus', album: 'Cemeteries', trackNumber: null, year: null, embeddedArtwork: null,
+  filenameSuggestion: { title: 'Cemeteries', artist: 'Sodus', inferred: true }, source: 'id3',
+}
+
+async function mockAdminApi(
+  page: Page,
+  options: {
+    totpStatus?: { enrolled: boolean; confirmed: boolean }
+    radioTracks?: unknown
+    radioMetrics?: unknown
+    radioFailure?: boolean
+  } = {},
+) {
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace(/^\/api\/admin\/?/, '')
     const method = route.request().method()
+    if (options.radioFailure && method === 'GET' && path.startsWith('radio/')) {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'internal-error' }) })
+      return
+    }
     if (method === 'POST') {
+      if (path === 'radio/metadata/resolve') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ metadata: { provider: 'spotify', sourceUrl: 'https://open.spotify.com/track/test', externalId: 'test', title: 'Cemeteries', artist: 'Sodus', album: 'Cemeteries', artworkUrl: null, durationSeconds: null, year: null, evidence: ['Spotify metadata retrieved'] } }) })
+        return
+      }
+      if (path === 'radio/metadata/match') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ match: { level: 'High', score: 100, evidence: [{ state: 'pass', text: 'Title matches' }, { state: 'pass', text: 'Artist matches' }] } }) })
+        return
+      }
+      if (path.startsWith('radio/audio/analyze')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ analysis: radioAnalysis, optimization: { recommended: false, reason: 'already-efficient' } }) })
+        return
+      }
       if (path.startsWith('auth/totp/enroll')) {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(enrollment) })
+        return
+      }
+      if (path.startsWith('radio/tracks') && path.includes('reorder')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
         return
       }
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
       return
     }
+    if (method === 'PUT' && path.startsWith('radio/tracks')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
+      return
+    }
+    if (method === 'PATCH' && path.startsWith('radio/tracks/')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
+      return
+    }
+    if (method === 'DELETE' && path.startsWith('radio/tracks/')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+      return
+    }
     let body: unknown = {}
     if (path === '') body = dashboard
+    else if (path === 'auth/totp/status') body = options.totpStatus ?? { enrolled: false, confirmed: false }
     else if (path === 'auth') body = {}
+    else if (path.startsWith('radio/metrics')) body = options.radioMetrics ?? radioMetrics
+    else if (path.startsWith('radio/tracks')) body = options.radioTracks ?? radioTracks
     else if (path.startsWith('users/')) body = userDetail
     else if (path.startsWith('users')) body = users
     else if (path.startsWith('projects/')) body = projectDetail
@@ -89,6 +146,17 @@ async function authenticate(page: Page) {
   await page.evaluate(() => {
     window.localStorage.setItem('localizationhub.auth.token', 'test-normal-token')
     window.sessionStorage.setItem('localizationhub.admin.session', 'test-admin-token')
+  })
+}
+
+// Public radio artwork requests from the admin library are served by a stub so
+// cover thumbnails never hit the (database-less) E2E server.
+async function mockPublicRadioMedia(page: Page) {
+  await page.route('**/api/radio/tracks/*/artwork', (route) => {
+    route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64') })
+  })
+  await page.route('**/api/radio/tracks/*/audio', (route) => {
+    route.fulfill({ status: 200, contentType: 'audio/mpeg', headers: { 'Accept-Ranges': 'bytes', 'Content-Length': '1024' }, body: Buffer.alloc(1024, 0) })
   })
 }
 
@@ -153,6 +221,97 @@ test.describe('admin console routing and views', () => {
     await page.goto('/app/admin/audit')
     await expect(page.getByText('Audit log')).toBeVisible()
     await expect(page.getByText('admin.user.suspend')).toBeVisible()
+  })
+
+  test('renders the LH Radio library with tracks and actions', async ({ page }) => {
+    await mockPublicRadioMedia(page)
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('First Light')).toBeVisible()
+    await expect(page.getByText('Second Bloom')).toBeVisible()
+    await expect(page.locator('.radio-status.is-published')).toHaveText('Published')
+    await expect(page.locator('.radio-status:not(.is-published)')).toHaveText('Unpublished')
+    await expect(page.getByRole('button', { name: '+ Add track' })).toBeVisible()
+  })
+
+  test('renders the real zero-track and zero-metrics state without crashing', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      radioTracks: { tracks: [] },
+      radioMetrics: {
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: '0',
+        total_duration_seconds: '0',
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('No tracks yet.')).toBeVisible()
+    await expect(page.getByText('0 B')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
+  })
+
+  test('keeps Radio Admin mounted with an inline retry when Radio APIs fail', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, { radioFailure: true })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('Radio data could not be loaded completely.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry Radio library' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
+  })
+
+  test('opens the smart upload flow and shows ID3 audio analysis', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await expect(page.getByRole('tab', { name: /Upload MP3/ })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Import Link/ })).toBeVisible()
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByText('Audio analysis')).toBeVisible()
+    await expect(page.getByText('ID3 + frame data')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Cemeteries"]')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Sodus"]')).toBeVisible()
+  })
+
+  test('resolves provider links as metadata-only suggestions', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
+    await page.getByRole('button', { name: 'Resolve metadata' }).click()
+    await expect(page.getByText('Metadata retrieved')).toBeVisible()
+    await expect(page.locator('input[required][maxlength="200"][value="Cemeteries"]')).toBeVisible()
+    await expect(page.getByText(/Links import metadata only/)).toBeVisible()
+  })
+
+  test('shows Smart Match evidence after a link and attached MP3', async ({ page }) => {
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
+    await page.getByRole('button', { name: 'Resolve metadata' }).click()
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByText('Smart Match · High')).toBeVisible()
+    await expect(page.getByText('✓ Title matches')).toBeVisible()
+  })
+
+  test('turns malformed Radio numeric payloads into an inline contract error', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      radioTracks: { tracks: [] },
+      radioMetrics: {
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: 'not-a-number',
+        total_duration_seconds: 0,
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText(/invalid total audio bytes/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry Radio library' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
   })
 
   test('opens a destructive confirmation dialog', async ({ page }) => {
@@ -286,5 +445,18 @@ test.describe('admin TOTP enrollment QR', () => {
     expect(await page.locator('body').innerText()).not.toContain('otpauth://totp/')
     expect(await page.locator('body').innerText()).not.toContain('JBSWY3DPEHPK3PXP')
     await expect(page.locator('.admin-qr-box svg')).toHaveCount(0)
+  })
+
+  test('already-enrolled state uses the existing Authenticator without offering setup', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, { totpStatus: { enrolled: true, confirmed: true } })
+    await signInOnly(page)
+    await page.goto('/app/admin')
+    await page.getByLabel('Email code').fill('123456')
+    await page.getByRole('button', { name: 'Verify email' }).click()
+    await expect(page.getByText('Authenticator already configured')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Setup Authenticator' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Continue Authenticator setup' })).toHaveCount(0)
+    await expect(page.getByLabel('Authenticator code')).toBeVisible()
   })
 })

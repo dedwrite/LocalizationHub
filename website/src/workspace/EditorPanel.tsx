@@ -162,9 +162,10 @@ export default function EditorPanel(props: EditorPanelProps) {
       </div>
 
       <div className="editor-scroll">
+        <div className="editor-content-column">
         <section className="source-section">
           <div className="section-label-row">
-            <span className="section-label">Source</span>
+            <span className="section-label"><small>REFERENCE</small> Source</span>
             <button className="link-button" onClick={copySource} title="Copy source">{copied ? 'Copied' : 'Copy'}</button>
           </div>
           <div className="source-text" dir={direction === 'auto' ? undefined : direction}>
@@ -181,7 +182,7 @@ export default function EditorPanel(props: EditorPanelProps) {
 
         <section className="translation-section">
           <div className="section-label-row">
-            <span className="section-label">Translation</span>
+            <span className="section-label translation-label"><small>WORKING COPY</small> Translation</span>
             {!writable && <span className="readonly-badge">Read only</span>}
           </div>
           <textarea
@@ -224,6 +225,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           targetLocale={targetLocale}
           context={mtContext}
         />
+        </div>
       </div>
 
       <div className="editor-footer">

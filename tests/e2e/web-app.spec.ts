@@ -5,6 +5,17 @@ const jsonFile = { name: 'browser.json', mimeType: 'application/json', buffer: B
 const csvFile = { name: 'browser.csv', mimeType: 'text/csv', buffer: Buffer.from('key,source,translation\nmenu.start,Start,\n') }
 const poFile = { name: 'browser.po', mimeType: 'text/plain', buffer: Buffer.from('msgid "Start"\nmsgstr ""\n') }
 
+const testUser = { id: 'visual-user', username: 'reviewer', email: 'reviewer@example.com', emailVerified: true, createdAt: '2026-08-29T09:00:00Z' }
+
+async function mockCloudWorkspace(page: any, projects: any[]) {
+  await page.route('**/api/auth/me', async (route: any) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: testUser }) }))
+  await page.route('**/api/projects', async (route: any) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ projects }) }))
+  await page.addInitScript(() => {
+    localStorage.setItem('localizationhub.auth.token', 'visual-test-token')
+    localStorage.setItem('localizationhub.auth.user', JSON.stringify({ id: 'visual-user', username: 'reviewer', email: 'reviewer@example.com', emailVerified: true, createdAt: '2026-08-29T09:00:00Z' }))
+  })
+}
+
 async function importFile(page: any, file: any) {
   await page.goto('/app/local')
   await page.locator('input[type="file"]').setInputFiles(file)
@@ -28,6 +39,76 @@ test.describe('public routing and accessibility', () => {
     const results = await new AxeBuilder({ page }).analyze()
     const serious = results.violations.filter(item => item.impact === 'serious' || item.impact === 'critical')
     expect(serious).toEqual([])
+  })
+
+  test('Landing communicates extraction, context, and protected syntax', async ({ page }) => {
+    await page.goto('/#extraction')
+    await expect(page.getByRole('heading', { name: 'Start from a game folder.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Godot' })).toBeVisible()
+    await expect(page.getByText('READ-ONLY EXTRACTION').first()).toBeVisible()
+    await page.goto('/#context')
+    await expect(page.getByRole('heading', { name: 'The words arrive with their guardrails.' })).toBeVisible()
+    await expect(page.getByText('TOKENS VALID')).toBeVisible()
+    await expect(page.getByText('{new_strings}').first()).toBeVisible()
+    await expect(page.getByText('Friday · 11:59 PM')).toBeVisible()
+  })
+
+  test('Landing FAQ reflects the current v0.8 release', async ({ page }) => {
+    await page.goto('/#faq')
+    const answer = page.locator('.faq-list details').first().locator('p')
+    await expect(answer).toContainText('v0.8.0')
+    await expect(answer).not.toContainText('v0.4.0')
+  })
+
+  test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'Localization work, without the mess.' })).toBeVisible()
+    await expect(page.locator('.engine-card')).toHaveCount(3)
+    const state = await page.locator('.engine-card').first().evaluate((element: HTMLElement) => ({ opacity: getComputedStyle(element).opacity, transform: getComputedStyle(element).transform }))
+    expect(state.opacity).toBe('1')
+    expect(state.transform).toBe('none')
+  })
+})
+
+test.describe('Visual Batch 2 project surfaces', () => {
+  test('renders real project metadata and makes Cloud/Local context explicit', async ({ page }) => {
+    await mockCloudWorkspace(page, [{ id: 'p1', name: 'RPG Localization', role: 'owner', revision: 8, updatedAt: '2026-08-28T09:00:00Z', sourceFileName: 'dialogue.json', entryCount: 120, translatedCount: 30, memberCount: 2 }])
+    await page.goto('/app/projects')
+    await expect(page.getByText('1', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('120', { exact: true }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open RPG Localization' })).toBeVisible()
+    await expect(page.locator('.projects-page .app-context-nav button.active')).toHaveAttribute('aria-current', 'page')
+    if ((page.viewportSize()?.width ?? 1000) <= 767) await page.getByRole('button', { name: 'Local browser' }).click()
+    else await page.locator('.projects-page .app-context-nav button').nth(1).click()
+    await expect(page).toHaveURL(/\/app\/local$/)
+    await expect(page.getByText('LOCAL PROJECTS / NO ACCOUNT REQUIRED')).toBeVisible()
+  })
+
+  test('makes the empty Cloud Projects state intentional and actionable', async ({ page }) => {
+    await mockCloudWorkspace(page, [])
+    await page.goto('/app/projects')
+    await expect(page.getByText('No Cloud Projects yet.')).toBeVisible()
+    await expect(page.getByRole('button', { name: '+ Create your first project' })).toBeVisible()
+    await expect(page.locator('.empty-graphic')).toBeVisible()
+  })
+
+  test('gives a single real project useful context and actions', async ({ page }) => {
+    await mockCloudWorkspace(page, [{ id: 'p1', name: 'RPG Localization', role: 'owner', revision: 8, updatedAt: '2026-08-28T09:00:00Z', sourceFileName: 'dialogue.json', entryCount: 120, translatedCount: 30, memberCount: 2 }])
+    await page.goto('/app/projects')
+    await expect(page.locator('.single-project-layout')).toBeVisible()
+    await expect(page.getByRole('complementary', { name: 'Project quick actions' })).toContainText('30 of 120 entries translated')
+    await expect(page.getByRole('button', { name: 'Open project' })).toBeVisible()
+  })
+
+  test('uses a balanced grid for several real projects', async ({ page }) => {
+    const projects = Array.from({ length: 4 }, (_, index) => ({ id: `p${index}`, name: `Project ${index + 1}`, role: 'editor', revision: index + 1, updatedAt: '2026-08-28T09:00:00Z', sourceFileName: `file-${index}.json`, entryCount: 40 + index, translatedCount: index * 4, memberCount: 2 }))
+    await mockCloudWorkspace(page, projects)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/app/projects')
+    await expect(page.locator('.project-layout:not(.single-project-layout) .project-card')).toHaveCount(4)
+    const widths = await page.locator('.project-card').evaluateAll((cards) => cards.map((card) => Math.round((card as HTMLElement).getBoundingClientRect().width)))
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(2)
   })
 })
 

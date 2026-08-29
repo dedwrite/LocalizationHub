@@ -40,9 +40,17 @@ function encryptSecret(secret) {
   return { encryptedSecret: encrypted.toString('base64url'), nonce: nonce.toString('base64url'), authTag: cipher.getAuthTag().toString('base64url') }
 }
 function decryptSecret(row) {
-  const decipher = createDecipheriv('aes-256-gcm', securityKey(), Buffer.from(row.nonce, 'base64url'))
-  decipher.setAuthTag(Buffer.from(row.auth_tag, 'base64url'))
-  return Buffer.concat([decipher.update(Buffer.from(row.encrypted_secret, 'base64url')), decipher.final()]).toString('utf8')
+  try {
+    const decipher = createDecipheriv('aes-256-gcm', securityKey(), Buffer.from(row.nonce, 'base64url'))
+    decipher.setAuthTag(Buffer.from(row.auth_tag, 'base64url'))
+    return Buffer.concat([decipher.update(Buffer.from(row.encrypted_secret, 'base64url')), decipher.final()]).toString('utf8')
+  } catch (error) {
+    if (error instanceof AdminSecurityError) throw error
+    throw new AdminSecurityError(
+      'admin-security-key-mismatch',
+      'Admin security cannot decrypt the existing Authenticator enrollment. Check the configured Admin security key.',
+    )
+  }
 }
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 export function base32Encode(buffer) { let bits = ''; for (const byte of buffer) bits += byte.toString(2).padStart(8, '0'); let encoded = ''; for (let index = 0; index + 5 <= bits.length; index += 5) encoded += BASE32_ALPHABET[Number.parseInt(bits.slice(index, index + 5), 2)]; return encoded }
@@ -65,8 +73,22 @@ export async function requestAdminEmailCode(userId) { const database = getDataba
 export async function verifyAdminEmailCode(userId, code) { const database = getDatabasePool(); const result = await database.query('SELECT id, code_hash, attempts, expires_at FROM admin_email_challenges WHERE user_id = $1 AND used_at IS NULL ORDER BY created_at DESC LIMIT 1', [userId]); const row = result.rows[0]; if (!row || new Date(row.expires_at).getTime() <= Date.now() || row.attempts >= 10) throw new AdminSecurityError('admin-email-invalid', 'The Admin email code is invalid or expired.'); if (!equalHex(row.code_hash, hash(code))) { await database.query('UPDATE admin_email_challenges SET attempts = attempts + 1 WHERE id = $1', [row.id]); throw new AdminSecurityError('admin-email-invalid', 'The Admin email code is invalid or expired.') } await database.query('UPDATE admin_email_challenges SET used_at = NOW() WHERE id = $1', [row.id]); return true }
 export async function beginTotpEnrollment(userId, username) { const existing = await getDatabasePool().query('SELECT confirmed_at FROM admin_totp_enrollments WHERE user_id = $1', [userId]); if (existing.rows[0]?.confirmed_at) throw new AdminSecurityError('totp-already-enrolled', 'TOTP is already enrolled.'); const secret = generateTotpSecret(); const encrypted = encryptSecret(secret); await getDatabasePool().query('INSERT INTO admin_totp_enrollments (user_id, encrypted_secret, nonce, auth_tag) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO UPDATE SET encrypted_secret = EXCLUDED.encrypted_secret, nonce = EXCLUDED.nonce, auth_tag = EXCLUDED.auth_tag, enrolled_at = NOW(), confirmed_at = NULL', [userId, encrypted.encryptedSecret, encrypted.nonce, encrypted.authTag]); return { secret, uri: otpauthUri(secret, username) }
 }
+export async function getAdminTotpStatus(userId) {
+  const result = await getDatabasePool().query(
+    'SELECT confirmed_at FROM admin_totp_enrollments WHERE user_id = $1',
+    [userId],
+  )
+  return {
+    enrolled: result.rowCount > 0,
+    confirmed: Boolean(result.rows[0]?.confirmed_at),
+  }
+}
 export async function verifyAdminTotp(userId, code) { const result = await getDatabasePool().query('SELECT encrypted_secret, nonce, auth_tag, confirmed_at FROM admin_totp_enrollments WHERE user_id = $1', [userId]); if (!result.rowCount) throw new AdminSecurityError('totp-not-enrolled', 'TOTP enrollment is required.'); if (!verifyTotp(decryptSecret(result.rows[0]), code)) throw new AdminSecurityError('totp-invalid', 'The TOTP code is invalid.'); if (!result.rows[0].confirmed_at) await getDatabasePool().query('UPDATE admin_totp_enrollments SET confirmed_at = NOW() WHERE user_id = $1', [userId]); return true }
 export async function createAdminSession(userId) { const token = randomBytes(32).toString('base64url'); const now = new Date(); await getDatabasePool().query('INSERT INTO admin_sessions (token_hash, user_id, expires_at, recent_totp_at) VALUES ($1, $2, $3, $4)', [hash(token), userId, new Date(now.getTime() + ADMIN_SESSION_TTL_MS), now]); return token }
+export async function confirmAdminTotpAndCreateSession(userId, code) {
+  await verifyAdminTotp(userId, code)
+  return createAdminSession(userId)
+}
 export async function authenticateAdminSession(token, userId) { if (!token || !userId) return null; const result = await getDatabasePool().query("SELECT s.user_id, s.last_used_at, s.expires_at, u.site_role, u.suspended_at FROM admin_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.user_id = $2 AND s.revoked_at IS NULL", [hash(token), userId]); const row = result.rows[0]; if (!row || row.site_role !== 'super_admin' || row.suspended_at || new Date(row.expires_at).getTime() <= Date.now() || new Date(row.last_used_at).getTime() + ADMIN_IDLE_TTL_MS <= Date.now()) return null; await getDatabasePool().query('UPDATE admin_sessions SET last_used_at = NOW() WHERE token_hash = $1', [hash(token)]); return row }
 export async function revokeAdminSession(token) { if (token) await getDatabasePool().query('UPDATE admin_sessions SET revoked_at = NOW() WHERE token_hash = $1', [hash(token)]) }
 export async function writeAdminAudit({ adminUserId, action, targetType = null, targetId = null, success, metadata = {}, requestIp = null, userAgent = null }) { await getDatabasePool().query('INSERT INTO admin_audit_log (admin_user_id, action, target_type, target_id, success, metadata, request_ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)', [adminUserId, action, targetType, targetId, success, JSON.stringify(metadata), requestIp, userAgent]) }

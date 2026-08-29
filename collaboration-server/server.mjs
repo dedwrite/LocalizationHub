@@ -38,6 +38,7 @@ import {
 import {
   applyCorsHeaders,
 } from './cors.mjs'
+import { serveBinary } from './binary-response.mjs'
 import {
   getDatabasePool,
 } from './database.mjs'
@@ -66,16 +67,15 @@ import {
   sendVerificationEmail,
 } from './email-delivery.mjs'
 import {
-  AdminSecurityError,
   authenticateAdminSession,
   beginTotpEnrollment,
-  createAdminSession,
+  confirmAdminTotpAndCreateSession,
+  getAdminTotpStatus,
   getSuperAdmin,
   hasRecentAdminEmailVerification,
   requestAdminEmailCode,
   revokeAdminSession,
   verifyAdminEmailCode,
-  verifyAdminTotp,
   changeProjectMemberRole,
   deleteProject,
   deleteUser,
@@ -100,9 +100,35 @@ import {
   verifyUserEmail,
   writeAdminAudit,
 } from './admin.mjs'
+import { formatAdminRequestError } from './admin-http-errors.mjs'
 import {
   EMAIL_VERIFICATION_PAGE,
 } from './email-verification-page.mjs'
+
+import {
+  ARTWORK_MAX_BYTES,
+  MP3_MAX_BYTES,
+  createRadioTrack,
+  deleteRadioTrack,
+  getPublishedRadioArtwork,
+  getPublishedRadioAudio,
+  getRadioAudioForAdmin,
+  getRadioMetrics,
+  getRadioTrack,
+  listPublishedRadioTracks,
+  listRadioTracks,
+  reorderRadioTracks,
+  setRadioTrackArtwork,
+  setRadioTrackAudio,
+  updateRadioTrack,
+  updateRadioTrackAnalysis,
+  validateAudioBuffer,
+  validateArtworkBuffer,
+  validateTrackMetadata,
+} from './radio.mjs'
+import { analyzeRadioAudio, smartMatchRadioMetadata } from './radio-analysis.mjs'
+import { fetchApprovedRadioArtwork, resolveRadioMetadata } from './radioMetadataProviders/index.mjs'
+import { optimizeRadioMp3, recommendRadioOptimization } from './radio-optimization.mjs'
 
 import {
   randomUUID,
@@ -2711,6 +2737,51 @@ async function readJsonBody(
   )
 }
 
+/*
+ * Reads a raw binary request body (used for LH Radio audio/artwork uploads)
+ * with a hard byte cap. Never trusts Content-Length alone.
+ */
+async function readRawBody(
+  request,
+  maxBytes,
+) {
+  const chunks = []
+
+  let totalBytes =
+    0
+
+  for await (
+    const chunk
+    of request
+  ) {
+    totalBytes +=
+      chunk.length
+
+    if (
+      totalBytes >
+      maxBytes
+    ) {
+      const error =
+        new Error(
+          'request-too-large',
+        )
+
+      error.code =
+        'payload-too-large'
+
+      throw error
+    }
+
+    chunks.push(
+      chunk,
+    )
+  }
+
+  return Buffer.concat(
+    chunks,
+  )
+}
+
 const httpServer =
   createServer(
     async (
@@ -2776,6 +2847,14 @@ const httpServer =
             sendJson(response, 200, { ok: true })
             return
           }
+          if (request.method === 'GET' && request.url === '/api/admin/auth/totp/status') {
+            if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
+              sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
+              return
+            }
+            sendJson(response, 200, await getAdminTotpStatus(superAdmin.id))
+            return
+          }
           if (request.method === 'POST' && request.url === '/api/admin/auth/totp/enroll') {
             if (!await hasRecentAdminEmailVerification(superAdmin.id)) {
               sendJson(response, 403, { error: 'admin-email-required', message: 'A fresh Admin email code is required.' })
@@ -2791,8 +2870,7 @@ const httpServer =
               return
             }
             const body = await readJsonBody(request)
-            await verifyAdminTotp(superAdmin.id, body?.code)
-            const adminToken = await createAdminSession(superAdmin.id)
+            const adminToken = await confirmAdminTotpAndCreateSession(superAdmin.id, body?.code)
             sendJson(response, 200, { ok: true, adminToken })
             return
           }
@@ -2923,15 +3001,334 @@ const httpServer =
             sendJson(response, 200, result)
             return
           }
-          sendJson(response, 404, { error: 'not-found' })
-        } catch (error) {
-          if (error instanceof AdminSecurityError) {
-            sendJson(response, 403, { error: error.code, message: error.message })
+
+          // ---- LH Radio library administration ----
+          const radioUuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+          const radioPatterns = {
+            metrics: /^\/api\/admin\/radio\/metrics$/,
+            list: /^\/api\/admin\/radio\/tracks$/,
+            reorder: /^\/api\/admin\/radio\/tracks\/reorder$/,
+            analyze: /^\/api\/admin\/radio\/audio\/analyze$/,
+            optimize: /^\/api\/admin\/radio\/audio\/optimize$/,
+            metadata: /^\/api\/admin\/radio\/metadata\/resolve$/,
+            artworkImport: /^\/api\/admin\/radio\/metadata\/artwork$/,
+            match: /^\/api\/admin\/radio\/metadata\/match$/,
+            analyzeTrack: new RegExp(`^/api/admin/radio/tracks/(${radioUuid})/analyze$`),
+            track: new RegExp(`^/api/admin/radio/tracks/(${radioUuid})$`),
+            media: new RegExp(`^/api/admin/radio/tracks/(${radioUuid})/(audio|artwork)(?:\\?.*)?$`),
+          }
+          const radioListMatch = request.url.match(radioPatterns.list)
+          const radioMetricsMatch = request.url.match(radioPatterns.metrics)
+          const radioReorderMatch = request.url.match(radioPatterns.reorder)
+          const radioAnalyzeMatch = request.url.match(radioPatterns.analyze)
+          const radioOptimizeMatch = request.url.match(radioPatterns.optimize)
+          const radioMetadataMatch = request.url.match(radioPatterns.metadata)
+          const radioArtworkImportMatch = request.url.match(radioPatterns.artworkImport)
+          const radioMatchMatch = request.url.match(radioPatterns.match)
+          const radioAnalyzeTrackMatch = request.url.match(radioPatterns.analyzeTrack)
+          const radioTrackMatch = request.url.match(radioPatterns.track)
+          const radioMediaMatch = request.url.match(radioPatterns.media)
+
+          if (request.method === 'GET' && radioMetricsMatch) {
+            const metrics = await getRadioMetrics()
+            sendJson(response, 200, metrics)
             return
           }
-          console.error('Admin request failed:', error)
-          sendJson(response, 500, { error: 'internal-error' })
+
+          if (request.method === 'GET' && radioListMatch) {
+            const tracks = await listRadioTracks()
+            sendJson(response, 200, { tracks })
+            return
+          }
+
+          if (request.method === 'POST' && radioMetadataMatch) {
+            try {
+              const body = await readJsonBody(request)
+              const metadata = await resolveRadioMetadata(body?.url)
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.metadata_import', targetType: 'radio_provider', targetId: metadata.externalId || null, success: true, metadata: { provider: metadata.provider } })
+              sendJson(response, 200, { metadata })
+            } catch (error) {
+              sendJson(response, 400, { error: 'metadata-unavailable', message: error instanceof Error ? error.message : 'Metadata could not be retrieved.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioArtworkImportMatch) {
+            try {
+              const body = await readJsonBody(request)
+              const artwork = await fetchApprovedRadioArtwork(body?.url)
+              // Validate both declared and actual bytes before returning a staged
+              // preview. The artwork is persisted only through the normal upload.
+              const mime = artwork.mime === 'image/jpg' ? 'image/jpeg' : artwork.mime
+              const validated = validateArtworkBuffer(artwork.data, mime)
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.artwork_import', targetType: 'radio_provider', targetId: null, success: true, metadata: { mime, size_bytes: validated.length } })
+              sendJson(response, 200, { mime, data: validated.toString('base64') })
+            } catch (error) {
+              sendJson(response, 400, { error: 'artwork-unavailable', message: error instanceof Error ? error.message : 'Artwork could not be retrieved.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioMatchMatch) {
+            try {
+              const body = await readJsonBody(request)
+              sendJson(response, 200, { match: smartMatchRadioMetadata(body?.metadata, body?.analysis) })
+            } catch (error) {
+              sendJson(response, 400, { error: 'match-unavailable', message: error instanceof Error ? error.message : 'Smart Match could not be calculated.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioAnalyzeMatch) {
+            try {
+              const url = new URL(`http://localhost${request.url}`)
+              const buffer = await readRawBody(request, MP3_MAX_BYTES)
+              const mime = (request.headers['content-type'] || 'audio/mpeg').split(';')[0].trim().toLowerCase()
+              // Signature/MIME validation remains the single upload contract.
+              validateAudioBuffer(buffer, mime)
+              const analysis = await analyzeRadioAudio(buffer, { filename: url.searchParams.get('filename') || '' })
+              const trackId = url.searchParams.get('trackId')
+              let track = null
+              if (trackId && new RegExp(`^${radioUuid}$`).test(trackId)) {
+                track = await updateRadioTrackAnalysis(trackId, analysis)
+                if (track) await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.audio_analyze', targetType: 'radio_track', targetId: trackId, success: true, metadata: { size_bytes: buffer.length, duration_seconds: analysis.durationSeconds, bitrate_kbps: analysis.bitrateKbps } })
+              }
+              const responseAnalysis = {
+                ...analysis,
+                embeddedArtwork: analysis.embeddedArtwork
+                  ? { ...analysis.embeddedArtwork, data: analysis.embeddedArtwork.data.toString('base64') }
+                  : null,
+              }
+              sendJson(response, 200, { analysis: responseAnalysis, track, optimization: recommendRadioOptimization(analysis) })
+            } catch (error) {
+              sendJson(response, 400, { error: error?.code || 'invalid-audio', message: error instanceof Error ? error.message : 'Audio analysis failed.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioAnalyzeTrackMatch) {
+            try {
+              const trackId = radioAnalyzeTrackMatch[1]
+              const audio = await getRadioAudioForAdmin(trackId)
+              if (!audio) { sendJson(response, 404, { error: 'audio-not-found', message: 'This track has no audio to analyze.' }); return }
+              validateAudioBuffer(audio.data, audio.mime)
+              const analysis = await analyzeRadioAudio(audio.data)
+              const track = await updateRadioTrackAnalysis(trackId, analysis)
+              if (!track) { sendJson(response, 404, { error: 'track-not-found' }); return }
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.audio_analyze', targetType: 'radio_track', targetId: trackId, success: true, metadata: { size_bytes: audio.data.length, duration_seconds: analysis.durationSeconds, bitrate_kbps: analysis.bitrateKbps } })
+              sendJson(response, 200, { analysis: { ...analysis, embeddedArtwork: analysis.embeddedArtwork ? { ...analysis.embeddedArtwork, data: analysis.embeddedArtwork.data.toString('base64') } : null }, track })
+            } catch (error) {
+              sendJson(response, 400, { error: error?.code || 'invalid-audio', message: error instanceof Error ? error.message : 'Audio analysis failed.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioOptimizeMatch) {
+            try {
+              const url = new URL(`http://localhost${request.url}`)
+              const buffer = await readRawBody(request, MP3_MAX_BYTES)
+              const mime = (request.headers['content-type'] || 'audio/mpeg').split(';')[0].trim().toLowerCase()
+              validateAudioBuffer(buffer, mime)
+              const result = await optimizeRadioMp3(buffer, { profile: url.searchParams.get('profile') || 'high' })
+              const responseAnalysis = {
+                ...result.analysis,
+                embeddedArtwork: result.analysis.embeddedArtwork
+                  ? { ...result.analysis.embeddedArtwork, data: result.analysis.embeddedArtwork.data.toString('base64') }
+                  : null,
+              }
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.audio_optimize', targetType: 'radio_track', targetId: url.searchParams.get('trackId') || null, success: true, metadata: { profile: result.profile, original_size_bytes: result.originalSizeBytes, new_size_bytes: result.newSizeBytes, bitrate_kbps: result.analysis.bitrateKbps } })
+              sendJson(response, 200, { analysis: responseAnalysis, originalSizeBytes: result.originalSizeBytes, newSizeBytes: result.newSizeBytes, profile: result.profile, data: result.buffer.toString('base64') })
+            } catch (error) {
+              const status = error instanceof Error && /ffmpeg is not installed/u.test(error.message) ? 503 : 400
+              sendJson(response, status, { error: status === 503 ? 'audio-optimization-unavailable' : error?.code || 'audio-optimization-failed', message: error instanceof Error ? error.message : 'Audio optimization failed.' })
+            }
+            return
+          }
+
+          if (request.method === 'POST' && radioListMatch) {
+            const body = await readJsonBody(request)
+            const metadata = validateTrackMetadata(body)
+            const track = await createRadioTrack(metadata)
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_create', targetType: 'radio_track', targetId: track.id, success: true, metadata: { title: track.title, artist: track.artist, album: track.album, position: track.position } })
+            sendJson(response, 201, { track })
+            return
+          }
+
+          if (request.method === 'POST' && radioReorderMatch) {
+            await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+            const body = await readJsonBody(request)
+            await reorderRadioTracks(body?.orderedIds)
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_reorder', targetType: 'radio_track', targetId: null, success: true, metadata: { count: Array.isArray(body?.orderedIds) ? body.orderedIds.length : 0 } })
+            sendJson(response, 200, { ok: true })
+            return
+          }
+
+          if (radioMediaMatch && request.method === 'PUT') {
+            const trackId = radioMediaMatch[1]
+            const kind = radioMediaMatch[2]
+            const mediaUrl = new URL(`http://localhost${request.url}`)
+            const mime = (request.headers['content-type'] || '').split(';')[0].trim().toLowerCase()
+            const maxBytes = kind === 'audio' ? MP3_MAX_BYTES : ARTWORK_MAX_BYTES
+            const buffer = await readRawBody(request, maxBytes)
+            const track = kind === 'audio'
+              ? await setRadioTrackAudio(trackId, buffer, mime, { optimized: mediaUrl.searchParams.get('optimized') === '1', profile: mediaUrl.searchParams.get('profile') })
+              : await setRadioTrackArtwork(trackId, buffer, mime)
+            if (!track) { sendJson(response, 404, { error: 'track-not-found' }); return }
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_update', targetType: 'radio_track', targetId: track.id, success: true, metadata: { title: track.title, field: kind, size_bytes: buffer.length } })
+            sendJson(response, 200, { track })
+            return
+          }
+
+          if (radioTrackMatch) {
+            const trackId = radioTrackMatch[1]
+            if (request.method === 'PATCH') {
+              const body = await readJsonBody(request)
+              const metadata = validateTrackMetadata(body)
+              const before = await getRadioTrack(trackId)
+              if (!before) { sendJson(response, 404, { error: 'track-not-found' }); return }
+              const track = await updateRadioTrack(trackId, metadata)
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_update', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: track.title, artist: track.artist, album: track.album, position: track.position } })
+              if (before.published !== track.published) {
+                await writeAdminAudit({ adminUserId: superAdmin.id, action: track.published ? 'admin.radio.track_publish' : 'admin.radio.track_unpublish', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: track.title } })
+              }
+              sendJson(response, 200, { track })
+              return
+            }
+            if (request.method === 'DELETE') {
+              await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+              const deleted = await deleteRadioTrack(trackId)
+              if (!deleted) { sendJson(response, 404, { error: 'track-not-found' }); return }
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_delete', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: deleted.title } })
+              sendJson(response, 200, { ok: true })
+              return
+            }
+          }
+
+          sendJson(response, 404, { error: 'not-found' })
+        } catch (error) {
+          const failure = formatAdminRequestError(error)
+          if (failure.unexpected) console.error('Admin request failed:', error)
+          sendJson(response, failure.status, failure.body)
         }
+        return
+      }
+
+      // ---- Public LH Radio catalog & media (read-only, published only) ----
+      if (
+        request.url?.startsWith(
+          '/api/radio'
+        )
+      ) {
+        try {
+          const radioTracksMatch =
+            /^\/api\/radio\/tracks$/.test(
+              request.url,
+            )
+
+          const radioMediaMatch =
+            request.url?.match(
+              /^\/api\/radio\/tracks\/([0-9a-fA-F-]{36})\/(audio|artwork)$/,
+            )
+
+          if (
+            request.method ===
+              'GET' &&
+            radioTracksMatch
+          ) {
+            const tracks =
+              await listPublishedRadioTracks()
+
+            sendJson(
+              response,
+              200,
+              { tracks },
+            )
+
+            return
+          }
+
+          if (
+            (request.method === 'GET' || request.method === 'HEAD') &&
+            radioMediaMatch
+          ) {
+            const trackId =
+              radioMediaMatch[1]
+
+            const kind =
+              radioMediaMatch[2]
+
+            if (kind === 'audio') {
+              const audio =
+                await getPublishedRadioAudio(
+                  trackId,
+                )
+
+              if (!audio) {
+                sendJson(
+                  response,
+                  404,
+                  { error: 'not-found' },
+                )
+
+                return
+              }
+
+              serveBinary(
+                response,
+                audio.data,
+                audio.mime,
+                request.headers.range,
+                request.method,
+              )
+
+              return
+            }
+
+            const artwork =
+              await getPublishedRadioArtwork(
+                trackId,
+              )
+
+            if (!artwork) {
+              sendJson(
+                response,
+                404,
+                { error: 'not-found' },
+              )
+
+              return
+            }
+
+            serveBinary(
+              response,
+              artwork.data,
+              artwork.mime,
+              request.headers.range,
+              request.method,
+            )
+
+            return
+          }
+
+          sendJson(
+            response,
+            404,
+            { error: 'not-found' },
+          )
+        } catch (error) {
+          console.error(
+            'Radio request failed:',
+            request.url,
+            error?.message ?? error,
+          )
+
+          sendJson(
+            response,
+            500,
+            { error: 'internal-error' },
+          )
+        }
+
         return
       }
 

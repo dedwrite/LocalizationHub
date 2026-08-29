@@ -8,12 +8,14 @@ import {
   base32Encode,
   bootstrapSuperAdmin,
   changeProjectMemberRole,
+  confirmAdminTotpAndCreateSession,
   deleteProject,
   deleteUser,
   generateTotpSecret,
   getPlatformMetrics,
   getProject,
   getRecentActivity,
+  getAdminTotpStatus,
   getStorageBreakdown,
   getUser,
   hasRecentAdminEmailVerification,
@@ -313,12 +315,61 @@ describe('TOTP verification and reconfirmation', () => {
     assert.equal(await verifyAdminTotp(ADMIN_ID, code), true)
   })
 
+  it('returns totp-not-enrolled when confirmation is attempted before enrollment', async () => {
+    const client = new FakeClient({ 'SELECT encrypted_secret, nonce, auth_tag, confirmed_at': empty() })
+    setDatabasePoolForTests(pool(client))
+    await assert.rejects(
+      confirmAdminTotpAndCreateSession(ADMIN_ID, '123456'),
+      (error) => error instanceof AdminSecurityError && error.code === 'totp-not-enrolled',
+    )
+    assert.ok(!client.calls.some((c) => c.sql.includes('INSERT INTO admin_sessions')))
+  })
+
   it('rejects an incorrect TOTP', async () => {
     process.env.ADMIN_SECURITY_KEY = 'test-admin-key'
     const secret = generateTotpSecret()
     const client = new FakeClient({ 'SELECT encrypted_secret, nonce, auth_tag, confirmed_at': row(encryptedRow(secret)) })
     setDatabasePoolForTests(pool(client))
-    await assert.rejects(verifyAdminTotp(ADMIN_ID, '000000'), AdminSecurityError)
+    await assert.rejects(
+      verifyAdminTotp(ADMIN_ID, '000000'),
+      (error) => error instanceof AdminSecurityError && error.code === 'totp-invalid',
+    )
+  })
+
+  it('returns a safe configuration error when ADMIN_SECURITY_KEY is missing', async () => {
+    const secret = generateTotpSecret()
+    const client = new FakeClient({ 'SELECT encrypted_secret, nonce, auth_tag, confirmed_at': row(encryptedRow(secret)) })
+    setDatabasePoolForTests(pool(client))
+    await assert.rejects(
+      verifyAdminTotp(ADMIN_ID, '000000'),
+      (error) => error instanceof AdminSecurityError && error.code === 'admin-security-unconfigured',
+    )
+  })
+
+  it('returns a safe key-mismatch error when the enrollment cannot be decrypted', async () => {
+    process.env.ADMIN_SECURITY_KEY = 'different-admin-key'
+    const secret = generateTotpSecret()
+    const client = new FakeClient({ 'SELECT encrypted_secret, nonce, auth_tag, confirmed_at': row(encryptedRow(secret)) })
+    setDatabasePoolForTests(pool(client))
+    await assert.rejects(
+      verifyAdminTotp(ADMIN_ID, '000000'),
+      (error) => error instanceof AdminSecurityError && error.code === 'admin-security-key-mismatch',
+    )
+  })
+
+  it('creates an Admin session after validating an existing enrollment', async () => {
+    process.env.ADMIN_SECURITY_KEY = 'test-admin-key'
+    const secret = generateTotpSecret()
+    const code = totpCode(secret)
+    const client = new FakeClient({
+      'SELECT encrypted_secret, nonce, auth_tag, confirmed_at': row(encryptedRow(secret)),
+      'INSERT INTO admin_sessions': empty(),
+    })
+    setDatabasePoolForTests(pool(client))
+    const token = await confirmAdminTotpAndCreateSession(ADMIN_ID, code)
+    assert.equal(typeof token, 'string')
+    assert.ok(token.length > 20)
+    assert.ok(client.calls.some((c) => c.sql.includes('INSERT INTO admin_sessions')))
   })
 
   it('reconfirms TOTP and refreshes recent_totp_at', async () => {
@@ -332,6 +383,22 @@ describe('TOTP verification and reconfirmation', () => {
     setDatabasePoolForTests(pool(client))
     assert.equal(await reconfirmAdminTotp('token', ADMIN_ID, code), true)
     assert.ok(client.calls.some((c) => c.sql.includes('SET recent_totp_at = NOW()')))
+  })
+})
+
+describe('Admin TOTP enrollment status', () => {
+  it('reports a confirmed existing enrollment without returning secret material', async () => {
+    const client = new FakeClient({
+      'SELECT confirmed_at FROM admin_totp_enrollments': row({ confirmed_at: new Date().toISOString() }),
+    })
+    setDatabasePoolForTests(pool(client))
+    assert.deepEqual(await getAdminTotpStatus(ADMIN_ID), { enrolled: true, confirmed: true })
+  })
+
+  it('reports when no enrollment exists', async () => {
+    const client = new FakeClient({ 'SELECT confirmed_at FROM admin_totp_enrollments': empty() })
+    setDatabasePoolForTests(pool(client))
+    assert.deepEqual(await getAdminTotpStatus(ADMIN_ID), { enrolled: false, confirmed: false })
   })
 })
 
