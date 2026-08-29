@@ -8,6 +8,7 @@ import type {
   TokenProfile,
   TokenRule,
 } from './types'
+import { scanBalancedBraces } from './scanners'
 
 /*
  * Unity specific protected-content rules layered over the generic profile.
@@ -60,7 +61,8 @@ function overlaps(first: ProtectedToken, second: ProtectedToken): boolean {
 }
 
 function extractUnitySpecificTokens(text: string): ProtectedToken[] {
-  const tokens: ProtectedToken[] = []
+  const tokens: ProtectedToken[] = scanBalancedBraces(text, 'unity-smart-string', 'format')
+    .filter((item) => /:/u.test(item.raw))
   for (const rule of UNITY_RULES) {
     const regex = new RegExp(rule.pattern.source, rule.pattern.flags)
     let match: RegExpExecArray | null

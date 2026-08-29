@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { parseLocalizationFile } from '@localizationhub/core'
+import { createTokenProfileConfig } from '@localizationhub/core'
 import { createProject, getStoredUser, listProjects, login, logout, register, restoreSession, sendVerification, type AuthUser, type ProjectSummary } from './appApi'
 import { navigate } from './navigation'
 import LocalWorkspace from './LocalWorkspace'
@@ -71,7 +72,8 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
       version: 3,
       sourceFileName: file.name,
       selectedEntryId: null,
-      tokenProfile: 'generic',
+      tokenProfile: 'auto',
+      tokenProfileConfig: createTokenProfileConfig('auto'),
       document: { parser: doc.parser, format: doc.format, sourceText: doc.sourceText, schema: doc.schema, language: doc.language },
       entries: doc.entries,
       workflow: { entries: {} },

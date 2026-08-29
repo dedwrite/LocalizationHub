@@ -20,6 +20,9 @@ import {
 import {
   validateProtectedTokens,
   type TokenProfileId,
+  type TokenProfileConfig,
+  createTokenProfileConfig,
+  updateTokenProfileConfig,
 } from '@localizationhub/core'
 
 import {
@@ -177,6 +180,11 @@ import './App.css'
 
 type TranslationEntry =
   ParsedLocalizationEntry
+
+function profileStateForProject(project: Pick<LocalizationProjectV3, 'tokenProfile' | 'tokenProfileConfig' | 'engineDetection'>) {
+  const config = project.tokenProfileConfig ?? createTokenProfileConfig(project.tokenProfile ?? 'generic', project.engineDetection)
+  return { profile: config.mode === 'auto' ? 'auto' as TokenProfileId : config.selectedProfile ?? config.resolvedProfile, config }
+}
 
 function formatCloudProjectRole(
   role:
@@ -539,10 +547,9 @@ function App() {
                 : project.entries[0].id,
             )
 
-            setTokenProfile(
-              project.tokenProfile ??
-                'generic',
-            )
+            const receivedProfile = profileStateForProject(project)
+            setTokenProfile(receivedProfile.profile)
+            setTokenProfileConfig(receivedProfile.config)
 
             setSearchQuery('')
             setEntryFilter('all')
@@ -781,8 +788,11 @@ function App() {
     setTokenProfile,
   ] =
     useState<TokenProfileId>(
-      'generic',
+      'auto',
     )
+
+  const [tokenProfileConfig, setTokenProfileConfig] = useState<TokenProfileConfig>(() => createTokenProfileConfig('auto'))
+  const resolvedTokenProfile = tokenProfileConfig.resolvedProfile
 
   const [
     recentProjects,
@@ -839,7 +849,7 @@ function App() {
   const fullyProtectedEntryIds =
     useProtectedEntryIds(
       entries,
-      tokenProfile,
+      resolvedTokenProfile,
     )
 
   const {
@@ -850,7 +860,7 @@ function App() {
     useReviewEntryIds(
       entries,
       fullyProtectedEntryIds,
-      tokenProfile,
+      resolvedTokenProfile,
     )
 
   const {
@@ -971,7 +981,7 @@ function App() {
       ? validateProtectedTokens(
           selectedEntry.source,
           selectedEntry.translation,
-          tokenProfile,
+          resolvedTokenProfile,
         )
       : null
 
@@ -1193,9 +1203,8 @@ function App() {
       return
     }
 
-    setTokenProfile(
-      nextProfile,
-    )
+    setTokenProfile(nextProfile)
+    setTokenProfileConfig(updateTokenProfileConfig(tokenProfileConfig, nextProfile))
 
     setIsDirty(
       true,
@@ -1299,8 +1308,9 @@ function App() {
     )
 
     setTokenProfile(
-      'generic',
+      'auto',
     )
+    setTokenProfileConfig(createTokenProfileConfig('auto'))
 
     setIsDirty(
       false,
@@ -1609,8 +1619,9 @@ function App() {
       )
 
       setTokenProfile(
-        'generic',
+        'auto',
       )
+      setTokenProfileConfig(createTokenProfileConfig('auto'))
 
       setIsDirty(
         false,
@@ -1656,6 +1667,8 @@ function App() {
       selectedEntryId,
 
       tokenProfile,
+      tokenProfileConfig,
+      engineDetection: tokenProfileConfig.detection,
 
       document:
         documentInfo,
@@ -2117,10 +2130,9 @@ try {
           : project.entries[0].id,
       )
 
-      setTokenProfile(
-        project.tokenProfile ??
-          'generic',
-      )
+      const loadedProfile = profileStateForProject(project)
+      setTokenProfile(loadedProfile.profile)
+      setTokenProfileConfig(loadedProfile.config)
 
       setSearchQuery('')
 
@@ -3013,8 +3025,9 @@ try {
       )
 
       setTokenProfile(
-        'generic',
+        'auto',
       )
+      setTokenProfileConfig(createTokenProfileConfig('auto'))
 
       setIsDirty(
         false,
@@ -3139,7 +3152,7 @@ try {
       analyzeExportValidation(
         entries,
         fullyProtectedEntryIds,
-        tokenProfile,
+        resolvedTokenProfile,
       )
 
     if (
@@ -3477,10 +3490,9 @@ try {
                 null,
             )
 
-            setTokenProfile(
-              project.tokenProfile ??
-                'generic',
-            )
+            const receivedProfile = profileStateForProject(project)
+            setTokenProfile(receivedProfile.profile)
+            setTokenProfileConfig(receivedProfile.config)
 
             setProjectLocation(
               null,
@@ -4093,6 +4105,7 @@ try {
               value={
                 tokenProfile
               }
+              config={tokenProfileConfig}
               disabled={
                 workspaceReadOnly
               }
@@ -4909,7 +4922,7 @@ try {
                             }
 
                             tokenProfile={
-                              tokenProfile
+                              resolvedTokenProfile
                             }
 
                             direction={
@@ -5488,4 +5501,3 @@ try {
 }
 
 export default App
-

@@ -21,6 +21,7 @@ import type {
   ExtractionEngineInfo,
   ExtractionResult,
 } from './types'
+import { createTokenProfileConfig, detectionFromEngine } from '../tokens'
 
 function toParsedEntry(entry: ExtractedEntry): ParsedLocalizationEntry {
   return {
@@ -50,6 +51,11 @@ export function buildProjectFromExtraction(
     entries: {},
   }
 
+  const tokenDetection = result.engine === 'godot' || result.engine === 'unity' || result.engine === 'unreal'
+    ? { engine: result.engine, confidence: 'high' as const, evidence: ['authoritative extraction metadata'] }
+    : detectionFromEngine(result.detection)
+  const tokenProfileConfig = createTokenProfileConfig('auto', tokenDetection)
+
   for (const entry of selectedEntries) {
     extractionInfo.entries[entry.id] = {
       context: entry.context,
@@ -64,7 +70,11 @@ export function buildProjectFromExtraction(
     version: 3,
     sourceFileName,
     selectedEntryId: entries[0]?.id ?? null,
-    tokenProfile: result.engine === 'unreal' ? 'unreal' : result.engine === 'unity' ? 'unity' : result.engine === 'godot' ? 'godot' : 'generic',
+    // Auto is persisted for extracted projects; the authoritative extraction
+    // result is retained as detection evidence and drives the resolved profile.
+    tokenProfile: 'auto',
+    tokenProfileConfig,
+    engineDetection: tokenProfileConfig.detection,
     document: {
       parser: 'json',
       format: 'flat-json-object',

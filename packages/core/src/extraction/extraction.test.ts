@@ -263,4 +263,21 @@ describe('engine detection', () => {
     expect(detection.engine).toBe('generic')
     expect(detection.confidence).toBe('low')
   })
+
+  it('always prefers authoritative extraction metadata', () => {
+    const detection = detectEngine({
+      extractionEngine: 'unity',
+      files: [{ name: 'project.godot', lower: 'project.godot' }],
+      directories: [],
+    })
+    expect(detection.engine).toBe('unity')
+    expect(detection.confidence).toBe('high')
+    expect(detection.evidence[0]).toMatch(/authoritative extraction metadata/u)
+  })
+
+  it('does not claim confidence from one overlapping content token', () => {
+    const detection = detectEngine({ files: [], directories: [], contentSamples: ['Value {0}'] })
+    expect(detection.engine).toBe('generic')
+    expect(detection.confidence).toBe('low')
+  })
 })

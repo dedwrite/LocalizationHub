@@ -8,12 +8,34 @@ export type TokenKind =
   | 'control-code'
 
 export type TokenProfileId =
+  | 'auto'
   | 'generic'
   | 'godot'
   | 'unity'
   | 'unreal'
   | 'renpy'
   | 'custom'
+
+export type ResolvedTokenProfileId =
+  | 'generic'
+  | 'godot'
+  | 'unity'
+  | 'unreal'
+
+export type TokenProfileMode = 'auto' | 'manual'
+
+export type TokenProfileDetection = {
+  engine: 'unity' | 'unreal' | 'godot' | 'unknown'
+  confidence: 'high' | 'medium' | 'low'
+  evidence: string[]
+}
+
+export type TokenProfileConfig = {
+  mode: TokenProfileMode
+  selectedProfile?: ResolvedTokenProfileId
+  resolvedProfile: ResolvedTokenProfileId
+  detection: TokenProfileDetection
+}
 
 export type ProtectedToken = {
   raw: string

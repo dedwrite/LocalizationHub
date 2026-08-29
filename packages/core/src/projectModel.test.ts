@@ -299,5 +299,33 @@ describe(
         }
       },
     )
+
+    it('preserves an old explicit Godot choice as manual', () => {
+      const result = decodeLocalizationProject(JSON.stringify({
+        format: 'LocalizationHubProject', version: 3, sourceFileName: 'game.json', selectedEntryId: 'e',
+        tokenProfile: 'godot', document: { parser: 'json', format: 'flat-json-object', sourceText: '{}' },
+        entries: [{ id: 'e', key: 'hello', source: 'Hello', translation: '', keyPath: ['hello'], sourcePath: ['hello'] }],
+        workflow: { entries: {} },
+      }))
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.project.tokenProfileConfig?.mode).toBe('manual')
+        expect(result.project.tokenProfileConfig?.selectedProfile).toBe('godot')
+      }
+    })
+
+    it('round-trips Auto with a separate resolved profile and detection', () => {
+      const result = decodeLocalizationProject(JSON.stringify({
+        format: 'LocalizationHubProject', version: 3, sourceFileName: 'game.json', selectedEntryId: 'e',
+        tokenProfile: 'auto', tokenProfileConfig: {
+          mode: 'auto', resolvedProfile: 'unity', detection: { engine: 'unity', confidence: 'high', evidence: ['metadata'] },
+        }, engineDetection: { engine: 'unity', confidence: 'high', evidence: ['metadata'] },
+        document: { parser: 'json', format: 'flat-json-object', sourceText: '{}' },
+        entries: [{ id: 'e', key: 'hello', source: 'Hello', translation: '', keyPath: ['hello'], sourcePath: ['hello'] }],
+        workflow: { entries: {} },
+      }))
+      expect(result.ok).toBe(true)
+      if (result.ok) expect(result.project.tokenProfileConfig?.resolvedProfile).toBe('unity')
+    })
   },
 )

@@ -1,4 +1,4 @@
-import { addProjectTag, calculateProjectStatistics, decodeLocalizationProject, emptyProjectMetadata, findTranslationMemory, glossaryIssues, glossaryIssues as getGlossaryIssues, toggleEntryTag, validateProtectedTokens, type ProjectMetadata } from '@localizationhub/core'
+import { addProjectTag, calculateProjectStatistics, createTokenProfileConfig, decodeLocalizationProject, emptyProjectMetadata, findTranslationMemory, glossaryIssues, glossaryIssues as getGlossaryIssues, toggleEntryTag, validateProtectedTokens, type ProjectMetadata } from '@localizationhub/core'
 
 export type AuthUser = {
   id: string
@@ -76,7 +76,7 @@ export async function register(username: string, email: string, password: string
 export async function restoreSession() { if (!token()) return null; try { const result = await api('/api/auth/me'); try { window.localStorage.setItem(USER_KEY, JSON.stringify(result.user)) } catch { /* Storage write failed; keep the in-memory session. */ } return result.user as AuthUser } catch { clearAuth(); return null } }
 export async function logout() { if (token()) { try { await api('/api/auth/logout', { method: 'POST' }) } finally { clearAuth() } } }
 export async function listProjects() { return (await api('/api/projects')).projects as ProjectSummary[] }
-export async function createProject(name: string, project?: any) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: project ?? { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], workflow: { entries: {} } } }) })).project as ProjectSnapshot }
+export async function createProject(name: string, project?: any) { return (await api('/api/projects', { method: 'POST', body: JSON.stringify({ name, project: project ?? { format: 'LocalizationHubProject', version: 3, sourceFileName: `${name}.json`, entries: [{ id: 'entry-1', translation: '' }], tokenProfile: 'auto', tokenProfileConfig: createTokenProfileConfig('auto'), workflow: { entries: {} } } }) })).project as ProjectSnapshot }
 export async function getProject(id: string) {
   const snapshot = (await api(`/api/projects/${id}`)).project as Omit<ProjectSnapshot, 'migratedFromVersion'>
   return decodeCloudProject(snapshot)

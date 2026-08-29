@@ -158,6 +158,15 @@
   text-transform: capitalize;
 }
 
+.token-profile-toolbar-status {
+  display: block;
+  margin-top: 3px;
+  color: #9ba8c4;
+  font-size: 10px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
 .toolbar-button {
   border: 1px solid #3b4350;
   background: #171c24;

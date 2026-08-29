@@ -110,6 +110,13 @@ function overlaps(
   )
 }
 
+function isPercentWordFalsePositive(text: string, token: ProtectedToken): boolean {
+  if (token.kind !== 'format' || !token.raw.startsWith('%')) return false
+  const before = token.start > 0 ? text[token.start - 1] : ''
+  const after = token.end < text.length ? text[token.end] : ''
+  return /\d/u.test(before) && /[\p{L}\p{N}_]/u.test(after)
+}
+
 export function extractGenericTokens(
   text: string,
 ): ProtectedToken[] {
@@ -131,13 +138,11 @@ export function extractGenericTokens(
         continue
       }
 
+      const candidate = createToken(raw, match.index, rule.kind, rule.id)
+      if (isPercentWordFalsePositive(text, candidate)) continue
+
       candidates.push({
-        ...createToken(
-          raw,
-          match.index,
-          rule.kind,
-          rule.id,
-        ),
+        ...candidate,
         priority,
       })
     }
