@@ -25,6 +25,10 @@ export type DirectorySignature = {
 export type DetectionInput = {
   files: FileSignature[]
   directories: DirectorySignature[]
+  /** Authoritative engine metadata from an accepted extraction pass. */
+  extractionEngine?: EngineFamily
+  /** Optional text samples used only as low-confidence supporting evidence. */
+  contentSamples?: string[]
 }
 
 const UNREAL_EXTENSIONS = new Set(['.pak', '.utoc', '.ucas', '.uasset', '.uexp', '.ubulk', '.locres', '.locmeta', '.umap'])
@@ -50,6 +54,15 @@ function hasDirectoryEnding(directories: DirectorySignature[], suffixes: string[
 }
 
 export function detectEngine(input: DetectionInput): EngineDetection {
+  if (input.extractionEngine && ['godot', 'unity', 'unreal'].includes(input.extractionEngine)) {
+    const label = input.extractionEngine === 'unreal' ? 'Unreal Engine' : input.extractionEngine === 'unity' ? 'Unity' : 'Godot'
+    return {
+      engine: input.extractionEngine,
+      familyLabel: label,
+      confidence: 'high',
+      evidence: [`authoritative extraction metadata: ${label}`],
+    }
+  }
   const evidence: string[] = []
 
   const unrealCount = countByExtension(input.files, UNREAL_EXTENSIONS)
@@ -75,6 +88,16 @@ export function detectEngine(input: DetectionInput): EngineDetection {
   const inkCount = input.files.filter((file) => file.lower.endsWith('.ink') || file.lower.endsWith('.ink.json') || file.lower.endsWith('.json') && file.lower.includes('ink')).length
   if (inkCount > 0) evidence.push(`${inkCount} Ink file(s)`)
 
+  const samples = input.contentSamples ?? []
+  const contentSignals = {
+    unreal: samples.filter((sample) => /\|(?:plural|gender|hpp)\s*\(/u.test(sample)).length,
+    unity: samples.filter((sample) => /\{[^{}\r\n]+:(?:plural|choose|select|list)(?:\([^{}]*\))?/u.test(sample)).length,
+    godot: samples.filter((sample) => /\[\$[^\]]+\]|(?<![\p{L}\p{N}])%[A-Za-z_][A-Za-z0-9_]*/u.test(sample)).length,
+  }
+  if (contentSignals.unreal > 0) evidence.push(`${contentSignals.unreal} Unreal format signature(s)`)
+  if (contentSignals.unity > 0) evidence.push(`${contentSignals.unity} Unity Smart String signature(s)`)
+  if (contentSignals.godot > 0) evidence.push(`${contentSignals.godot} Godot format signature(s)`)
+
   // Score-based decision. Prefer the strongest, most specific signal. Large
   // numbers of a single engine's resources are strong evidence even without a
   // project file (e.g. a recovered PCK may not surface project.godot at the
@@ -95,13 +118,23 @@ export function detectEngine(input: DetectionInput): EngineDetection {
     ((unityFileCount > 0 || unityLevelCount > 0) ? 30 : 0)
 
   const scores: Array<{ engine: EngineFamily; score: number }> = [
-    { engine: 'unreal', score: unrealCount > 0 ? 100 : 0 },
+    { engine: 'unreal', score: unrealCount > 0 ? 100 : contentSignals.unreal >= 2 ? 40 : 0 },
     { engine: 'godot', score: godotScore },
-    { engine: 'unity', score: unityScore },
+    { engine: 'unity', score: unityScore || (contentSignals.unity >= 2 ? 40 : 0) },
     { engine: 'ink', score: inkCount > 0 ? 90 : 0 },
   ]
 
   const best = scores.reduce((a, b) => (b.score > a.score ? b : a), { engine: 'generic' as EngineFamily, score: 0 })
+
+  const tied = scores.filter((item) => item.score > 0 && item.score === best.score)
+  if (tied.length > 1) {
+    return {
+      engine: 'generic',
+      familyLabel: 'Unknown / Generic',
+      confidence: 'low',
+      evidence: [...evidence, `ambiguous signals: ${tied.map((item) => item.engine).join(', ')}`],
+    }
+  }
 
   if (best.score === 0) {
     return {

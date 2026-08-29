@@ -609,6 +609,9 @@
 .radio-analysis dl div { display: grid; gap: 3px; }
 .radio-analysis dt { color: var(--admin-muted); font-size: 10px; text-transform: uppercase; }
 .radio-analysis dd { margin: 0; color: #f5f7fa; font-size: 13px; }
+.radio-operation-status { margin: 12px 0; color: #c8c0ff; font: 12px 'DM Mono', monospace; }
+.radio-analysis-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.radio-analysis-error .admin-error { margin: 0; }
 .radio-smart-match { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #3b3559; color: #ded9ff; font-size: 12px; }
 .radio-smart-match span { color: var(--admin-muted); }
 .radio-smart-match .match-pass { color: #8fdcb5; }

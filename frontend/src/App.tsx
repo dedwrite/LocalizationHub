@@ -20,6 +20,9 @@ import {
 import {
   validateProtectedTokens,
   type TokenProfileId,
+  type TokenProfileConfig,
+  createTokenProfileConfig,
+  updateTokenProfileConfig,
 } from '@localizationhub/core'
 
 import {
@@ -177,6 +180,11 @@ import './App.css'
 
 type TranslationEntry =
   ParsedLocalizationEntry
+
+function profileStateForProject(project: Pick<LocalizationProjectV3, 'tokenProfile' | 'tokenProfileConfig' | 'engineDetection'>) {
+  const config = project.tokenProfileConfig ?? createTokenProfileConfig(project.tokenProfile ?? 'generic', project.engineDetection)
+  return { profile: config.mode === 'auto' ? 'auto' as TokenProfileId : config.selectedProfile ?? config.resolvedProfile, config }
+}
 
 function formatCloudProjectRole(
   role:
@@ -539,10 +547,9 @@ function App() {
                 : project.entries[0].id,
             )
 
-            setTokenProfile(
-              project.tokenProfile ??
-                'generic',
-            )
+            const receivedProfile = profileStateForProject(project)
+            setTokenProfile(receivedProfile.profile)
+            setTokenProfileConfig(receivedProfile.config)
 
             setSearchQuery('')
             setEntryFilter('all')
@@ -585,8 +592,8 @@ function App() {
               : 'success',
 
             role === 'viewer'
-              ? 'تم تحويلك إلى Viewer. أصبح الوصول للقراءة فقط.'
-              : `تم تحديث صلاحيتك إلى ${formatCloudProjectRole(role)}.`,
+              ? 'Your role changed to Viewer. Access is now read-only.'
+              : `Your role was updated to ${formatCloudProjectRole(role)}.`,
           )
         },
 
@@ -594,7 +601,7 @@ function App() {
         async () => {
           showToast(
             'error',
-            'تم سحب عضويتك من هذا المشروع.',
+            'Your membership in this project was revoked.',
           )
 
           resetToHome()
@@ -781,8 +788,11 @@ function App() {
     setTokenProfile,
   ] =
     useState<TokenProfileId>(
-      'generic',
+      'auto',
     )
+
+  const [tokenProfileConfig, setTokenProfileConfig] = useState<TokenProfileConfig>(() => createTokenProfileConfig('auto'))
+  const resolvedTokenProfile = tokenProfileConfig.resolvedProfile
 
   const [
     recentProjects,
@@ -839,7 +849,7 @@ function App() {
   const fullyProtectedEntryIds =
     useProtectedEntryIds(
       entries,
-      tokenProfile,
+      resolvedTokenProfile,
     )
 
   const {
@@ -850,7 +860,7 @@ function App() {
     useReviewEntryIds(
       entries,
       fullyProtectedEntryIds,
-      tokenProfile,
+      resolvedTokenProfile,
     )
 
   const {
@@ -971,7 +981,7 @@ function App() {
       ? validateProtectedTokens(
           selectedEntry.source,
           selectedEntry.translation,
-          tokenProfile,
+          resolvedTokenProfile,
         )
       : null
 
@@ -1003,7 +1013,7 @@ function App() {
       .startsWith(
         'ar',
       )
-      ? 'أدخل الترجمة...'
+      ? 'Enter translation...'
       : 'Enter translation...'
 
   const currentDocument:
@@ -1143,7 +1153,7 @@ function App() {
 
     showToast(
       'info',
-      'لا توجد Entries أخرى غير مترجمة.',
+      'There are no other untranslated entries.',
     )
   }
 
@@ -1193,9 +1203,8 @@ function App() {
       return
     }
 
-    setTokenProfile(
-      nextProfile,
-    )
+    setTokenProfile(nextProfile)
+    setTokenProfileConfig(updateTokenProfileConfig(tokenProfileConfig, nextProfile))
 
     setIsDirty(
       true,
@@ -1299,8 +1308,9 @@ function App() {
     )
 
     setTokenProfile(
-      'generic',
+      'auto',
     )
+    setTokenProfileConfig(createTokenProfileConfig('auto'))
 
     setIsDirty(
       false,
@@ -1392,7 +1402,7 @@ function App() {
       ) {
         showToast(
           'error',
-          'تم سحب عضويتك من هذا المشروع.',
+          'Your membership in this project was revoked.',
         )
 
         resetToHome()
@@ -1554,7 +1564,7 @@ function App() {
       ) {
         showToast(
           'warning',
-          'لم يتم العثور على نصوص قابلة للترجمة.',
+          'No translatable text was found.',
         )
 
         return
@@ -1609,8 +1619,9 @@ function App() {
       )
 
       setTokenProfile(
-        'generic',
+        'auto',
       )
+      setTokenProfileConfig(createTokenProfileConfig('auto'))
 
       setIsDirty(
         false,
@@ -1618,7 +1629,7 @@ function App() {
 
       showToast(
         'success',
-        `تم فتح ${name} بنجاح.`,
+        `${name} opened successfully.`,
       )
     } catch (
       error
@@ -1629,7 +1640,7 @@ function App() {
 
       showToast(
         'error',
-        'حدث خطأ أثناء فتح الملف.',
+        'An error occurred while opening the file.',
       )
     }
   }
@@ -1656,6 +1667,8 @@ function App() {
       selectedEntryId,
 
       tokenProfile,
+      tokenProfileConfig,
+      engineDetection: tokenProfileConfig.detection,
 
       document:
         documentInfo,
@@ -1814,7 +1827,7 @@ function App() {
     if (!project) {
       showToast(
         'warning',
-        'لا يوجد مشروع لحفظه.',
+        'There is no project to save.',
       )
 
       return
@@ -1867,7 +1880,7 @@ function App() {
 
       showToast(
         'success',
-        'تم حفظ نسخة المشروع بنجاح.',
+        'The project copy was saved successfully.',
       )
     } catch (
       error
@@ -1878,7 +1891,7 @@ function App() {
 
       showToast(
         'error',
-        'فشل حفظ نسخة المشروع.',
+        'Failed to save the project copy.',
       )
     }
   }
@@ -1905,7 +1918,7 @@ function App() {
     if (!project) {
       showToast(
         'warning',
-        'لا يوجد مشروع لحفظه.',
+        'There is no project to save.',
       )
 
       return
@@ -1962,7 +1975,7 @@ try {
 
       showToast(
         'success',
-        'تم حفظ المشروع.',
+        'Project saved.',
       )
     } catch (
       error
@@ -1979,7 +1992,7 @@ try {
       ) {
         showToast(
           'info',
-          'تم تحويلك إلى Viewer. أصبح الوصول للقراءة فقط.',
+          'Your role changed to Viewer. Access is now read-only.',
         )
 
         await refreshCloudRole()
@@ -1995,7 +2008,7 @@ try {
       ) {
         showToast(
           'warning',
-          'تعذر الحفظ: المشروع تغيّر على السحابة.',
+          'Could not save because the project changed in the Cloud.',
         )
 
         if (
@@ -2007,7 +2020,7 @@ try {
               title:
                 'Cloud Project Conflict',
               message:
-                'توجد نسخة أحدث على السحابة.\n\nهل تريد إعادة تحميلها الآن؟\n\nملاحظة: سيتم استبدال التعديلات المحلية غير المحفوظة.',
+                'A newer version is available in the Cloud.\n\nWould you like to reload it now?\n\nNote: your unsaved local changes will be replaced.',
               confirmLabel:
                 'Reload',
               cancelLabel:
@@ -2029,7 +2042,7 @@ try {
 
       showToast(
         'error',
-        'فشل حفظ المشروع.',
+        'Failed to save the project.',
       )
     }
   }
@@ -2117,10 +2130,9 @@ try {
           : project.entries[0].id,
       )
 
-      setTokenProfile(
-        project.tokenProfile ??
-          'generic',
-      )
+      const loadedProfile = profileStateForProject(project)
+      setTokenProfile(loadedProfile.profile)
+      setTokenProfileConfig(loadedProfile.config)
 
       setSearchQuery('')
 
@@ -2155,8 +2167,8 @@ try {
           : 'success',
 
         loaded.migratedFromVersion === 1
-          ? 'تم فتح المشروع القديم وترحيله للتنسيق الحالي.'
-          : 'تم فتح المشروع بنجاح.',
+          ? 'The older project was opened and migrated to the current format.'
+          : 'Project opened successfully.',
       )
     } catch (
       error
@@ -2195,12 +2207,12 @@ try {
 
             showToast(
               'warning',
-              'تعذر العثور على المشروع. تمت إزالته من Recent Projects.',
+              'The project could not be found and was removed from Recent Projects.',
             )
           } else {
             showToast(
               'error',
-              'فشل قراءة ملف المشروع.',
+              'Failed to read the project file.',
             )
           }
 
@@ -2213,28 +2225,28 @@ try {
           case 'invalid-format':
             showToast(
               'error',
-              'ملف المشروع غير صالح.',
+              'The project file is invalid.',
             )
             return
 
           case 'empty-project':
             showToast(
               'warning',
-              'المشروع لا يحتوي على نصوص.',
+              'The project contains no text.',
             )
             return
 
           case 'unsupported-version':
             showToast(
               'error',
-              'إصدار المشروع غير مدعوم.',
+              'The project version is not supported.',
             )
             return
 
           case 'invalid-json':
             showToast(
               'error',
-              'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
+              'Failed to open the project. The file may be corrupt or invalid.',
             )
             return
         }
@@ -2242,7 +2254,7 @@ try {
 
       showToast(
         'error',
-        'فشل فتح المشروع. قد يكون الملف تالفًا أو غير صالح.',
+        'Failed to open the project. The file may be corrupt or invalid.',
       )
     }
   }
@@ -2959,7 +2971,7 @@ try {
       ) {
         showToast(
           'warning',
-          '\u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0646\u0635\u0648\u0635 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062a\u0631\u062c\u0645\u0629.',
+          'No translatable text was found.',
         )
 
         return
@@ -3013,8 +3025,9 @@ try {
       )
 
       setTokenProfile(
-        'generic',
+        'auto',
       )
+      setTokenProfileConfig(createTokenProfileConfig('auto'))
 
       setIsDirty(
         false,
@@ -3022,7 +3035,7 @@ try {
 
       showToast(
         'success',
-        `\u062a\u0645 \u0641\u062a\u062d ${name} \u0628\u0646\u062c\u0627\u062d.`,
+        `${name} opened successfully.`,
       )
     } catch (
       error
@@ -3033,7 +3046,7 @@ try {
 
       showToast(
         'error',
-        '\u062a\u0639\u0630\u0631 \u0641\u062a\u062d \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0645\u0633\u062d\u0648\u0628.',
+        'An error occurred while opening the file.',
       )
     }
   }
@@ -3103,7 +3116,7 @@ try {
     ) {
       showToast(
         'warning',
-        'لا يوجد ملف لتصديره.',
+        'There is no file to export.',
       )
 
       return
@@ -3139,7 +3152,7 @@ try {
       analyzeExportValidation(
         entries,
         fullyProtectedEntryIds,
-        tokenProfile,
+        resolvedTokenProfile,
       )
 
     if (
@@ -3198,7 +3211,7 @@ try {
 
         showToast(
           'warning',
-          'تم إلغاء التصدير لعرض التحذيرات.',
+          'Export was cancelled so you can review the warnings.',
         )
 
         return
@@ -3244,7 +3257,7 @@ try {
 
       showToast(
         'success',
-        'تم تصدير ملف JSON بنجاح.',
+        'The JSON file was exported successfully.',
       )
     } catch (
       error
@@ -3255,7 +3268,7 @@ try {
 
       showToast(
         'error',
-        'فشل تصدير الملف. قد يكون المشروع قديمًا ولا يحتوي على بيانات المصدر الأصلية.',
+        'Failed to export the file. The project may be old and missing its original source data.',
       )
     }
   }
@@ -3477,10 +3490,9 @@ try {
                 null,
             )
 
-            setTokenProfile(
-              project.tokenProfile ??
-                'generic',
-            )
+            const receivedProfile = profileStateForProject(project)
+            setTokenProfile(receivedProfile.profile)
+            setTokenProfileConfig(receivedProfile.config)
 
             setProjectLocation(
               null,
@@ -4093,6 +4105,7 @@ try {
               value={
                 tokenProfile
               }
+              config={tokenProfileConfig}
               disabled={
                 workspaceReadOnly
               }
@@ -4909,7 +4922,7 @@ try {
                             }
 
                             tokenProfile={
-                              tokenProfile
+                              resolvedTokenProfile
                             }
 
                             direction={
@@ -5488,4 +5501,3 @@ try {
 }
 
 export default App
-

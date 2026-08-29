@@ -8,7 +8,7 @@ import BrowserCollaboration from '../BrowserCollaboration'
 import ConfirmDialog from './ConfirmDialog'
 import type { BulkSelection, EntryFilterId, EntryIssue, EntryView } from './entryCollection'
 import type { ProjectSnapshot } from '../appApi'
-import type { TokenProfileId } from '@localizationhub/core'
+import { TOKEN_PROFILE_LABELS, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type Surface = 'entries' | 'editor' | 'tools'
@@ -20,8 +20,10 @@ export type MobileWorkspaceProps = {
   role: string
   saveState: SaveState
   tokenProfileId: TokenProfileId
-  tokenProfiles: string[]
-  onTokenProfile: (value: string) => void
+  tokenProfileSelection: TokenProfileId
+  tokenProfileConfig: TokenProfileConfig
+  tokenProfiles: TokenProfileId[]
+  onTokenProfile: (value: TokenProfileId) => void
   goHome: () => void
   onHome: () => void
   onSave: () => void
@@ -44,6 +46,7 @@ export type MobileWorkspaceProps = {
   status: string
   writable: boolean
   issues: EntryIssue[]
+  sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
   total: number
@@ -97,7 +100,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
       <header className="mob-header">
         <button className="mob-back" onClick={props.goHome} aria-label="Back to projects">‹</button>
         <div className="mob-title">
-          <strong className="mob-project-name">{props.projectName}</strong>
+          <strong className="mob-project-name" data-i18n-content>{props.projectName}</strong>
           <span className={`save-state save-${saveState}`}>{saveLabel}</span>
         </div>
         <button className="mob-save" onClick={props.onSave} disabled={saveState === 'saving'}>Save</button>
@@ -132,6 +135,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
             writable={props.writable}
             tokenProfileId={props.tokenProfileId}
             issues={props.issues}
+            sourceDirection={props.sourceDirection}
             direction={props.direction}
             position={props.position}
             total={props.total}
@@ -171,9 +175,12 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
               </div>
               <label className="mob-token-field">
                 <span>Token profile</span>
-                <select value={props.tokenProfileId} onChange={(event) => props.onTokenProfile(event.target.value)}>
-                  {props.tokenProfiles.map((item) => <option key={item} value={item}>{item}</option>)}
+                <select value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
+                  {props.tokenProfiles.map((item) => <option key={item} value={item}>{item === 'auto' ? `Auto · ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.resolvedProfile]}` : TOKEN_PROFILE_LABELS[item as 'generic' | 'godot' | 'unreal' | 'unity'] ?? item}</option>)}
                 </select>
+                <small>{props.tokenProfileConfig.mode === 'auto' ? `Auto · ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.resolvedProfile]}` : `Selected · ${TOKEN_PROFILE_LABELS[(props.tokenProfileConfig.selectedProfile ?? props.tokenProfileId) as 'generic' | 'godot' | 'unreal' | 'unity'] ?? props.tokenProfileId}`}</small>
+                {props.tokenProfileConfig.mode === 'auto' && props.tokenProfileConfig.detection.engine === 'unknown' && <small className="token-profile-mobile-warning">Engine not detected. Using Generic.</small>}
+                {props.tokenProfileConfig.mode === 'auto' && props.tokenProfileConfig.detection.engine !== 'unknown' && <small>Detected {TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} · {props.tokenProfileConfig.detection.confidence} confidence</small>}
               </label>
             </div>
           </div>
@@ -211,7 +218,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
 
       {props.overviewOpen && (
         <div className="overlay mob-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) props.setOverviewOpen(false) }}>
-          <ProjectOverview snapshot={props.snapshot} draft={props.draft} memberCount={props.members.length} tokenProfileId={props.tokenProfileId} role={props.role} onClose={() => props.setOverviewOpen(false)} />
+          <ProjectOverview snapshot={props.snapshot} draft={props.draft} memberCount={props.members.length} tokenProfileId={props.tokenProfileId} tokenProfileConfig={props.tokenProfileConfig} role={props.role} onClose={() => props.setOverviewOpen(false)} />
         </div>
       )}
 

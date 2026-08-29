@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getProject, saveProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
+import { createTokenProfileConfig, displayTokenProfile, TOKEN_PROFILE_LABELS, updateTokenProfileConfig, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import { canEdit } from '../appLogic'
 import { buildEntryCollection, entryIssues, type BulkSelection, type EntryFilterId } from './entryCollection'
 import { validateProjectV3 } from './projectValidation'
@@ -70,7 +71,9 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   const autosaveTimer = useRef<any>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const tokenProfileId = draft?.tokenProfile ?? 'generic'
+  const tokenProfileConfig: TokenProfileConfig = draft?.tokenProfileConfig ?? createTokenProfileConfig(draft?.tokenProfile ?? 'generic', draft?.engineDetection)
+  const tokenProfileId = tokenProfileConfig.resolvedProfile
+  const tokenProfileSelection: TokenProfileId = tokenProfileConfig.mode === 'auto' ? 'auto' : tokenProfileConfig.selectedProfile ?? tokenProfileId
 
   useEffect(() => {
     getProject(projectId)
@@ -123,6 +126,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   const entry = entries[selected]
   const status = draft?.workflow?.entries?.[entry?.id]?.status ?? (entry?.translation ? 'translated' : 'draft')
   const issues = entry ? entryIssues(entry, tokenProfileId) : []
+  const sourceDirection = draft?.document?.language?.sourceDirection ?? 'auto'
   const direction = draft?.document?.language?.translationDirection ?? 'auto'
   const sourceLocale = draft?.document?.language?.sourceLocale
   const targetLocale = draft?.document?.language?.translationLocale
@@ -157,6 +161,13 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     editVersionRef.current += 1
     setSaveState('unsaved')
     scheduleAutosave()
+  }
+
+  function changeTokenProfile(value: TokenProfileId) {
+    updateDraft((current: any) => {
+      const config = updateTokenProfileConfig(current.tokenProfileConfig, value, current.engineDetection)
+      return { ...current, tokenProfile: value, tokenProfileConfig: config, engineDetection: config.detection }
+    })
   }
 
   function scheduleAutosave() {
@@ -367,8 +378,10 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         role={snapshot.role}
         saveState={saveState}
         tokenProfileId={tokenProfileId}
-        tokenProfiles={['generic', 'godot']}
-        onTokenProfile={(value) => updateDraft((current: any) => ({ ...current, tokenProfile: value }))}
+        tokenProfileSelection={tokenProfileSelection}
+        tokenProfileConfig={tokenProfileConfig}
+        tokenProfiles={['auto', 'generic', 'godot', 'unreal', 'unity']}
+        onTokenProfile={changeTokenProfile}
         goHome={goHome}
         onHome={onHome}
         onSave={saveNow}
@@ -389,6 +402,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         status={status}
         writable={writable}
         issues={issues}
+        sourceDirection={sourceDirection}
         direction={direction}
         position={selected}
         total={entries.length}
@@ -430,8 +444,10 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         role={snapshot.role}
         saveState={saveState}
         tokenProfileId={tokenProfileId}
-        tokenProfiles={['generic', 'godot']}
-        onTokenProfile={(value) => updateDraft((current: any) => ({ ...current, tokenProfile: value }))}
+        tokenProfileSelection={tokenProfileSelection}
+        tokenProfileConfig={tokenProfileConfig}
+        tokenProfiles={['auto', 'generic', 'godot', 'unreal', 'unity']}
+        onTokenProfile={changeTokenProfile}
         onHome={goHome}
         onSave={saveNow}
         onOverview={() => setOverviewOpen(true)}
@@ -476,6 +492,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
             writable={writable}
             tokenProfileId={tokenProfileId}
             issues={issues}
+            sourceDirection={sourceDirection}
             direction={direction}
             position={selected}
             total={entries.length}
@@ -514,7 +531,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
 
       {overviewOpen && (
         <div className="overlay">
-          <ProjectOverview snapshot={snapshot} draft={draft} memberCount={members.length} tokenProfileId={tokenProfileId} role={snapshot.role} onClose={() => setOverviewOpen(false)} />
+          <ProjectOverview snapshot={snapshot} draft={draft} memberCount={members.length} tokenProfileId={tokenProfileId} tokenProfileConfig={tokenProfileConfig} role={snapshot.role} onClose={() => setOverviewOpen(false)} />
         </div>
       )}
 
@@ -578,8 +595,10 @@ function Toolbar(props: {
   role: string
   saveState: SaveState
   tokenProfileId: string
-  tokenProfiles: string[]
-  onTokenProfile: (value: string) => void
+  tokenProfileSelection: TokenProfileId
+  tokenProfileConfig: TokenProfileConfig
+  tokenProfiles: TokenProfileId[]
+  onTokenProfile: (value: TokenProfileId) => void
   onHome: () => void
   onSave: () => void
   onOverview: () => void
@@ -595,15 +614,24 @@ function Toolbar(props: {
     <header className="workspace-toolbar">
       <button className="toolbar-brand" onClick={props.onHome} title="Back to projects" aria-label="LocalizationHub — back to projects"><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
       <div className="toolbar-title">
-        <strong>{props.projectName}</strong>
+        <strong data-i18n-content>{props.projectName}</strong>
         <span className={`save-state save-${props.saveState}`}>{saveLabel}</span>
       </div>
       <div className="toolbar-group">
         <label className="toolbar-select">
           <span>Token profile</span>
-          <select value={props.tokenProfileId} onChange={(event) => props.onTokenProfile(event.target.value)}>
-            {props.tokenProfiles.map((item) => <option key={item} value={item}>{item}</option>)}
+          <select value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
+            {props.tokenProfiles.map((item) => <option key={item} value={item}>{item === 'auto' ? displayTokenProfile(props.tokenProfileConfig) : TOKEN_PROFILE_LABELS[item as 'generic' | 'godot' | 'unreal' | 'unity'] ?? item}</option>)}
           </select>
+          <small className="token-profile-toolbar-status">
+            {props.tokenProfileConfig.mode === 'auto'
+              ? props.tokenProfileConfig.detection.engine === 'unknown'
+                ? 'Engine not detected · using Generic'
+                : `Detected ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} · ${props.tokenProfileConfig.detection.confidence} confidence`
+              : props.tokenProfileConfig.detection.engine !== 'unknown' && props.tokenProfileConfig.selectedProfile !== props.tokenProfileConfig.detection.engine
+                ? `${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} detected · selected profile differs`
+                : 'Manual profile selected'}
+          </small>
         </label>
         <button className="toolbar-button" onClick={props.onCollaboration}>Collaboration</button>
         <button className="toolbar-button" onClick={props.onSearchReplace}>Search &amp; Replace</button>

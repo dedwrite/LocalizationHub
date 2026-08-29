@@ -1,6 +1,9 @@
 import type {
   TokenProfileId,
+  TokenProfileConfig,
+  TokenProfileDetection,
 } from './tokens'
+import { createTokenProfileConfig, detectionFromEngine } from './tokens'
 
 import type {
   LocalizationFileFormat,
@@ -93,6 +96,10 @@ export type LocalizationProjectV2 = {
   tokenProfile:
     TokenProfileId
 
+  /** Additive profile state. `tokenProfile` remains for V3 compatibility. */
+  tokenProfileConfig?: TokenProfileConfig
+  engineDetection?: TokenProfileDetection
+
   document:
     StoredDocumentInfo
 
@@ -115,6 +122,9 @@ export type LocalizationProjectV3 = {
 
   tokenProfile:
     TokenProfileId
+
+  tokenProfileConfig?: TokenProfileConfig
+  engineDetection?: TokenProfileDetection
 
   document:
     StoredDocumentInfo
@@ -197,6 +207,7 @@ function migrateProjectV1(
     sourceFileName: legacy.sourceFileName,
     selectedEntryId: restored?.id ?? entries[0]?.id ?? null,
     tokenProfile: legacy.tokenProfile ?? 'generic',
+    tokenProfileConfig: createTokenProfileConfig(legacy.tokenProfile ?? 'generic'),
     document: {
       parser: 'json',
       format: 'flat-json-object',
@@ -218,6 +229,7 @@ function migrateProjectV2(
   return {
     ...project,
     version: 3,
+    tokenProfileConfig: project.tokenProfileConfig ?? createTokenProfileConfig(project.tokenProfile),
     workflow: { entries: {} },
   }
 }
@@ -313,9 +325,26 @@ export function decodeLocalizationProject(
       return { ok: false, reason: 'invalid-format' }
     }
 
+    const profile = project.tokenProfile ?? 'generic'
+    const authoritativeDetection = project.engineDetection
+      ?? (project.metadata?.extraction ? detectionFromEngine({
+        engine: project.metadata.extraction.engine,
+        familyLabel: project.metadata.extraction.familyLabel,
+        confidence: project.metadata.extraction.confidence,
+        evidence: ['authoritative extraction metadata'],
+      }) : undefined)
+    const tokenProfileConfig = project.tokenProfileConfig ?? createTokenProfileConfig(
+      profile,
+      authoritativeDetection,
+    )
     return {
       ok: true,
-      project: project as LocalizationProjectV3,
+      project: {
+        ...project,
+        tokenProfile: profile,
+        tokenProfileConfig,
+        engineDetection: authoritativeDetection ?? tokenProfileConfig.detection,
+      } as LocalizationProjectV3,
       migratedFromVersion: null,
     }
   }

@@ -1,7 +1,7 @@
 {
   "name": "localizationhub",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Desktop localization editor for structured game text and protected-token workflows.",
   "type": "module",
   "scripts": {
@@ -20,10 +20,11 @@
     "@tauri-apps/plugin-dialog": "^2.7.2",
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2.5.4",
+    "@localizationhub/i18n": "0.9.0",
     "lossless-json": "^4.3.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "@localizationhub/core": "0.8.0"
+    "@localizationhub/core": "0.9.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

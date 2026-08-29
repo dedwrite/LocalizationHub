@@ -89,7 +89,26 @@ export async function confirmAdminTotpAndCreateSession(userId, code) {
   await verifyAdminTotp(userId, code)
   return createAdminSession(userId)
 }
-export async function authenticateAdminSession(token, userId) { if (!token || !userId) return null; const result = await getDatabasePool().query("SELECT s.user_id, s.last_used_at, s.expires_at, u.site_role, u.suspended_at FROM admin_sessions s INNER JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.user_id = $2 AND s.revoked_at IS NULL", [hash(token), userId]); const row = result.rows[0]; if (!row || row.site_role !== 'super_admin' || row.suspended_at || new Date(row.expires_at).getTime() <= Date.now() || new Date(row.last_used_at).getTime() + ADMIN_IDLE_TTL_MS <= Date.now()) return null; await getDatabasePool().query('UPDATE admin_sessions SET last_used_at = NOW() WHERE token_hash = $1', [hash(token)]); return row }
+export async function authenticateAdminSession(token, userId) {
+  if (!token || !userId) return null
+  const result = await getDatabasePool().query(
+    `UPDATE admin_sessions AS session
+     SET last_used_at = NOW()
+     FROM users AS admin_user
+     WHERE session.token_hash = $1
+       AND session.user_id = $2
+       AND session.revoked_at IS NULL
+       AND session.expires_at > NOW()
+       AND session.last_used_at > NOW() - ($3 * INTERVAL '1 millisecond')
+       AND admin_user.id = session.user_id
+       AND admin_user.site_role = 'super_admin'
+       AND admin_user.suspended_at IS NULL
+     RETURNING session.user_id, session.last_used_at, session.expires_at,
+               admin_user.site_role, admin_user.suspended_at`,
+    [hash(token), userId, ADMIN_IDLE_TTL_MS],
+  )
+  return result.rows[0] ?? null
+}
 export async function revokeAdminSession(token) { if (token) await getDatabasePool().query('UPDATE admin_sessions SET revoked_at = NOW() WHERE token_hash = $1', [hash(token)]) }
 export async function writeAdminAudit({ adminUserId, action, targetType = null, targetId = null, success, metadata = {}, requestIp = null, userAgent = null }) { await getDatabasePool().query('INSERT INTO admin_audit_log (admin_user_id, action, target_type, target_id, success, metadata, request_ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)', [adminUserId, action, targetType, targetId, success, JSON.stringify(metadata), requestIp, userAgent]) }
 export async function requireRecentTotp(token, userId) { const result = await getDatabasePool().query('SELECT recent_totp_at FROM admin_sessions WHERE token_hash = $1 AND user_id = $2 AND revoked_at IS NULL', [hash(token), userId]); if (!result.rows[0]?.recent_totp_at || new Date(result.rows[0].recent_totp_at).getTime() + 5 * 60 * 1000 < Date.now()) throw new AdminSecurityError('recent-totp-required', 'Recent TOTP confirmation is required.'); return true }

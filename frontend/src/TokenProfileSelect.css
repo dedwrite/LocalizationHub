@@ -1,5 +1,6 @@
 .token-profile-control {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 
@@ -48,4 +49,28 @@
 .token-profile-control select option {
   background-color: #181c26;
   color: #e8ebf2;
+}
+
+.token-profile-status {
+  flex-basis: 100%;
+  display: block;
+  color: #9ba8c4;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.token-profile-status.warning {
+  color: #e8ca8a;
+}
+
+.token-profile-status button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #bcb2ff;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

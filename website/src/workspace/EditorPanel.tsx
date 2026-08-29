@@ -8,6 +8,7 @@ type EditorPanelProps = {
   writable: boolean
   tokenProfileId: TokenProfileId
   issues: Array<{ severity: 'error' | 'warning'; message: string }>
+  sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
   total: number
@@ -62,7 +63,7 @@ function DialogueContextStrip({ context }: { context: any }) {
 }
 
 export default function EditorPanel(props: EditorPanelProps) {
-  const { entry, status, writable, tokenProfileId, issues, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale, mobile = false, onNext, onPrev } = props
+  const { entry, status, writable, tokenProfileId, issues, sourceDirection, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale, mobile = false, onNext, onPrev } = props
   const [jumpOpen, setJumpOpen] = useState(false)
   const [jumpValue, setJumpValue] = useState('')
   const [copied, setCopied] = useState(false)
@@ -168,14 +169,14 @@ export default function EditorPanel(props: EditorPanelProps) {
             <span className="section-label"><small>REFERENCE</small> Source</span>
             <button className="link-button" onClick={copySource} title="Copy source">{copied ? 'Copied' : 'Copy'}</button>
           </div>
-          <div className="source-text" dir={direction === 'auto' ? undefined : direction}>
+          <div className="source-text" dir={sourceDirection} data-i18n-content>
             <ProtectedSource text={source} profileId={tokenProfileId} />
           </div>
           {(entry?.context || entry?.notes || entry?.dialogueContext) && (
             <div className="source-context">
               {entry.dialogueContext && <DialogueContextStrip context={entry.dialogueContext} />}
-              {entry.context && <p><strong>Context:</strong> {entry.context}</p>}
-              {entry.notes && <p><strong>Notes:</strong> {entry.notes}</p>}
+              {entry.context && <p><strong>Context:</strong> <bdi data-i18n-content>{entry.context}</bdi></p>}
+              {entry.notes && <p><strong>Notes:</strong> <bdi data-i18n-content>{entry.notes}</bdi></p>}
             </div>
           )}
         </section>

@@ -8,6 +8,7 @@ import type {
   TokenProfile,
   TokenRule,
 } from './types'
+import { scanBalancedBraces, scanBalancedParentheses } from './scanners'
 
 /*
  * Unreal Engine specific protected-content rules layered over the generic
@@ -57,7 +58,17 @@ function overlaps(first: ProtectedToken, second: ProtectedToken): boolean {
 }
 
 function extractUnrealSpecificTokens(text: string): ProtectedToken[] {
-  const tokens: ProtectedToken[] = []
+  const tokens: ProtectedToken[] = scanBalancedBraces(text, 'unreal-ftext-argument', 'format')
+  for (const brace of tokens.slice()) {
+    const afterBrace = brace.end
+    const modifier = text.slice(afterBrace).match(/^\|\s*(plural|ordinal|gender|hpp)\s*/u)
+    if (!modifier) continue
+    const open = afterBrace + modifier[0].length
+    const close = scanBalancedParentheses(text, open)
+    if (close < 0) continue
+    const raw = text.slice(brace.start, close + 1)
+    tokens.push({ raw, start: brace.start, end: close + 1, kind: 'format', ruleId: 'unreal-argument-modifier' })
+  }
   for (const rule of UNREAL_RULES) {
     const regex = new RegExp(rule.pattern.source, rule.pattern.flags)
     let match: RegExpExecArray | null

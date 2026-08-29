@@ -456,6 +456,15 @@
   max-width: 60%;
 }
 
+.mob-token-field small {
+  display: block;
+  color: #9ba8c4;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.mob-token-field .token-profile-mobile-warning { color: #e8ca8a; }
+
 /* ---------- Sheets / overlays (bottom sheets on phone) ---------- */
 /* Notice toast: keep it above the bottom nav so it never blocks navigation. */
 .mob-workspace .toast {

@@ -24,7 +24,7 @@ export async function confirmUnsavedChanges(
     title:
       'Unsaved Changes',
     message:
-      'لديك تغييرات غير محفوظة. إذا تابعت، ستفقد هذه التغييرات.',
+      'You have unsaved changes. If you continue, those changes will be lost.',
     confirmLabel:
       'Discard Changes',
     cancelLabel:

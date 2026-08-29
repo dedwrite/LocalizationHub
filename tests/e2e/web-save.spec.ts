@@ -91,6 +91,7 @@ test.describe('cloud save regression', () => {
   test('autosave sends a valid object and persists on reload', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
     await page.getByLabel('Translation').fill('Autosaved text')
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
     const last = state.saves.at(-1)!
@@ -106,6 +107,7 @@ test.describe('cloud save regression', () => {
     await openTools(page)
     await page.getByRole('tab', { name: 'Tags', exact: true }).click()
     await page.getByRole('button', { name: 'UI' }).click()
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
     const last = state.saves.at(-1)!
@@ -124,6 +126,7 @@ test.describe('cloud save regression', () => {
     await page.getByRole('tab', { name: 'Tags', exact: true }).click()
     await page.getByLabel('New tag label').fill('Ship')
     await page.getByRole('button', { name: 'Add tag' }).click()
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
     const last = state.saves.at(-1)!
@@ -136,6 +139,7 @@ test.describe('cloud save regression', () => {
     await openTools(page)
     await page.getByRole('tab', { name: 'Memory', exact: true }).click()
     await page.getByRole('button', { name: 'Apply' }).click()
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
     const last = state.saves.at(-1)!
@@ -151,6 +155,7 @@ test.describe('cloud save regression', () => {
     await page.getByLabel('Translation').fill('First draft')
     await page.getByLabel('Translation').fill('Second draft')
     await page.getByLabel('Translation').fill('Final value')
+    await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
     expect(state.saves.length).toBeGreaterThanOrEqual(1)

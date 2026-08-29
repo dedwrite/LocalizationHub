@@ -20,7 +20,20 @@ export type {
   TokenIssueSeverity,
   TokenValidationIssue,
   TokenValidationResult,
+  ResolvedTokenProfileId,
+  TokenProfileMode,
+  TokenProfileConfig,
+  TokenProfileDetection,
 } from './types'
+
+export {
+  TOKEN_PROFILE_LABELS,
+  createTokenProfileConfig,
+  detectionFromEngine,
+  displayTokenProfile,
+  resolveTokenProfile,
+  updateTokenProfileConfig,
+} from './profiles'
 
 export {
   createCustomTokenProfile,
@@ -35,6 +48,7 @@ const tokenProfiles: Record<
   TokenProfileId,
   TokenProfile | undefined
 > = {
+  auto: genericTokenProfile,
   generic: genericTokenProfile,
   godot: godotTokenProfile,
   unreal: unrealTokenProfile,

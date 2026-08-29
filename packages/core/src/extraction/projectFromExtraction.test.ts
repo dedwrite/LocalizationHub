@@ -15,7 +15,9 @@ describe('projectFromExtraction', () => {
     expect(project.format).toBe('LocalizationHubProject')
     expect(project.entries).toHaveLength(1)
     expect(project.entries[0].source).toBe('Where have you been?')
-    expect(project.tokenProfile).toBe('godot')
+    expect(project.tokenProfile).toBe('auto')
+    expect(project.tokenProfileConfig?.mode).toBe('auto')
+    expect(project.tokenProfileConfig?.resolvedProfile).toBe('godot')
 
     // Backward-compatible extraction metadata.
     const extraction = project.metadata?.extraction

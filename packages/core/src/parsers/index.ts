@@ -69,7 +69,7 @@ export function parseLocalizationFile(
     ok: false,
 
     reason:
-      `صيغة .${extension ?? ''} غير مدعومة حاليًا.`,
+      `The .${extension ?? ''} format is not currently supported.`,
   }
 }
 

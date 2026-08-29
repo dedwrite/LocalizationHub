@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 const metrics = {
@@ -71,6 +71,11 @@ const radioAnalysis = {
   filenameSuggestion: { title: 'Cemeteries', artist: 'Sodus', inferred: true }, source: 'id3',
 }
 
+async function fulfillRadioAnalysis(route: Route, analysis = radioAnalysis, delayMs = 0) {
+  if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs))
+  await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ analysis, optimization: { recommended: false, reason: 'already-efficient' } }) })
+}
+
 async function mockAdminApi(
   page: Page,
   options: {
@@ -78,8 +83,11 @@ async function mockAdminApi(
     radioTracks?: unknown
     radioMetrics?: unknown
     radioFailure?: boolean
+    onAudioAnalyze?: (route: Route, call: number) => Promise<void>
+    onTrackCreate?: (route: Route) => Promise<void>
   } = {},
 ) {
+  let audioAnalyzeCalls = 0
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace(/^\/api\/admin\/?/, '')
@@ -98,7 +106,9 @@ async function mockAdminApi(
         return
       }
       if (path.startsWith('radio/audio/analyze')) {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ analysis: radioAnalysis, optimization: { recommended: false, reason: 'already-efficient' } }) })
+        audioAnalyzeCalls += 1
+        if (options.onAudioAnalyze) await options.onAudioAnalyze(route, audioAnalyzeCalls)
+        else await fulfillRadioAnalysis(route)
         return
       }
       if (path.startsWith('auth/totp/enroll')) {
@@ -107,6 +117,11 @@ async function mockAdminApi(
       }
       if (path.startsWith('radio/tracks') && path.includes('reorder')) {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+        return
+      }
+      if (path === 'radio/tracks') {
+        if (options.onTrackCreate) await options.onTrackCreate(route)
+        else await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
         return
       }
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
@@ -272,6 +287,139 @@ test.describe('admin console routing and views', () => {
     await expect(page.getByText('ID3 + frame data')).toBeVisible()
     await expect(page.locator('input[required][maxlength="200"][value="Cemeteries"]')).toBeVisible()
     await expect(page.locator('input[required][maxlength="200"][value="Sodus"]')).toBeVisible()
+  })
+
+  test('labels file inspection as Analyzing audio and reserves Saving for submit', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: (route) => fulfillRadioAnalysis(route, radioAnalysis, 200),
+      onTrackCreate: async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Add track' })
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByRole('status')).toHaveText('Analyzing audio…')
+    await expect(page.getByRole('button', { name: 'Analyzing audio…' })).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Saving…' })).toHaveCount(0)
+    await expect(page.getByText('Audio analysis')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Add track', exact: true })).toBeEnabled()
+    await dialog.getByRole('button', { name: 'Add track', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Saving…' })).toBeDisabled()
+    await expect(page.getByRole('dialog', { name: 'Add track' })).toHaveCount(0)
+  })
+
+  test('shows a timeout error, keeps the file, and retries analysis', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: async (route, call) => {
+        if (call === 1) {
+          await route.fulfill({ status: 408, contentType: 'application/json', body: JSON.stringify({ error: 'audio-analysis-timeout', message: 'Audio analysis took too long. Retry analysis.' }) })
+          return
+        }
+        await fulfillRadioAnalysis(route)
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Add track' })
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'retry-me.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
+    await expect(page.getByRole('alert')).toHaveText('Audio analysis took too long. Retry analysis.')
+    await expect(page.getByText(/retry-me\.mp3/)).toBeVisible()
+    await page.getByRole('button', { name: 'Retry analysis' }).click()
+    await expect(page.getByText('Audio analysis')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Add track', exact: true })).toBeEnabled()
+  })
+
+  test('keeps a failed file available and allows choosing another file', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: async (route, call) => {
+        if (call === 1) {
+          await route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'invalid-audio', message: 'Audio metadata could not be read.' }) })
+          return
+        }
+        await fulfillRadioAnalysis(route)
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const input = page.locator('input[type=file]').first()
+    await input.setInputFiles({ name: 'broken.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 broken fixture') })
+    await expect(page.getByRole('alert')).toHaveText('Audio metadata could not be read.')
+    await expect(page.getByText(/broken\.mp3/)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry analysis' })).toBeVisible()
+    await input.setInputFiles({ name: 'replacement.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 replacement fixture') })
+    await expect(page.getByText('Audio analysis')).toBeVisible()
+  })
+
+  test('a second file selection invalidates the older analysis response', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: async (route) => {
+        const filename = new URL(route.request().url()).searchParams.get('filename')
+        const analysis = filename === 'second.mp3'
+          ? { ...radioAnalysis, title: 'Second Track', artist: 'Second Artist' }
+          : { ...radioAnalysis, title: 'Stale First Track', artist: 'Stale Artist' }
+        try {
+          await fulfillRadioAnalysis(route, analysis, filename === 'second.mp3' ? 10 : 300)
+        } catch {
+          // The first request is expected to be aborted by the second selection.
+        }
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Add track' })
+    const input = page.locator('input[type=file]').first()
+    await input.setInputFiles({ name: 'first.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 first fixture') })
+    await expect(page.getByRole('status')).toHaveText('Analyzing audio…')
+    await input.setInputFiles({ name: 'second.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 second fixture') })
+    await expect(dialog.getByRole('textbox', { name: /Track title/ })).toHaveValue('Second Track')
+    await page.waitForTimeout(350)
+    await expect(dialog.getByRole('textbox', { name: /Track title/ })).toHaveValue('Second Track')
+    await expect(dialog.locator('input[value="Stale First Track"]')).toHaveCount(0)
+  })
+
+  test('Cancel remains available while analysis is pending', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: async (route) => {
+        try {
+          await fulfillRadioAnalysis(route, radioAnalysis, 500)
+        } catch {
+          // Closing the modal aborts the pending request.
+        }
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Add track' })
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'cancel.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 cancel fixture') })
+    await expect(page.getByRole('status')).toHaveText('Analyzing audio…')
+    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled()
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Add track' })).toHaveCount(0)
+  })
+
+  test('keeps ID3 autofill and embedded artwork preview', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      onAudioAnalyze: (route) => fulfillRadioAnalysis(route, {
+        ...radioAnalysis,
+        embeddedArtwork: { mime: 'image/png', data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB', description: 'Cover' },
+      }),
+    })
+    await page.goto('/app/admin/radio')
+    await page.getByRole('button', { name: '+ Add track' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Add track' })
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'tagged.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 tagged fixture') })
+    await expect(dialog.getByRole('textbox', { name: /Track title/ })).toHaveValue('Cemeteries')
+    await expect(dialog.getByRole('textbox', { name: /Artist/ })).toHaveValue('Sodus')
+    await expect(page.locator('.radio-cover-preview')).toHaveAttribute('src', /^data:image\/png;base64,/)
   })
 
   test('resolves provider links as metadata-only suggestions', async ({ page }) => {

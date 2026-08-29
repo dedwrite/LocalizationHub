@@ -1,6 +1,6 @@
 {
   "name": "localizationhub",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "LocalizationHub is a collaborative localization workspace designed for game translation teams.",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "website:build": "npm run build --workspace website",
     "test:e2e": "playwright test",
     "test:performance": "vitest run .\\website\\src\\performance.test.ts",
+    "test:i18n": "node scripts/i18n-audit.mjs && vitest run packages/i18n/src",
     "website:serve": "set SERVE_PUBLIC_WEBSITE=1&& set ENABLE_EXPERIMENTAL_CLOUD_API=0&& node collaboration-server/server.mjs"
   },
   "keywords": [],

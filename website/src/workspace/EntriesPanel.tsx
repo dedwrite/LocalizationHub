@@ -84,8 +84,10 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           )}
           <span className={`entry-status-dot ${statusDotClass(view)}`} aria-hidden="true" />
           <div className="entry-row-main">
-            <span className="entry-key">{key}</span>
-            <span className="entry-preview">{view.entry.translation || view.entry.source || 'Untranslated'}</span>
+            <span className="entry-key" data-i18n-content>{key}</span>
+            {view.entry.translation || view.entry.source
+              ? <span className="entry-preview" data-i18n-content>{view.entry.translation || view.entry.source}</span>
+              : <span className="entry-preview">Untranslated</span>}
           </div>
           <div className="entry-row-meta">
             <span className={`entry-state-tag state-${statusLabel(view).toLowerCase().replace(' ', '-')}`}>{statusLabel(view)}</span>
@@ -115,8 +117,10 @@ export default function EntriesPanel(props: EntriesPanelProps) {
         />
         <span className={`entry-status-dot ${statusDotClass(view)}`} title={statusLabel(view)} aria-hidden="true" />
         <div className="entry-row-main">
-          <span className="entry-key">{view.entry.key || view.entry.id}</span>
-          <span className="entry-preview">{view.entry.translation || 'Untranslated'}</span>
+          <span className="entry-key" data-i18n-content>{view.entry.key || view.entry.id}</span>
+          {view.entry.translation
+            ? <span className="entry-preview" data-i18n-content>{view.entry.translation}</span>
+            : <span className="entry-preview">Untranslated</span>}
         </div>
         <div className="entry-row-meta">
           {view.hasError && <span className="entry-flag flag-error" title="QA error">!</span>}

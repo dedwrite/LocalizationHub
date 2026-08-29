@@ -1,4 +1,4 @@
-import { calculateProjectStatistics } from '@localizationhub/core'
+import { calculateProjectStatistics, createTokenProfileConfig, displayTokenProfile, type TokenProfileConfig } from '@localizationhub/core'
 
 /*
  * Unobtrusive Project Overview panel showing key project facts.
@@ -8,6 +8,7 @@ export default function ProjectOverview({
   draft,
   memberCount,
   tokenProfileId,
+  tokenProfileConfig,
   role,
   onClose,
 }: {
@@ -15,6 +16,7 @@ export default function ProjectOverview({
   draft: any
   memberCount: number
   tokenProfileId: string
+  tokenProfileConfig?: TokenProfileConfig
   role: string
   onClose: () => void
 }) {
@@ -34,7 +36,7 @@ export default function ProjectOverview({
         <dt>Revision</dt><dd>{snapshot.revision}</dd>
         <dt>Role</dt><dd>{role}</dd>
         <dt>Members</dt><dd>{memberCount}</dd>
-        <dt>Token profile</dt><dd>{tokenProfileId}</dd>
+        <dt>Token profile</dt><dd>{displayTokenProfile(tokenProfileConfig ?? createTokenProfileConfig(tokenProfileId as any))}</dd>
         <dt>Total entries</dt><dd>{stats.total}</dd>
         <dt>Translated</dt><dd>{stats.translated} ({stats.translationCompletion}%)</dd>
         <dt>Needs review</dt><dd>{stats.needsReview}</dd>
