@@ -6,12 +6,17 @@ import type {
   AdminProject,
   AdminSession,
   AdminUser,
+  RadioMetrics,
+  RadioTrack,
+  RadioTrackInput,
 } from './adminApi'
 import {
   beginTotpEnrollment,
   changeProjectRoleAdmin,
   confirmTotp,
+  createRadioTrackAdmin,
   deleteProjectAdmin,
+  deleteRadioTrackAdmin,
   deleteUserAdmin,
   getAdminDashboard,
   getAdminProject,
@@ -19,13 +24,16 @@ import {
   getAdminUser,
   getAdminUsers,
   getAuditLog,
+  getRadioMetricsAdmin,
   getStorageMetrics,
   getUserSessions,
   hasAdminSession,
   hasNormalSession,
+  listRadioTracksAdmin,
   logoutAdmin,
   reconfirmTotp,
   removeProjectMemberAdmin,
+  reorderRadioTracksAdmin,
   requestEmailCode,
   revokeAllSessionsAdmin,
   revokeSessionAdmin,
@@ -33,12 +41,15 @@ import {
   transferOwnershipAdmin,
   unsuspendUserAdmin,
   unverifyUserEmailAdmin,
+  updateRadioTrackAdmin,
+  uploadRadioArtworkAdmin,
+  uploadRadioAudioAdmin,
   verifyEmailCode,
   verifyUserEmailAdmin,
 } from './adminApi'
 import './admin-console.css'
 
-type Page = 'security' | 'dashboard' | 'users' | 'user-detail' | 'projects' | 'project-detail' | 'audit'
+type Page = 'security' | 'dashboard' | 'users' | 'user-detail' | 'projects' | 'project-detail' | 'audit' | 'radio'
 type RunAction = (action: () => Promise<unknown>) => Promise<void>
 type Navigate = (to: string) => void
 
@@ -59,6 +70,7 @@ function parseRoute(pathname: string): { page: Page; id?: string } {
   if (parts[0] === 'users') return parts[1] ? { page: 'user-detail', id: parts[1] } : { page: 'users' }
   if (parts[0] === 'projects') return parts[1] ? { page: 'project-detail', id: parts[1] } : { page: 'projects' }
   if (parts[0] === 'audit') return { page: 'audit' }
+  if (parts[0] === 'radio') return { page: 'radio' }
   return { page: 'dashboard' }
 }
 
@@ -924,6 +936,12 @@ function AuditView() {
             <option value="admin.project.member_role_change">Role changed</option>
             <option value="admin.project.member_remove">Member removed</option>
             <option value="admin.project.ownership_transfer">Ownership transferred</option>
+            <option value="admin.radio.track_create">Radio track created</option>
+            <option value="admin.radio.track_update">Radio track updated</option>
+            <option value="admin.radio.track_publish">Radio track published</option>
+            <option value="admin.radio.track_unpublish">Radio track unpublished</option>
+            <option value="admin.radio.track_reorder">Radio tracks reordered</option>
+            <option value="admin.radio.track_delete">Radio track deleted</option>
           </select>
         </label>
       </div>
@@ -961,6 +979,313 @@ function AuditView() {
       )}
       <Pagination total={total} offset={offset} onChange={setOffset} />
     </section>
+  )
+}
+
+function formatDuration(seconds?: number | null): string {
+  if (!seconds || !Number.isFinite(seconds) || seconds <= 0) return '—'
+  const total = Math.round(seconds)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+type RadioModalState = { mode: 'add' } | { mode: 'edit'; track: RadioTrack }
+
+function RadioView({ run }: { run: RunAction }) {
+  const [tracks, setTracks] = useState<RadioTrack[]>([])
+  const [metrics, setMetrics] = useState<RadioMetrics | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [actionError, setActionError] = useState('')
+  const [modal, setModal] = useState<RadioModalState | null>(null)
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+
+  async function load() {
+    setError('')
+    try {
+      const [trackList, metricData] = await Promise.all([listRadioTracksAdmin(), getRadioMetricsAdmin()])
+      setTracks(trackList.tracks)
+      setMetrics(metricData)
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    Promise.all([listRadioTracksAdmin(), getRadioMetricsAdmin()])
+      .then(([trackList, metricData]) => {
+        if (alive) {
+          setTracks(trackList.tracks)
+          setMetrics(metricData)
+        }
+      })
+      .catch((e) => {
+        if (alive) setError((e as Error).message)
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  async function act(action: () => Promise<unknown>) {
+    setActionError('')
+    try {
+      await run(action)
+      await load()
+    } catch (e) {
+      setActionError((e as Error).message)
+    }
+  }
+
+  function move(trackId: string, direction: -1 | 1) {
+    const index = tracks.findIndex((t) => t.id === trackId)
+    const target = index + direction
+    if (index < 0 || target < 0 || target >= tracks.length) return
+    const next = [...tracks]
+    const [moved] = next.splice(index, 1)
+    next.splice(target, 0, moved)
+    setTracks(next)
+    act(() => reorderRadioTracksAdmin(next.map((t) => t.id)))
+  }
+
+  async function togglePublish(track: RadioTrack) {
+    const input: RadioTrackInput = {
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      position: track.position,
+      published: !track.published,
+    }
+    await act(() => updateRadioTrackAdmin(track.id, input))
+  }
+
+  function requestDelete(track: RadioTrack) {
+    setConfirm({
+      title: 'Delete track',
+      body: `Permanently delete "${track.title}" and its audio and artwork? This cannot be undone.`,
+      confirmLabel: 'Delete track',
+      danger: true,
+      onConfirm: () => act(() => deleteRadioTrackAdmin(track.id)),
+    })
+  }
+
+  return (
+    <section className="admin-section">
+      <div className="admin-detail-head">
+        <div>
+          <h2>LH Radio Library</h2>
+          <p className="admin-lede">Manage the first-party radio catalog published across the public site and Web App.</p>
+        </div>
+        <button className="admin-btn admin-btn-primary" onClick={() => setModal({ mode: 'add' })}>+ Add track</button>
+      </div>
+
+      {metrics && (
+        <div className="metric-cards" style={{ marginBottom: 18 }}>
+          <MetricCard label="Tracks" value={metrics.track_count} />
+          <MetricCard label="Published" value={metrics.published_count} />
+          <MetricCard label="Audio storage" value={formatBytes(metrics.total_audio_bytes)} />
+          <MetricCard label="Total duration" value={formatDuration(metrics.total_duration_seconds)} />
+        </div>
+      )}
+
+      <ActionError message={actionError} />
+
+      {loading ? (
+        <p className="admin-message">Loading…</p>
+      ) : error ? (
+        <ActionError message={error} />
+      ) : tracks.length === 0 ? (
+        <div className="admin-empty">
+          <strong>No tracks yet.</strong>
+          <p>Add your first track to start the radio.</p>
+        </div>
+      ) : (
+        <div className="admin-table-wrap" tabIndex={0}>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Cover</th>
+                <th>Track</th>
+                <th>Album</th>
+                <th>Duration</th>
+                <th>Audio</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {tracks.map((track, index) => (
+                <tr key={track.id}>
+                  <td>{track.position}</td>
+                  <td>
+                    {track.artworkMime ? (
+                      <img
+                        className="radio-cover-thumb"
+                        src={`/api/radio/tracks/${track.id}/artwork`}
+                        alt=""
+                        width={40}
+                        height={40}
+                      />
+                    ) : (
+                      <span className="radio-cover-empty" aria-hidden="true">♪</span>
+                    )}
+                  </td>
+                  <td>
+                    <strong>{track.title}</strong>
+                    <span className="radio-track-artist"> · {track.artist}</span>
+                  </td>
+                  <td>{track.album || '—'}</td>
+                  <td>{formatDuration(track.durationSeconds)}</td>
+                  <td>{track.audioSizeBytes > 0 ? formatBytes(track.audioSizeBytes) : '—'}</td>
+                  <td>
+                    <span className={`radio-status ${track.published ? 'is-published' : ''}`}>
+                      {track.published ? 'Published' : 'Unpublished'}
+                    </span>
+                  </td>
+                  <td className="member-actions">
+                    <button className="admin-btn" onClick={() => move(track.id, -1)} disabled={index === 0} aria-label={`Move ${track.title} up`}>↑</button>
+                    <button className="admin-btn" onClick={() => move(track.id, 1)} disabled={index === tracks.length - 1} aria-label={`Move ${track.title} down`}>↓</button>
+                    <button className="admin-btn" onClick={() => setModal({ mode: 'edit', track })}>Edit</button>
+                    <button className="admin-btn" onClick={() => togglePublish(track)}>
+                      {track.published ? 'Unpublish' : 'Publish'}
+                    </button>
+                    <button className="admin-btn admin-btn-danger" onClick={() => requestDelete(track)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {modal && <RadioTrackModal state={modal} onClose={() => setModal(null)} onSaved={load} run={run} />}
+      {confirm && <ConfirmModal state={confirm} onCancel={() => setConfirm(null)} />}
+    </section>
+  )
+}
+
+function RadioTrackModal({ state, onClose, onSaved, run }: { state: RadioModalState; onClose: () => void; onSaved: () => Promise<void>; run: RunAction }) {
+  const editing = state.mode === 'edit' ? state.track : null
+  const [title, setTitle] = useState(editing?.title ?? '')
+  const [artist, setArtist] = useState(editing?.artist ?? '')
+  const [album, setAlbum] = useState(editing?.album ?? '')
+  const [position, setPosition] = useState(String(editing?.position ?? 0))
+  const [published, setPublished] = useState(editing?.published ?? false)
+  const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(editing?.artworkMime ? `/api/radio/tracks/${editing.id}/artwork` : null)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  function onCoverSelect(file: File | undefined) {
+    if (!file) return
+    setCoverFile(file)
+    setCoverPreview(URL.createObjectURL(file))
+  }
+
+  function onAudioSelect(file: File | undefined) {
+    if (!file) return
+    setAudioFile(file)
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      if (!title.trim() || !artist.trim()) throw new Error('Title and artist are required.')
+      const input: RadioTrackInput = {
+        title: title.trim(),
+        artist: artist.trim(),
+        album: album.trim() || null,
+        position: Number(position) || 0,
+        published,
+      }
+      let trackId: string
+      if (editing) {
+        const result = await updateRadioTrackAdmin(editing.id, input)
+        trackId = result.track.id
+      } else {
+        if (!audioFile) throw new Error('An MP3 audio file is required.')
+        if (!coverFile) throw new Error('Cover artwork is required.')
+        const result = await createRadioTrackAdmin(input)
+        trackId = result.track.id
+      }
+      // Media replacement/upload via the `run` wrapper so TOTP re-confirmation works.
+      await run(async () => {
+        if (audioFile) await uploadRadioAudioAdmin(trackId, audioFile)
+        if (coverFile) await uploadRadioArtworkAdmin(trackId, coverFile)
+      })
+      await onSaved()
+      onClose()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={editing ? 'Edit track' : 'Add track'}>
+      <form className="modal-card radio-modal" onSubmit={submit}>
+        <h3>{editing ? 'Edit track' : 'Add track'}</h3>
+        <div className="radio-form-grid">
+          <label className="admin-field">
+            Track title *
+            <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200} required />
+          </label>
+          <label className="admin-field">
+            Artist *
+            <input value={artist} onChange={(e) => setArtist(e.target.value)} maxLength={200} required />
+          </label>
+          <label className="admin-field">
+            Album
+            <input value={album} onChange={(e) => setAlbum(e.target.value)} maxLength={200} />
+          </label>
+          <label className="admin-field">
+            Order
+            <input type="number" min={0} value={position} onChange={(e) => setPosition(e.target.value)} />
+          </label>
+          <label className="admin-field">
+            Audio file (MP3) {editing ? '(optional to replace)' : '*'}
+            <input
+              type="file"
+              accept="audio/mpeg,.mp3"
+              onChange={(e) => onAudioSelect(e.target.files?.[0])}
+            />
+            {audioFile && <span className="radio-file-note">{audioFile.name} · {formatBytes(audioFile.size)}</span>}
+          </label>
+          <label className="admin-field">
+            Cover artwork (JPEG / PNG / WebP) {editing ? '(optional to replace)' : '*'}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => onCoverSelect(e.target.files?.[0])}
+            />
+            {coverPreview && <img className="radio-cover-preview" src={coverPreview} alt="Cover preview" />}
+          </label>
+        </div>
+        <label className="admin-checkbox">
+          <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+          Publish immediately
+        </label>
+        <p className="radio-rights-note">Only upload audio and artwork you have the rights to stream publicly.</p>
+        {error && <p className="admin-error" role="alert">{error}</p>}
+        <div className="modal-actions">
+          <button type="button" className="admin-btn" disabled={busy} onClick={onClose}>Cancel</button>
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={busy}>
+            {busy ? 'Saving…' : editing ? 'Save changes' : 'Add track'}
+          </button>
+        </div>
+      </form>
+    </div>
   )
 }
 
@@ -1130,6 +1455,8 @@ export default function AdminConsole() {
     view = <ProjectDetailView projectId={route.id} run={run} onNavigate={navigate} />
   } else if (route.page === 'audit') {
     view = <AuditView />
+  } else if (route.page === 'radio') {
+    view = <RadioView run={run} />
   } else {
     view = <DashboardView data={dashboard} />
   }
@@ -1142,6 +1469,7 @@ export default function AdminConsole() {
           <NavButton active={route.page === 'dashboard'} onClick={() => navigate('/app/admin')}>Dashboard</NavButton>
           <NavButton active={route.page === 'users' || route.page === 'user-detail'} onClick={() => navigate('/app/admin/users')}>Users</NavButton>
           <NavButton active={route.page === 'projects' || route.page === 'project-detail'} onClick={() => navigate('/app/admin/projects')}>Projects</NavButton>
+          <NavButton active={route.page === 'radio'} onClick={() => navigate('/app/admin/radio')}>Radio</NavButton>
           <NavButton active={route.page === 'audit'} onClick={() => navigate('/app/admin/audit')}>Audit</NavButton>
         </nav>
         <button className="admin-btn" onClick={logout}>Logout</button>

@@ -239,3 +239,95 @@ export async function getStorageMetrics(userId?: string) {
   const url = userId ? `/api/admin/storage?userId=${encodeURIComponent(userId)}` : '/api/admin/storage'
   return api<{ owned_storage?: number; owned_projects?: { projectId: string; projectName: string; bytes: number }[]; platform?: AdminMetrics }>(url)
 }
+
+// ---- LH Radio ----
+export type RadioTrack = {
+  id: string
+  title: string
+  artist: string
+  album: string | null
+  position: number
+  published: boolean
+  audioMime: string | null
+  audioSizeBytes: number
+  artworkMime: string | null
+  artworkSizeBytes: number
+  durationSeconds: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type RadioMetrics = {
+  track_count: number
+  published_count: number
+  total_audio_bytes: number
+  total_duration_seconds: number
+}
+
+export type RadioTrackInput = {
+  title: string
+  artist: string
+  album?: string | null
+  position: number
+  published?: boolean
+}
+
+export async function getRadioMetricsAdmin() {
+  return api<RadioMetrics>('/api/admin/radio/metrics')
+}
+export async function listRadioTracksAdmin() {
+  return api<{ tracks: RadioTrack[] }>('/api/admin/radio/tracks')
+}
+export async function createRadioTrackAdmin(input: RadioTrackInput) {
+  return api<{ track: RadioTrack }>('/api/admin/radio/tracks', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+export async function updateRadioTrackAdmin(trackId: string, input: RadioTrackInput) {
+  return api<{ track: RadioTrack }>(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+export async function reorderRadioTracksAdmin(orderedIds: string[]) {
+  return api('/api/admin/radio/tracks/reorder', {
+    method: 'POST',
+    body: JSON.stringify({ orderedIds }),
+  })
+}
+export async function deleteRadioTrackAdmin(trackId: string) {
+  return api(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}`, { method: 'DELETE' })
+}
+
+// Raw binary media uploads. These intentionally bypass the JSON `api()` helper
+// so the request body is the file bytes with the correct Content-Type.
+async function uploadRadioMedia(path: string, file: File, mime: string) {
+  const response = await fetch(path, {
+    method: 'PUT',
+    headers: { ...headers(), 'Content-Type': mime },
+    body: file,
+  })
+  const text = await response.text()
+  let body: unknown = null
+  try {
+    body = text ? JSON.parse(text) : null
+  } catch {
+    body = { message: text }
+  }
+  if (!response.ok) {
+    const payload = body as { message?: string; error?: string } | null
+    const error = new Error(payload?.message || payload?.error || `Upload failed (${response.status})`) as Error & { code?: string; status?: number }
+    error.code = payload?.error
+    error.status = response.status
+    throw error
+  }
+  return body as { track: RadioTrack }
+}
+
+export async function uploadRadioAudioAdmin(trackId: string, file: File) {
+  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/audio`, file, file.type || 'audio/mpeg')
+}
+export async function uploadRadioArtworkAdmin(trackId: string, file: File) {
+  return uploadRadioMedia(`/api/admin/radio/tracks/${encodeURIComponent(trackId)}/artwork`, file, file.type || 'image/jpeg')
+}

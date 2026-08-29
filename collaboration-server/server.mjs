@@ -105,6 +105,25 @@ import {
 } from './email-verification-page.mjs'
 
 import {
+  ARTWORK_MAX_BYTES,
+  MP3_MAX_BYTES,
+  RadioValidationError,
+  createRadioTrack,
+  deleteRadioTrack,
+  getPublishedRadioArtwork,
+  getPublishedRadioAudio,
+  getRadioMetrics,
+  getRadioTrack,
+  listPublishedRadioTracks,
+  listRadioTracks,
+  reorderRadioTracks,
+  setRadioTrackArtwork,
+  setRadioTrackAudio,
+  updateRadioTrack,
+  validateTrackMetadata,
+} from './radio.mjs'
+
+import {
   randomUUID,
   randomInt,
   randomBytes,
@@ -2711,6 +2730,266 @@ async function readJsonBody(
   )
 }
 
+/*
+ * Reads a raw binary request body (used for LH Radio audio/artwork uploads)
+ * with a hard byte cap. Never trusts Content-Length alone.
+ */
+async function readRawBody(
+  request,
+  maxBytes,
+) {
+  const chunks = []
+
+  let totalBytes =
+    0
+
+  for await (
+    const chunk
+    of request
+  ) {
+    totalBytes +=
+      chunk.length
+
+    if (
+      totalBytes >
+      maxBytes
+    ) {
+      const error =
+        new Error(
+          'request-too-large',
+        )
+
+      error.code =
+        'payload-too-large'
+
+      throw error
+    }
+
+    chunks.push(
+      chunk,
+    )
+  }
+
+  return Buffer.concat(
+    chunks,
+  )
+}
+
+/*
+ * Parses an HTTP `Range: bytes=...` header against a known total length.
+ * Returns { start, end } for a satisfiable single range, { unsatisfiable }
+ * for an out-of-bounds range, or { invalid } for a malformed header.
+ */
+function parseRangeHeader(
+  rangeHeader,
+  totalLength,
+) {
+  if (
+    typeof rangeHeader !==
+      'string' ||
+    rangeHeader.length === 0
+  ) {
+    return null
+  }
+
+  const match =
+    /^bytes=(\d*)-(\d*)$/.exec(
+      rangeHeader.trim(),
+    )
+
+  if (!match) {
+    return { invalid: true }
+  }
+
+  const rawStart =
+    match[1]
+
+  const rawEnd =
+    match[2]
+
+  if (
+    rawStart === '' &&
+    rawEnd === ''
+  ) {
+    return { invalid: true }
+  }
+
+  let start
+
+  let end
+
+  if (rawStart === '') {
+    const suffix =
+      Number(rawEnd)
+
+    if (
+      !Number.isFinite(
+        suffix,
+      ) ||
+      suffix <= 0
+    ) {
+      return { invalid: true }
+    }
+
+    start =
+      Math.max(
+        0,
+        totalLength -
+          suffix,
+      )
+
+    end =
+      totalLength - 1
+  } else {
+    start =
+      Number(rawStart)
+
+    end =
+      rawEnd === ''
+        ? totalLength - 1
+        : Number(rawEnd)
+
+    if (
+      !Number.isFinite(
+        start,
+      ) ||
+      !Number.isFinite(
+        end,
+      )
+    ) {
+      return { invalid: true }
+    }
+  }
+
+  if (
+    start < 0 ||
+    start >= totalLength ||
+    end < start
+  ) {
+    return { unsatisfiable: true }
+  }
+
+  end =
+    Math.min(
+      end,
+      totalLength - 1,
+    )
+
+  return { start, end }
+}
+
+/*
+ * Serves a binary buffer with HTTP Range support for browser audio streaming.
+ */
+function serveBinary(
+  response,
+  buffer,
+  mime,
+  rangeHeader,
+) {
+  const totalLength =
+    buffer.length
+
+  const headers = {
+    'Content-Type':
+      mime,
+
+    'Accept-Ranges':
+      'bytes',
+
+    'X-Content-Type-Options':
+      'nosniff',
+
+    'Cache-Control':
+      'public, max-age=86400',
+  }
+
+  const range =
+    parseRangeHeader(
+      rangeHeader,
+      totalLength,
+    )
+
+  if (range?.invalid) {
+    response.writeHead(
+      416,
+      {
+        ...headers,
+
+        'Content-Range':
+          `bytes */${totalLength}`,
+
+        'Content-Length':
+          0,
+      },
+    )
+
+    response.end()
+
+    return
+  }
+
+  if (range?.unsatisfiable) {
+    response.writeHead(
+      416,
+      {
+        ...headers,
+
+        'Content-Range':
+          `bytes */${totalLength}`,
+
+        'Content-Length':
+          0,
+      },
+    )
+
+    response.end()
+
+    return
+  }
+
+  if (range) {
+    const slice =
+      buffer.subarray(
+        range.start,
+        range.end + 1,
+      )
+
+    response.writeHead(
+      206,
+      {
+        ...headers,
+
+        'Content-Range':
+          `bytes ${range.start}-${range.end}/${totalLength}`,
+
+        'Content-Length':
+          slice.length,
+      },
+    )
+
+    response.end(
+      slice,
+    )
+
+    return
+  }
+
+  response.writeHead(
+    200,
+    {
+      ...headers,
+
+      'Content-Length':
+        totalLength,
+    },
+  )
+
+  response.end(
+    buffer,
+  )
+}
+
 const httpServer =
   createServer(
     async (
@@ -2923,15 +3202,225 @@ const httpServer =
             sendJson(response, 200, result)
             return
           }
+
+          // ---- LH Radio library administration ----
+          const radioUuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'
+          const radioPatterns = {
+            metrics: /^\/api\/admin\/radio\/metrics$/,
+            list: /^\/api\/admin\/radio\/tracks$/,
+            reorder: /^\/api\/admin\/radio\/tracks\/reorder$/,
+            track: new RegExp(`^/api/admin/radio/tracks/(${radioUuid})$`),
+            media: new RegExp(`^/api/admin/radio/tracks/(${radioUuid})/(audio|artwork)$`),
+          }
+          const radioListMatch = request.url.match(radioPatterns.list)
+          const radioMetricsMatch = request.url.match(radioPatterns.metrics)
+          const radioReorderMatch = request.url.match(radioPatterns.reorder)
+          const radioTrackMatch = request.url.match(radioPatterns.track)
+          const radioMediaMatch = request.url.match(radioPatterns.media)
+
+          if (request.method === 'GET' && radioMetricsMatch) {
+            const metrics = await getRadioMetrics()
+            sendJson(response, 200, metrics)
+            return
+          }
+
+          if (request.method === 'GET' && radioListMatch) {
+            const tracks = await listRadioTracks()
+            sendJson(response, 200, { tracks })
+            return
+          }
+
+          if (request.method === 'POST' && radioListMatch) {
+            const body = await readJsonBody(request)
+            const metadata = validateTrackMetadata(body)
+            const track = await createRadioTrack(metadata)
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_create', targetType: 'radio_track', targetId: track.id, success: true, metadata: { title: track.title, artist: track.artist, album: track.album, position: track.position } })
+            sendJson(response, 201, { track })
+            return
+          }
+
+          if (request.method === 'POST' && radioReorderMatch) {
+            await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+            const body = await readJsonBody(request)
+            await reorderRadioTracks(body?.orderedIds)
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_reorder', targetType: 'radio_track', targetId: null, success: true, metadata: { count: Array.isArray(body?.orderedIds) ? body.orderedIds.length : 0 } })
+            sendJson(response, 200, { ok: true })
+            return
+          }
+
+          if (radioMediaMatch && request.method === 'PUT') {
+            const trackId = radioMediaMatch[1]
+            const kind = radioMediaMatch[2]
+            const mime = (request.headers['content-type'] || '').split(';')[0].trim().toLowerCase()
+            const maxBytes = kind === 'audio' ? MP3_MAX_BYTES : ARTWORK_MAX_BYTES
+            const buffer = await readRawBody(request, maxBytes)
+            const track = kind === 'audio' ? await setRadioTrackAudio(trackId, buffer, mime) : await setRadioTrackArtwork(trackId, buffer, mime)
+            if (!track) { sendJson(response, 404, { error: 'track-not-found' }); return }
+            await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_update', targetType: 'radio_track', targetId: track.id, success: true, metadata: { title: track.title, field: kind, size_bytes: buffer.length } })
+            sendJson(response, 200, { track })
+            return
+          }
+
+          if (radioTrackMatch) {
+            const trackId = radioTrackMatch[1]
+            if (request.method === 'PATCH') {
+              const body = await readJsonBody(request)
+              const metadata = validateTrackMetadata(body)
+              const before = await getRadioTrack(trackId)
+              if (!before) { sendJson(response, 404, { error: 'track-not-found' }); return }
+              const track = await updateRadioTrack(trackId, metadata)
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_update', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: track.title, artist: track.artist, album: track.album, position: track.position } })
+              if (before.published !== track.published) {
+                await writeAdminAudit({ adminUserId: superAdmin.id, action: track.published ? 'admin.radio.track_publish' : 'admin.radio.track_unpublish', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: track.title } })
+              }
+              sendJson(response, 200, { track })
+              return
+            }
+            if (request.method === 'DELETE') {
+              await requireRecentTotp(adminRequest.adminToken, adminRequest.user.id)
+              const deleted = await deleteRadioTrack(trackId)
+              if (!deleted) { sendJson(response, 404, { error: 'track-not-found' }); return }
+              await writeAdminAudit({ adminUserId: superAdmin.id, action: 'admin.radio.track_delete', targetType: 'radio_track', targetId: trackId, success: true, metadata: { title: deleted.title } })
+              sendJson(response, 200, { ok: true })
+              return
+            }
+          }
+
           sendJson(response, 404, { error: 'not-found' })
         } catch (error) {
           if (error instanceof AdminSecurityError) {
             sendJson(response, 403, { error: error.code, message: error.message })
             return
           }
+          if (error instanceof RadioValidationError) {
+            sendJson(response, 400, { error: error.code, message: error.message })
+            return
+          }
+          if (error?.code === 'payload-too-large') {
+            sendJson(response, 413, { error: 'payload-too-large', message: 'Upload exceeds the size limit.' })
+            return
+          }
           console.error('Admin request failed:', error)
           sendJson(response, 500, { error: 'internal-error' })
         }
+        return
+      }
+
+      // ---- Public LH Radio catalog & media (read-only, published only) ----
+      if (
+        request.url?.startsWith(
+          '/api/radio'
+        )
+      ) {
+        try {
+          const radioTracksMatch =
+            /^\/api\/radio\/tracks$/.test(
+              request.url,
+            )
+
+          const radioMediaMatch =
+            request.url?.match(
+              /^\/api\/radio\/tracks\/([0-9a-fA-F-]{36})\/(audio|artwork)$/,
+            )
+
+          if (
+            request.method ===
+              'GET' &&
+            radioTracksMatch
+          ) {
+            const tracks =
+              await listPublishedRadioTracks()
+
+            sendJson(
+              response,
+              200,
+              { tracks },
+            )
+
+            return
+          }
+
+          if (
+            request.method ===
+              'GET' &&
+            radioMediaMatch
+          ) {
+            const trackId =
+              radioMediaMatch[1]
+
+            const kind =
+              radioMediaMatch[2]
+
+            if (kind === 'audio') {
+              const audio =
+                await getPublishedRadioAudio(
+                  trackId,
+                )
+
+              if (!audio) {
+                sendJson(
+                  response,
+                  404,
+                  { error: 'not-found' },
+                )
+
+                return
+              }
+
+              serveBinary(
+                response,
+                audio.data,
+                audio.mime,
+                request.headers.range,
+              )
+
+              return
+            }
+
+            const artwork =
+              await getPublishedRadioArtwork(
+                trackId,
+              )
+
+            if (!artwork) {
+              sendJson(
+                response,
+                404,
+                { error: 'not-found' },
+              )
+
+              return
+            }
+
+            serveBinary(
+              response,
+              artwork.data,
+              artwork.mime,
+              request.headers.range,
+            )
+
+            return
+          }
+
+          sendJson(
+            response,
+            404,
+            { error: 'not-found' },
+          )
+        } catch (error) {
+          console.error(
+            'Radio request failed:',
+            request.url,
+            error?.message ?? error,
+          )
+
+          sendJson(
+            response,
+            500,
+            { error: 'internal-error' },
+          )
+        }
+
         return
       }
 

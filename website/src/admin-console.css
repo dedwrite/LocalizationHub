@@ -490,3 +490,94 @@
     align-items: stretch;
   }
 }
+
+/* LH Radio library */
+.radio-cover-thumb {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--admin-border);
+}
+
+.radio-cover-empty {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px dashed var(--admin-border);
+  border-radius: 6px;
+  color: var(--admin-muted);
+}
+
+.radio-track-artist {
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.radio-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-muted);
+}
+
+.radio-status.is-published {
+  color: #8fdcb5;
+  border-color: #2f6b4f;
+  background: #14301f;
+}
+
+.radio-modal {
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.radio-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+
+.radio-form-grid .admin-field {
+  max-width: none;
+  margin: 10px 0;
+}
+
+.radio-file-note {
+  color: var(--admin-muted);
+  font-size: 12px;
+}
+
+.radio-cover-preview {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  margin-top: 6px;
+}
+
+.radio-rights-note {
+  color: var(--admin-muted);
+  font-size: 12px;
+  margin: 12px 0 0;
+  border-left: 2px solid var(--admin-border);
+  padding-left: 10px;
+}
+
+.admin-empty strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 480px) {
+  .radio-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

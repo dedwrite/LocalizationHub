@@ -57,6 +57,15 @@ const enrollment = {
   uri: 'otpauth://totp/LocalizationHub:operator?secret=JBSWY3DPEHPK3PXP&issuer=LocalizationHub&algorithm=SHA1&digits=6&period=30',
 }
 
+const radioTracks = {
+  tracks: [
+    { id: '11111111-1111-4111-8111-111111111111', title: 'First Light', artist: 'Aurora Field', album: 'Dawn', position: 0, published: true, audioMime: 'audio/mpeg', audioSizeBytes: 12345, artworkMime: 'image/png', artworkSizeBytes: 678, durationSeconds: 180, createdAt: '2026-08-26T09:00:00Z', updatedAt: '2026-08-26T09:00:00Z' },
+    { id: '22222222-2222-4222-8222-222222222222', title: 'Second Bloom', artist: 'Mica', album: null, position: 1, published: false, audioMime: null, audioSizeBytes: 0, artworkMime: null, artworkSizeBytes: 0, durationSeconds: null, createdAt: '2026-08-26T09:00:00Z', updatedAt: '2026-08-26T09:00:00Z' },
+  ],
+}
+
+const radioMetrics = { track_count: 2, published_count: 1, total_audio_bytes: 12345, total_duration_seconds: 180 }
+
 async function mockAdminApi(page: Page) {
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
@@ -67,12 +76,30 @@ async function mockAdminApi(page: Page) {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(enrollment) })
         return
       }
+      if (path.startsWith('radio/tracks') && path.includes('reorder')) {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+        return
+      }
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+      return
+    }
+    if (method === 'PUT' && path.startsWith('radio/tracks')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
+      return
+    }
+    if (method === 'PATCH' && path.startsWith('radio/tracks/')) {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ track: radioTracks.tracks[0] }) })
+      return
+    }
+    if (method === 'DELETE' && path.startsWith('radio/tracks/')) {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
       return
     }
     let body: unknown = {}
     if (path === '') body = dashboard
     else if (path === 'auth') body = {}
+    else if (path.startsWith('radio/metrics')) body = radioMetrics
+    else if (path.startsWith('radio/tracks')) body = radioTracks
     else if (path.startsWith('users/')) body = userDetail
     else if (path.startsWith('users')) body = users
     else if (path.startsWith('projects/')) body = projectDetail
@@ -89,6 +116,17 @@ async function authenticate(page: Page) {
   await page.evaluate(() => {
     window.localStorage.setItem('localizationhub.auth.token', 'test-normal-token')
     window.sessionStorage.setItem('localizationhub.admin.session', 'test-admin-token')
+  })
+}
+
+// Public radio artwork requests from the admin library are served by a stub so
+// cover thumbnails never hit the (database-less) E2E server.
+async function mockPublicRadioMedia(page: Page) {
+  await page.route('**/api/radio/tracks/*/artwork', (route) => {
+    route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64') })
+  })
+  await page.route('**/api/radio/tracks/*/audio', (route) => {
+    route.fulfill({ status: 200, contentType: 'audio/mpeg', headers: { 'Accept-Ranges': 'bytes', 'Content-Length': '1024' }, body: Buffer.alloc(1024, 0) })
   })
 }
 
@@ -153,6 +191,17 @@ test.describe('admin console routing and views', () => {
     await page.goto('/app/admin/audit')
     await expect(page.getByText('Audit log')).toBeVisible()
     await expect(page.getByText('admin.user.suspend')).toBeVisible()
+  })
+
+  test('renders the LH Radio library with tracks and actions', async ({ page }) => {
+    await mockPublicRadioMedia(page)
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('First Light')).toBeVisible()
+    await expect(page.getByText('Second Bloom')).toBeVisible()
+    await expect(page.locator('.radio-status.is-published')).toHaveText('Published')
+    await expect(page.locator('.radio-status:not(.is-published)')).toHaveText('Unpublished')
+    await expect(page.getByRole('button', { name: '+ Add track' })).toBeVisible()
   })
 
   test('opens a destructive confirmation dialog', async ({ page }) => {

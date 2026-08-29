@@ -1,7 +1,8 @@
 /* ============================================================
-   LH Radio — global Spotify playlist shell.
+   LH Radio — native first-party player.
    Near-black charcoal surface, purple accent, thin borders,
-   restrained glow, DM Mono metadata labels. LocalizationHub native.
+   restrained glow, DM Mono metadata labels. The cover is a
+   circular rotating disc that spins slowly only while playing.
    ============================================================ */
 
 .lh-radio {
@@ -14,56 +15,78 @@
   color: #e9e8ed;
 }
 
-/* ---------- Embed ---------- */
-.lh-radio-embed {
+.lh-radio-audio {
   display: none;
-  width: 100%;
-  max-width: 300px;
-  height: 352px;
-  margin: 0 auto;
-  line-height: 0;
 }
-.lh-radio[data-embed-status='ready'] .lh-radio-embed {
+
+/* ---------- Circular rotating cover / disc ---------- */
+.lh-radio-disc {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 50%, #1a1c25 0%, #0b0d12 62%);
+  border: 1px solid #343848;
+  box-shadow:
+    0 0 0 3px rgba(167, 156, 255, 0.05),
+    0 0 22px rgba(167, 156, 255, 0.16),
+    inset 0 0 12px rgba(0, 0, 0, 0.6);
+}
+
+.lh-radio-disc-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
-.lh-radio-embed iframe {
-  border: 0;
-  border-radius: 8px;
+
+.lh-radio-disc-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  color: var(--lh-accent);
+  background: radial-gradient(circle at 50% 40%, #1c1f2c 0%, #0d0f15 70%);
 }
 
-.lh-radio-embed-wrap {
-  position: relative;
-  padding: 10px 10px 4px;
+.lh-radio-disc-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #08090c;
+  border: 2px solid rgba(167, 156, 255, 0.35);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.9);
 }
 
-.lh-radio-loading,
-.lh-radio-fallback {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 9px;
-  height: 300px;
-  padding: 20px;
-  color: var(--lh-muted);
-  font-size: 0.78rem;
+/* The disc itself is what rotates: cover + hub spin together like a record. */
+.lh-radio-disc {
+  animation: lh-radio-spin 24s linear infinite;
+  animation-play-state: paused;
 }
-.lh-radio-fallback-title {
-  margin: 0;
-  color: #e9e8ed;
-  font-size: 0.95rem;
-  font-weight: 700;
+
+.lh-radio.is-playing .lh-radio-disc {
+  animation-play-state: running;
 }
-.lh-radio-fallback-note {
-  margin: 0;
-  font-size: 0.75rem;
+
+/* Collapsed uses a lighter, slower spin for subtlety. */
+.lh-radio-disc-small {
+  animation-duration: 40s;
 }
-.lh-radio-link {
-  color: var(--lh-accent-strong);
-  font-size: 0.72rem;
-  font-weight: 700;
+
+@keyframes lh-radio-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
-.lh-radio-link:hover { text-decoration: underline; }
 
 /* ---------- Collapsed capsule ---------- */
 .lh-radio-capsule {
@@ -74,18 +97,22 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 8px 7px 12px;
-  background: rgba(16, 19, 25, 0.92);
+  padding: 8px 10px;
+  background: rgba(16, 19, 25, 0.94);
   border: 1px solid var(--lh-line);
   border-radius: 999px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 18px rgba(167, 156, 255, 0.12);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 20px rgba(167, 156, 255, 0.1);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  max-width: calc(100vw - 32px);
 }
+
 .lh-radio-capsule-main {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  max-width: 180px;
   border: 0;
   background: transparent;
   padding: 0;
@@ -93,73 +120,80 @@
   color: inherit;
   font: inherit;
 }
-.lh-radio-eq {
-  display: inline-flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 2px;
-  height: 16px;
-  width: 16px;
-}
-.lh-radio-eq span {
-  width: 2.5px;
-  border-radius: 1px;
-  background: var(--lh-accent);
-  height: 5px;
-}
-.lh-radio.is-playing .lh-radio-eq span {
-  animation: lh-radio-eq 0.9s ease-in-out infinite;
-}
-.lh-radio.is-playing .lh-radio-eq span:nth-child(2) { animation-delay: 0.15s; }
-.lh-radio.is-playing .lh-radio-eq span:nth-child(3) { animation-delay: 0.3s; }
-@keyframes lh-radio-eq {
-  0%, 100% { height: 4px; }
-  50% { height: 15px; }
-}
+
 .lh-radio-capsule-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  min-width: 0;
   line-height: 1.15;
 }
-.lh-radio-name {
-  font-size: 0.68rem;
+
+.lh-radio-capsule-title {
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
-.lh-radio-meta {
+
+.lh-radio-capsule-artist {
   color: var(--lh-muted);
   font: 0.55rem 'DM Mono', monospace;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
-.lh-radio.is-playing .lh-radio-meta { color: var(--lh-accent-strong); }
-.lh-radio-attribution {
-  color: var(--lh-muted);
-  font-size: 0.58rem;
-  font-weight: 600;
-  padding: 4px 6px;
-  border-radius: 6px;
+
+.lh-radio.is-playing .lh-radio-capsule-artist { color: var(--lh-accent-strong); }
+
+.lh-radio-capsule-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  border-radius: 0 0 999px 999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
 }
-.lh-radio-attribution:hover { color: var(--lh-accent-strong); }
-.lh-radio-play {
+
+.lh-radio-capsule-progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--lh-accent);
+  box-shadow: 0 0 8px rgba(167, 156, 255, 0.6);
+}
+
+.lh-radio-capsule-btn {
   width: 30px;
   height: 30px;
   display: grid;
   place-items: center;
-  border: 1px solid #4a4068;
+  border: 1px solid transparent;
   border-radius: 50%;
-  background: #241f3a;
-  color: var(--lh-accent-strong);
-  font-size: 0.7rem;
+  background: transparent;
+  color: var(--lh-muted);
+  font-size: 0.66rem;
   cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
 }
-.lh-radio-play:hover {
-  background: #2c2447;
-  border-color: var(--lh-accent);
-  transform: scale(1.06);
+
+.lh-radio-capsule-btn:hover { color: #fff; background: #1d202a; }
+
+.lh-radio-capsule-play {
+  background: #241f3a;
+  border-color: #4a4068;
+  color: var(--lh-accent-strong);
 }
+
+.lh-radio-capsule-play:hover { background: #2c2447; border-color: var(--lh-accent); }
 
 /* ---------- Expanded panel ---------- */
 .lh-radio-panel {
@@ -171,9 +205,10 @@
   background: var(--lh-bg);
   border: 1px solid var(--lh-line);
   border-radius: 14px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(167, 156, 255, 0.08), 0 0 32px rgba(167, 156, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(167, 156, 255, 0.08), 0 0 34px rgba(167, 156, 255, 0.1);
   overflow: hidden;
 }
+
 .lh-radio-panel-head {
   display: flex;
   align-items: center;
@@ -181,26 +216,22 @@
   padding: 12px 14px;
   border-bottom: 1px solid var(--lh-line);
 }
-.lh-radio-panel-title {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+
+.lh-radio-panel-title { display: flex; flex-direction: column; gap: 2px; }
+
 .lh-radio-kicker {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
 }
+
 .lh-radio-sub {
   color: var(--lh-accent);
-  font: 0.52rem 'DM Mono', monospace;
-  letter-spacing: 0.12em;
+  font: 0.5rem 'DM Mono', monospace;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.lh-radio-panel-actions {
-  display: flex;
-  gap: 6px;
-}
+
 .lh-radio-icon-btn {
   width: 26px;
   height: 26px;
@@ -211,37 +242,279 @@
   color: var(--lh-muted);
   border-radius: 7px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1rem;
   line-height: 1;
 }
-.lh-radio-icon-btn:hover {
-  color: #fff;
-  border-color: var(--lh-accent);
+
+.lh-radio-icon-btn:hover { color: #fff; border-color: var(--lh-accent); }
+
+.lh-radio-now {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 18px 14px;
 }
-.lh-radio-panel-foot {
+
+.lh-radio-panel .lh-radio-disc { width: 96px; height: 96px; flex: 0 0 96px; }
+
+.lh-radio-now-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+
+.lh-radio-now-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lh-radio-now-artist { color: var(--lh-soft, #b6b8c1); font-size: 0.82rem; }
+
+.lh-radio-now-album {
+  color: var(--lh-muted);
+  font: 0.58rem 'DM Mono', monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Seek */
+.lh-radio-seek {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+}
+
+.lh-radio-time {
+  color: var(--lh-muted);
+  font: 0.56rem 'DM Mono', monospace;
+  min-width: 32px;
+}
+
+.lh-radio-seek-input {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--lh-accent) var(--seek-pct, 0%), #262a34 var(--seek-pct, 0%));
+  cursor: pointer;
+}
+
+.lh-radio-seek-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--lh-accent);
+  box-shadow: 0 0 8px rgba(167, 156, 255, 0.6);
+}
+
+.lh-radio-seek-input::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--lh-accent);
+}
+
+/* Controls */
+.lh-radio-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 12px 0 6px;
+}
+
+.lh-radio-ctl {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--lh-line);
+  background: transparent;
+  color: var(--lh-muted);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.72rem;
+}
+
+.lh-radio-ctl:hover { color: #fff; border-color: var(--lh-accent); }
+
+.lh-radio-ctl-primary {
+  width: 46px;
+  height: 46px;
+  background: #241f3a;
+  border-color: #4a4068;
+  color: var(--lh-accent-strong);
+  font-size: 0.86rem;
+  box-shadow: 0 0 18px rgba(167, 156, 255, 0.22);
+}
+
+.lh-radio-ctl-primary:hover { background: #2c2447; border-color: var(--lh-accent); }
+
+/* Volume */
+.lh-radio-volume {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 12px;
+}
+
+.lh-radio-vol-mute {
+  border: 0;
+  background: transparent;
+  color: var(--lh-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.lh-radio-vol-mute:hover { color: #fff; }
+
+.lh-radio-volume-input {
+  flex: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: #262a34;
+  cursor: pointer;
+}
+
+.lh-radio-volume-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--lh-accent);
+}
+
+.lh-radio-volume-input::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--lh-accent);
+}
+
+/* Error */
+.lh-radio-error {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px 12px;
-  border-top: 1px solid var(--lh-line);
-}
-.lh-radio-foot-label {
-  color: var(--lh-muted);
-  font: 0.52rem 'DM Mono', monospace;
-  letter-spacing: 0.1em;
+  gap: 8px;
+  margin: 0 18px 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(239, 91, 91, 0.4);
+  background: rgba(58, 31, 38, 0.5);
+  border-radius: 8px;
+  color: #ff9aa5;
+  font-size: 0.72rem;
 }
 
-/* Collapsed: keep the panel (and its embed) mounted and invisible so audio
-   continues, without repositioning it into the viewport. */
+.lh-radio-link {
+  border: 0;
+  background: transparent;
+  color: var(--lh-accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0;
+}
+
+.lh-radio-link:hover { text-decoration: underline; }
+
+/* Playlist */
+.lh-radio-playlist {
+  border-top: 1px solid var(--lh-line);
+  padding: 12px 12px 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.lh-radio-playlist-label {
+  display: block;
+  margin: 0 4px 8px;
+  color: var(--lh-muted);
+  font: 0.5rem 'DM Mono', monospace;
+  letter-spacing: 0.14em;
+}
+
+.lh-radio-playlist-empty { color: var(--lh-muted); font-size: 0.72rem; padding: 4px; }
+
+.lh-radio-playlist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lh-radio-playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.lh-radio-playlist-item:hover { background: #171a22; }
+
+.lh-radio-playlist-item.is-current {
+  background: #1c1c2e;
+  border-color: #3a3560;
+}
+
+.lh-radio-playlist-num {
+  color: var(--lh-muted);
+  font: 0.56rem 'DM Mono', monospace;
+  width: 16px;
+  text-align: right;
+}
+
+.lh-radio-playlist-cover {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  color: var(--lh-accent);
+}
+
+.lh-radio-playlist-meta { display: flex; flex-direction: column; min-width: 0; }
+.lh-radio-playlist-meta strong { font-size: 0.76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lh-radio-playlist-meta small { color: var(--lh-muted); font-size: 0.66rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Collapsed hides the panel (kept mounted so audio survives). */
 .lh-radio.is-collapsed .lh-radio-panel {
   visibility: hidden;
   pointer-events: none;
 }
+
 .lh-radio.is-open .lh-radio-capsule { display: none; }
 
-/* On the app surface the workspace puts a full-height inspector on the right,
-   so the player docks to the bottom-left to avoid covering editor/inspector
-   controls. Public surfaces keep the bottom-right corner. */
+/* ---------- App surface docks bottom-left (avoid workspace inspector) ---------- */
 @media (min-width: 768px) {
   .lh-radio[data-surface='app'] .lh-radio-capsule,
   .lh-radio[data-surface='app'] .lh-radio-panel {
@@ -250,17 +523,19 @@
   }
 }
 
-/* ---------- Focus / accessibility ---------- */
+/* ---------- Focus ---------- */
 .lh-radio button:focus-visible,
-.lh-radio a:focus-visible {
+.lh-radio input:focus-visible {
   outline: 2px solid var(--lh-accent);
   outline-offset: 2px;
 }
 
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .lh-radio.is-playing .lh-radio-eq span { animation: none; height: 8px; }
-  .lh-radio-play { transition: none; }
+  .lh-radio-disc,
+  .lh-radio.is-playing .lh-radio-disc {
+    animation: none;
+  }
 }
 
 /* ---------- Mobile ---------- */
@@ -273,8 +548,9 @@
   .lh-radio[data-surface='app'] .lh-radio-capsule {
     bottom: calc(76px + env(safe-area-inset-bottom));
   }
-  .lh-radio-capsule-main { flex: 1; min-width: 0; }
+  .lh-radio-capsule-main { flex: 1; min-width: 0; max-width: none; }
   .lh-radio-capsule-text { flex: 1; min-width: 0; }
+  .lh-radio-capsule-btn { width: 34px; height: 34px; }
 
   .lh-radio-panel {
     left: 12px;
