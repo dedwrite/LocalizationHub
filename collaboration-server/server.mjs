@@ -38,6 +38,7 @@ import {
 import {
   applyCorsHeaders,
 } from './cors.mjs'
+import { serveBinary } from './binary-response.mjs'
 import {
   getDatabasePool,
 } from './database.mjs'
@@ -2774,221 +2775,6 @@ async function readRawBody(
   )
 }
 
-/*
- * Parses an HTTP `Range: bytes=...` header against a known total length.
- * Returns { start, end } for a satisfiable single range, { unsatisfiable }
- * for an out-of-bounds range, or { invalid } for a malformed header.
- */
-function parseRangeHeader(
-  rangeHeader,
-  totalLength,
-) {
-  if (
-    typeof rangeHeader !==
-      'string' ||
-    rangeHeader.length === 0
-  ) {
-    return null
-  }
-
-  const match =
-    /^bytes=(\d*)-(\d*)$/.exec(
-      rangeHeader.trim(),
-    )
-
-  if (!match) {
-    return { invalid: true }
-  }
-
-  const rawStart =
-    match[1]
-
-  const rawEnd =
-    match[2]
-
-  if (
-    rawStart === '' &&
-    rawEnd === ''
-  ) {
-    return { invalid: true }
-  }
-
-  let start
-
-  let end
-
-  if (rawStart === '') {
-    const suffix =
-      Number(rawEnd)
-
-    if (
-      !Number.isFinite(
-        suffix,
-      ) ||
-      suffix <= 0
-    ) {
-      return { invalid: true }
-    }
-
-    start =
-      Math.max(
-        0,
-        totalLength -
-          suffix,
-      )
-
-    end =
-      totalLength - 1
-  } else {
-    start =
-      Number(rawStart)
-
-    end =
-      rawEnd === ''
-        ? totalLength - 1
-        : Number(rawEnd)
-
-    if (
-      !Number.isFinite(
-        start,
-      ) ||
-      !Number.isFinite(
-        end,
-      )
-    ) {
-      return { invalid: true }
-    }
-  }
-
-  if (
-    start < 0 ||
-    start >= totalLength ||
-    end < start
-  ) {
-    return { unsatisfiable: true }
-  }
-
-  end =
-    Math.min(
-      end,
-      totalLength - 1,
-    )
-
-  return { start, end }
-}
-
-/*
- * Serves a binary buffer with HTTP Range support for browser audio streaming.
- */
-function serveBinary(
-  response,
-  buffer,
-  mime,
-  rangeHeader,
-) {
-  const totalLength =
-    buffer.length
-
-  const headers = {
-    'Content-Type':
-      mime,
-
-    'Accept-Ranges':
-      'bytes',
-
-    'X-Content-Type-Options':
-      'nosniff',
-
-    'Cache-Control':
-      'public, max-age=86400',
-  }
-
-  const range =
-    parseRangeHeader(
-      rangeHeader,
-      totalLength,
-    )
-
-  if (range?.invalid) {
-    response.writeHead(
-      416,
-      {
-        ...headers,
-
-        'Content-Range':
-          `bytes */${totalLength}`,
-
-        'Content-Length':
-          0,
-      },
-    )
-
-    response.end()
-
-    return
-  }
-
-  if (range?.unsatisfiable) {
-    response.writeHead(
-      416,
-      {
-        ...headers,
-
-        'Content-Range':
-          `bytes */${totalLength}`,
-
-        'Content-Length':
-          0,
-      },
-    )
-
-    response.end()
-
-    return
-  }
-
-  if (range) {
-    const slice =
-      buffer.subarray(
-        range.start,
-        range.end + 1,
-      )
-
-    response.writeHead(
-      206,
-      {
-        ...headers,
-
-        'Content-Range':
-          `bytes ${range.start}-${range.end}/${totalLength}`,
-
-        'Content-Length':
-          slice.length,
-      },
-    )
-
-    response.end(
-      slice,
-    )
-
-    return
-  }
-
-  response.writeHead(
-    200,
-    {
-      ...headers,
-
-      'Content-Length':
-        totalLength,
-    },
-  )
-
-  response.end(
-    buffer,
-  )
-}
-
 const httpServer =
   createServer(
     async (
@@ -3336,8 +3122,7 @@ const httpServer =
           }
 
           if (
-            request.method ===
-              'GET' &&
+            (request.method === 'GET' || request.method === 'HEAD') &&
             radioMediaMatch
           ) {
             const trackId =
@@ -3367,6 +3152,7 @@ const httpServer =
                 audio.data,
                 audio.mime,
                 request.headers.range,
+                request.method,
               )
 
               return
@@ -3392,6 +3178,7 @@ const httpServer =
               artwork.data,
               artwork.mime,
               request.headers.range,
+              request.method,
             )
 
             return

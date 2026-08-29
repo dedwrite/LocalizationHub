@@ -1016,6 +1016,25 @@ function formatDuration(seconds?: number | null): string {
 
 type RadioModalState = { mode: 'add' } | { mode: 'edit'; track: RadioTrack }
 
+async function fetchRadioAdminData() {
+  const [trackResult, metricResult] = await Promise.allSettled([
+    listRadioTracksAdmin(),
+    getRadioMetricsAdmin(),
+  ])
+  const errors: string[] = []
+  if (trackResult.status === 'rejected') {
+    errors.push(`Track catalog: ${trackResult.reason instanceof Error ? trackResult.reason.message : 'Request failed.'}`)
+  }
+  if (metricResult.status === 'rejected') {
+    errors.push(`Metrics: ${metricResult.reason instanceof Error ? metricResult.reason.message : 'Request failed.'}`)
+  }
+  return {
+    tracks: trackResult.status === 'fulfilled' ? trackResult.value.tracks : null,
+    metrics: metricResult.status === 'fulfilled' ? metricResult.value : null,
+    error: errors.join(' '),
+  }
+}
+
 function RadioView({ run }: { run: RunAction }) {
   const [tracks, setTracks] = useState<RadioTrack[]>([])
   const [metrics, setMetrics] = useState<RadioMetrics | null>(null)
@@ -1026,24 +1045,29 @@ function RadioView({ run }: { run: RunAction }) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   async function load() {
+    setLoading(true)
     setError('')
     try {
-      const [trackList, metricData] = await Promise.all([listRadioTracksAdmin(), getRadioMetricsAdmin()])
-      setTracks(trackList.tracks)
-      setMetrics(metricData)
+      const result = await fetchRadioAdminData()
+      if (result.tracks) setTracks(result.tracks)
+      if (result.metrics) setMetrics(result.metrics)
+      setError(result.error)
     } catch (e) {
       setError((e as Error).message)
+    } finally {
+      setLoading(false)
     }
   }
 
   useEffect(() => {
     let alive = true
     setLoading(true)
-    Promise.all([listRadioTracksAdmin(), getRadioMetricsAdmin()])
-      .then(([trackList, metricData]) => {
+    fetchRadioAdminData()
+      .then((result) => {
         if (alive) {
-          setTracks(trackList.tracks)
-          setMetrics(metricData)
+          if (result.tracks) setTracks(result.tracks)
+          if (result.metrics) setMetrics(result.metrics)
+          setError(result.error)
         }
       })
       .catch((e) => {
@@ -1120,16 +1144,24 @@ function RadioView({ run }: { run: RunAction }) {
 
       <ActionError message={actionError} />
 
+      {error && (
+        <div className="admin-inline-error" role="alert">
+          <div>
+            <strong>Radio data could not be loaded completely.</strong>
+            <span>{error}</span>
+          </div>
+          <button type="button" className="admin-btn" disabled={loading} onClick={load}>Retry Radio library</button>
+        </div>
+      )}
+
       {loading ? (
         <p className="admin-message">Loading…</p>
-      ) : error ? (
-        <ActionError message={error} />
-      ) : tracks.length === 0 ? (
+      ) : !error && tracks.length === 0 ? (
         <div className="admin-empty">
           <strong>No tracks yet.</strong>
           <p>Add your first track to start the radio.</p>
         </div>
-      ) : (
+      ) : tracks.length > 0 ? (
         <div className="admin-table-wrap" tabIndex={0}>
           <table className="admin-table">
             <thead>
@@ -1187,7 +1219,7 @@ function RadioView({ run }: { run: RunAction }) {
             </tbody>
           </table>
         </div>
-      )}
+      ) : null}
 
       {modal && <RadioTrackModal state={modal} onClose={() => setModal(null)} onSaved={load} run={run} />}
       {confirm && <ConfirmModal state={confirm} onCancel={() => setConfirm(null)} />}

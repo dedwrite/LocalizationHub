@@ -28,6 +28,21 @@ export const MAX_ALBUM_LENGTH = 200
 
 const ARTWORK_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
+function databaseNumber(value, field, { nullable = false } = {}) {
+  if (value == null) {
+    if (nullable) return null
+    throw new Error(`Radio database field ${field} is missing.`)
+  }
+  if (typeof value === 'string' && value.trim() === '') {
+    throw new Error(`Radio database field ${field} is not numeric.`)
+  }
+  const normalized = Number(value)
+  if (!Number.isFinite(normalized)) {
+    throw new Error(`Radio database field ${field} is not numeric.`)
+  }
+  return normalized
+}
+
 function cleanText(value, field) {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new RadioValidationError('invalid-metadata', `${field} is required.`)
@@ -116,8 +131,8 @@ export async function listPublishedRadioTracks() {
     title: row.title,
     artist: row.artist,
     album: row.album ?? null,
-    position: row.position,
-    durationSeconds: typeof row.duration_seconds === 'number' ? row.duration_seconds : null,
+    position: databaseNumber(row.position, 'position'),
+    durationSeconds: databaseNumber(row.duration_seconds, 'duration_seconds', { nullable: true }),
     artworkUrl: `/api/radio/tracks/${row.id}/artwork`,
     audioUrl: `/api/radio/tracks/${row.id}/audio`,
   }))
@@ -237,7 +252,13 @@ export async function getRadioMetrics() {
        COALESCE(SUM(duration_seconds), 0)::double precision AS total_duration_seconds
      FROM radio_tracks`,
   )
-  return rows.rows[0]
+  const row = rows.rows[0]
+  return {
+    track_count: databaseNumber(row?.track_count, 'track_count'),
+    published_count: databaseNumber(row?.published_count, 'published_count'),
+    total_audio_bytes: databaseNumber(row?.total_audio_bytes, 'total_audio_bytes'),
+    total_duration_seconds: databaseNumber(row?.total_duration_seconds, 'total_duration_seconds'),
+  }
 }
 
 // ---- Public binary access (published only) ----
@@ -274,13 +295,13 @@ function serializeTrack(row) {
     title: row.title,
     artist: row.artist,
     album: row.album ?? null,
-    position: row.position,
+    position: databaseNumber(row.position, 'position'),
     published: row.published,
     audioMime: row.audio_mime ?? null,
-    audioSizeBytes: Number(row.audio_size_bytes ?? 0),
+    audioSizeBytes: databaseNumber(row.audio_size_bytes ?? 0, 'audio_size_bytes'),
     artworkMime: row.artwork_mime ?? null,
-    artworkSizeBytes: Number(row.artwork_size_bytes ?? 0),
-    durationSeconds: typeof row.duration_seconds === 'number' ? row.duration_seconds : null,
+    artworkSizeBytes: databaseNumber(row.artwork_size_bytes ?? 0, 'artwork_size_bytes'),
+    durationSeconds: databaseNumber(row.duration_seconds, 'duration_seconds', { nullable: true }),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

@@ -9,6 +9,8 @@ import {
   deleteRadioTrack,
   getPublishedRadioArtwork,
   getPublishedRadioAudio,
+  getRadioMetrics,
+  listRadioTracks,
   listPublishedRadioTracks,
   reorderRadioTracks,
   setRadioTrackArtwork,
@@ -109,6 +111,60 @@ describe('radio artwork validation', () => {
 })
 
 describe('radio track data access', () => {
+  it('normalizes zero-valued PostgreSQL metrics to JavaScript numbers', async () => {
+    const client = new FakeClient({
+      'COUNT(*)::int AS track_count': row({
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: '0',
+        total_duration_seconds: '0',
+      }),
+    })
+    setDatabasePoolForTests(pool(client))
+    assert.deepEqual(await getRadioMetrics(), {
+      track_count: 0,
+      published_count: 0,
+      total_audio_bytes: 0,
+      total_duration_seconds: 0,
+    })
+  })
+
+  it('normalizes numeric fields for a synthetic track with non-zero media sizes', async () => {
+    const client = new FakeClient({
+      'FROM radio_tracks': row({
+        ...trackRow,
+        position: '3',
+        audio_size_bytes: '12345',
+        artwork_size_bytes: '678',
+        duration_seconds: '180.5',
+      }),
+    })
+    setDatabasePoolForTests(pool(client))
+    const tracks = await listRadioTracks()
+    assert.deepEqual(
+      {
+        position: tracks[0].position,
+        audioSizeBytes: tracks[0].audioSizeBytes,
+        artworkSizeBytes: tracks[0].artworkSizeBytes,
+        durationSeconds: tracks[0].durationSeconds,
+      },
+      { position: 3, audioSizeBytes: 12345, artworkSizeBytes: 678, durationSeconds: 180.5 },
+    )
+  })
+
+  it('rejects malformed numeric database values instead of leaking them into the API', async () => {
+    const client = new FakeClient({
+      'COUNT(*)::int AS track_count': row({
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: 'not-a-number',
+        total_duration_seconds: 0,
+      }),
+    })
+    setDatabasePoolForTests(pool(client))
+    await assert.rejects(getRadioMetrics(), /total_audio_bytes is not numeric/)
+  })
+
   it('creates a track and returns its serialized form', async () => {
     const client = new FakeClient({
       'INSERT INTO radio_tracks': row(trackRow),

@@ -280,11 +280,40 @@ export type RadioTrackInput = {
   published?: boolean
 }
 
+function radioNumber(value: unknown, field: string, nullable = false): number | null {
+  if (value == null && nullable) return null
+  if (typeof value === 'string' && value.trim() === '') throw new Error(`Radio API returned invalid ${field}.`)
+  const normalized = Number(value)
+  if (!Number.isFinite(normalized)) throw new Error(`Radio API returned invalid ${field}.`)
+  return normalized
+}
+
+function normalizeRadioTrack(value: RadioTrack): RadioTrack {
+  return {
+    ...value,
+    position: radioNumber(value.position, 'track position') as number,
+    audioSizeBytes: radioNumber(value.audioSizeBytes, 'audio size') as number,
+    artworkSizeBytes: radioNumber(value.artworkSizeBytes, 'artwork size') as number,
+    durationSeconds: radioNumber(value.durationSeconds, 'track duration', true),
+  }
+}
+
+function normalizeRadioMetrics(value: RadioMetrics): RadioMetrics {
+  return {
+    track_count: radioNumber(value.track_count, 'track count') as number,
+    published_count: radioNumber(value.published_count, 'published count') as number,
+    total_audio_bytes: radioNumber(value.total_audio_bytes, 'total audio bytes') as number,
+    total_duration_seconds: radioNumber(value.total_duration_seconds, 'total duration') as number,
+  }
+}
+
 export async function getRadioMetricsAdmin() {
-  return api<RadioMetrics>('/api/admin/radio/metrics')
+  return normalizeRadioMetrics(await api<RadioMetrics>('/api/admin/radio/metrics'))
 }
 export async function listRadioTracksAdmin() {
-  return api<{ tracks: RadioTrack[] }>('/api/admin/radio/tracks')
+  const result = await api<{ tracks: RadioTrack[] }>('/api/admin/radio/tracks')
+  if (!Array.isArray(result.tracks)) throw new Error('Radio API returned an invalid track catalog.')
+  return { tracks: result.tracks.map(normalizeRadioTrack) }
 }
 export async function createRadioTrackAdmin(input: RadioTrackInput) {
   return api<{ track: RadioTrack }>('/api/admin/radio/tracks', {

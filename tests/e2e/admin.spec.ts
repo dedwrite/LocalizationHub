@@ -68,12 +68,21 @@ const radioMetrics = { track_count: 2, published_count: 1, total_audio_bytes: 12
 
 async function mockAdminApi(
   page: Page,
-  options: { totpStatus?: { enrolled: boolean; confirmed: boolean } } = {},
+  options: {
+    totpStatus?: { enrolled: boolean; confirmed: boolean }
+    radioTracks?: unknown
+    radioMetrics?: unknown
+    radioFailure?: boolean
+  } = {},
 ) {
   await page.route('**/api/admin**', async (route) => {
     const url = new URL(route.request().url())
     const path = url.pathname.replace(/^\/api\/admin\/?/, '')
     const method = route.request().method()
+    if (options.radioFailure && method === 'GET' && path.startsWith('radio/')) {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'internal-error' }) })
+      return
+    }
     if (method === 'POST') {
       if (path.startsWith('auth/totp/enroll')) {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(enrollment) })
@@ -102,8 +111,8 @@ async function mockAdminApi(
     if (path === '') body = dashboard
     else if (path === 'auth/totp/status') body = options.totpStatus ?? { enrolled: false, confirmed: false }
     else if (path === 'auth') body = {}
-    else if (path.startsWith('radio/metrics')) body = radioMetrics
-    else if (path.startsWith('radio/tracks')) body = radioTracks
+    else if (path.startsWith('radio/metrics')) body = options.radioMetrics ?? radioMetrics
+    else if (path.startsWith('radio/tracks')) body = options.radioTracks ?? radioTracks
     else if (path.startsWith('users/')) body = userDetail
     else if (path.startsWith('users')) body = users
     else if (path.startsWith('projects/')) body = projectDetail
@@ -206,6 +215,52 @@ test.describe('admin console routing and views', () => {
     await expect(page.locator('.radio-status.is-published')).toHaveText('Published')
     await expect(page.locator('.radio-status:not(.is-published)')).toHaveText('Unpublished')
     await expect(page.getByRole('button', { name: '+ Add track' })).toBeVisible()
+  })
+
+  test('renders the real zero-track and zero-metrics state without crashing', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      radioTracks: { tracks: [] },
+      radioMetrics: {
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: '0',
+        total_duration_seconds: '0',
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('No tracks yet.')).toBeVisible()
+    await expect(page.getByText('0 B')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
+  })
+
+  test('keeps Radio Admin mounted with an inline retry when Radio APIs fail', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, { radioFailure: true })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText('Radio data could not be loaded completely.')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry Radio library' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
+  })
+
+  test('turns malformed Radio numeric payloads into an inline contract error', async ({ page }) => {
+    await page.unroute('**/api/admin**')
+    await mockAdminApi(page, {
+      radioTracks: { tracks: [] },
+      radioMetrics: {
+        track_count: 0,
+        published_count: 0,
+        total_audio_bytes: 'not-a-number',
+        total_duration_seconds: 0,
+      },
+    })
+    await page.goto('/app/admin/radio')
+    await expect(page.getByRole('heading', { name: 'LH Radio Library' })).toBeVisible()
+    await expect(page.getByText(/invalid total audio bytes/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Retry Radio library' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Workspace unavailable.' })).toHaveCount(0)
   })
 
   test('opens a destructive confirmation dialog', async ({ page }) => {
