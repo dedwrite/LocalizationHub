@@ -126,6 +126,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   const entry = entries[selected]
   const status = draft?.workflow?.entries?.[entry?.id]?.status ?? (entry?.translation ? 'translated' : 'draft')
   const issues = entry ? entryIssues(entry, tokenProfileId) : []
+  const sourceDirection = draft?.document?.language?.sourceDirection ?? 'auto'
   const direction = draft?.document?.language?.translationDirection ?? 'auto'
   const sourceLocale = draft?.document?.language?.sourceLocale
   const targetLocale = draft?.document?.language?.translationLocale
@@ -401,6 +402,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         status={status}
         writable={writable}
         issues={issues}
+        sourceDirection={sourceDirection}
         direction={direction}
         position={selected}
         total={entries.length}
@@ -490,6 +492,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
             writable={writable}
             tokenProfileId={tokenProfileId}
             issues={issues}
+            sourceDirection={sourceDirection}
             direction={direction}
             position={selected}
             total={entries.length}
@@ -611,7 +614,7 @@ function Toolbar(props: {
     <header className="workspace-toolbar">
       <button className="toolbar-brand" onClick={props.onHome} title="Back to projects" aria-label="LocalizationHub — back to projects"><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
       <div className="toolbar-title">
-        <strong>{props.projectName}</strong>
+        <strong data-i18n-content>{props.projectName}</strong>
         <span className={`save-state save-${props.saveState}`}>{saveLabel}</span>
       </div>
       <div className="toolbar-group">

@@ -1262,7 +1262,7 @@ export function parseJsonLocalization(
         false,
 
       reason:
-        'الملف ليس JSON صالحًا.',
+        'The file is not valid JSON.',
     }
   }
 
@@ -1295,7 +1295,7 @@ export function parseJsonLocalization(
         false,
 
       reason:
-        'تم التعرف على JSON Array، لكن لم نستطع تحديد حقول المفتاح والنص والترجمة تلقائيًا.',
+        'A JSON array was detected, but the key, source, and translation fields could not be identified automatically.',
     }
   }
 
@@ -1345,7 +1345,7 @@ export function parseJsonLocalization(
         false,
 
       reason:
-        'تم التعرف على JSON Object، لكن بنيته ليست من الأنماط المدعومة حاليًا.',
+        'A JSON object was detected, but its structure is not currently supported.',
     }
   }
 
@@ -1354,6 +1354,6 @@ export function parseJsonLocalization(
       false,
 
     reason:
-      'بنية JSON غير مدعومة حاليًا.',
+      'This JSON structure is not currently supported.',
   }
 }

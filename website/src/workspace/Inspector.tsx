@@ -116,7 +116,7 @@ export default function Inspector(props: InspectorProps) {
             {comments.map((item) => (
               <div key={item.id} className="comment-item">
                 <span className="comment-meta">{item.authorName || 'Collaborator'} · {new Date(item.createdAt).toLocaleString()}</span>
-                <p>{item.body}</p>
+                <p data-i18n-content>{item.body}</p>
                 {writable && <button className="link-button" onClick={() => run(async () => { await resolveComment(projectId, item.id, !item.resolved); setComments(await listComments(projectId, entryId)) })}>{item.resolved ? 'Reopen' : 'Resolve'}</button>}
               </div>
             ))}
@@ -133,7 +133,7 @@ export default function Inspector(props: InspectorProps) {
           <div className="inspector-section">
             <h3>Assignment</h3>
             {assignment ? (
-              <p>Currently assigned to <strong>{members.find((m) => m.id === assignment.assigneeUserId)?.username || 'a member'}</strong></p>
+              <p>Currently assigned to <strong data-i18n-content>{members.find((m) => m.id === assignment.assigneeUserId)?.username || 'a member'}</strong></p>
             ) : (
               <p className="muted">Unassigned.</p>
             )}
@@ -141,7 +141,7 @@ export default function Inspector(props: InspectorProps) {
               <div className="assign-options">
                 <button onClick={() => assignTo(null)}>Unassign</button>
                 {members.filter((m) => m.id !== currentUserId).map((member) => (
-                  <button key={member.id} onClick={() => assignTo(member.id)}>Assign to {member.username}</button>
+                  <button key={member.id} onClick={() => assignTo(member.id)}>Assign to <span data-i18n-content>{member.username}</span></button>
                 ))}
                 {members.length === 0 && <p className="muted">No other members to assign.</p>}
               </div>
@@ -171,7 +171,7 @@ export default function Inspector(props: InspectorProps) {
                 const active = data.entryTags[entryId]?.includes(tag.id)
                 return (
                   <button key={tag.id} className={`chip ${active ? 'active' : ''}`} disabled={!writable} onClick={() => toggleTag(tag.id)}>
-                    {tag.label}
+                    <span data-i18n-content>{tag.label}</span>
                   </button>
                 )
               })}

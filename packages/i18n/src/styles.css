@@ -1,0 +1,54 @@
+.lh-language-switcher {
+  position: fixed;
+  z-index: 10000;
+  inset-block-start: 12px;
+  inset-inline-end: 14px;
+  display: inline-flex;
+  align-items: center;
+  color: #f4f1ff;
+  font: 600 12px/1.2 Manrope, system-ui, sans-serif;
+}
+
+.lh-language-switcher select {
+  min-block-size: 34px;
+  padding-block: 6px;
+  padding-inline: 11px 30px;
+  border: 1px solid rgb(143 124 219 / 42%);
+  border-radius: 999px;
+  color: inherit;
+  background: #17151f;
+  color-scheme: dark;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  cursor: pointer;
+}
+
+.lh-language-switcher select:hover { border-color: rgb(169 145 255 / 68%); }
+.lh-language-switcher select:focus-visible { outline: 2px solid #aa8cff; outline-offset: 2px; }
+.lh-visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+html[dir='rtl'] body { text-align: start; }
+html[dir='rtl'] input[type='email'],
+html[dir='rtl'] input[type='url'],
+html[dir='rtl'] input[type='number'],
+html[dir='rtl'] input[data-technical],
+html[dir='rtl'] code,
+html[dir='rtl'] pre,
+html[dir='rtl'] kbd,
+html[dir='rtl'] samp { direction: ltr; unicode-bidi: isolate; text-align: start; }
+
+/* User/localization content owns its own writing direction independently of UI chrome. */
+[data-i18n-content],
+[dir='ltr'],
+[dir='rtl'],
+[dir='auto'] { unicode-bidi: isolate; }
+
+/* Transport semantics remain previous → play → next in both UI directions. */
+.lh-radio-controls,
+.lh-radio-volume,
+.lh-radio-capsule { direction: ltr; }
+
+@media (max-width: 720px) {
+  /* Keep the app header's back/save controls reachable on compact screens. */
+  .lh-language-switcher { inset-block-start: 56px; inset-inline-end: 8px; }
+  .lh-language-switcher select { min-block-size: 32px; max-inline-size: 112px; }
+}

@@ -46,6 +46,7 @@ export type MobileWorkspaceProps = {
   status: string
   writable: boolean
   issues: EntryIssue[]
+  sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
   total: number
@@ -99,7 +100,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
       <header className="mob-header">
         <button className="mob-back" onClick={props.goHome} aria-label="Back to projects">‹</button>
         <div className="mob-title">
-          <strong className="mob-project-name">{props.projectName}</strong>
+          <strong className="mob-project-name" data-i18n-content>{props.projectName}</strong>
           <span className={`save-state save-${saveState}`}>{saveLabel}</span>
         </div>
         <button className="mob-save" onClick={props.onSave} disabled={saveState === 'saving'}>Save</button>
@@ -134,6 +135,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
             writable={props.writable}
             tokenProfileId={props.tokenProfileId}
             issues={props.issues}
+            sourceDirection={props.sourceDirection}
             direction={props.direction}
             position={props.position}
             total={props.total}

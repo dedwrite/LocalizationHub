@@ -208,9 +208,9 @@ export default function LhRadio() {
             <span className="lh-radio-disc-hub" />
           </div>
           <div className="lh-radio-now-meta">
-            <span className="lh-radio-now-title">{currentTrack?.title ?? 'LH Radio'}</span>
-            <span className="lh-radio-now-artist">{currentTrack?.artist ?? 'Select a track'}</span>
-            {currentTrack?.album && <span className="lh-radio-now-album">{currentTrack.album}</span>}
+            <span className="lh-radio-now-title" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.title ?? 'LH Radio'}</span>
+            <span className="lh-radio-now-artist" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.artist ?? 'Select a track'}</span>
+            {currentTrack?.album && <span className="lh-radio-now-album" data-i18n-content>{currentTrack.album}</span>}
           </div>
         </div>
 
@@ -282,7 +282,7 @@ export default function LhRadio() {
                     ) : (
                       <span className="lh-radio-playlist-cover lh-radio-disc-fallback">♪</span>
                     )}
-                    <span className="lh-radio-playlist-meta">
+                    <span className="lh-radio-playlist-meta" data-i18n-content>
                       <strong>{track.title}</strong>
                       <small>{track.artist}</small>
                     </span>
@@ -306,8 +306,8 @@ export default function LhRadio() {
             <span className="lh-radio-disc-hub" />
           </span>
           <span className="lh-radio-capsule-text">
-            <strong className="lh-radio-capsule-title">{currentTrack?.title ?? 'LH RADIO'}</strong>
-            <small className="lh-radio-capsule-artist">{currentTrack?.artist ?? 'FOCUS MODE'}</small>
+            <strong className="lh-radio-capsule-title" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.title ?? 'LH RADIO'}</strong>
+            <small className="lh-radio-capsule-artist" data-i18n-content={currentTrack ? true : undefined}>{currentTrack?.artist ?? 'FOCUS MODE'}</small>
           </span>
         </button>
         <span className="lh-radio-capsule-progress" aria-hidden="true">
