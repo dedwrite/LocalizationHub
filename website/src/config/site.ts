@@ -1,9 +1,9 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.8.0',
+  version: '0.9.0',
   releaseTitle: 'Web Experience Update',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.8.0',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.0',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*

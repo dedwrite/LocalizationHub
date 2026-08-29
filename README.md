@@ -6,9 +6,9 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.8.0 — Web Experience Update**
+**LocalizationHub v0.9.0 — Arabic UI & Engine-Aware Tokens**
 
-v0.8.0 refreshes the browser experience and adds first-party LH Radio and smarter track administration, while preserving the read-only Game Text Extraction introduced in v0.7:
+v0.9.0 adds bilingual English/Arabic UI, engine-aware token profiles, and the accepted v0.8 Web Experience and LH Radio foundation, while preserving the read-only Game Text Extraction introduced in v0.7:
 
 - **Native LH Radio** — Admin-managed first-party MP3 playback with a persistent custom player across the public website and Web App.
 - **Smarter Radio ingestion** — ID3/audio analysis, embedded artwork recovery, metadata-only Spotify/YouTube suggestions, Smart Match evidence, and optional ffmpeg optimization when available.
@@ -424,8 +424,8 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.8.0**
+**LocalizationHub v0.9.0**
 
 Windows builds are distributed through the project's GitHub Releases page.
 
-Download the current release: [LocalizationHub v0.8.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.8.0).
+Download the current release: [LocalizationHub v0.9.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.0).

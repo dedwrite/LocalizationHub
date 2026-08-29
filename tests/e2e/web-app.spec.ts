@@ -53,10 +53,10 @@ test.describe('public routing and accessibility', () => {
     await expect(page.getByText('Friday · 11:59 PM')).toBeVisible()
   })
 
-  test('Landing FAQ reflects the current v0.8 release', async ({ page }) => {
+  test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('v0.8.0')
+    await expect(answer).toContainText('v0.9.0')
     await expect(answer).not.toContainText('v0.4.0')
   })
 
