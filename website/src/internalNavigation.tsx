@@ -20,7 +20,7 @@ export interface ClickLike {
 }
 
 function defaultBase(): string {
-  return typeof window !== 'undefined' ? window.location.href : 'http://localhost/'
+  return typeof window !== 'undefined' ? window.location.href : 'https://localizationhub.app/'
 }
 
 export function isModifiedClick(event: ClickLike): boolean {

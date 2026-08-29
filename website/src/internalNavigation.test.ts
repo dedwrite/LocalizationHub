@@ -14,6 +14,10 @@ function click(overrides: Partial<ClickLike> = {}): ClickLike {
 }
 
 describe('isExternalHref', () => {
+  it('uses the production origin when no browser location exists', () => {
+    expect(isExternalHref('/app/projects')).toBe(false)
+  })
+
   it('classifies same-origin routes as internal', () => {
     expect(isExternalHref('/app/projects', BASE)).toBe(false)
     expect(isExternalHref('/#product', BASE)).toBe(false)
