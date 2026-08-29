@@ -12,7 +12,7 @@ Spotify-foundation checkpoint and is untouched.
 
 - Branch: `feature/v0.8-web-experience`
 - Starting commit: `07d5955245ed9c34032a02cd27e3817614e4be13`
-- Final commit: see report (implementation + checkpoint)
+- Final commit: `1d94c36` (implementation + checkpoint)
 
 ## Storage architecture
 
