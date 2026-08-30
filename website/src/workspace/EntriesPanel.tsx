@@ -1,8 +1,10 @@
 import { useMemo, useState, type KeyboardEvent } from 'react'
 import { ENTRY_FILTERS, type BulkSelection, type EntryFilterId, type EntryView } from './entryCollection'
 import VirtualList from './VirtualList'
+import { useI18n } from '@localizationhub/i18n'
 
 type EntriesPanelProps = {
+  local?: boolean
   views: EntryView[]
   counts: Record<string, number>
   filter: EntryFilterId
@@ -36,6 +38,7 @@ function statusLabel(view: EntryView): string {
 }
 
 export default function EntriesPanel(props: EntriesPanelProps) {
+  const { t } = useI18n()
   const { views, counts, filter, onFilter, query, onQuery, selected, onSelect, selection, onToggleSelection, onClearSelection, commentEntryIds, assigneeOf, onOpenBulk, onJumpTo, mobile = false } = props
   const [moreFilters, setMoreFilters] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
@@ -44,8 +47,8 @@ export default function EntriesPanel(props: EntriesPanelProps) {
   const secondaryFilters = useMemo(() => ENTRY_FILTERS.filter((item) => !item.primary), [])
 
   const total = counts.total ?? 0
-  const translated = counts.translated ?? 0
-  const remaining = total - translated
+  const remaining = counts.untranslated ?? 0
+  const translated = total - remaining
   const percent = total ? Math.round((translated / total) * 100) : 0
 
   function renderRow(item: unknown) {
@@ -132,7 +135,8 @@ export default function EntriesPanel(props: EntriesPanelProps) {
     )
   }
 
-  const filters = mobile ? [...primaryFilters, ...(moreFilters ? secondaryFilters : [])] : ENTRY_FILTERS
+  const filters = (mobile ? [...primaryFilters, ...(moreFilters ? secondaryFilters : [])] : ENTRY_FILTERS)
+    .filter((item) => !props.local || !['comments', 'assigned-to-me'].includes(item.id))
 
   if (mobile) {
     return (
@@ -225,10 +229,10 @@ export default function EntriesPanel(props: EntriesPanelProps) {
     <div className="entries-panel">
       <div className="entries-head">
         <div className="entries-counts">
-          <span className="count-pill">{counts.total}</span>
-          <span className="count-pill count-done">{counts.translated}</span>
-          <span className="count-pill count-todo">{counts.untranslated}</span>
-          <span className="count-pill count-review">{counts['needs-review']}</span>
+          <span className="count-pill" title="Total entries">{counts.total}</span>
+          <span className="count-pill count-done" title="Translated">{translated}</span>
+          <span className="count-pill count-todo" title="Untranslated">{counts.untranslated}</span>
+          <span className="count-pill count-review" title="Needs Review">{counts['needs-review']}</span>
           {counts.errors > 0 && <span className="count-pill count-error">{counts.errors}</span>}
           {counts.warnings > 0 && <span className="count-pill count-warning">{counts.warnings}</span>}
         </div>
@@ -236,8 +240,9 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           <button className="icon-button" onClick={onJumpTo} title="Jump to entry">#</button>
         </div>
       </div>
+      {props.local && <div className="local-completion" data-i18n-skip>{t('local.completion', { translated, total, percent })}</div>}
       <div className="entries-filters" role="tablist" aria-label="Entry filters">
-        {ENTRY_FILTERS.map((item) => {
+        {filters.map((item) => {
           const count = counts[item.id] ?? 0
           return (
             <button

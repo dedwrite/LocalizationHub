@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import ConfirmDialog from './ConfirmDialog'
+import { useI18n } from '@localizationhub/i18n'
 
 /*
  * Project-wide Search & Replace.
@@ -18,6 +19,7 @@ export default function SearchReplace({
   onApply: (updates: Array<{ index: number; translation: string }>) => void
   onClose: () => void
 }) {
+  const { t } = useI18n()
   const [find, setFind] = useState('')
   const [replace, setReplace] = useState('')
   const [scope, setScope] = useState<'translation' | 'source' | 'both'>('translation')
@@ -94,7 +96,7 @@ export default function SearchReplace({
             Case sensitive
           </label>
         </div>
-        <p className="dialog-hint">{find ? `${replaceCount} match${replaceCount === 1 ? '' : 'es'} found.` : 'Enter text to search.'}</p>
+        <p className="dialog-hint" data-i18n-skip>{find ? t('local.matches', { count: replaceCount }) : t('local.enterSearch')}</p>
         <div className="dialog-actions">
           <button className="dialog-button" onClick={onClose}>Close</button>
           <button className="dialog-button dialog-button-danger" disabled={!writable || replaceCount === 0} onClick={() => setConfirming(true)}>
@@ -104,7 +106,7 @@ export default function SearchReplace({
         {confirming && (
           <ConfirmDialog
             title="Replace all"
-            body={`Replace ${replaceCount} occurrence(s) across the project? This cannot be undone.`}
+            body={t('local.replaceConfirm', { count: replaceCount })}
             confirmLabel="Replace All"
             danger
             onConfirm={applyAll}

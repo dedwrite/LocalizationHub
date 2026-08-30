@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import { openTools } from './helpers'
 
 const jsonFile = { name: 'browser.json', mimeType: 'application/json', buffer: Buffer.from('{"menu.start":"Start","menu.quit":"Quit"}') }
 const csvFile = { name: 'browser.csv', mimeType: 'text/csv', buffer: Buffer.from('key,source,translation\nmenu.start,Start,\n') }
@@ -56,7 +57,7 @@ test.describe('public routing and accessibility', () => {
   test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('v0.9.0')
+    await expect(answer).toContainText('v0.9.1')
     await expect(answer).not.toContainText('v0.4.0')
   })
 
@@ -121,7 +122,8 @@ test.describe('browser-local files', () => {
     await expect(page.getByText('Saved to this browser.')).toBeVisible()
     await page.reload()
     await expect(page.getByText('Recent browser projects')).toBeVisible()
-    await page.getByRole('button', { name: 'browser.json:json', exact: true }).click()
+    await page.getByRole('button', { name: 'browser.json', exact: true }).click()
+    await openTools(page)
     const download = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Export' }).click()
     const content = await (await download).createReadStream()
@@ -131,6 +133,7 @@ test.describe('browser-local files', () => {
   test('imports and exports CSV', async ({ page }) => {
     await importFile(page, csvFile)
     await page.locator('textarea').fill('Start translated')
+    await openTools(page)
     const download = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Export' }).click()
     expect((await (await download).createReadStream())?.readable).toBe(true)
@@ -139,6 +142,7 @@ test.describe('browser-local files', () => {
   test('imports and exports PO', async ({ page }) => {
     await importFile(page, poFile)
     await page.locator('textarea').fill('Commencer')
+    await openTools(page)
     const download = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Export' }).click()
     expect((await (await download).createReadStream())?.readable).toBe(true)

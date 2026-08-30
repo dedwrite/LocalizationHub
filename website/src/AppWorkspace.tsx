@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useI18n } from '@localizationhub/i18n'
+import ProjectDeleteDialog from '../../frontend/src/ProjectDeleteDialog'
+import { deleteProject } from './appApi'
 import { parseLocalizationFile } from '@localizationhub/core'
 import { createTokenProfileConfig } from '@localizationhub/core'
 import { createProject, getStoredUser, listProjects, login, logout, register, restoreSession, sendVerification, type AuthUser, type ProjectSummary } from './appApi'
@@ -53,7 +56,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [verification, setVerification] = useState(false)
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(() => new URLSearchParams(window.location.search).get('deleted') === '1' ? 'Cloud Project deleted permanently.' : '')
   const [newOpen, setNewOpen] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -116,20 +119,29 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
         <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
         <span className="result-count">{loading ? 'SYNCING' : `${filtered.length} OF ${projects.length} PROJECTS`}</span>
       </div>
-      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
+      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
     <MobileNav />
   </main>
 }
 
-function ProjectCard({ project, onOpen }: { project: ProjectSummary; onOpen: () => void }) {
+function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; onOpen: () => void; onDeleted: () => void }) {
+  const { t } = useI18n()
+  const [deleting, setDeleting] = useState(false)
+  const menu = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    const close = (event: PointerEvent) => { if (menu.current && !menu.current.contains(event.target as Node)) menu.current.open = false }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [])
   const total = project.entryCount ?? 0
   const translated = project.translatedCount ?? 0
   const percent = total ? Math.round((translated / total) * 100) : 0
   const sourceLabel = project.sourceFileName || 'LocalizationHub Project'
   const extension = project.sourceFileName?.split('.').pop()?.toUpperCase() || 'LH'
   return (
+    <div className="project-card-shell">
     <button className="project-card" onClick={onOpen} aria-label={`Open ${project.name}`}>
       <div className="project-card-top"><span className="project-glyph" aria-hidden="true">{extension.slice(0, 4)}</span><span className="project-role">{friendlyStatus(project.role)}</span></div>
       <div className="project-title"><strong>{project.name}</strong><span aria-hidden="true">↗</span></div>
@@ -139,6 +151,9 @@ function ProjectCard({ project, onOpen }: { project: ProjectSummary; onOpen: () 
       <div className="project-facts"><span>{total.toLocaleString()} entries</span><span>Rev {project.revision}</span><span>{project.memberCount ?? 1} {(project.memberCount ?? 1) === 1 ? 'member' : 'members'}</span></div>
       <small>Updated {new Date(project.updatedAt).toLocaleDateString()}</small>
     </button>
+    {project.role === 'owner' && <details ref={menu} className="project-card-actions" data-i18n-skip onKeyDown={(event) => { if (event.key === 'Escape' && menu.current) { menu.current.open = false; menu.current.querySelector('summary')?.focus() } }}><summary aria-label={t('delete.actions')}>⋯</summary><button type="button" onClick={() => { if (menu.current) menu.current.open = false; setDeleting(true) }}>{t('delete.project')}</button></details>}
+    {deleting && project.role === 'owner' && <ProjectDeleteDialog name={project.name} onDelete={() => deleteProject(project.id)} onDeleted={onDeleted} onCancel={() => setDeleting(false)} />}
+    </div>
   )
 }
 

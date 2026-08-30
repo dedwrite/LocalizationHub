@@ -718,6 +718,32 @@ export async function saveCloudProject(
   }
 }
 
+// Lock the project while checking its current owner. All four dependent tables
+// in migrations 002/003 reference projects(id) ON DELETE CASCADE; no filesystem,
+// user/session, Admin, or Radio data is part of this operation.
+export async function deleteCloudProject(projectId, userId) {
+  requireUserId(userId)
+  const client = await getDatabasePool().connect()
+  try {
+    await client.query('BEGIN')
+    const visible = await client.query(
+      `SELECT owner_user_id FROM projects
+       WHERE id = $1 AND (owner_user_id = $2 OR EXISTS (
+         SELECT 1 FROM project_memberships WHERE project_id = $1 AND user_id = $2
+       )) FOR UPDATE`, [projectId, userId],
+    )
+    if (!visible.rows[0]) throw new CloudProjectNotFoundError()
+    if (visible.rows[0].owner_user_id !== userId) throw new CloudProjectOwnerRequiredError()
+    const deleted = await client.query('DELETE FROM projects WHERE id = $1 AND owner_user_id = $2 RETURNING id', [projectId, userId])
+    if (!deleted.rows[0]) throw new CloudProjectNotFoundError()
+    await client.query('COMMIT')
+    return { deleted: true, projectId }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally { client.release() }
+}
+
 
 export async function listCloudProjectMembers(
   projectId,

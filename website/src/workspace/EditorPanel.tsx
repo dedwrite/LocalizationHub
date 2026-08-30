@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
+import type { EntryIssue } from './entryCollection'
 
 type EditorPanelProps = {
+  local?: boolean
   entry: any
   extractionContext?: EntryContext
   status: string
   writable: boolean
   tokenProfileId: TokenProfileId
-  issues: Array<{ severity: 'error' | 'warning'; message: string }>
+  issues: EntryIssue[]
   sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
@@ -39,7 +41,7 @@ function ProtectedSource({ text, profileId }: { text: string; profileId: TokenPr
   let cursor = 0
   tokens.forEach((token, i) => {
     if (token.start > cursor) spans.push(<span key={`text-${i}`}>{text.slice(cursor, token.start)}</span>)
-    spans.push(<span key={`token-${i}`} className="protected-token">{text.slice(token.start, token.end)}</span>)
+    spans.push(<span key={`token-${i}`} className="protected-token" dir="ltr">{text.slice(token.start, token.end)}</span>)
     cursor = token.end
   })
   if (cursor < text.length) spans.push(<span key="tail">{text.slice(cursor)}</span>)
@@ -73,6 +75,7 @@ export function DialogueContextStrip({ context }: { context: EntryContext | Pars
 }
 
 export default function EditorPanel(props: EditorPanelProps) {
+  const { locale, t } = useI18n()
   const { entry, status, writable, tokenProfileId, issues, sourceDirection, direction, position, total, onTranslationChange, onStatusChange, onNextUntranslated, onPrevUntranslated, onJumpTo, sourceLocale, targetLocale, mobile = false, onNext, onPrev } = props
   const [jumpOpen, setJumpOpen] = useState(false)
   const [jumpValue, setJumpValue] = useState('')
@@ -81,6 +84,8 @@ export default function EditorPanel(props: EditorPanelProps) {
 
   const source = entry?.source ?? ''
   const translation = entry?.translation ?? ''
+  const protectedTokens = extractProtectedTokens(source, tokenProfileId)
+  const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
   // Extraction context stays in its canonical metadata location. Both display
   // and MT use the same fallback; explicit parsed context remains authoritative.
   const dialogueContext = entry?.dialogueContext ?? props.extractionContext
@@ -180,12 +185,13 @@ export default function EditorPanel(props: EditorPanelProps) {
         <div className="editor-content-column">
         <section className="source-section">
           <div className="section-label-row">
-            <span className="section-label"><small>REFERENCE</small> Source</span>
+            <span className="section-label" data-i18n-skip><small>{t('workspace.reference')}</small> {t('workspace.source')}</span>
             <button className="link-button" onClick={copySource} title="Copy source">{copied ? 'Copied' : 'Copy'}</button>
           </div>
           <div className="source-text" dir={sourceDirection} data-i18n-content>
             <ProtectedSource text={source} profileId={tokenProfileId} />
           </div>
+          {protectedTokens.length > 0 && <div className="source-token-list"><span>{t('qa.detected')}</span>{protectedTokens.map((token, index) => <code key={index} dir="ltr">{token.raw}</code>)}</div>}
           {(entry?.context || entry?.notes || dialogueContext) && (
             <div className="source-context">
               {dialogueContext && <DialogueContextStrip context={dialogueContext} />}
@@ -197,13 +203,13 @@ export default function EditorPanel(props: EditorPanelProps) {
 
         <section className="translation-section">
           <div className="section-label-row">
-            <span className="section-label translation-label"><small>WORKING COPY</small> Translation</span>
+            <span className="section-label translation-label" data-i18n-skip><small>{t('workspace.workingCopy')}</small> {t('workspace.translation')}</span>
             {!writable && <span className="readonly-badge">Read only</span>}
           </div>
           <textarea
             ref={textareaRef}
             className={`translation-editor direction-${direction}`}
-            dir={direction === 'auto' ? undefined : direction}
+            dir={direction}
             value={translation}
             onChange={(event) => onTranslationChange(event.target.value)}
             readOnly={!writable}
@@ -213,7 +219,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (
-                <div key={i} className={`inline-qa-item qa-${issue.severity}`}>{issue.message}</div>
+                <div key={i} className={`inline-qa-item qa-${issue.severity}`} data-i18n-skip>{locale === 'ar' && issue.kind && issueKeys[issue.kind] ? <>{t(issueKeys[issue.kind])}{issue.token && <> <code dir="ltr">{issue.token.raw}</code></>}</> : issue.message}</div>
               ))}
             </div>
           )}
@@ -234,6 +240,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           </div>
         )}
 
+        {props.local && <p className="muted local-mt-privacy">Your project stays on this device. Using Machine Translation sends the current text/context to the selected provider.</p>}
         <MachineTranslationPanel
           sourceText={source}
           sourceLocale={sourceLocale}
@@ -243,8 +250,14 @@ export default function EditorPanel(props: EditorPanelProps) {
         </div>
       </div>
 
-      <div className="editor-footer">
-        {mobile ? (
+      <div className={`editor-footer ${props.local ? 'local-entry-navigation' : ''}`}>
+        {props.local ? <>
+          <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>
+          <button className="nav-button" onClick={onNext} disabled={position >= total - 1}>Next</button>
+          <button className="nav-button" onClick={onPrevUntranslated}>Previous Untranslated</button>
+          <button className="nav-button nav-primary" onClick={onNextUntranslated}>Next Untranslated</button>
+          {!mobile && <span className="editor-hint">Ctrl+S save · Alt+↓/↑ navigate</span>}
+        </> : mobile ? (
           <>
             <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>
             <button className="nav-button nav-primary" onClick={onNextUntranslated} disabled={!writable}>Next Untranslated</button>

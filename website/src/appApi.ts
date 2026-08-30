@@ -108,6 +108,10 @@ export async function saveProject(id: string, baseRevision: number, project: any
   const snapshot = (await api(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify({ baseRevision, project }) })).project as Omit<ProjectSnapshot, 'migratedFromVersion'>
   return decodeCloudProject(snapshot)
 }
+export async function deleteProject(id: string): Promise<void> {
+  const result = await api(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (result?.deleted !== true || result?.projectId !== id) throw new Error('Could not confirm project deletion. Refresh before trying again.')
+}
 export async function sendVerification() { return api('/api/auth/verification/send', { method: 'POST' }) }
 export function projectStats(project: any) { return calculateProjectStatistics(project.entries, project.workflow?.entries ?? {}) }
 export function tokenWarnings(source: string, translation: string) { return validateProtectedTokens(source, translation).errors }

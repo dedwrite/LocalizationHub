@@ -11,6 +11,7 @@ import {
   addCloudProjectMember,
   canEditCloudProject,
   createCloudProject,
+  deleteCloudProject,
   getCloudProject,
   getCloudProjectRoleForUser,
   listCloudProjectMembers,
@@ -30,6 +31,7 @@ import {
   restoreCloudActivity,
 } from './cloud-workflow.mjs'
 import { isValidCloudProjectV3 } from './cloud-project-validation.mjs'
+import { revokeDeletedProjectSessions } from './cloud-project-sessions.mjs'
 import {
   resolvePublicWebsiteDirectory,
   ensurePublicWebsiteDirectory,
@@ -4363,6 +4365,20 @@ const httpServer =
         request.url?.match(
           /^\/api\/projects\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/
         )
+
+      if (request.method === 'DELETE' && projectMatch) {
+        try {
+          const result = await deleteCloudProject(projectMatch[1].toLowerCase(), cloudAuthentication.user.id)
+          revokeDeletedProjectSessions(sessions, result.projectId, clearClientSession, send)
+          sendJson(response, 200, result)
+        } catch (error) {
+          if (error instanceof CloudProjectNotFoundError) { sendJson(response, 404, { error: 'project-not-found' }); return }
+          if (error instanceof CloudProjectOwnerRequiredError) { sendJson(response, 403, { error: 'project-owner-required' }); return }
+          console.error('Cloud project deletion failed.')
+          sendJson(response, 500, { error: 'internal-error' })
+        }
+        return
+      }
 
       if (
         request.method ===

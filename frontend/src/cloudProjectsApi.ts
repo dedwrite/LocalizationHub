@@ -73,6 +73,11 @@ export class CloudProjectsApiError
   }
 }
 
+export async function deleteCloudProject(projectId: string): Promise<void> {
+  const result = await requestJson<{ deleted: boolean; projectId: string }>(`/api/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE' })
+  if (result?.deleted !== true || result.projectId !== projectId) throw new CloudProjectsApiError('invalid-response', 'Could not confirm project deletion. Refresh before trying again.')
+}
+
 function getApiBaseUrl():
   string {
   try {

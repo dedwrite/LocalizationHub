@@ -60,10 +60,10 @@ export const websiteMessages = {
   'website.formats.title': { en: 'Bring your format. Keep your structure.', ar: 'أحضر صيغتك. واحتفظ ببنيتها.' },
   /* The public release heading is authored as two visual lines. Arabic reads
    * naturally right-to-left when the semantic phrase is split in this order. */
-  'website.release.webExperience': { en: 'Web Experience', ar: 'تحديث' },
-  'website.release.currentTitle': { en: 'Web Experience Update', ar: 'تحديث تجربة الويب' },
-  'website.release.update': { en: 'Update', ar: 'تجربة الويب' },
-  'website.release.description': { en: 'Translate in the refreshed browser workspace, keep context and protected tokens visible, and move between Cloud, Local, and first-party LH Radio workflows without losing your place.', ar: 'ترجم في مساحة الويب المحسّنة، مع إبقاء السياق وTokens المحمية ظاهرة، والتنقل بين المشاريع السحابية والمحلية وLH Radio دون فقدان موضعك.' },
+  'website.release.localWorkspace': { en: 'Local Workspace', ar: 'تكافؤ' },
+  'website.release.currentTitle': { en: 'Local Workspace Parity', ar: 'تكافؤ مساحة العمل المحلية' },
+  'website.release.parity': { en: 'Parity', ar: 'مساحة العمل المحلية' },
+  'website.release.description': { en: 'Use the full translation workspace with browser-local files: context, protected tokens, workflow and saved progress. Cloud Project owners can now delete projects safely from Web and Desktop.', ar: 'استخدم مساحة الترجمة الكاملة مع ملفات المتصفح المحلية: السياق والرموز المحمية وسير العمل والتقدم المحفوظ. ويمكن لمالكي المشاريع السحابية الآن حذف مشاريعهم بأمان من الويب وتطبيق سطح المكتب.' },
   'website.faq.kicker': { en: '05 / GOOD QUESTIONS', ar: '05 / أسئلة مهمة' },
   'website.faq.title': { en: 'Before you start translating.', ar: 'قبل أن تبدأ الترجمة.' },
   'website.download.description': { en: 'A focused Windows workspace for translating, reviewing, and managing the localization files you already have.', ar: 'مساحة عمل مركزة على Windows لترجمة ملفات التوطين الحالية ومراجعتها وإدارتها.' },

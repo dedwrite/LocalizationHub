@@ -8,6 +8,7 @@ import { legalMessages } from './legal'
 import { radioMessages } from './radio'
 import { websiteMessages } from './website'
 import { workspaceMessages } from './workspace'
+import { parityMessages } from './parity'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
@@ -20,6 +21,7 @@ export const messages = {
   ...legalMessages,
   ...websiteMessages,
   ...workspaceMessages,
+  ...parityMessages,
   ...radioMessages,
 } satisfies MessageCatalog
 

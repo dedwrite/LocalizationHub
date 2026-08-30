@@ -7,6 +7,7 @@
    ============================================================ */
 
 .mob-workspace {
+  color-scheme: dark;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -16,6 +17,15 @@
   color: #f5f7fa;
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
 }
+
+/* Same quiet, usable scrollbar treatment as the desktop workspace. */
+.mob-workspace :is(.editor-scroll, .inspector-content, .virtual-list, .mob-tools, .mob-entries) { scrollbar-width: auto; scrollbar-color: #514b73 #0d1117; }
+.mob-workspace ::-webkit-scrollbar { width: 12px; height: 12px; }
+.mob-workspace ::-webkit-scrollbar-track { background: #0d1117; }
+.mob-workspace ::-webkit-scrollbar-thumb { background: #514b73; border: 3px solid #0d1117; border-radius: 10px; }
+.mob-workspace ::-webkit-scrollbar-thumb:hover { background: #6a628e; }
+.mob-workspace ::-webkit-scrollbar-thumb:active { background: #8174ae; }
+.mob-editor .editor-footer.local-entry-navigation { display: grid; grid-template-columns: 1fr 1fr; }
 
 /* iOS Safari: never let focus zoom into inputs/textarea/select. */
 .mob-workspace input,
