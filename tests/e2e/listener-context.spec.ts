@@ -56,7 +56,7 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('.lh-language-switcher select').selectOption(locale)
     const strip = page.locator('.dialogue-context-strip')
     await expect(strip).toBeVisible()
-    await expect(strip).toHaveText(scenario[locale])
+    await expect(strip.locator(':scope > span')).toHaveText(scenario[locale].split(' · '))
     await expect(page.locator('html')).toHaveAttribute('dir', locale === 'en' ? 'ltr' : 'rtl')
     await page.screenshot({ path: testInfo.outputPath(`listener-${locale}.png`) })
     await page.locator('.mt-toggle').click()

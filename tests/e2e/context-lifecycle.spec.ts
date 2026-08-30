@@ -100,14 +100,14 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   await openEditor(page)
   await page.locator('.lh-language-switcher select').selectOption(locale)
   const visible = locale === 'en' ? 'Speaker: Caloy (male) · → Listener: Mark (male) · Scene: 4/Assembly.1d.inkb' : 'المتحدث: Caloy (ذكر) · → المستمع: Mark (ذكر) · المشهد: 4/Assembly.1d.inkb'
-  await expect(page.locator('.dialogue-context-strip')).toHaveText(visible)
+  await expect(page.locator('.dialogue-context-strip > span')).toHaveText(visible.split(' · '))
   await initialMetadata
   await page.waitForLoadState('networkidle')
   await page.reload()
   if (locale === 'ar') await page.locator('.lh-language-switcher select').selectOption('en')
   await openEditor(page)
   await page.locator('.lh-language-switcher select').selectOption(locale)
-  await expect(page.locator('.dialogue-context-strip')).toHaveText(visible)
+  await expect(page.locator('.dialogue-context-strip > span')).toHaveText(visible.split(' · '))
   await page.locator('.mt-toggle').click()
   await page.locator('input[name="mt-provider-key"]').fill('synthetic-test-key')
   await page.locator('.mt-actions button').first().click()
@@ -129,7 +129,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   await openEditor(page)
   await expect(page.getByLabel('Translation', { exact: true })).toHaveValue(translation)
   await page.locator('.lh-language-switcher select').selectOption(locale)
-  await expect(page.locator('.dialogue-context-strip')).toHaveText(visible)
+  await expect(page.locator('.dialogue-context-strip > span')).toHaveText(visible.split(' · '))
   expect(errors).toEqual([])
 })
 

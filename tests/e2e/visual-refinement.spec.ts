@@ -1,0 +1,110 @@
+import { test, expect, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
+import { parseLocalizationFile } from '@localizationhub/core'
+import { projectFromLocalDocument } from '../../website/src/localProjects'
+
+const original = JSON.parse(readFileSync('tests/fixtures/caloy-mark.json', 'utf8'))[0]
+const fixture = JSON.stringify([0, 1, 2].map(index => ({ ...original, entry_id: String(index + 1), text_en: `Line ${index + 1} {name}` })))
+
+async function populatedRadio(page: Page) {
+  await page.route('**/api/radio/**', route => {
+    if (new URL(route.request().url()).pathname === '/api/radio/tracks') return route.fulfill({ json: { tracks: [{ id: 'radio-visual', title: 'A sufficiently long track title', artist: 'Synthetic artist', position: 0, durationSeconds: 180, audioUrl: '/api/radio/tracks/radio-visual/audio', artworkUrl: null }] } })
+    return route.fulfill({ status: 204 })
+  })
+}
+
+for (const locale of ['en', 'ar'] as const) {
+  test(`populated Radio never intercepts Local navigation in ${locale}`, async ({ page }) => {
+    await populatedRadio(page)
+    const errors: string[] = []
+    page.on('pageerror', error => errors.push(error.message))
+    await page.goto('/app/local')
+    await page.locator('input[type=file]').setInputFiles({ name: 'visual-review.json', mimeType: 'application/json', buffer: Buffer.from(fixture) })
+    await page.locator('.lh-language-switcher select').selectOption(locale)
+    await expect(page.locator('.lh-radio-capsule-title')).toHaveText('A sufficiently long track title')
+    const footer = page.locator('.editor-footer')
+    await expect(footer).toBeVisible()
+    const collision = await footer.evaluate(element => {
+      const radio = document.querySelector('.lh-radio-capsule')!.getBoundingClientRect()
+      return [...element.querySelectorAll('button')].some(button => {
+        const box = button.getBoundingClientRect()
+        return box.left < radio.right && box.right > radio.left && box.top < radio.bottom && box.bottom > radio.top
+      })
+    })
+    expect(collision, 'Radio must not cover even part of a navigation button').toBe(false)
+    const next = footer.getByRole('button', { name: locale === 'en' ? 'Next' : 'التالي', exact: true })
+    await next.click()
+    await expect(page.locator('.source-text')).toContainText('Line 2')
+    await footer.getByRole('button', { name: locale === 'en' ? 'Previous' : 'السابق', exact: true }).click()
+    await expect(page.locator('.source-text')).toContainText('Line 1')
+    if ((page.viewportSize()?.width ?? 1440) < 768) {
+      await page.locator('.mob-nav button').last().click()
+      await expect(page.locator('.mob-tools')).toBeVisible()
+      await page.locator('.mob-nav button').first().click()
+      await expect(page.locator('.mob-surface .entries-panel')).toBeVisible()
+    }
+    expect(errors).toEqual([])
+  })
+}
+
+test('landing preview changes the real UI locale, with bounded section spacing', async ({ page }) => {
+  await populatedRadio(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  const preview = page.locator('.preview-controls')
+  await preview.getByRole('button', { name: 'العربية', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.locator('.lh-language-switcher select')).toHaveValue('ar')
+  await expect(preview.getByRole('button', { name: 'العربية', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await preview.getByRole('button', { name: 'English', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
+  const spacings = await page.locator('.landing-main .section').evaluateAll(elements => elements.map(e => parseFloat(getComputedStyle(e).paddingTop)))
+  expect(Math.max(...spacings)).toBeLessThanOrEqual(104)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
+})
+
+for (const locale of ['en', 'ar'] as const) test(`Cloud navigation remains clear of Radio in ${locale}`, async ({ page }) => {
+  const parsed = parseLocalizationFile(fixture, 'visual-cloud.json')
+  if (!parsed.ok) throw new Error(parsed.reason)
+  const project = projectFromLocalDocument(parsed.document, 'visual-cloud.json')
+  const user = { id: 'visual-user', username: 'visual', email: 'visual@example.invalid', emailVerified: true }
+  await page.addInitScript(user => {
+    localStorage.setItem('localizationhub.auth.token', 'synthetic-visual-token')
+    localStorage.setItem('localizationhub.auth.user', JSON.stringify(user))
+  }, user)
+  await page.route('**/api/auth/me', route => route.fulfill({ json: { user } }))
+  await page.route('**/api/projects/visual-cloud', route => route.fulfill({ json: { project: { id: 'visual-cloud', name: 'Visual Cloud', role: 'owner', revision: 1, project } } }))
+  await page.route('**/api/projects/visual-cloud/**', route => route.fulfill({ json: { members: [], assignments: [], entries: [], comments: [], activity: [] } }))
+  await populatedRadio(page)
+  await page.goto('/app/projects/visual-cloud')
+  await page.locator('.lh-language-switcher select').selectOption(locale)
+  await expect(page.locator('.source-text')).toContainText('Line 1')
+  await expect(page.locator('.lh-radio-capsule-title')).toHaveText('A sufficiently long track title')
+  const next = page.locator('.editor-footer').getByRole('button', { name: locale === 'en' ? 'Next Untranslated' : 'التالي غير المترجم', exact: true })
+  await next.click()
+  await expect(page.locator('.source-text')).toContainText('Line 2')
+  const box = await next.boundingBox()
+  const radio = await page.locator('.lh-radio-capsule').boundingBox()
+  expect(box && radio && box.x < radio.x + radio.width && box.x + box.width > radio.x && box.y < radio.y + radio.height && box.y + box.height > radio.y).toBe(false)
+})
+
+test('project metadata restores English whitespace and language control clears account actions', async ({ page }) => {
+  const user = { id: 'visual-user', username: 'Visual reviewer', email: 'visual@example.invalid', emailVerified: true }
+  const projects = [{ id: 'visual-one', name: 'Dialogue review', role: 'owner', revision: 3, sourceFileName: 'synthetic.json', entryCount: 120, translatedCount: 48, memberCount: 2, updatedAt: '2026-08-30T00:00:00Z' }]
+  await page.addInitScript(user => { localStorage.setItem('localizationhub.auth.token', 'synthetic-visual'); localStorage.setItem('localizationhub.auth.user', JSON.stringify(user)) }, user)
+  await page.route('**/api/**', route => route.fulfill({ json: new URL(route.request().url()).pathname === '/api/auth/me' ? { user } : { projects, tracks: [] } }))
+  await page.goto('/app/projects')
+  await expect(page.locator('.project-card')).toBeVisible()
+  for (const locale of ['ar', 'en', 'ar', 'en']) {
+    await page.locator('.lh-language-switcher select').selectOption(locale)
+    await expect(page.locator('html')).toHaveAttribute('lang', locale)
+    if (locale === 'en') {
+      await expect(page.locator('.project-facts')).toContainText('120 entries')
+      await expect(page.locator('.support-actions').getByRole('button', { name: 'Open project', exact: true })).toBeVisible()
+      expect(await page.locator('.project-summary, .project-card, .project-support').allTextContents()).not.toEqual(expect.arrayContaining([expect.stringMatching(/[\u0600-\u06ff]/u)]))
+    }
+    const language = await page.locator('.lh-language-switcher').boundingBox()
+    const logout = await page.locator('.account button').boundingBox()
+    expect(language && logout && language.x < logout.x + logout.width && language.x + language.width > logout.x && language.y < logout.y + logout.height && language.y + language.height > logout.y).toBe(false)
+  }
+})

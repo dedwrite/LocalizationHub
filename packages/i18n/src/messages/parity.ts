@@ -1,6 +1,8 @@
 import type { MessageCatalog } from '../types'
 
 export const parityMessages = {
+  'landing.previewLanguage': { en: 'Preview interface language', ar: 'لغة واجهة المعاينة' },
+  'landing.previewLive': { en: 'One workspace. Two languages.', ar: 'مساحة عمل واحدة. بلغتان.' },
   'local.backFiles': { en: 'Back to local files', ar: 'العودة إلى الملفات المحلية' },
   'local.completion': { en: '{translated}/{total} translated · {percent}% complete', ar: '{translated}/{total} مترجم · اكتمل {percent}%' },
   'local.matches': { en: '{count} matches found.', ar: 'عُثر على {count} تطابق.' },

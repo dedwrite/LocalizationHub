@@ -82,6 +82,7 @@ function dynamicArabicText(text: string) {
   if (text === '↻ Refresh') return '↻ تحديث'
   if (text.includes('Web Experience Update')) return text.replace('Web Experience Update', 'تحديث تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Local Workspace Parity')) return text.replace('Local Workspace Parity', 'تكافؤ مساحة العمل المحلية').replace(/^v(?=\d)/u, 'الإصدار ')
+  if (text.includes('Web Experience Polish')) return text.replace('Web Experience Polish', 'تحسين تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
   return text
 }
 
@@ -131,7 +132,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         // Arabic translation left behind by a previous locale.
         if (priorOriginal == null) {
           originalTexts.current.set(node, current)
-        } else if (current === priorLocalized && current !== priorOriginal) {
+        } else if (current.trim() === priorLocalized && current !== priorOriginal) {
           node.data = priorOriginal
         } else if (current !== priorOriginal) {
           originalTexts.current.set(node, current)

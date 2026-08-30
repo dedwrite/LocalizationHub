@@ -61,17 +61,17 @@ export function DialogueContextStrip({ context }: { context: EntryContext | Pars
     ? ` (${genderKeys[value] ? t(genderKeys[value]) : value})` : ''
   const parts: React.ReactNode[] = []
   if (context.speaker) {
-    parts.push(<span key="speaker">{t('extraction.context.speaker')} <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
+    parts.push(<span className="context-person" key="speaker"><span className="context-field-label">{t('extraction.context.speaker')}</span> <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
   }
   if (context.listeners?.length) {
-    parts.push(<span key="listeners">→ {t('extraction.source.listeners')}: {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
+    parts.push(<span className="context-person" key="listeners">→ <span className="context-field-label">{t('extraction.source.listeners')}:</span> {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
   } else if (context.listener) {
-    parts.push(<span key="listener">→ {t('extraction.context.listener')} <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
+    parts.push(<span className="context-person" key="listener">→ <span className="context-field-label">{t('extraction.context.listener')}</span> <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
   }
-  if (context.scene) parts.push(<span key="scene">{t('extraction.context.scene')} <bdi>{context.scene}</bdi></span>)
-  if (context.conversationId) parts.push(<span key="conversation">{t('workspace.context.conversation')} <bdi>{context.conversationId}</bdi></span>)
+  if (context.scene) parts.push(<span className="context-detail" key="scene"><span className="context-field-label">{t('extraction.context.scene')}</span> <bdi>{context.scene}</bdi></span>)
+  if (context.conversationId) parts.push(<span className="context-detail" key="conversation"><span className="context-field-label">{t('workspace.context.conversation')}</span> <bdi>{context.conversationId}</bdi></span>)
   if (parts.length === 0) return null
-  return <p className="dialogue-context-strip" data-i18n-skip>{parts.map((part, index) => <span key={index}>{index > 0 && ' · '}{part}</span>)}</p>
+  return <div className="dialogue-context-strip" data-i18n-skip>{parts}</div>
 }
 
 export default function EditorPanel(props: EditorPanelProps) {
@@ -195,7 +195,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           {(entry?.context || entry?.notes || dialogueContext) && (
             <div className="source-context">
               {dialogueContext && <DialogueContextStrip context={dialogueContext} />}
-              {entry.context && <p><strong>Context:</strong> <bdi data-i18n-content>{entry.context}</bdi></p>}
+              {entry.context && entry.context !== dialogueContext?.scene && <p><strong>Context:</strong> <bdi data-i18n-content>{entry.context}</bdi></p>}
               {entry.notes && <p><strong>Notes:</strong> <bdi data-i18n-content>{entry.notes}</bdi></p>}
             </div>
           )}
