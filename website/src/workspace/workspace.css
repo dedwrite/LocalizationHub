@@ -8,6 +8,7 @@
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  --workspace-dock-height: 104px;
 }
 
 /* Keep workspace scroll surfaces quiet and consistent with the dark UI.
@@ -187,6 +188,45 @@
   flex: 1;
   min-height: 0;
   position: relative;
+  margin-bottom: var(--workspace-dock-height);
+}
+
+/* One functional bottom dock: Radio at physical left, navigation beside it.
+   Keep the whole working surface above both, including resizable side panels.
+   The transport's physical direction stays unchanged in RTL. */
+.workspace-shell::after {
+  content: '';
+  position: fixed;
+  inset: auto 0 0;
+  height: var(--workspace-dock-height);
+  border-top: 1px solid #282e38;
+  background: #0e1218;
+  pointer-events: none;
+  z-index: 3;
+}
+.workspace-shell .editor-footer {
+  position: fixed;
+  left: calc(min(360px, 40vw) + 40px);
+  right: 20px;
+  bottom: 12px;
+  min-height: 80px;
+  border: 0;
+  padding: 6px 0;
+  z-index: 4;
+}
+.workspace-page.workspace-shell .editor-footer.local-entry-navigation {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+body:has(.workspace-shell) .lh-radio[data-surface='app'] .lh-radio-capsule {
+  width: min(360px, 40vw);
+  max-width: none;
+}
+body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
+@media (min-width: 768px) and (max-width: 1100px) {
+  .workspace-shell { --workspace-dock-height: 120px; }
+  .workspace-page.workspace-shell .editor-footer.local-entry-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-shell .editor-footer .editor-hint { display: none; }
 }
 
 .pane {

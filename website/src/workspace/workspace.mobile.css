@@ -104,6 +104,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* The global collapsed Radio sits between this surface and the bottom
+     navigation. Reserve its actual 74px height plus breathing room: padding
+     inside the scroller cannot protect the fixed editor footer. */
+  margin-bottom: 92px;
 }
 
 /* Each surface fills the available height and scrolls internally. Overriding
@@ -123,6 +127,7 @@
   border-top: 1px solid #222a35;
   background: #0e1218;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  height: calc(64px + env(safe-area-inset-bottom));
 }
 
 .mob-nav button {
@@ -480,7 +485,7 @@
 .mob-workspace .toast {
   left: 12px;
   right: 12px;
-  bottom: calc(72px + env(safe-area-inset-bottom));
+  bottom: calc(174px + env(safe-area-inset-bottom));
   max-width: none;
 }
 
