@@ -14,7 +14,6 @@ import type {
 } from './types'
 import {
   explicitField,
-  structuralInference,
   userMapped,
 } from './provenance'
 
@@ -158,6 +157,7 @@ export function inferContextFromRecord(
         break
       case 'listener':
         listeners.push(text)
+        context.listenerProvenance = prov
         break
       case 'speakerGender':
         context.speakerGender = normalizeGender(value)
@@ -165,6 +165,7 @@ export function inferContextFromRecord(
         break
       case 'listenerGender':
         listenerGenders.push(normalizeGender(value))
+        context.listenerGenderProvenance = prov
         break
       case 'grammaticalGender':
         context.grammaticalGender = normalizeGender(value)
@@ -214,15 +215,12 @@ export function inferContextFromRecord(
 
   if (listeners.length === 1) {
     context.listener = listeners[0]
-    context.listenerProvenance = structuralInference('medium')
   } else if (listeners.length > 1) {
     context.listeners = listeners
-    context.listenerProvenance = structuralInference('medium')
   }
 
   if (listenerGenders.length === 1) {
     context.listenerGender = listenerGenders[0]
-    context.listenerGenderProvenance = structuralInference('medium')
   } else if (listenerGenders.length > 1) {
     context.listenerGenders = listenerGenders
   }

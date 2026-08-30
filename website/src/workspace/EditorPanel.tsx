@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractProtectedTokens, type TokenProfileId } from '@localizationhub/core'
+import { extractProtectedTokens, type EntryContext, type TokenProfileId } from '@localizationhub/core'
+import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
 
 type EditorPanelProps = {
   entry: any
+  extractionContext?: EntryContext
   status: string
   writable: boolean
   tokenProfileId: TokenProfileId
@@ -49,17 +51,23 @@ function ProtectedSource({ text, profileId }: { text: string; profileId: TokenPr
  * never guessed values.
  */
 function DialogueContextStrip({ context }: { context: any }) {
-  const parts: string[] = []
+  const { t } = useI18n()
+  const genderKeys: Record<string, MessageKey> = {
+    male: 'workspace.context.male', female: 'workspace.context.female', neutral: 'workspace.context.neutral',
+  }
+  const gender = (value?: string) => value && value !== 'unknown'
+    ? ` (${genderKeys[value] ? t(genderKeys[value]) : value})` : ''
+  const parts: React.ReactNode[] = []
   if (context.speaker) {
-    parts.push(`Speaker: ${context.speaker}${context.speakerGender && context.speakerGender !== 'unknown' ? ` (${context.speakerGender})` : ''}`)
+    parts.push(<span key="speaker">{t('extraction.context.speaker')} <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
   }
   if (context.listener) {
-    parts.push(`→ Listener: ${context.listener}${context.listenerGender && context.listenerGender !== 'unknown' ? ` (${context.listenerGender})` : ''}`)
+    parts.push(<span key="listener">→ {t('extraction.context.listener')} <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
   }
-  if (context.scene) parts.push(`Scene: ${context.scene}`)
-  if (context.conversationId) parts.push(`Conversation: ${context.conversationId}`)
+  if (context.scene) parts.push(<span key="scene">{t('extraction.context.scene')} <bdi>{context.scene}</bdi></span>)
+  if (context.conversationId) parts.push(<span key="conversation">{t('workspace.context.conversation')} <bdi>{context.conversationId}</bdi></span>)
   if (parts.length === 0) return null
-  return <p className="dialogue-context-strip">{parts.join(' · ')}</p>
+  return <p className="dialogue-context-strip" data-i18n-skip>{parts.map((part, index) => <span key={index}>{index > 0 && ' · '}{part}</span>)}</p>
 }
 
 export default function EditorPanel(props: EditorPanelProps) {
@@ -71,16 +79,19 @@ export default function EditorPanel(props: EditorPanelProps) {
 
   const source = entry?.source ?? ''
   const translation = entry?.translation ?? ''
+  // Extraction context stays in its canonical metadata location. Both display
+  // and MT use the same fallback; explicit parsed context remains authoritative.
+  const dialogueContext = entry?.dialogueContext ?? props.extractionContext
 
   // Concise, proven context for the MT reference request (never paths/guessed).
   const mtContext = {
-    speaker: entry?.dialogueContext?.speaker,
-    listener: entry?.dialogueContext?.listener,
-    listeners: entry?.dialogueContext?.listeners,
-    speakerGender: entry?.dialogueContext?.speakerGender,
-    listenerGender: entry?.dialogueContext?.listenerGender,
-    scene: entry?.dialogueContext?.scene,
-    conversationId: entry?.dialogueContext?.conversationId,
+    speaker: dialogueContext?.speaker,
+    listener: dialogueContext?.listener,
+    listeners: dialogueContext?.listeners,
+    speakerGender: dialogueContext?.speakerGender,
+    listenerGender: dialogueContext?.listenerGender,
+    scene: dialogueContext?.scene,
+    conversationId: dialogueContext?.conversationId,
   }
 
   useEffect(() => {
@@ -172,9 +183,9 @@ export default function EditorPanel(props: EditorPanelProps) {
           <div className="source-text" dir={sourceDirection} data-i18n-content>
             <ProtectedSource text={source} profileId={tokenProfileId} />
           </div>
-          {(entry?.context || entry?.notes || entry?.dialogueContext) && (
+          {(entry?.context || entry?.notes || dialogueContext) && (
             <div className="source-context">
-              {entry.dialogueContext && <DialogueContextStrip context={entry.dialogueContext} />}
+              {dialogueContext && <DialogueContextStrip context={dialogueContext} />}
               {entry.context && <p><strong>Context:</strong> <bdi data-i18n-content>{entry.context}</bdi></p>}
               {entry.notes && <p><strong>Notes:</strong> <bdi data-i18n-content>{entry.notes}</bdi></p>}
             </div>

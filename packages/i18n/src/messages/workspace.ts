@@ -1,6 +1,10 @@
 import type { MessageCatalog } from '../types'
 
 export const workspaceMessages = {
+  'workspace.context.conversation': { en: 'Conversation:', ar: 'المحادثة:' },
+  'workspace.context.male': { en: 'male', ar: 'ذكر' },
+  'workspace.context.female': { en: 'female', ar: 'أنثى' },
+  'workspace.context.neutral': { en: 'neutral', ar: 'محايد' },
   'projects.restoring': { en: 'Restoring workspace…', ar: 'جارٍ استعادة مساحة العمل…' },
   'projects.openingWorkspace': { en: 'Opening workspace…', ar: 'جارٍ فتح مساحة العمل…' },
   'projects.context': { en: 'Project context', ar: 'سياق المشروع' },

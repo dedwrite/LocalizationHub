@@ -7,7 +7,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { extractInkb, readInkbTextStrings, parseInkbMetadata } from './engines/inkb'
+import { extractInkb, inferInkbListeners, readInkbTextStrings, parseInkbMetadata } from './engines/inkb'
+import { inferContextFromRecord } from './contextInference'
 
 /*
  * Build a synthetic `.inkb` buffer matching the real layout:
@@ -198,5 +199,136 @@ describe('inkb dialogue extraction', () => {
     const result = extractInkb('x.inkb', buffer)
     expect(result.entries).toHaveLength(1)
     expect(result.entries[0].context?.speaker).toBe('MarkBorja')
+  })
+})
+
+describe('conservative INKB listeners (synthetic dialogue)', () => {
+  const characters = { Ada: 'actor-a', Bo: 'actor-b' }
+  const extract = (lines: string[], cast: Record<string, string> = characters, player?: string) => extractInkb('synthetic/hall.inkb', buildInkb([
+    'type: "dialogue"', `characters: ${JSON.stringify(cast)}`,
+    ...(player ? [`player: ${JSON.stringify(player)}`] : []), '$ pass', ...lines,
+  ]))
+
+  it('infers the opposite participant once per turn, including continuation, with accurate stats', () => {
+    const result = extract(['Ada: Test greeting.', 'A second test sentence.', 'Bo: Test reply.'])
+    expect(result.entries.map((e) => e.context?.listener)).toEqual(['Bo', 'Bo', 'Ada'])
+    expect(result.entries.map((e) => e.context?.listenerId)).toEqual(['actor-b', 'actor-b', 'actor-a'])
+    expect(result.stats.entriesWithListener).toBe(3)
+    for (const entry of result.entries) {
+      expect(entry.context?.listenerProvenance).toEqual({ source: 'structural-inference', confidence: 'medium' })
+      expect(entry.context?.listenerGender).toBeUndefined()
+      expect(entry.context?.scene).toBe('synthetic/hall')
+      expect(entry.context?.conversationId).toBe('inkb:synthetic/hall')
+    }
+    expect(result.entries.map((e) => e.context?.speaker)).toEqual(['Ada', 'Ada', 'Bo'])
+    expect(result.entries.map((e) => e.context?.speakerId)).toEqual(['actor-a', 'actor-a', 'actor-b'])
+    expect(result.entries[1].rawMetadata?.continuation).toBe(true)
+  })
+
+  it('requires the player to actually speak and works both directions without manufacturing an id', () => {
+    const result = extract(['Bo: Test question.', 'Ada: Test answer.'], { Bo: 'actor-b' }, 'Ada')
+    expect(result.entries.map((e) => e.context?.listener)).toEqual(['Ada', 'Bo'])
+    expect(result.entries[0].context?.listenerId).toBeUndefined()
+    expect(result.entries[1].context?.listenerId).toBe('actor-b')
+    expect(extract(['Bo: Test monologue.'], characters, 'Ada').stats.entriesWithListener).toBe(0)
+  })
+
+  it.each([
+    { cast: { ...characters, Cy: 'actor-c' }, lines: ['Ada: Test one.', 'Bo: Test two.', 'Cy: Test three.'] },
+    { cast: { ...characters, Cy: 'actor-c' }, lines: ['Ada: Test one.', 'Bo: Test two.'] },
+    { cast: characters, lines: ['Ada: Test one.', 'Bo: Test two.', 'Unknown: Test three.'] },
+    { cast: { Ada: 'same-id', Bo: 'same-id' }, lines: ['Ada: Test one.', 'Bo: Test two.'] },
+  ])('does not infer from ambiguous casts, unknown speakers, or adjacency: $cast', ({ cast, lines }) => {
+    const result = extract(lines, cast, 'Ada')
+    expect(result.entries.every((e) => !e.context?.listener && !e.context?.listenerProvenance)).toBe(true)
+    expect(result.stats.entriesWithListener).toBe(0)
+  })
+
+  it('does not assign listeners to narration, thoughts, choices, or interrupted continuations', () => {
+    const result = extract([
+      'A synthetic narrator sentence.', 'Ada: Test greeting.', ':: A test thought.',
+      'A continued thought sentence.', '$ push_timed_choices 2 0', '(Test option)',
+      '$ wait 1', 'A bare sentence after the choice.', 'Bo: Test reply.',
+    ])
+    expect(result.entries.map((e) => e.context?.listener)).toEqual([undefined, 'Bo', undefined, undefined, undefined, undefined, 'Ada'])
+    expect(result.stats.entriesWithListener).toBe(2)
+    expect(result.entries.find((e) => e.classification === 'Choice')?.context?.listener).toBeUndefined()
+  })
+
+  it('resolves focus-command stable ids without changing existing speaker attribution', () => {
+    const result = extract(['$ F actor-a default', 'Test focus line.', 'Bo: Test reply.'])
+    // The current focus grammar uses alphanumeric/underscore ids.
+    const focused = extractInkb('focus.inkb', buildInkb([
+      'characters: {"Ada":"actorA","Bo":"actorB"}', '$ F actorA default',
+      'Test focus line.', 'Bo: Test reply.',
+    ]))
+    expect(focused.entries[0].context?.speaker).toBe('actorA')
+    expect(focused.entries[0].context?.listener).toBe('Bo')
+    expect(focused.entries[1].context?.listenerId).toBe('actorA')
+    expect(result.stats.entriesWithListener).toBe(0)
+  })
+
+  it.each(['listener', 'target', 'recipient', 'to', 'audience', 'directedAt'])('preserves explicit %s and its high-confidence provenance', (field) => {
+    const fromHeader = extractInkb('explicit.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, `${field}: "Explicit recipient"`, '$ pass',
+      'Ada: Synthetic greeting.', 'An uninterrupted continuation.', 'Bo: Synthetic reply.', ':: Test thought.',
+    ]))
+    expect(fromHeader.entries.slice(0, 3).every((e) => e.context?.listener === 'Explicit recipient')).toBe(true)
+    expect(fromHeader.entries[3].context?.listener).toBeUndefined()
+    expect(fromHeader.stats.entriesWithListener).toBe(3)
+    expect(fromHeader.entries[0].context?.listenerProvenance).toEqual({ source: 'explicit-field', confidence: 'high' })
+    const result = extract(['Ada: Test greeting.', 'Bo: Test reply.'])
+    const explicit = inferContextFromRecord({ speaker: 'Ada', [field]: 'Explicit recipient', listenerGender: 'female' }).context
+    result.entries[0].context = explicit
+    inferInkbListeners(result.entries, { type: 'dialogue', characters })
+    expect(result.entries[0].context).toEqual(explicit)
+    expect(explicit.listener).toBe('Explicit recipient')
+    expect(explicit.listenerProvenance).toEqual({ source: 'explicit-field', confidence: 'high' })
+    expect(explicit.listenerGender).toBe('female')
+  })
+
+  it('keeps plural explicit listeners and user-mapped listener provenance', () => {
+    const fromHeader = extractInkb('audience.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, 'audience: ["Bo", "Cy"]', '$ pass', 'Ada: Synthetic greeting.',
+    ]))
+    expect(fromHeader.entries).toHaveLength(1)
+    expect(fromHeader.entries[0].context?.listeners).toEqual(['Bo', 'Cy'])
+    expect(fromHeader.stats.entriesWithListener).toBe(1)
+    const result = extract(['Ada: Test greeting.', 'Bo: Test reply.'])
+    result.entries[0].context = { speaker: 'Ada', listeners: ['Bo', 'Cy'], listenerProvenance: { source: 'explicit-field', confidence: 'high' } }
+    inferInkbListeners(result.entries, { type: 'dialogue', characters })
+    expect(result.entries[0].context.listeners).toEqual(['Bo', 'Cy'])
+    expect(result.entries[0].context.listener).toBeUndefined()
+    expect(inferContextFromRecord({ customTo: 'Bo' }, [{ fieldName: 'customTo', role: 'listener' }]).context.listenerProvenance)
+      .toEqual({ source: 'user-mapped', confidence: 'high' })
+  })
+
+  it('does not overwrite an explicit listener id or infer around a wider explicit audience', () => {
+    const entries = extract(['Ada: Test greeting.', 'Bo: Test reply.']).entries
+    entries[0].context = { speaker: 'Ada', listenerId: 'actor-b' }
+    entries[1].context = { speaker: 'Bo' }
+    inferInkbListeners(entries, { type: 'dialogue', characters })
+    expect(entries[0].context).toEqual({ speaker: 'Ada', listenerId: 'actor-b' })
+    entries[0].context = { speaker: 'Ada', listener: 'Cy' }
+    entries[1].context = { speaker: 'Bo' }
+    inferInkbListeners(entries, { type: 'dialogue', characters })
+    expect(entries[0].context.listener).toBe('Cy')
+    expect(entries[1].context.listener).toBeUndefined()
+  })
+
+  it('does not replace an unreadable explicit target with an inferred one', () => {
+    const result = extractInkb('invalid-target.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, 'target: {"unsupported":"shape"}', '$ pass',
+      'Ada: Synthetic greeting.', 'Bo: Synthetic reply.',
+    ]))
+    expect(result.stats.entriesWithListener).toBe(0)
+  })
+
+  it.each(['Bo', 'actor-b'])('retains a reliable id for an explicit target %s', (target) => {
+    const result = extractInkb('explicit-id.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, `listener: "${target}"`, '$ pass', 'Ada: Synthetic greeting.',
+    ]))
+    expect(result.entries[0].context?.listener).toBe(target)
+    expect(result.entries[0].context?.listenerId).toBe('actor-b')
   })
 })

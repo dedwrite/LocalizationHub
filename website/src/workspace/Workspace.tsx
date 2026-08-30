@@ -488,6 +488,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         <div className="pane editor-pane">
           <EditorPanel
             entry={entry}
+            extractionContext={draft?.metadata?.extraction?.entries?.[entry?.id]?.context}
             status={status}
             writable={writable}
             tokenProfileId={tokenProfileId}

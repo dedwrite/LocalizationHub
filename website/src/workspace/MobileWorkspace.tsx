@@ -131,6 +131,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
         {surface === 'editor' && (
           <EditorPanel
             entry={props.entry}
+            extractionContext={props.draft?.metadata?.extraction?.entries?.[props.entry?.id]?.context}
             status={props.status}
             writable={props.writable}
             tokenProfileId={props.tokenProfileId}

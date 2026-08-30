@@ -41,6 +41,8 @@ import type {
   ExtractionResult,
 } from '../types'
 import { buildEntry, toProtectedSegments } from './shared'
+import { explicitField, structuralInference } from '../provenance'
+import { recognizeContextField } from '../contextInference'
 
 export type InkbStoryType = 'scene' | 'dialogue' | 'chat'
 
@@ -49,6 +51,9 @@ export type InkbMetadata = {
   /* display name → character id (e.g. "Mark" → "MarkBorja") */
   characters: Record<string, string>
   player?: string
+  listener?: string
+  listeners?: string[]
+  hasExplicitListener?: boolean
 }
 
 const INKB_HEADER_BYTES = 10
@@ -65,6 +70,14 @@ const DIALOGUE_PATTERN = /^([A-Za-z0-9:_-]+)\s*(?:\(([^)]+)\))?:\s*(.+)$/u
  * never be mistaken for dialogue.
  */
 const METADATA_HEADER_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]*\s*:\s*["{]/u
+
+function isMetadataHeader(str: string): boolean {
+  if (METADATA_HEADER_PATTERN.test(str)) return true
+  const arrayHeader = str.match(/^([A-Za-z_][A-Za-z0-9_.-]*)\s*:\s*\[/u)
+  // Dialogue also starts with [.] / [..] / [$cmd]; only known listener
+  // fields can be array-valued metadata, never an arbitrary speaker line.
+  return Boolean(arrayHeader && recognizeContextField(arrayHeader[1]) === 'listener')
+}
 
 /* Click-to-reveal text: [:text] — the inner text is translatable. */
 const REVEAL_PATTERN = /\[:([^\]]*)\]/gu
@@ -121,9 +134,11 @@ export function readInkbTextStrings(buffer: Uint8Array): string[] {
  */
 export function parseInkbMetadata(strings: string[]): InkbMetadata {
   const metadata: InkbMetadata = { type: 'scene', characters: {} }
+  const explicitListeners: string[] = []
 
   for (const str of strings) {
     if (str.startsWith('$')) break
+    if (!isMetadataHeader(str) && DIALOGUE_PATTERN.test(str)) break
     const typeMatch = str.match(/^type:\s*"([^"]+)"/u)
     if (typeMatch) {
       metadata.type = typeMatch[1] as InkbStoryType
@@ -143,10 +158,23 @@ export function parseInkbMetadata(strings: string[]): InkbMetadata {
       }
       continue
     }
+    const fieldMatch = str.match(/^([A-Za-z_][A-Za-z0-9_.-]*)\s*:\s*(.+)$/su)
+    if (fieldMatch && recognizeContextField(fieldMatch[1]) === 'listener') {
+      metadata.hasExplicitListener = true
+      try {
+        const value: unknown = JSON.parse(fieldMatch[2])
+        const values = Array.isArray(value) ? value : [value]
+        for (const target of values) {
+          if (typeof target === 'string' && target.trim()) explicitListeners.push(target)
+        }
+      } catch { /* Retain the explicit-field flag so inference stays disabled. */ }
+    }
     // Other header keys (name, color, character_props, ...) are ignored.
     if (/^[A-Za-z_][A-Za-z0-9_.-]*\s*:/u.test(str)) continue
   }
 
+  if (explicitListeners.length === 1) metadata.listener = explicitListeners[0]
+  else if (explicitListeners.length > 1) metadata.listeners = [...new Set(explicitListeners)]
   return metadata
 }
 
@@ -160,6 +188,9 @@ export function parseInkbMetadata(strings: string[]): InkbMetadata {
 export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionResult {
   const strings = readInkbTextStrings(buffer)
   const metadata = parseInkbMetadata(strings)
+  const explicitListenerCharacters = Object.entries(metadata.characters).filter(([name, id]) =>
+    typeof id === 'string' && id.trim() && (name === metadata.listener || id === metadata.listener))
+  const explicitListenerId = explicitListenerCharacters.length === 1 ? explicitListenerCharacters[0][1] : undefined
 
   // Culture-independent story identity: strip `locales/<culture>/` so locale
   // variants of the same story share one logical identity.
@@ -173,6 +204,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   const isSourceLocale = localeInfo.isBase === true
 
   const entries: ExtractedEntry[] = []
+  const spokenDialogue: ExtractedEntry[] = []
   let order = 0
   const conversationId = `inkb:${storyId}`
 
@@ -182,6 +214,9 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   // the active speaker. Track the current speaker to attribute bare lines.
   let currentSpeaker: string | undefined
   let currentSpeakerId: string | undefined
+  // Keep existing speaker attribution, but never carry an inferred addressee
+  // across thought, choice, or command boundaries without a new speaking turn.
+  let spokenTurn = false
 
   // Timed player choices: `$ push_timed_choices [duration] [n]` is followed by
   // parenthesized `(option)` strings until the next `$` command. These are
@@ -222,6 +257,12 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       context: {
         speaker,
         speakerId: characterId,
+        ...(speaker && !isThought && spokenTurn && (metadata.listener || metadata.listeners?.length) ? {
+          listener: metadata.listener,
+          listeners: metadata.listeners,
+          listenerId: explicitListenerId,
+          listenerProvenance: explicitField('high'),
+        } : {}),
         conversationId,
         scene: storyId,
         speakerProvenance: speaker
@@ -247,14 +288,17 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
         isSourceLocale,
       },
     }))
+    if (speaker && !isThought && spokenTurn) spokenDialogue.push(entries[entries.length - 1])
   }
 
   for (const str of strings) {
     // Commands: track `$ F <char>` focus commands for implicit speaker, and
     // `$ push_timed_choices` for timed player choices.
     if (str.startsWith('$')) {
+      spokenTurn = false
       const focusMatch = str.match(/^\$\s*F\s+([A-Za-z0-9_]+)/u)
       if (focusMatch) {
+        spokenTurn = true
         currentSpeaker = focusMatch[1]
         currentSpeakerId = metadata.characters[focusMatch[1]] ?? focusMatch[1]
         timedChoicesActive = false
@@ -268,7 +312,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       }
       continue
     }
-    if (METADATA_HEADER_PATTERN.test(str)) continue
+    if (isMetadataHeader(str)) continue
 
     // Timed player choice: parenthesized `(option)` strings following
     // `$ push_timed_choices`. Structurally proven player choices, not narration.
@@ -310,6 +354,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       const charKey = match[1]
       const text = match[3]
       const isThought = charKey === ':'
+      spokenTurn = !isThought
       const speaker = isThought ? undefined : charKey
       const characterId = isThought ? undefined : metadata.characters[charKey]
       if (!isThought) {
@@ -322,6 +367,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
 
     // Thought (inner monologue): `:: text`
     if (str.startsWith('::')) {
+      spokenTurn = false
       push(str.slice(2), undefined, undefined, true, ':', false)
       continue
     }
@@ -334,6 +380,8 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       push(str, currentSpeaker, currentSpeakerId, false, currentSpeaker ?? 'narration', true)
     }
   }
+
+  inferInkbListeners(spokenDialogue, metadata)
 
   // Attach the full structural fingerprint to every entry so the culture
   // aggregator can detect cross-locale structural divergence (translators
@@ -355,13 +403,60 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       byClassification: entries.reduce<Record<string, number>>((acc, e) => { acc[e.classification] = (acc[e.classification] ?? 0) + 1; return acc }, {}),
       protectedTokenCount: entries.reduce((sum, e) => sum + e.protectedSegments.length, 0),
       entriesWithSpeaker: entries.filter((e) => e.context?.speaker).length,
-      entriesWithListener: 0,
+      entriesWithListener: entries.filter((e) => e.context?.listener || e.context?.listeners?.length).length,
       entriesWithExplicitGender: 0,
       entriesWithInferredContext: entries.filter((e) => e.context?.scene || e.context?.conversationId).length,
       conversationGroups: entries.length > 0 ? 1 : 0,
       warnings: 0,
       errors: 0,
     },
+  }
+}
+
+/**
+ * Called only with spoken turns (and their uninterrupted continuations).
+ * Require both members of an unambiguous two-person cast to actually speak in
+ * this story. A player hint or a single neighbouring line is never sufficient.
+ * Keep this story-wide: the binary control flow is not decoded, so we cannot
+ * safely split a multi-party story into smaller presumed conversations.
+ */
+export function inferInkbListeners(spokenDialogue: ExtractedEntry[], metadata: InkbMetadata): void {
+  if (metadata.hasExplicitListener) return
+  const participants = new Map<string, { name: string; id?: string }>()
+  for (const [name, id] of Object.entries(metadata.characters)) {
+    if (!name.trim() || typeof id !== 'string') return
+    participants.set(name, { name, id: id.trim() ? id : undefined })
+  }
+  if (metadata.player && !participants.has(metadata.player)) {
+    // A player may be identified by the same stable id used in $ F commands.
+    if (![...participants.values()].some((p) => p.id === metadata.player)) {
+      participants.set(metadata.player, { name: metadata.player })
+    }
+  }
+  if (participants.size !== 2) return
+
+  const pair = [...participants.values()]
+  const resolve = (speaker: string | undefined) => {
+    const matches = pair.filter((p) => p.name === speaker || (p.id && p.id === speaker))
+    return matches.length === 1 ? matches[0] : undefined
+  }
+  // Duplicate/overlapping character identities cannot establish two people.
+  if (pair.some((p) => resolve(p.name) !== p || (p.id && resolve(p.id) !== p))) return
+  const speakers = spokenDialogue.map((entry) => resolve(entry.context?.speaker))
+  if (speakers.some((speaker) => !speaker) || new Set(speakers).size !== 2) return
+  // An explicit addressee outside the pair is evidence of a wider audience.
+  // Preserve those values and do not infer targets for the remaining lines.
+  if (spokenDialogue.some(({ context }) => [context?.listener, context?.listenerId, ...(context?.listeners ?? [])]
+    .some((target) => target && !resolve(target)))) return
+
+  for (const [index, entry] of spokenDialogue.entries()) {
+    const context = entry.context
+    if (!context || context.listener || context.listenerId || context.listeners?.length) continue
+    const listener = pair.find((participant) => participant !== speakers[index])!
+    context.listener = listener.name
+    context.listenerId = listener.id
+    context.listenerProvenance = structuralInference('medium')
+    // INKB has no supported explicit gender field; names supply no evidence.
   }
 }
 
