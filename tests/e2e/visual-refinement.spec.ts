@@ -87,3 +87,24 @@ for (const locale of ['en', 'ar'] as const) test(`Cloud navigation remains clear
   const radio = await page.locator('.lh-radio-capsule').boundingBox()
   expect(box && radio && box.x < radio.x + radio.width && box.x + box.width > radio.x && box.y < radio.y + radio.height && box.y + box.height > radio.y).toBe(false)
 })
+
+test('project metadata restores English whitespace and language control clears account actions', async ({ page }) => {
+  const user = { id: 'visual-user', username: 'Visual reviewer', email: 'visual@example.invalid', emailVerified: true }
+  const projects = [{ id: 'visual-one', name: 'Dialogue review', role: 'owner', revision: 3, sourceFileName: 'synthetic.json', entryCount: 120, translatedCount: 48, memberCount: 2, updatedAt: '2026-08-30T00:00:00Z' }]
+  await page.addInitScript(user => { localStorage.setItem('localizationhub.auth.token', 'synthetic-visual'); localStorage.setItem('localizationhub.auth.user', JSON.stringify(user)) }, user)
+  await page.route('**/api/**', route => route.fulfill({ json: new URL(route.request().url()).pathname === '/api/auth/me' ? { user } : { projects, tracks: [] } }))
+  await page.goto('/app/projects')
+  await expect(page.locator('.project-card')).toBeVisible()
+  for (const locale of ['ar', 'en', 'ar', 'en']) {
+    await page.locator('.lh-language-switcher select').selectOption(locale)
+    await expect(page.locator('html')).toHaveAttribute('lang', locale)
+    if (locale === 'en') {
+      await expect(page.locator('.project-facts')).toContainText('120 entries')
+      await expect(page.locator('.support-actions').getByRole('button', { name: 'Open project', exact: true })).toBeVisible()
+      expect(await page.locator('.project-summary, .project-card, .project-support').allTextContents()).not.toEqual(expect.arrayContaining([expect.stringMatching(/[\u0600-\u06ff]/u)]))
+    }
+    const language = await page.locator('.lh-language-switcher').boundingBox()
+    const logout = await page.locator('.account button').boundingBox()
+    expect(language && logout && language.x < logout.x + logout.width && language.x + language.width > logout.x && language.y < logout.y + logout.height && language.y + language.height > logout.y).toBe(false)
+  }
+})

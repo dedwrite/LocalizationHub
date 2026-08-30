@@ -157,6 +157,19 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 .recent-local-row > button:last-child { border-radius: 7px; }
 .app-context-nav { border-radius: 10px; }
 .app-context-nav button { border-radius: 7px; text-align: start; }
+.projects-page .dashboard-heading .muted { color: #a5adbb; }
+/* Match the global language control's two placement breakpoints. It must not
+   cover the public CTA, project account actions, or Local/Cloud switcher. */
+@media (min-width: 768px) {
+  .site-header, .workspace-page.projects-page .app-header, .local-home .local-header { padding-inline-end: 144px; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+  .workspace-page.projects-page .app-header { display: flex; flex-wrap: wrap; }
+}
+@media (max-width: 767px) {
+  .projects-page .account { max-width: calc(100% - 112px); min-width: 0; flex-wrap: wrap; }
+  .projects-page .account > span { min-width: 0; overflow-wrap: anywhere; }
+}
 .app-loading { gap: 16px; align-content: center; }
 .app-loading::before { content: ''; width: 28px; height: 28px; border: 2px solid #302c40; border-top-color: #a79cff; border-radius: 50%; animation: web-loading-spin 800ms linear infinite; }
 @keyframes web-loading-spin { to { transform: rotate(360deg); } }
