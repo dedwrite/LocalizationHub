@@ -300,8 +300,9 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   }
 
   const nextUntranslated = useCallback((dir: 1 | -1) => {
+    const currentSelected = selectedRef.current
     for (let offset = 1; offset < entries.length; offset++) {
-      const index = selected + dir * offset
+      const index = currentSelected + dir * offset
       if (index < 0 || index >= entries.length) break
       if (!entries[index]?.translation) { setSelected(index); return }
     }
@@ -324,8 +325,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         if (writable) { saveNow(); nextUntranslated(event.shiftKey ? -1 : 1) }
         return
       }
-      if (event.altKey && event.key === 'ArrowDown') { event.preventDefault(); goto(selected + 1); return }
-      if (event.altKey && event.key === 'ArrowUp') { event.preventDefault(); goto(selected - 1); return }
+        if (event.altKey && event.key === 'ArrowDown') { event.preventDefault(); goto(selectedRef.current + 1); return }
+        if (event.altKey && event.key === 'ArrowUp') { event.preventDefault(); goto(selectedRef.current - 1); return }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && !typing) {
         event.preventDefault()
         searchRef.current?.focus()
