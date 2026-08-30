@@ -11,10 +11,13 @@ import AdminConsole from './AdminConsole'
 import { InternalLink } from './internalNavigation'
 import { allowHistoryNavigation } from './navigation'
 import LhRadio from './lhRadio/LhRadio'
+import TipCard from './delight/TipCard'
+import { FooterSecret, FridayClock } from './delight/LittleSecrets'
 import './styles.css'
 import './experience-polish.css'
 import './workspace-deep-polish.css'
 import './visual-refinement.css'
+import './delight/delight.css'
 
 const nav = [
   ['Product', '/#product'], ['Workflow', '/#workflow'], ['Cloud', '/#cloud'], ['Formats', '/#formats'], ['Web App', '/app'], ['Download', '/download'], ['GitHub', site.repositoryUrl],
@@ -46,6 +49,7 @@ function EngineCard({ engine, index }: { engine: (typeof engineSignals)[number];
 }
 
 function Landing() {
+  const { t } = useI18n()
   return <><Header /><main className="landing-main">
     <section className="hero">
       <div className="hero-copy">
@@ -58,6 +62,7 @@ function Landing() {
       <div className="hero-visual"><div className="visual-caption"><span className="caption-dot" /> structured localization workspace</div><div className="preview-aura" aria-hidden="true" /><Reveal variant="right"><EditorPreview /></Reveal></div>
     </section>
     <section className="signal-strip"><span>BUILT FOR THE WORK BETWEEN <b>IMPORT</b> AND <b>SHIP</b></span><span>JSON · CSV · PO · GAME FOLDERS</span><span>WINDOWS X64</span></section>
+    <section className="field-notes" data-i18n-skip><div><span className="field-notes-kicker">{t('delight.notes')}</span><h2>{t('delight.notesTitle')}</h2><p>{t('delight.notesBody')}</p></div><TipCard context="landing" /></section>
 
     <Reveal variant="up"><section className="section extraction-section" id="extraction">
       <div className="section-intro"><p className="eyebrow">NEW IN v0.7 · GAME TEXT EXTRACTION</p><h2>Start from a<br /><i>game folder.</i></h2><p>Point LocalizationHub at a Godot, Unreal, or Unity project and read its text out — read-only — into a structured, reviewable project.</p></div>
@@ -70,7 +75,7 @@ function Landing() {
       <div className="section-intro"><p className="eyebrow">CONTEXT / SYNTAX AWARE</p><h2>The words arrive<br /><i>with their guardrails.</i></h2><p>When structure is available, LocalizationHub keeps dialogue context close and checks protected syntax before export.</p></div>
       <div className="context-demo" aria-label="Illustrative localization entry">
         <div className="demo-topline"><span>ILLUSTRATIVE ENTRY / hotfix.friday.1159</span><span className="demo-status"><i /> TOKENS VALID</span></div>
-        <div className="context-people"><div><small>SPEAKER</small><strong>Developer</strong></div><div><small>LISTENER</small><strong>Translator</strong></div><div><small>SCENE</small><strong>Friday · 11:59 PM</strong></div></div>
+        <div className="context-people"><div><small>SPEAKER</small><strong>Developer</strong></div><div><small>LISTENER</small><strong>Translator</strong></div><div><small>SCENE</small><strong><FridayClock /></strong></div></div>
         <div className="demo-copy"><small>SOURCE</small><p>"Quick hotfix. Only <mark>{'{new_strings}'}</mark> new lines before <mark>{'<color=#A86BFF>'}</mark>midnight<mark>{'</color>'}</mark>."</p></div>
         <div className="demo-copy demo-translation"><small>TRANSLATION</small><p lang="ar" dir="rtl">"هوتفكس بسيط. بس <mark>{'{new_strings}'}</mark> سطر جديد قبل <mark>{'<color=#A86BFF>'}</mark>منتصف الليل<mark>{'</color>'}</mark>."</p></div>
         <div className="protected-row"><span>PROTECTED</span><code>{'{new_strings}'}</code><code>{'<color=#A86BFF>'}</code><code>{'</color>'}</code></div>
@@ -89,7 +94,7 @@ function Landing() {
 function DownloadPage() { return <><Header /><main className="inner-page download-page"><p className="eyebrow">RELEASE / {site.version}</p><div className="download-layout"><div><h1>LocalizationHub<br /><i>{site.releaseTitle}</i></h1><p className="page-lede">A focused Windows workspace for translating, reviewing, and managing the localization files you already have.</p><a className="button button-primary" href={site.releaseUrl}>Download from GitHub <span>↗</span></a><a className="button button-quiet" href={site.releaseUrl}>View release notes <span>↗</span></a></div><div className="download-panel"><div className="panel-mark"><img src="/localizationhub-logo.jpg" alt="" /></div><span className="panel-kicker">CURRENT STABLE RELEASE</span><h2>v{site.version}</h2><div className="download-fact"><span>Installer</span><strong>LocalizationHub_0.9.2_x64-setup.exe</strong></div><div className="download-fact"><span>Platform</span><strong>Windows x64</strong></div><div className="download-fact"><span>Works with</span><strong>Local Projects · Optional Cloud Projects</strong></div></div></div></main><Footer /></> }
 function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) { const privacy = kind === 'privacy'; return <><Header /><main className="inner-page document-page"><p className="eyebrow">LOCALIZATIONHUB / {privacy ? 'PRIVACY' : 'TERMS'}</p><article><h1>{privacy ? 'Privacy, in plain language.' : 'Terms for using the workspace.'}</h1><p className="page-lede">{privacy ? 'This preliminary overview describes what the current product does with your files and account data.' : 'These initial product terms describe practical expectations for using LocalizationHub.'}</p>{(privacy ? [['Local Projects', 'Local Projects stay on your machine unless you explicitly choose to use a Cloud Project or an online collaboration feature.'], ['Cloud Projects', 'Cloud Projects use authenticated accounts and PostgreSQL-backed project storage. Project members can access data according to their Owner, Editor, or Viewer role.'], ['Accounts', 'Cloud features use account details needed for authentication, sessions, membership, and email verification.'], ['Project data', 'LocalizationHub uses project data to provide the editing, persistence, collaboration, and history features you request.'], ['API keys', 'Machine translation API keys are kept in application memory and are not stored in project files, localization files, application configuration, local storage, or logs.'], ['Third-party infrastructure', 'The public release is distributed through GitHub Releases. Cloud infrastructure and email delivery may change as the product evolves.'], ['Music and third-party embeds', 'LH Radio streams audio tracks that are uploaded and administered directly by LocalizationHub. LocalizationHub does not build tracking around the player and does not receive any third-party account details.'], ['Future updates', 'This page is a practical starting point and may be updated as the website and service mature.']] : [['Using LocalizationHub', 'Use the editor to work with localization files you already have. Do not use the product to violate the rights of others or to interfere with systems you do not control.'], ['Local files and backups', 'Keep backups of important localization files and projects. Local Projects are stored on your machine and remain your responsibility.'], ['Cloud Projects', 'Cloud access is permission-based. Respect project roles and the work of other collaborators.'], ['Accounts', 'Keep your account credentials private and use accurate information when creating an account.'], ['Software availability', 'Features and availability may change while LocalizationHub continues to develop.'], ['Releases and updates', 'Download releases from the official repository and review release notes before updating.'], ['Changes to these terms', 'These initial terms may be revised as the product and public website develop.']]).map(([heading, text]) => <section key={heading}><h2>{heading}</h2><p>{text}</p></section>)}</article></main><Footer /></> }
 function NotFound() { return <><Header /><main className="inner-page not-found"><p className="eyebrow">404 / ENTRY NOT FOUND</p><h1>Page not found.</h1><p>The route you requested does not exist.</p><InternalLink className="button button-primary" href="/">Back to LocalizationHub</InternalLink></main><Footer /></> }
-function Footer() { return <footer><InternalLink className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></InternalLink><span>v{site.version} · {site.releaseTitle}</span><div><a href={site.repositoryUrl}>GitHub</a><a href={site.releaseUrl}>Releases</a><span className="muted">Documentation / upcoming</span><a className="creator-signature" href="https://dedwrite.xyz/" target="_blank" rel="noopener noreferrer">DEDWRITE</a></div></footer> }
+function Footer() { return <footer><InternalLink className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></InternalLink><span>v{site.version} · {site.releaseTitle}</span><div><a href={site.repositoryUrl}>GitHub</a><a href={site.releaseUrl}>Releases</a><span className="muted">Documentation / upcoming</span><a className="creator-signature" href="https://dedwrite.xyz/" target="_blank" rel="noopener noreferrer">DEDWRITE</a><FooterSecret /></div></footer> }
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
   useEffect(() => { const handle = (event: PopStateEvent) => { if (allowHistoryNavigation(event)) setPath(window.location.pathname) }; window.addEventListener('popstate', handle); return () => window.removeEventListener('popstate', handle) }, [])

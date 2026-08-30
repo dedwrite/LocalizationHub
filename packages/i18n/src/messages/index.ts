@@ -9,6 +9,7 @@ import { radioMessages } from './radio'
 import { websiteMessages } from './website'
 import { workspaceMessages } from './workspace'
 import { parityMessages } from './parity'
+import { delightMessages } from './delight'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
@@ -22,6 +23,7 @@ export const messages = {
   ...websiteMessages,
   ...workspaceMessages,
   ...parityMessages,
+  ...delightMessages,
   ...radioMessages,
 } satisfies MessageCatalog
 

@@ -4,6 +4,7 @@ import {
 } from '../appApi'
 import ConfirmDialog from './ConfirmDialog'
 import { useI18n } from '@localizationhub/i18n'
+import TipCard from '../delight/TipCard'
 
 type InspectorTab = 'workflow' | 'quality' | 'comments' | 'assignments' | 'history' | 'tags' | 'memory' | 'glossary'
 
@@ -222,6 +223,7 @@ export default function Inspector(props: InspectorProps) {
             )}
           </div>
         )}
+        <TipCard context={tab === 'quality' || tab === 'glossary' ? 'review' : 'editor'} />
       </div>
 
       {confirmRestore && (
