@@ -163,6 +163,8 @@ import EntryHistoryPanel from './EntryHistoryPanel'
 import EditorInspector from './EditorInspector'
 import BulkActionBar from './BulkActionBar'
 import ProjectOverview from './ProjectOverview'
+import ProjectDeleteDialog from './ProjectDeleteDialog'
+import { canDeleteOpenProject, deleteOpenCloudProject } from './projectDeletion'
 import ScanGameFlow from './extraction/ScanGameFlow'
 import ExtractionSourcePanel from './extraction/ExtractionSourcePanel'
 import ToolsDependencies from './extraction/ToolsDependencies'
@@ -719,6 +721,17 @@ function App() {
       'cloud' &&
     workspaceCloudRole ===
       'viewer'
+
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  async function requestProjectDeletion() {
+    if (!canDeleteOpenProject(projectLocation, workspaceCloudRole) || projectLocation?.kind !== 'cloud') return
+    try {
+      const current = await getCloudProject(projectLocation.projectId)
+      if (current.role !== 'owner') throw new Error('project-owner-required')
+      setDeleteTarget({ id: current.id, name: current.name })
+    } catch { showToast('error', 'Could not load the Cloud Project for deletion. Refresh and try again.') }
+  }
 
   workspaceReadOnlyRef.current =
     workspaceReadOnly
@@ -4664,6 +4677,7 @@ try {
                     <ProjectOverview
                       statistics={projectStatistics}
                       onClose={() => setShowProjectOverview(false)}
+                      onDelete={canDeleteOpenProject(projectLocation, workspaceCloudRole) ? () => { void requestProjectDeletion() } : undefined}
                     />
                   )}
 
@@ -5477,6 +5491,17 @@ try {
         }
       />
 
+      {deleteTarget && <ProjectDeleteDialog name={deleteTarget.name}
+        onDelete={() => deleteOpenCloudProject({ kind: 'cloud', projectId: deleteTarget.id }, workspaceCloudRole, () => undefined)}
+        onDeleted={() => {
+          const id = deleteTarget.id
+          setDeleteTarget(null); setShowProjectOverview(false); resetToHome()
+          setCloudProjectId(''); setCloudRevision(null); setWorkflowEntries({}); setProjectMetadata(emptyProjectMetadata()); setSelectedEntryIds(new Set())
+          setCloudProjects((current) => current.filter((project) => project.id !== id))
+          void handleRefreshCloudProjects()
+          showToast('success', 'Cloud Project deleted permanently.')
+        }}
+        onCancel={() => setDeleteTarget(null)} />}
       <ConfirmationModal />
     </>
   )

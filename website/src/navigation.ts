@@ -4,7 +4,35 @@
 // event tells the router to re-render. Some older WebKit builds do not expose
 // a `PopStateEvent` constructor, so fall back to a generic `Event`.
 
+type NavigationGuard = (resume: () => void) => boolean
+let guard: NavigationGuard | undefined
+let guardedUrl = ''
+
+export function setNavigationGuard(next: NavigationGuard) {
+  guard = next
+  guardedUrl = window.location.href
+  return () => { if (guard === next) guard = undefined }
+}
+
+/** Run at the router boundary BEFORE changing the mounted route. Window
+ * popstate handlers must not race a separately registered capture listener. */
+export function allowHistoryNavigation(event: PopStateEvent) {
+  const destination = window.location.href
+  if (guard && event.isTrusted && destination !== guardedUrl && !guard(() => commitNavigation(destination))) {
+    event.stopImmediatePropagation()
+    window.history.pushState({}, '', guardedUrl)
+    return false
+  }
+  guardedUrl = destination
+  return true
+}
+
 export function navigate(path: string) {
+  if (guard && !guard(() => commitNavigation(path))) return
+  commitNavigation(path)
+}
+
+function commitNavigation(path: string) {
   window.history.pushState({}, '', path)
   dispatchPopState()
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getProject, saveProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
+import { deleteProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
+import ProjectDeleteDialog from '../../../frontend/src/ProjectDeleteDialog'
 import { createTokenProfileConfig, displayTokenProfile, TOKEN_PROFILE_LABELS, updateTokenProfileConfig, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import { canEdit } from '../appLogic'
 import { buildEntryCollection, entryIssues, type BulkSelection, type EntryFilterId } from './entryCollection'
@@ -13,7 +14,10 @@ import ConfirmDialog from './ConfirmDialog'
 import BrowserCollaboration from '../BrowserCollaboration'
 import MobileWorkspace from './MobileWorkspace'
 import { useMediaQuery } from '../hooks/useMediaQuery'
-import { navigate } from '../navigation'
+import { navigate, setNavigationGuard } from '../navigation'
+import { cloudWorkspaceStorage, type WorkspaceStorage } from './storage'
+import { exportLocalProject } from '../localProjects'
+import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
@@ -40,8 +44,11 @@ function saveLayout(layout: LayoutState) {
   }
 }
 
-export default function Workspace({ user, onHome }: { user: { id: string; username: string }; onHome: () => void }) {
-  const projectId = window.location.pathname.split('/').pop()!
+export default function Workspace({ user, onHome, storage: suppliedStorage }: { user: { id: string; username: string }; onHome: () => void; storage?: WorkspaceStorage }) {
+  const routeProjectId = window.location.pathname.split('/').pop()!
+  const storage = useMemo(() => suppliedStorage ?? cloudWorkspaceStorage(routeProjectId), [suppliedStorage, routeProjectId])
+  const projectId = storage.id
+  const local = storage.kind === 'local'
   const isMobile = useMediaQuery('(max-width: 767px)')
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null)
   const [draft, setDraft] = useState<any>(null)
@@ -58,6 +65,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   const [commentEntryIds, setCommentEntryIds] = useState<Set<string>>(new Set())
   const [layout, setLayout] = useState(loadLayout)
   const [overviewOpen, setOverviewOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [replaceOpen, setReplaceOpen] = useState(false)
   const [bulkOpen, setBulkOpen] = useState(false)
   const [collabOpen, setCollabOpen] = useState(false)
@@ -70,29 +78,35 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   const snapshotRef = useRef<ProjectSnapshot | null>(null)
   const autosaveTimer = useRef<any>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+  const leaveAction = useRef<(() => void) | null>(null)
 
   const tokenProfileConfig: TokenProfileConfig = draft?.tokenProfileConfig ?? createTokenProfileConfig(draft?.tokenProfile ?? 'generic', draft?.engineDetection)
   const tokenProfileId = tokenProfileConfig.resolvedProfile
   const tokenProfileSelection: TokenProfileId = tokenProfileConfig.mode === 'auto' ? 'auto' : tokenProfileConfig.selectedProfile ?? tokenProfileId
 
   useEffect(() => {
-    getProject(projectId)
+    let active = true
+    storage.load()
       .then((result) => {
+        if (!active) return
         const project = structuredClone(result.project)
         snapshotRef.current = result
         draftRef.current = project
         setSnapshot(result)
         setDraft(project)
+        if (local && !storage.persisted) { dirtyRef.current = true; setSaveState('unsaved') }
+        setSelected(Math.max(0, project.entries.findIndex((item: any) => item.id === project.selectedEntryId)))
         if (result.migratedFromVersion) {
           setNotice(`Legacy Project V${result.migratedFromVersion} loaded. It will be upgraded to Project V3 when next saved.`)
         }
       })
       .catch((failure) => setError(failure instanceof Error ? failure.message : 'Could not load project.'))
-      .finally(() => setLoading(false))
-  }, [projectId])
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false; window.clearTimeout(autosaveTimer.current) }
+  }, [storage])
 
   useEffect(() => {
-    if (!snapshot) return
+    if (!snapshot || local) return
     listMembers(projectId).then(setMembers).catch(() => undefined)
     listAssignments(projectId).then((result) => {
       const map: Record<string, string | null> = {}
@@ -102,7 +116,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     listCommentCounts(projectId).then((result) => {
       setCommentEntryIds(new Set(result.filter((item) => item.count > 0).map((item) => item.entryId)))
     }).catch(() => undefined)
-  }, [projectId, snapshot?.revision])
+  }, [projectId, snapshot?.revision, local])
 
   const entries = draft?.entries ?? []
   const writable = snapshot ? canEdit(snapshot.role) : false
@@ -171,7 +185,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   }
 
   function scheduleAutosave() {
-    if (!writable || !snapshotRef.current) return
+    if (local || !writable || !snapshotRef.current) return
     window.clearTimeout(autosaveTimer.current)
     autosaveTimer.current = window.setTimeout(flushSave, 1500)
   }
@@ -182,7 +196,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
    * newer edits save against the incremented revision.
    */
   async function flushSave() {
-    if (!writable || !snapshotRef.current || !dirtyRef.current) return
+    if (!writable || !snapshotRef.current || (!dirtyRef.current && !local)) return
     if (savingRef.current) {
       pendingSaveRef.current = true
       return
@@ -192,6 +206,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     setSaveState('saving')
 
     const toSave = structuredClone(draftRef.current)
+    if (local) toSave.selectedEntryId = toSave.entries[selected]?.id ?? null
     const baseRevision = snapshotRef.current.revision
     const versionAtSave = editVersionRef.current
 
@@ -204,7 +219,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     }
 
     try {
-      const saved = await saveProject(projectId, baseRevision, toSave)
+      const saved = await storage.save(toSave, baseRevision)
       snapshotRef.current = saved
       setSnapshot(saved)
       if (editVersionRef.current === versionAtSave) {
@@ -213,18 +228,20 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         setDraft(draftRef.current)
         dirtyRef.current = false
         setSaveState('saved')
+        if (local) setNotice('Saved to this browser.')
       } else {
         // Newer edits arrived; keep them dirty against the new revision.
         setSaveState('unsaved')
       }
     } catch (failure) {
       setSaveState('failed')
-      setNotice((failure as any)?.code === 'revision-conflict' ? 'This project changed elsewhere. Reload before saving.' : failure instanceof Error ? failure.message : 'Save failed.')
+      setNotice(local ? 'Could not save to this browser. Keep this view open and export a backup before retrying.' : (failure as any)?.code === 'revision-conflict' ? 'This project changed elsewhere. Reload before saving.' : failure instanceof Error ? failure.message : 'Save failed.')
     } finally {
       savingRef.current = false
       if (dirtyRef.current && pendingSaveRef.current) {
         pendingSaveRef.current = false
-        scheduleAutosave()
+        if (local) void flushSave() // A second explicit Save, not local autosave.
+        else scheduleAutosave()
       }
     }
   }
@@ -244,26 +261,23 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
   }
 
   function saveNow() {
-    if (!writable || !snapshotRef.current || !dirtyRef.current) return
+    if (!writable || !snapshotRef.current || (!dirtyRef.current && !local)) return
     window.clearTimeout(autosaveTimer.current)
     void flushSave()
   }
 
   function updateTranslation(value: string) {
     updateDraft((current: any) => {
-      const next = structuredClone(current)
-      next.entries[selected].translation = value
-      return next
+      if (current.entries[selected].translation === value) return current
+      const nextEntries = current.entries.slice()
+      nextEntries[selected] = { ...nextEntries[selected], translation: value }
+      return { ...current, entries: nextEntries }
     })
   }
 
   function updateStatus(nextStatus: string) {
     updateDraft((current: any) => {
-      const next = structuredClone(current)
-      next.workflow ??= { entries: {} }
-      next.workflow.entries ??= {}
-      next.workflow.entries[entry.id] = { status: nextStatus }
-      return next
+      return { ...current, workflow: { ...current.workflow, entries: { ...current.workflow?.entries, [entry.id]: { status: nextStatus } } } }
     })
   }
 
@@ -271,6 +285,16 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     const clamped = Math.max(0, Math.min(entries.length - 1, index))
     setSelected(clamped)
     setQuery('')
+  }
+
+  function exportFile() {
+    try {
+      const project = draftRef.current
+      const url = URL.createObjectURL(new Blob([exportLocalProject(project)], { type: 'text/plain;charset=utf-8' }))
+      const link = document.createElement('a')
+      link.href = url; link.download = project.sourceFileName; link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch { setNotice('Export failed. Your local project was not changed.') }
   }
 
   const nextUntranslated = useCallback((dir: 1 | -1) => {
@@ -293,7 +317,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
       }
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault()
-        if (writable) { saveNow(); nextUntranslated(1) }
+        if (writable) { saveNow(); nextUntranslated(event.shiftKey ? -1 : 1) }
         return
       }
       if (event.altKey && event.key === 'ArrowDown') { event.preventDefault(); goto(selected + 1); return }
@@ -320,8 +344,27 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
     return () => window.removeEventListener('beforeunload', beforeUnload)
   }, [])
 
+  useEffect(() => {
+    if (!local) return
+    return setNavigationGuard((resume) => {
+      if (!dirtyRef.current) return true
+      leaveAction.current = resume
+      setConfirmLeave(true)
+      return false
+    })
+  }, [local])
+
+  function leaveWithoutSaving() {
+    dirtyRef.current = false
+    window.clearTimeout(autosaveTimer.current)
+    setConfirmLeave(false)
+    const action = leaveAction.current ?? onHome
+    leaveAction.current = null
+    action()
+  }
+
   function goHome() {
-    if (dirtyRef.current) { setConfirmLeave(true); return }
+    if (dirtyRef.current) { leaveAction.current = onHome; setConfirmLeave(true); return }
     onHome()
   }
 
@@ -369,9 +412,17 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
 
   const focusMode = layout.entriesCollapsed && layout.inspectorCollapsed
 
+  const deletionDialog = !local && snapshot.role === 'owner' && deleteOpen ? <ProjectDeleteDialog name={snapshot.name}
+    onDelete={() => deleteProject(projectId)}
+    onDeleted={() => { dirtyRef.current = false; window.clearTimeout(autosaveTimer.current); navigate('/app/projects?deleted=1') }}
+    onCancel={() => setDeleteOpen(false)} /> : null
+
   if (isMobile) {
     return (
-      <MobileWorkspace
+      <><MobileWorkspace
+        onDelete={!local && snapshot.role === 'owner' ? () => setDeleteOpen(true) : undefined}
+        local={local}
+        onExport={exportFile}
         user={user}
         projectId={projectId}
         projectName={snapshot.name}
@@ -383,7 +434,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         tokenProfiles={['auto', 'generic', 'godot', 'unreal', 'unity']}
         onTokenProfile={changeTokenProfile}
         goHome={goHome}
-        onHome={onHome}
+        onHome={leaveWithoutSaving}
         onSave={saveNow}
         views={collection.views}
         counts={collection.counts}
@@ -433,13 +484,15 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         setConfirmLeave={setConfirmLeave}
         notice={notice}
         setNotice={setNotice}
-      />
+      />{deletionDialog}</>
     )
   }
 
   return (
     <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''}`}>
       <Toolbar
+        local={local}
+        onExport={exportFile}
         projectName={snapshot.name}
         role={snapshot.role}
         saveState={saveState}
@@ -464,6 +517,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
           <>
             <div className="pane entries-pane" style={{ width: layout.entriesWidth }}>
               <EntriesPanel
+                local={local}
                 views={collection.views}
                 counts={collection.counts}
                 filter={filter as any}
@@ -487,6 +541,9 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
 
         <div className="pane editor-pane">
           <EditorPanel
+            local={local}
+            onNext={() => goto(selected + 1)}
+            onPrev={() => goto(selected - 1)}
             entry={entry}
             extractionContext={draft?.metadata?.extraction?.entries?.[entry?.id]?.context}
             status={status}
@@ -512,6 +569,7 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
             <ResizeHandle onDrag={(dx) => setLayout((l) => { const next = { ...l, inspectorWidth: Math.max(280, Math.min(560, l.inspectorWidth - dx)) }; saveLayout(next); return next })} />
             <div className="pane inspector-pane" style={{ width: layout.inspectorWidth }}>
               <Inspector
+                local={local}
                 projectId={projectId}
                 entry={entry}
                 snapshot={snapshot}
@@ -532,11 +590,11 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
 
       {overviewOpen && (
         <div className="overlay">
-          <ProjectOverview snapshot={snapshot} draft={draft} memberCount={members.length} tokenProfileId={tokenProfileId} tokenProfileConfig={tokenProfileConfig} role={snapshot.role} onClose={() => setOverviewOpen(false)} />
+          <ProjectOverview local={local} onDelete={() => setDeleteOpen(true)} snapshot={snapshot} draft={draft} memberCount={members.length} tokenProfileId={tokenProfileId} tokenProfileConfig={tokenProfileConfig} role={snapshot.role} onClose={() => setOverviewOpen(false)} />
         </div>
       )}
 
-      {collabOpen && (
+      {!local && collabOpen && (
         <div className="overlay">
           <div className="dialog dialog-wide">
             <h2 className="dialog-title">Live collaboration</h2>
@@ -563,14 +621,15 @@ export default function Workspace({ user, onHome }: { user: { id: string; userna
         </div>
       )}
 
+      {deletionDialog}
       {confirmLeave && (
         <ConfirmDialog
           title="Unsaved changes"
           body="You have unsaved changes. Leave without saving?"
           confirmLabel="Leave"
           danger
-          onConfirm={() => { setConfirmLeave(false); onHome() }}
-          onCancel={() => setConfirmLeave(false)}
+          onConfirm={leaveWithoutSaving}
+          onCancel={() => { leaveAction.current = null; setConfirmLeave(false) }}
         />
       )}
     </main>
@@ -592,6 +651,8 @@ function ResizeHandle({ onDrag }: { onDrag: (dx: number) => void }) {
 }
 
 function Toolbar(props: {
+  local?: boolean
+  onExport: () => void
   projectName: string
   role: string
   saveState: SaveState
@@ -613,7 +674,7 @@ function Toolbar(props: {
   const saveLabel = props.saveState === 'saving' ? 'Saving…' : props.saveState === 'failed' ? 'Save failed' : props.saveState === 'unsaved' ? 'Unsaved' : 'Saved'
   return (
     <header className="workspace-toolbar">
-      <button className="toolbar-brand" onClick={props.onHome} title="Back to projects" aria-label="LocalizationHub — back to projects"><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
+      <button className="toolbar-brand" onClick={props.onHome} title={props.local ? 'Back to local files' : 'Back to projects'} aria-label={props.local ? 'Back to local files' : 'LocalizationHub — back to projects'}><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
       <div className="toolbar-title">
         <strong data-i18n-content>{props.projectName}</strong>
         <span className={`save-state save-${props.saveState}`}>{saveLabel}</span>
@@ -621,20 +682,14 @@ function Toolbar(props: {
       <div className="toolbar-group">
         <label className="toolbar-select">
           <span>Token profile</span>
-          <select value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
+          <select aria-label="Token profile" value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
             {props.tokenProfiles.map((item) => <option key={item} value={item}>{item === 'auto' ? displayTokenProfile(props.tokenProfileConfig) : TOKEN_PROFILE_LABELS[item as 'generic' | 'godot' | 'unreal' | 'unity'] ?? item}</option>)}
           </select>
           <small className="token-profile-toolbar-status">
-            {props.tokenProfileConfig.mode === 'auto'
-              ? props.tokenProfileConfig.detection.engine === 'unknown'
-                ? 'Engine not detected · using Generic'
-                : `Detected ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} · ${props.tokenProfileConfig.detection.confidence} confidence`
-              : props.tokenProfileConfig.detection.engine !== 'unknown' && props.tokenProfileConfig.selectedProfile !== props.tokenProfileConfig.detection.engine
-                ? `${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} detected · selected profile differs`
-                : 'Manual profile selected'}
+            <TokenProfileStatus config={props.tokenProfileConfig} />
           </small>
         </label>
-        <button className="toolbar-button" onClick={props.onCollaboration}>Collaboration</button>
+        {!props.local && <button className="toolbar-button" onClick={props.onCollaboration}>Collaboration</button>}
         <button className="toolbar-button" onClick={props.onSearchReplace}>Search &amp; Replace</button>
         <button className="toolbar-button" onClick={props.onOverview}>Overview</button>
       </div>
@@ -642,7 +697,8 @@ function Toolbar(props: {
         <button className="toolbar-button" onClick={props.onToggleEntries}>Entries</button>
         <button className="toolbar-button" onClick={props.onToggleInspector}>Inspector</button>
         <button className="toolbar-button" onClick={props.onToggleFocus} title="Toggle focus mode">{props.focusMode ? 'Exit Focus' : 'Focus'}</button>
-        <button className="toolbar-button toolbar-save" onClick={props.onSave}>Save</button>
+        {props.local && <button className="toolbar-button" onClick={props.onExport}>Export</button>}
+        <button className="toolbar-button toolbar-save" onClick={props.onSave}>{props.local ? 'Save locally' : 'Save'}</button>
       </div>
     </header>
   )

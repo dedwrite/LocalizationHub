@@ -22,22 +22,22 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  const confirmRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
-    confirmRef.current?.focus()
+    const dialog = dialogRef.current
+    dialog?.showModal()
+    return () => { dialog?.close() }
   }, [])
 
   return (
-    <div className="dialog-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) onCancel() }}>
-      <div className="dialog" role="alertdialog" aria-modal="true" aria-label={title}>
+      <dialog ref={dialogRef} className="dialog native-confirm-dialog" role="alertdialog" aria-modal="true" aria-label={title} onCancel={(event) => { event.preventDefault(); onCancel() }} onKeyDown={(event) => event.stopPropagation()}>
         <h2 className="dialog-title">{title}</h2>
         {body && <p className="dialog-body">{body}</p>}
         <div className="dialog-actions">
-          <button className="dialog-button" onClick={onCancel}>{cancelLabel}</button>
-          <button ref={confirmRef} className={`dialog-button ${danger ? 'dialog-button-danger' : 'dialog-button-primary'}`} onClick={onConfirm}>{confirmLabel}</button>
+          <button autoFocus className="dialog-button" onClick={onCancel}>{cancelLabel}</button>
+          <button className={`dialog-button ${danger ? 'dialog-button-danger' : 'dialog-button-primary'}`} onClick={onConfirm}>{confirmLabel}</button>
         </div>
-      </div>
-    </div>
+      </dialog>
   )
 }

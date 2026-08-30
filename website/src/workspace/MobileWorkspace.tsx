@@ -9,11 +9,15 @@ import ConfirmDialog from './ConfirmDialog'
 import type { BulkSelection, EntryFilterId, EntryIssue, EntryView } from './entryCollection'
 import type { ProjectSnapshot } from '../appApi'
 import { TOKEN_PROFILE_LABELS, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
+import TokenProfileStatus from './TokenProfileStatus'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type Surface = 'entries' | 'editor' | 'tools'
 
 export type MobileWorkspaceProps = {
+  onDelete?: () => void
+  local?: boolean
+  onExport: () => void
   user: { id: string; username: string }
   projectId: string
   projectName: string
@@ -98,17 +102,18 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
   return (
     <main className="mob-workspace">
       <header className="mob-header">
-        <button className="mob-back" onClick={props.goHome} aria-label="Back to projects">‹</button>
+        <button className="mob-back" onClick={props.goHome} aria-label={props.local ? 'Back to local files' : 'Back to projects'}>‹</button>
         <div className="mob-title">
           <strong className="mob-project-name" data-i18n-content>{props.projectName}</strong>
           <span className={`save-state save-${saveState}`}>{saveLabel}</span>
         </div>
-        <button className="mob-save" onClick={props.onSave} disabled={saveState === 'saving'}>Save</button>
+        <button className="mob-save" onClick={props.onSave} disabled={saveState === 'saving'}>{props.local ? 'Save locally' : 'Save'}</button>
       </header>
 
       <div className="mob-surface">
         {surface === 'entries' && (
           <EntriesPanel
+            local={props.local}
             views={props.views}
             counts={props.counts}
             filter={props.filter}
@@ -130,6 +135,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
 
         {surface === 'editor' && (
           <EditorPanel
+            local={props.local}
             entry={props.entry}
             extractionContext={props.draft?.metadata?.extraction?.entries?.[props.entry?.id]?.context}
             status={props.status}
@@ -156,6 +162,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
         {surface === 'tools' && (
           <div className="mob-tools">
             <Inspector
+              local={props.local}
               projectId={props.projectId}
               entry={props.entry}
               snapshot={props.snapshot}
@@ -172,16 +179,16 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
               <div className="mob-tools-grid">
                 <button className="mob-tools-button" onClick={() => props.setOverviewOpen(true)}>Project Overview</button>
                 <button className="mob-tools-button" onClick={() => props.setReplaceOpen(true)}>Search &amp; Replace</button>
-                <button className="mob-tools-button" onClick={() => props.setCollabOpen(true)}>Collaboration</button>
+                {!props.local && <button className="mob-tools-button" onClick={() => props.setCollabOpen(true)}>Collaboration</button>}
+                {props.local && <button className="mob-tools-button" onClick={props.onExport}>Export</button>}
               </div>
               <label className="mob-token-field">
                 <span>Token profile</span>
-                <select value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
+                  <select aria-label="Token profile" value={props.tokenProfileSelection} onChange={(event) => props.onTokenProfile(event.target.value as TokenProfileId)}>
                   {props.tokenProfiles.map((item) => <option key={item} value={item}>{item === 'auto' ? `Auto · ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.resolvedProfile]}` : TOKEN_PROFILE_LABELS[item as 'generic' | 'godot' | 'unreal' | 'unity'] ?? item}</option>)}
                 </select>
                 <small>{props.tokenProfileConfig.mode === 'auto' ? `Auto · ${TOKEN_PROFILE_LABELS[props.tokenProfileConfig.resolvedProfile]}` : `Selected · ${TOKEN_PROFILE_LABELS[(props.tokenProfileConfig.selectedProfile ?? props.tokenProfileId) as 'generic' | 'godot' | 'unreal' | 'unity'] ?? props.tokenProfileId}`}</small>
-                {props.tokenProfileConfig.mode === 'auto' && props.tokenProfileConfig.detection.engine === 'unknown' && <small className="token-profile-mobile-warning">Engine not detected. Using Generic.</small>}
-                {props.tokenProfileConfig.mode === 'auto' && props.tokenProfileConfig.detection.engine !== 'unknown' && <small>Detected {TOKEN_PROFILE_LABELS[props.tokenProfileConfig.detection.engine]} · {props.tokenProfileConfig.detection.confidence} confidence</small>}
+                <small className="token-profile-mobile-warning"><TokenProfileStatus config={props.tokenProfileConfig} /></small>
               </label>
             </div>
           </div>
@@ -219,11 +226,11 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
 
       {props.overviewOpen && (
         <div className="overlay mob-overlay" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) props.setOverviewOpen(false) }}>
-          <ProjectOverview snapshot={props.snapshot} draft={props.draft} memberCount={props.members.length} tokenProfileId={props.tokenProfileId} tokenProfileConfig={props.tokenProfileConfig} role={props.role} onClose={() => props.setOverviewOpen(false)} />
+          <ProjectOverview local={props.local} onDelete={props.onDelete} snapshot={props.snapshot} draft={props.draft} memberCount={props.members.length} tokenProfileId={props.tokenProfileId} tokenProfileConfig={props.tokenProfileConfig} role={props.role} onClose={() => props.setOverviewOpen(false)} />
         </div>
       )}
 
-      {props.collabOpen && (
+      {!props.local && props.collabOpen && (
         <div className="overlay mob-overlay">
           <div className="dialog dialog-wide mob-sheet">
             <div className="mob-sheet-head">

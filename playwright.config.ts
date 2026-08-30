@@ -3,6 +3,9 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
+  // Each real lifecycle worker owns a PostgreSQL/WASM instance in addition to
+  // Chromium/WebKit. Bound memory/CPU contention for repeatable full-suite runs.
+  workers: 4,
   retries: 0,
   reporter: 'line',
   use: {

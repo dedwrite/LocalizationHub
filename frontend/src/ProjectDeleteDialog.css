@@ -1,0 +1,14 @@
+.project-delete-dialog { color-scheme: dark; color: #e9e6f5; background: #151820; border: 1px solid #464052; border-radius: 16px; padding: 24px; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; box-sizing: border-box; }
+.project-delete-dialog::backdrop { background: #070910c9; }
+.project-delete-dialog h2 { font-size: 20px; overflow-wrap: anywhere; }
+.project-delete-dialog p { color: #bbb5cb; line-height: 1.6; }
+.project-delete-dialog label { display: grid; gap: 8px; }
+.project-delete-dialog input { min-width: 0; padding: 12px; border: 1px solid #575066; background: #0e1118; color: #eeeaf5; border-radius: 8px; font: inherit; }
+.project-delete-name { overflow-wrap: anywhere; }
+.project-delete-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.project-delete-dialog button, .project-danger-zone button { min-height: 40px; border: 1px solid #534a65; padding: 8px 14px; background: #252032; color: #eeeaf5; border-radius: 8px; font: inherit; cursor: pointer; }
+.project-delete-danger { color: #ffd7dd !important; border-color: #99485b !important; background: #522737 !important; }
+.project-delete-dialog button:disabled { opacity: .45; cursor: not-allowed; }
+.project-delete-dialog :focus-visible, .project-danger-zone :focus-visible { outline: 2px solid #b891ff; outline-offset: 3px; }
+.project-danger-zone { margin-top: 24px; border-top: 1px solid #523241; padding-top: 16px; }
+.project-danger-zone h3 { font-size: 13px; color: #d6a6b1; }

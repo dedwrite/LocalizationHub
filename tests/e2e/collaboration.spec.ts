@@ -11,9 +11,11 @@ test('two browser contexts use the real protocol-v2 collaboration server', async
   expect(hosted.sessionId).toBeTruthy()
   const joined = await guest.evaluate((credentials: any) => new Promise<any>(resolve => { const socket = new WebSocket(`ws://${location.host}`); (window as any).collabSocket = socket; socket.onopen = () => socket.send(JSON.stringify({ type: 'join-session', protocolVersion: 2, sessionId: credentials.sessionId, inviteToken: credentials.inviteToken, displayName: 'Browser B' })); socket.onmessage = event => { const message = JSON.parse(event.data); if (message.type === 'session-joined') resolve(message) } }), hosted)
   expect(joined.sessionId).toBe(hosted.sessionId)
-  const updateWait = guest.evaluate(() => new Promise<any>(resolve => { (window as any).collabResolve = resolve; (window as any).collabSocket.addEventListener('message', (event: MessageEvent) => { const message = JSON.parse(event.data); if (message.type === 'translation-update') (window as any).collabResolve(message) }) }))
+  // Install the guest listener before sending. Starting two asynchronous
+  // evaluate calls did not guarantee their execution order across contexts.
+  await guest.evaluate(() => { (window as any).collabUpdate = new Promise<any>(resolve => { (window as any).collabSocket.addEventListener('message', (event: MessageEvent) => { const message = JSON.parse(event.data); if (message.type === 'translation-update') resolve(message) }) }) })
   await owner.evaluate(() => (window as any).collabSocket.send(JSON.stringify({ type: 'translation-update', update: { entryId: 'entry-1', translation: 'sync', baseRevision: 0 } })))
-  const update = await updateWait
+  const update = await guest.evaluate(() => (window as any).collabUpdate)
   expect(update.type).toBe('translation-update')
   expect(update.update.revision).toBe(1)
   await first.close()

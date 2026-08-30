@@ -3,10 +3,12 @@ import {
   addComment, addProjectTag, findTranslationMemory, glossaryIssues, listActivity, listAssignments, listComments, metadata, resolveComment, restoreActivity, setAssignment, toggleEntryTag, type ProjectSnapshot,
 } from '../appApi'
 import ConfirmDialog from './ConfirmDialog'
+import { useI18n } from '@localizationhub/i18n'
 
 type InspectorTab = 'workflow' | 'quality' | 'comments' | 'assignments' | 'history' | 'tags' | 'memory' | 'glossary'
 
 type InspectorProps = {
+  local?: boolean
   projectId: string
   entry: any
   snapshot: ProjectSnapshot
@@ -31,6 +33,7 @@ const TABS: Array<{ id: InspectorTab; label: string }> = [
 ]
 
 export default function Inspector(props: InspectorProps) {
+  const { t } = useI18n()
   const { projectId, entry, snapshot, draft, writable, currentUserId, members, setDraft, onRestored, onNotice } = props
   const [tab, setTab] = useState<InspectorTab>('workflow')
   const [comments, setComments] = useState<any[]>([])
@@ -47,12 +50,13 @@ export default function Inspector(props: InspectorProps) {
   const glossary = useMemo(() => glossaryIssues(entry?.source ?? '', entry?.translation ?? '', data.glossary), [entry, data])
 
   useEffect(() => {
+    if (props.local) return
     let active = true
     listComments(projectId, entryId).then((value) => active && setComments(value)).catch(() => undefined)
     listAssignments(projectId).then((value) => active && setAssignments(value)).catch(() => undefined)
     listActivity(projectId, entryId).then((value) => active && setActivity(value)).catch(() => undefined)
     return () => { active = false }
-  }, [projectId, entryId, snapshot.revision])
+  }, [projectId, entryId, snapshot.revision, props.local])
 
   async function run(action: () => Promise<unknown>) {
     setBusy(true)
@@ -94,7 +98,7 @@ export default function Inspector(props: InspectorProps) {
   return (
     <div className="inspector">
       <div className="inspector-tabs" role="tablist" aria-label="Inspector">
-        {TABS.map((item) => (
+        {TABS.filter((item) => !props.local || !['comments', 'assignments', 'history'].includes(item.id)).map((item) => (
           <button key={item.id} role="tab" aria-selected={tab === item.id} className={`inspector-tab ${tab === item.id ? 'active' : ''}`} onClick={() => setTab(item.id)}>
             {item.label}
           </button>
@@ -102,7 +106,7 @@ export default function Inspector(props: InspectorProps) {
       </div>
       <div className="inspector-content">
         {tab === 'workflow' && (
-          <WorkflowTab entry={entry} writable={writable} />
+          <WorkflowTab entry={entry} writable={writable} status={draft.workflow?.entries?.[entry?.id]?.status} />
         )}
 
         {tab === 'quality' && (
@@ -193,8 +197,8 @@ export default function Inspector(props: InspectorProps) {
             {suggestions.map((suggestion, index) => (
               <div key={index} className="memory-item">
                 <span className="memory-score">{Math.round(suggestion.score * 100)}%</span>
-                <p><strong>{suggestion.source}</strong></p>
-                <p className="muted">{suggestion.translation}</p>
+                <p data-i18n-content><strong>{suggestion.source}</strong></p>
+                <p className="muted" data-i18n-content>{suggestion.translation}</p>
                 {writable && <button className="link-button" onClick={() => setDraft((current: any) => { const next = structuredClone(current); const idx = next.entries.findIndex((e: any) => e.id === entryId); if (idx >= 0) next.entries[idx].translation = suggestion.translation; return next })}>Apply</button>}
               </div>
             ))}
@@ -207,13 +211,13 @@ export default function Inspector(props: InspectorProps) {
             {glossary.length === 0 && <p className="muted">No glossary issues.</p>}
             {glossary.map((issue, index) => (
               <div key={index} className="glossary-item">
-                <p><strong>{issue.term.sourceTerm}</strong>{issue.forbidden ? ' · forbidden term used' : ' · preferred term missing'}</p>
-                {issue.term.preferredTranslation && <p className="muted">Use: {issue.term.preferredTranslation}</p>}
+                <p data-i18n-skip><strong><bdi>{issue.term.sourceTerm}</bdi></strong> · {t(issue.forbidden ? 'local.forbiddenTerm' : 'local.preferredMissing')}</p>
+                {issue.term.preferredTranslation && <p className="muted" data-i18n-skip>{t('local.useTerm')} <bdi>{issue.term.preferredTranslation}</bdi></p>}
               </div>
             ))}
             {data.glossary.length > 0 && (
               <div className="glossary-list">
-                {data.glossary.map((term, index) => <span key={index} className="glossary-term">{term.sourceTerm} → {term.preferredTranslation || '—'}</span>)}
+                {data.glossary.map((term, index) => <span key={index} className="glossary-term" data-i18n-content><bdi>{term.sourceTerm}</bdi> → <bdi>{term.preferredTranslation || '—'}</bdi></span>)}
               </div>
             )}
           </div>
@@ -234,13 +238,13 @@ export default function Inspector(props: InspectorProps) {
   )
 }
 
-function WorkflowTab({ entry, writable }: { entry: any; writable: boolean }) {
-  const status = entry?.translation ? 'translated' : 'untranslated'
+function WorkflowTab({ entry, writable, status: workflowStatus }: { entry: any; writable: boolean; status?: string }) {
+  const status = workflowStatus ?? (entry?.translation ? 'translated' : 'untranslated')
   return (
     <div className="inspector-section">
       <h3>Workflow</h3>
       <dl className="detail-list">
-        <dt>Status</dt><dd>{status}</dd>
+        <dt>Status</dt><dd>{status.replace('-', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</dd>
         <dt>Entry key</dt><dd>{entry?.key || entry?.id}</dd>
       </dl>
       {!writable && <p className="muted">You have read-only access.</p>}
@@ -249,6 +253,7 @@ function WorkflowTab({ entry, writable }: { entry: any; writable: boolean }) {
 }
 
 function QualityTab({ entry, draft }: { entry: any; draft: any }) {
+  const { t } = useI18n()
   const data = metadata(draft)
   const issues = entry ? glossaryIssues(entry.source ?? '', entry.translation ?? '', data.glossary) : []
   return (
@@ -257,7 +262,7 @@ function QualityTab({ entry, draft }: { entry: any; draft: any }) {
       {(!entry || entry.translation === '') && <p className="muted">Untranslated entries have no quality issues yet.</p>}
       {issues.length === 0 && entry?.translation && <p className="muted">No glossary issues detected.</p>}
       {issues.map((issue, index) => (
-        <div key={index} className="qa-item"><p>{issue.term.sourceTerm}{issue.forbidden ? ' — forbidden translation used' : ' — preferred term missing'}</p></div>
+        <div key={index} className="qa-item"><p data-i18n-skip><bdi>{issue.term.sourceTerm}</bdi> — {t(issue.forbidden ? 'local.forbiddenTerm' : 'local.preferredMissing')}</p></div>
       ))}
     </div>
   )

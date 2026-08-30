@@ -5,8 +5,10 @@ import usePointerDepth from './hooks/usePointerDepth'
 import MotionDebugBadge from './components/MotionDebugBadge'
 import Reveal from './components/Reveal'
 import AppWorkspace from './AppWorkspace'
+import LocalWorkspace from './LocalWorkspace'
 import AdminConsole from './AdminConsole'
 import { InternalLink } from './internalNavigation'
+import { allowHistoryNavigation } from './navigation'
 import LhRadio from './lhRadio/LhRadio'
 import './styles.css'
 import './experience-polish.css'
@@ -87,12 +89,13 @@ function NotFound() { return <><Header /><main className="inner-page not-found">
 function Footer() { return <footer><InternalLink className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></InternalLink><span>v{site.version} · {site.releaseTitle}</span><div><a href={site.repositoryUrl}>GitHub</a><a href={site.releaseUrl}>Releases</a><span className="muted">Documentation / upcoming</span><a className="creator-signature" href="https://dedwrite.xyz/" target="_blank" rel="noopener noreferrer">DEDWRITE</a></div></footer> }
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
-  useEffect(() => { const handle = () => setPath(window.location.pathname); window.addEventListener('popstate', handle); return () => window.removeEventListener('popstate', handle) }, [])
+  useEffect(() => { const handle = (event: PopStateEvent) => { if (allowHistoryNavigation(event)) setPath(window.location.pathname) }; window.addEventListener('popstate', handle); return () => window.removeEventListener('popstate', handle) }, [])
   const suppressRadio = path === '/app/admin' || path.startsWith('/app/admin/')
   return <><RoutedPage path={path} />{!suppressRadio && <LhRadio />}</>
 }
 
 function RoutedPage({ path }: { path: string }) {
+  if (path === '/app/local') return <LocalWorkspace />
   if (path === '/app/admin' || path.startsWith('/app/admin/')) return <AdminConsole />
   if (path.startsWith('/app')) return <AppWorkspace />
   if (path === '/download') return <DownloadPage />

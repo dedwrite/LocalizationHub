@@ -89,6 +89,9 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   await page.locator('.lh-language-switcher select').selectOption(locale)
   const visible = locale === 'en' ? 'Speaker: Caloy (male) · → Listener: Mark (male) · Scene: 4/Assembly.1d.inkb' : 'المتحدث: Caloy (ذكر) · → المستمع: Mark (ذكر) · المشهد: 4/Assembly.1d.inkb'
   await expect(page.locator('.dialogue-context-strip')).toHaveText(visible)
+  // Let the real metadata reads settle before reloading. WebKit reports
+  // interrupted same-origin fetches as access-control page errors on teardown.
+  await page.waitForLoadState('networkidle')
   await page.reload()
   if (locale === 'ar') await page.locator('.lh-language-switcher select').selectOption('en')
   await openEditor(page)
@@ -108,6 +111,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   expect(savedResponse.status()).toBe(200)
   expect((await savedResponse.json()).project.project.entries[0].dialogueContext).toEqual(body.project.entries[0].dialogueContext)
   await expect.poll(() => persisted.filter((row) => row.id === id).at(-1)?.project.entries[0].translation).toBe(translation)
+  await page.waitForLoadState('networkidle')
   await page.reload()
   await openEditor(page)
   await expect(page.getByLabel('Translation', { exact: true })).toHaveValue(translation)

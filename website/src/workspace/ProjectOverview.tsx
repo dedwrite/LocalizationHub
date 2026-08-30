@@ -1,4 +1,5 @@
 import { calculateProjectStatistics, createTokenProfileConfig, displayTokenProfile, type TokenProfileConfig } from '@localizationhub/core'
+import { ProjectDangerZone } from '../../../frontend/src/ProjectDeleteDialog'
 
 /*
  * Unobtrusive Project Overview panel showing key project facts.
@@ -11,7 +12,11 @@ export default function ProjectOverview({
   tokenProfileConfig,
   role,
   onClose,
+  local = false,
+  onDelete,
 }: {
+  onDelete?: () => void
+  local?: boolean
   snapshot: { name: string; revision: number; updatedAt: string; role: string }
   draft: any
   memberCount: number
@@ -33,9 +38,9 @@ export default function ProjectOverview({
         <dt>Name</dt><dd>{snapshot.name}</dd>
         <dt>Format</dt><dd>{format}</dd>
         <dt>Source file</dt><dd>{draft.sourceFileName || '—'}</dd>
-        <dt>Revision</dt><dd>{snapshot.revision}</dd>
+        {!local && <><dt>Revision</dt><dd>{snapshot.revision}</dd>
         <dt>Role</dt><dd>{role}</dd>
-        <dt>Members</dt><dd>{memberCount}</dd>
+        <dt>Members</dt><dd>{memberCount}</dd></>}
         <dt>Token profile</dt><dd>{displayTokenProfile(tokenProfileConfig ?? createTokenProfileConfig(tokenProfileId as any))}</dd>
         <dt>Total entries</dt><dd>{stats.total}</dd>
         <dt>Translated</dt><dd>{stats.translated} ({stats.translationCompletion}%)</dd>
@@ -43,6 +48,7 @@ export default function ProjectOverview({
         <dt>Approved</dt><dd>{stats.approved}</dd>
         <dt>Updated</dt><dd>{new Date(snapshot.updatedAt).toLocaleString()}</dd>
       </dl>
+      {!local && role === 'owner' && onDelete && <ProjectDangerZone onDelete={onDelete} />}
     </div>
   )
 }

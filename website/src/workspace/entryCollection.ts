@@ -37,7 +37,7 @@ export const ENTRY_FILTERS: EntryFilter[] = [
   { id: 'tags', label: 'Has Tags' },
 ]
 
-export type EntryIssue = { severity: 'error' | 'warning'; message: string }
+export type EntryIssue = { severity: 'error' | 'warning'; message: string; kind?: string; token?: { raw: string } }
 
 export type EntryView = {
   entry: any
@@ -55,10 +55,9 @@ export function entryStatus(entry: any, workflow: EntryWorkflowMap): string {
 export function entryIssues(entry: any, tokenProfileId: TokenProfileId = 'generic'): EntryIssue[] {
   const result = validateProtectedTokens(entry.source ?? '', entry.translation ?? '', tokenProfileId)
   const issues: EntryIssue[] = []
-  for (const token of result.missingTokens ?? []) issues.push({ severity: 'error', message: `Missing protected token: ${token.raw}` })
-  for (const token of result.extraTokens ?? []) issues.push({ severity: 'error', message: `Unexpected protected token: ${token.raw}` })
-  for (const error of result.errors ?? []) issues.push({ severity: 'error', message: error.message })
-  for (const warning of result.warnings ?? []) issues.push({ severity: 'warning', message: warning.message })
+  for (const token of result.missingTokens ?? []) issues.push({ severity: 'error', kind: 'missing', token, message: `Missing protected token: ${token.raw}` })
+  for (const token of result.extraTokens ?? []) issues.push({ severity: 'error', kind: 'extra', token, message: `Unexpected protected token: ${token.raw}` })
+  issues.push(...result.errors, ...result.warnings)
   return issues
 }
 

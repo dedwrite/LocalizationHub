@@ -7,6 +7,8 @@ import { decodeLocalizationProject, parseLocalizationFile, type LocalizationProj
 import { desktopProjectStorage } from './projectFiles'
 import { cloudProjectStorage } from './cloudProjectStorage'
 import { createCloudProject } from './cloudProjectsApi'
+import { normalizeLocalProject, projectFromLocalDocument } from '../../website/src/localProjects'
+import { decodeCloudProject } from '../../website/src/appApi'
 
 // Replace only native filesystem IPC; exercise the real Desktop storage code.
 vi.mock('@tauri-apps/plugin-fs', () => ({
@@ -16,6 +18,23 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
 vi.mock('./authSession', () => ({ getAuthToken: () => 'synthetic-token' }))
 vi.mock('./runtimeConfig', () => ({ getCloudApiBaseUrl: () => 'http://test.invalid' }))
 afterEach(() => vi.unstubAllGlobals())
+
+it('Web Local, Web Cloud and Desktop preserve Sofia/KuyaGrab and explicit listener groups identically', async () => {
+  const records = [{ speaker: 'Sofia', speaker_gender: 'female', receiver: 'KuyaGrab', receiver_gender: 'male', text_en: 'Hello!', text_ar: '' }, { speaker: 'Sofia', receivers: [{ name: 'Mark', gender: 'male' }, { name: 'Ali', gender: 'male' }], text_en: 'Hello, everyone!', text_ar: '' }]
+  const parsed = parseLocalizationFile(JSON.stringify(records), 'roles.json')
+  if (!parsed.ok) throw new Error(parsed.reason)
+  const local = normalizeLocalProject(projectFromLocalDocument(parsed.document, 'roles.json'), 'roles.json')
+  expect(local.entries[0].dialogueContext).toMatchObject({ speaker: 'Sofia', speakerGender: 'female', listener: 'KuyaGrab', listenerGender: 'male' })
+  expect(local.entries[1].dialogueContext).toMatchObject({ listeners: ['Mark', 'Ali'], listenerGenders: ['male', 'male'] })
+  const web = decodeCloudProject({ id: 'synthetic', name: 'Roles', role: 'owner', revision: 1, project: local })
+  expect(web.project.entries).toEqual(local.entries)
+  const directory = await mkdtemp(join(tmpdir(), 'lh-local-parity-'))
+  const path = join(directory, 'roles.lhproj')
+  try {
+    await desktopProjectStorage.save({ kind: 'local', path }, local)
+    expect((await desktopProjectStorage.load({ kind: 'local', path })).project.entries).toEqual(local.entries)
+  } finally { await unlink(path).catch(() => undefined); await rmdir(directory) }
+})
 
 it('retains Caloy/Mark through Desktop open state, .lhproj save/reopen, cloud request and cloud storage load', async () => {
   const text = await readFile(new URL('../../tests/fixtures/caloy-mark.json', import.meta.url), 'utf8')

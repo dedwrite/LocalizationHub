@@ -63,7 +63,7 @@ export function parseLocalizationFile(
   }
 
   if (extension === 'csv') return parseCsvLocalization(text, mappings)
-  if (extension === 'po') return parsePoLocalization(text)
+  if (extension === 'po' || extension === 'pot') return parsePoLocalization(text)
 
   return {
     ok: false,
