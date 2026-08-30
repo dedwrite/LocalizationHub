@@ -424,8 +424,10 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.9.0**
+**LocalizationHub v0.9.2 — Web Experience Polish**
 
 Windows builds are distributed through the project's GitHub Releases page.
+The repository remains private, so these assets require repository access.
+The [website and Web App](https://localizationhub.app/) remain publicly usable.
 
-Download the current release: [LocalizationHub v0.9.0 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.0).
+Download the current release: [LocalizationHub v0.9.2 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.2).
