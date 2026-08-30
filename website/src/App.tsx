@@ -13,6 +13,7 @@ import LhRadio from './lhRadio/LhRadio'
 import './styles.css'
 import './experience-polish.css'
 import './workspace-deep-polish.css'
+import './visual-refinement.css'
 
 const nav = [
   ['Product', '/#product'], ['Workflow', '/#workflow'], ['Cloud', '/#cloud'], ['Formats', '/#formats'], ['Web App', '/app'], ['Download', '/download'], ['GitHub', site.repositoryUrl],

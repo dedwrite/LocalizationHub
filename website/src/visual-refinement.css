@@ -1,0 +1,82 @@
+/* v0.9.2 — shared visual rhythm. Scoped to product surfaces; Admin and Radio
+   transport behavior are deliberately unchanged. Fluid gaps replace oversized
+   fixed spacers without changing virtual-list row measurements. */
+:root {
+  --web-section-space: clamp(56px, 7vw, 104px);
+  --web-content-gap: clamp(24px, 4vw, 56px);
+  --web-panel-radius: 12px;
+}
+
+/* Reference -> context -> working copy: one readable editing column. */
+:is(.workspace-shell, .mob-workspace) .editor-content-column { max-width: 880px; }
+.workspace-shell .editor-scroll { padding: 22px clamp(20px, 3vw, 44px) 28px; }
+:is(.workspace-shell, .mob-workspace) .section-label-row { margin-bottom: 10px; }
+.workspace-shell .section-label small { font-size: 9px; letter-spacing: .09em; }
+:is(.workspace-shell, .mob-workspace) .source-text { border-radius: 10px; line-height: 1.8; }
+.workspace-shell .source-text { padding: 16px 18px; }
+.workspace-shell .source-context { padding: 0; border: 0; background: none; }
+.dialogue-context-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+  color: #c2c6d2;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: start;
+}
+.context-person { padding: 9px 12px; background: #171b25; border: 1px solid #2c3241; border-radius: 8px; }
+.context-person bdi { color: #e2deef; font-weight: 600; }
+.context-field-label { color: #afa5cf; }
+.context-detail { grid-column: 1 / -1; padding: 3px 2px; font-size: 11px; }
+.dialogue-context-strip bdi { overflow-wrap: anywhere; }
+.workspace-shell .translation-section { margin-top: 22px; padding: 16px; border-radius: var(--web-panel-radius); box-shadow: none; }
+.workspace-shell .translation-editor { min-height: clamp(168px, 24vh, 240px); padding: 16px; border-radius: 8px; }
+:is(.workspace-shell, .mob-workspace) .source-token-list { gap: 6px; line-height: 1.6; }
+:is(.workspace-shell, .mob-workspace) .source-token-list code { border-color: #443954; color: #c9b9e8; background: #211d2d; }
+:is(.workspace-shell, .mob-workspace) .inline-qa-item { border-radius: 6px; line-height: 1.65; }
+:is(.workspace-shell, .mob-workspace) .local-mt-privacy { font-size: 12px; line-height: 1.75; color: #aeb6c7; }
+.workspace-shell .muted { color: #a6adbb; }
+
+/* Profile metadata gets a second line; primary Save stays visually distinct. */
+.workspace-shell .workspace-toolbar { gap: 10px; padding-block: 10px; }
+.workspace-shell .toolbar-title { min-width: 110px; gap: 4px; }
+.workspace-shell .toolbar-title strong { max-width: 200px; }
+.workspace-shell .toolbar-group { gap: 6px; padding-inline-start: 10px; border-inline-start: 1px solid #2b3040; border-left: 0; }
+.workspace-shell .toolbar-group:last-child { margin-inline-start: auto; }
+.workspace-shell .toolbar-select { display: grid; grid-template-columns: auto minmax(100px, 1fr); gap: 3px 8px; max-width: 280px; }
+.workspace-shell .token-profile-toolbar-status { grid-column: 1 / -1; white-space: normal; margin: 0; color: #a4abba; }
+.workspace-shell :is(.toolbar-button, .toolbar-select select) { min-height: 34px; border-radius: 7px; }
+.workspace-shell .toolbar-button:not(.toolbar-save) { background: #141922; border-color: #303847; }
+.workspace-shell .toolbar-save { box-shadow: none; }
+.workspace-shell .entries-head { padding: 12px; }
+.workspace-shell .entry-row { border-inline-start: 3px solid transparent; transition: background 140ms ease, border-color 140ms ease; }
+.workspace-shell .entry-row.selected { border-inline-start-color: #a79cff; background: #23223b; }
+.workspace-shell .entry-row:focus-visible { outline: 2px solid #b2a5ff; outline-offset: -3px; }
+.workspace-shell .inspector-tabs { justify-content: flex-start; gap: 5px; margin: 0; padding: 10px; }
+.workspace-shell .inspector-tab { border-radius: 6px; }
+.workspace-shell .detail-list { border-radius: 8px; }
+.workspace-shell .nav-button { min-height: 36px; border-radius: 7px; }
+
+/* Small shared surfaces should feel related, with stable hover/focus geometry. */
+:is(.workspace-page, .local-page, .mob-workspace) :is(.dialog, .overview-panel, .auth-card, .notice) { border-radius: var(--web-panel-radius); }
+:is(.workspace-page, .local-page, .mob-workspace) .toast { border-radius: 10px; box-shadow: 0 10px 32px #0005; }
+:is(.workspace-page, .local-page) .notice { border-inline-start: 3px solid #7868ee; border-left: 0; }
+:is(.workspace-page, .local-page, .mob-workspace) button:focus-visible { outline: 2px solid #b2a5ff; outline-offset: 3px; }
+
+@media (max-width: 767px) {
+  .dialogue-context-strip { grid-template-columns: 1fr; gap: 6px; font-size: 13px; }
+  .context-detail { font-size: 12px; }
+  .context-person { padding: 8px 10px; }
+  .mob-editor .editor-scroll { padding: 14px 16px 20px; }
+  .mob-editor .source-context { margin-top: 10px; }
+  .mob-editor .translation-section { margin-top: 20px; }
+  .mob-editor .translation-editor { border-radius: 8px; padding: 14px; }
+  .mob-editor .section-label { line-height: 1.5; }
+  .mob-editor .section-label small { font-size: 9px; }
+  .mob-editor .editor-footer { gap: 6px; padding: 8px 12px; }
+  .mob-editor .nav-button { min-height: 44px; border-radius: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-shell .entry-row { transition: none; }
+}
