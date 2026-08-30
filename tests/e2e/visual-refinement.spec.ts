@@ -44,3 +44,19 @@ for (const locale of ['en', 'ar'] as const) {
     expect(errors).toEqual([])
   })
 }
+
+test('landing preview changes the real UI locale, with bounded section spacing', async ({ page }) => {
+  await populatedRadio(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/')
+  const preview = page.locator('.preview-controls')
+  await preview.getByRole('button', { name: 'العربية', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.locator('.lh-language-switcher select')).toHaveValue('ar')
+  await expect(preview.getByRole('button', { name: 'العربية', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await preview.getByRole('button', { name: 'English', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
+  const spacings = await page.locator('.landing-main .section').evaluateAll(elements => elements.map(e => parseFloat(getComputedStyle(e).paddingTop)))
+  expect(Math.max(...spacings)).toBeLessThanOrEqual(104)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
+})
