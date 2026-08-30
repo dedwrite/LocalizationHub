@@ -1,5 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { parseLocalizationFile } from '@localizationhub/core'
+import { projectFromLocalDocument } from '../../website/src/localProjects'
 
 const original = JSON.parse(readFileSync('tests/fixtures/caloy-mark.json', 'utf8'))[0]
 const fixture = JSON.stringify([0, 1, 2].map(index => ({ ...original, entry_id: String(index + 1), text_en: `Line ${index + 1} {name}` })))
@@ -59,4 +61,29 @@ test('landing preview changes the real UI locale, with bounded section spacing',
   const spacings = await page.locator('.landing-main .section').evaluateAll(elements => elements.map(e => parseFloat(getComputedStyle(e).paddingTop)))
   expect(Math.max(...spacings)).toBeLessThanOrEqual(104)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
+})
+
+for (const locale of ['en', 'ar'] as const) test(`Cloud navigation remains clear of Radio in ${locale}`, async ({ page }) => {
+  const parsed = parseLocalizationFile(fixture, 'visual-cloud.json')
+  if (!parsed.ok) throw new Error(parsed.reason)
+  const project = projectFromLocalDocument(parsed.document, 'visual-cloud.json')
+  const user = { id: 'visual-user', username: 'visual', email: 'visual@example.invalid', emailVerified: true }
+  await page.addInitScript(user => {
+    localStorage.setItem('localizationhub.auth.token', 'synthetic-visual-token')
+    localStorage.setItem('localizationhub.auth.user', JSON.stringify(user))
+  }, user)
+  await page.route('**/api/auth/me', route => route.fulfill({ json: { user } }))
+  await page.route('**/api/projects/visual-cloud', route => route.fulfill({ json: { project: { id: 'visual-cloud', name: 'Visual Cloud', role: 'owner', revision: 1, project } } }))
+  await page.route('**/api/projects/visual-cloud/**', route => route.fulfill({ json: { members: [], assignments: [], entries: [], comments: [], activity: [] } }))
+  await populatedRadio(page)
+  await page.goto('/app/projects/visual-cloud')
+  await page.locator('.lh-language-switcher select').selectOption(locale)
+  await expect(page.locator('.source-text')).toContainText('Line 1')
+  await expect(page.locator('.lh-radio-capsule-title')).toHaveText('A sufficiently long track title')
+  const next = page.locator('.editor-footer').getByRole('button', { name: locale === 'en' ? 'Next Untranslated' : 'التالي غير المترجم', exact: true })
+  await next.click()
+  await expect(page.locator('.source-text')).toContainText('Line 2')
+  const box = await next.boundingBox()
+  const radio = await page.locator('.lh-radio-capsule').boundingBox()
+  expect(box && radio && box.x < radio.x + radio.width && box.x + box.width > radio.x && box.y < radio.y + radio.height && box.y + box.height > radio.y).toBe(false)
 })
