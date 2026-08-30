@@ -10,9 +10,16 @@
 
 import { describe, expect, it } from 'vitest'
 import { buildSystemInstruction, buildTranslationContext } from './translationProviders'
-import { buildProjectFromExtraction, decodeLocalizationProject, extractInkb } from '@localizationhub/core'
+import { buildProjectFromExtraction, decodeLocalizationProject, detectDialogueContext, extractInkb } from '@localizationhub/core'
 
 describe('buildTranslationContext', () => {
+  it('carries normalized aliases and plural listeners into the existing MT reference', () => {
+    const context = detectDialogueContext({ sender: 'Sofia', sender_gender: 'female', receiver: 'KuyaGrab', receiver_gender: 'male', scene: '1a/$.inkb', conversation_id: 'test-1' })
+    const line = buildTranslationContext(context)
+    expect(line).toBe('Speaker: Sofia (female) | Listener: KuyaGrab (male) | Scene: 1a/$.inkb | Conversation: test-1')
+    expect(buildSystemInstruction({ apiKey: 'synthetic', text: 'Hello!', targetLanguage: 'ar', context: line })).toContain(`Context (reference only, never translate or output it): ${line}`)
+    expect(buildTranslationContext(detectDialogueContext({ receivers: ['Sofia', 'Mark'] }))).toBe('Listener: Sofia, Mark')
+  })
   it('carries inferred INKB context through project round-trip into the MT reference exactly once', () => {
     const body = new TextEncoder().encode('characters: {"Ada":"actor-a","Bo":"actor-b"}\0$ pass\0Ada: Synthetic greeting.\0Bo: Synthetic reply.\0NOP\0')
     const binary = new Uint8Array(10 + body.length)

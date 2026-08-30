@@ -17,7 +17,7 @@ export default function MachineTranslationPanel({
   sourceText?: string
   sourceLocale?: string
   targetLocale?: string
-  context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string; listenerGender?: string; scene?: string; conversationId?: string; previous?: string; next?: string }
+  context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string; listenerGender?: string; listenerGenders?: string[]; scene?: string; conversationId?: string; previous?: string; next?: string }
 }) {
   const [open, setOpen] = useState(false)
   const [provider] = useState<TranslationProviderId>('gemini')

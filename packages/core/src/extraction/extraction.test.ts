@@ -51,7 +51,7 @@ describe('classification', () => {
 
 describe('context inference', () => {
   it('recognizes speaker / listener / gender field aliases', () => {
-    expect(recognizeContextField('speaker_id')).toBe('speaker')
+    expect(recognizeContextField('speaker_id')).toBe('speakerId')
     expect(recognizeContextField('target_actor')).toBe('listener')
     expect(recognizeContextField('sex_code')).toBe('speakerGender')
     expect(recognizeContextField('text')).toBe('translatableText')

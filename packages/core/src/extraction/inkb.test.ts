@@ -268,7 +268,7 @@ describe('conservative INKB listeners (synthetic dialogue)', () => {
     expect(result.stats.entriesWithListener).toBe(0)
   })
 
-  it.each(['listener', 'target', 'recipient', 'to', 'audience', 'directedAt'])('preserves explicit %s and its high-confidence provenance', (field) => {
+  it.each(['listener', 'receiver', 'target', 'recipient', 'to', 'audience', 'directedAt'])('preserves explicit %s and its high-confidence provenance', (field) => {
     const fromHeader = extractInkb('explicit.inkb', buildInkb([
       `characters: ${JSON.stringify(characters)}`, `${field}: "Explicit recipient"`, '$ pass',
       'Ada: Synthetic greeting.', 'An uninterrupted continuation.', 'Bo: Synthetic reply.', ':: Test thought.',
@@ -322,6 +322,27 @@ describe('conservative INKB listeners (synthetic dialogue)', () => {
       'Ada: Synthetic greeting.', 'Bo: Synthetic reply.',
     ]))
     expect(result.stats.entriesWithListener).toBe(0)
+  })
+
+  it.each([null, '', [], {}])('allows safe two-party inference with empty receiver %j', (value) => {
+    const result = extractInkb('empty-receiver.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, `receiver: ${JSON.stringify(value)}`, '$ pass',
+      'Ada: Synthetic greeting.', 'Bo: Synthetic reply.',
+    ]))
+    expect(result.entries.map((e) => e.context?.listener)).toEqual(['Bo', 'Ada'])
+    expect(result.entries.every((e) => e.context?.listenerProvenance?.source === 'structural-inference')).toBe(true)
+  })
+
+  it('normalizes a shallow receiver object and explicit gender before inference', () => {
+    const result = extractInkb('receiver-object.inkb', buildInkb([
+      `characters: ${JSON.stringify(characters)}`, 'Receiver: {"displayName":"Cy","id":"actor-c","gender":"female"}',
+      '$ pass', 'Ada: Synthetic greeting.', 'Bo: Synthetic reply.',
+    ]))
+    for (const entry of result.entries) expect(entry.context).toMatchObject({
+      listener: 'Cy', listenerId: 'actor-c', listenerGender: 'female',
+      listenerProvenance: { source: 'explicit-field', confidence: 'high' },
+      listenerGenderProvenance: { source: 'explicit-field', confidence: 'high' },
+    })
   })
 
   it.each(['Bo', 'actor-b'])('retains a reliable id for an explicit target %s', (target) => {

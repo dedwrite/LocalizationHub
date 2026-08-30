@@ -425,6 +425,7 @@ function extractUnityStructuredJson(fileName: string, text: string, mappings: Ar
     walkStructuredData(parsed, {
       onRecord: (record) => extract(record.record, record.path),
       order,
+      mappings,
     })
   }
 

@@ -155,6 +155,7 @@ import WorkspaceCollaborationStatus from './WorkspaceCollaborationStatus'
 import { useCollaborationSession, type CollaborationController } from './useCollaborationSession'
 import LastSessionCard from './LastSessionCard'
 import MachineTranslationPanel from './MachineTranslationPanel'
+import DialogueContextStrip from './DialogueContextStrip'
 import ProjectWorkflowTools from './ProjectWorkflowTools'
 import EntryCommentsPanel from './EntryCommentsPanel'
 import EntryAssignmentPanel from './EntryAssignmentPanel'
@@ -953,6 +954,9 @@ function App() {
         entry.id ===
         selectedEntryId,
     ) ?? null
+
+  const selectedDialogueContext = selectedEntry?.dialogueContext
+    ?? (selectedEntry ? projectMetadata.extraction?.entries[selectedEntry.id]?.context : undefined)
 
 
   const selectedCollaborationConflict =
@@ -4782,36 +4786,14 @@ try {
                   }
 
                   {
-                    selectedEntry.dialogueContext &&
+                    selectedDialogueContext &&
                     (
                       <div className="editor-section">
                         <label>
                           Context
                         </label>
 
-                        <div
-                          className="source-text"
-                          dir="auto"
-                        >
-                          {
-                            [
-                              selectedEntry.dialogueContext.speaker
-                                ? `Speaker: ${selectedEntry.dialogueContext.speaker}${selectedEntry.dialogueContext.speakerGender && selectedEntry.dialogueContext.speakerGender !== 'unknown' ? ` (${selectedEntry.dialogueContext.speakerGender})` : ''}`
-                                : null,
-                              selectedEntry.dialogueContext.listener
-                                ? `→ Listener: ${selectedEntry.dialogueContext.listener}${selectedEntry.dialogueContext.listenerGender && selectedEntry.dialogueContext.listenerGender !== 'unknown' ? ` (${selectedEntry.dialogueContext.listenerGender})` : ''}`
-                                : null,
-                              selectedEntry.dialogueContext.scene
-                                ? `Scene: ${selectedEntry.dialogueContext.scene}`
-                                : null,
-                              selectedEntry.dialogueContext.conversationId
-                                ? `Conversation: ${selectedEntry.dialogueContext.conversationId}`
-                                : null,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')
-                          }
-                        </div>
+                        <DialogueContextStrip context={selectedDialogueContext} />
                       </div>
                     )
                   }

@@ -33,6 +33,18 @@ function buildProjectV3(text: string, fileName: string): LocalizationProjectV3 {
 }
 
 describe('dialogue context round-trip', () => {
+  it('preserves normalized aliases, plural IDs/genders and explicit provenance without rewriting source fields', () => {
+    const project = buildProjectV3(JSON.stringify([{ text: 'Hello!', sender: 'Sofia', actor_id: 's', sender_gender: 'female', receivers: [{ name: 'Mark', id: 'a', gender: 'male' }, { name: 'Alex', id: 'b', gender: 'neutral' }] }]), 'synthetic.json')
+    const decoded = decodeLocalizationProject(JSON.stringify(project))
+    expect(decoded.ok).toBe(true)
+    if (!decoded.ok) return
+    const context = decoded.project.entries[0].dialogueContext
+    expect(context).toEqual(project.entries[0].dialogueContext)
+    expect(context).toMatchObject({ speaker: 'Sofia', speakerId: 's', speakerGender: 'female', listeners: ['Mark', 'Alex'], listenerIds: ['a', 'b'], listenerGenders: ['male', 'neutral'], listenerProvenance: { source: 'explicit-field', confidence: 'high' } })
+    expect(context?.listenerId).toBeUndefined()
+    expect(decoded.project.document?.sourceText).toBe(project.document?.sourceText)
+  })
+
   it('preserves speaker/listener IDs, genders, pronouns, scene, conversation, node/line, voice, portrait', () => {
     const text = JSON.stringify([
       {
@@ -66,9 +78,12 @@ describe('dialogue context round-trip', () => {
     expect(ctx?.speakerId).toBe('mark')
     expect(ctx?.speakerGender).toBe('male')
     expect(ctx?.speakerPronouns).toBe('he/him')
-    expect(ctx?.listener).toBe('Cathy')
-    expect(ctx?.listenerId).toBe('cathy')
-    expect(ctx?.listenerGender).toBe('female')
+    // An explicit group stays plural, without a misleading single target/id.
+    expect(ctx?.listener).toBeUndefined()
+    expect(ctx?.listenerId).toBeUndefined()
+    expect(ctx?.listenerGender).toBeUndefined()
+    expect(ctx?.raw?.listener_id).toBe('cathy')
+    expect(ctx?.raw?.listener_gender).toBe('female')
     expect(ctx?.listenerPronouns).toBe('she/her')
     expect(ctx?.listeners).toEqual(['Cathy', 'Ryan'])
     expect(ctx?.scene).toBe('School Hallway')

@@ -8,7 +8,7 @@
  * The detection is split into CONFIDENCE TIERS so a weak/fuzzy field name never
  * fabricates context:
  *
- *   HIGH confidence — canonical, universally-safe names, auto-applied:
+ *   HIGH confidence — exact shared semantic role aliases, auto-applied:
  *     speaker / speaker_name / speaker_id
  *     listener / listener_name / listener_id
  *     listeners / listener_ids
@@ -22,8 +22,6 @@
  *
  *   MEDIUM confidence — plausible but ambiguous; SUGGESTED in the mapping
  *     review but NOT auto-applied (require user confirmation):
- *     who / talker / actor / character / character_name / from / sender → speaker
- *     target / to / addressee / recipient → listener
  *     location / chapter / level / act → scene
  *     sprite / avatar → portrait
  *     gender / sex / pronouns → gender/pronouns
@@ -37,16 +35,15 @@ import type {
   ParsedDialogueContext,
 } from './types'
 
-import {
-  normalizeGender,
-} from '../extraction/contextInference'
+import { contextScalar, normalizeDialogueRoles, normalizeGender, participantObject as toCharacterValue, recognizeDialogueRole, type DialogueRole, type DialogueRoleField } from '../dialogueRoles'
+import { explicitField, userMapped } from '../extraction/provenance'
 
 /*
  * Normalize a field name the same way the JSON parser does: camelCase →
  * snake_case, dashes → underscores, lowercase.
  */
 export function normalizeContextFieldName(fieldName: string): string {
-  return fieldName
+  return fieldName.trim()
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
     .replace(/-/g, '_')
     .replace(/\s+/g, '_')
@@ -98,57 +95,6 @@ export type DetectedContextField = {
 /* ------------------------------------------------------------------ */
 /* HIGH-confidence canonical field sets (auto-applied).                */
 /* ------------------------------------------------------------------ */
-
-const SPEAKER_ID_FIELDS = new Set([
-  'speaker_id',
-  'speakerid',
-  'speaker_key',
-  'speakerkey',
-])
-
-const SPEAKER_NAME_FIELDS = new Set([
-  'speaker',
-  'speaker_name',
-  'speakername',
-])
-
-const LISTENER_ID_FIELDS = new Set([
-  'listener_id',
-  'listenerid',
-])
-
-const LISTENER_NAME_FIELDS = new Set([
-  'listener',
-  'listener_name',
-  'listenername',
-])
-
-const LISTENERS_FIELDS = new Set([
-  'listeners',
-  'listener_names',
-  'listenernames',
-])
-
-const LISTENER_IDS_FIELDS = new Set([
-  'listener_ids',
-  'listenerids',
-  'target_ids',
-  'targetids',
-])
-
-const SPEAKER_GENDER_FIELDS = new Set([
-  'speaker_gender',
-  'speakergender',
-  'speaker_sex',
-  'speakersex',
-])
-
-const LISTENER_GENDER_FIELDS = new Set([
-  'listener_gender',
-  'listenergender',
-  'listener_sex',
-  'listenersex',
-])
 
 const SPEAKER_PRONOUNS_FIELDS = new Set([
   'speaker_pronouns',
@@ -208,17 +154,6 @@ const PORTRAIT_FIELDS = new Set([
  * mapping review but NOT auto-applied.
  */
 const MEDIUM_ROLE_SUGGESTIONS: Record<string, GenericContextRole> = {
-  who: 'speaker',
-  talker: 'speaker',
-  actor: 'speaker',
-  character: 'speaker',
-  character_name: 'speaker',
-  from: 'speaker',
-  sender: 'speaker',
-  target: 'listener',
-  to: 'listener',
-  addressee: 'listener',
-  recipient: 'listener',
   location: 'scene',
   chapter: 'scene',
   level: 'scene',
@@ -235,14 +170,8 @@ const MEDIUM_ROLE_SUGGESTIONS: Record<string, GenericContextRole> = {
  * `detectDialogueContext` (auto-apply) and `detectContextFields` (report).
  */
 function highConfidenceRole(normalized: string): GenericContextRole | undefined {
-  if (SPEAKER_ID_FIELDS.has(normalized)) return 'speakerId'
-  if (SPEAKER_NAME_FIELDS.has(normalized)) return 'speaker'
-  if (LISTENER_ID_FIELDS.has(normalized)) return 'listenerId'
-  if (LISTENER_NAME_FIELDS.has(normalized)) return 'listener'
-  if (LISTENERS_FIELDS.has(normalized)) return 'listeners'
-  if (LISTENER_IDS_FIELDS.has(normalized)) return 'listenerIds'
-  if (SPEAKER_GENDER_FIELDS.has(normalized)) return 'speakerGender'
-  if (LISTENER_GENDER_FIELDS.has(normalized)) return 'listenerGender'
+  const role = recognizeDialogueRole(normalized)
+  if (role) return role
   if (SPEAKER_PRONOUNS_FIELDS.has(normalized)) return 'speakerPronouns'
   if (LISTENER_PRONOUNS_FIELDS.has(normalized)) return 'listenerPronouns'
   if (SCENE_FIELDS.has(normalized)) return 'scene'
@@ -264,21 +193,6 @@ export type CharacterValue = {
   name?: string
   gender?: string
   raw?: Record<string, unknown>
-}
-
-function toCharacterValue(value: unknown): CharacterValue | undefined {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined
-  const record = value as Record<string, unknown>
-  const name = typeof record.name === 'string' ? record.name : undefined
-  const id = typeof record.id === 'string' || typeof record.id === 'number'
-    ? String(record.id)
-    : undefined
-  const gender = typeof record.gender === 'string' || typeof record.sex === 'string'
-    ? String(record.gender ?? record.sex)
-    : undefined
-  // Only treat as a character object if it has at least id or name.
-  if (id === undefined && name === undefined) return undefined
-  return { id, name, gender, raw: record }
 }
 
 export type CharacterDatabase = Map<string, CharacterValue>
@@ -321,31 +235,11 @@ export function buildCharacterDatabase(value: unknown): CharacterDatabase {
   return db
 }
 
-/* Split a comma/semicolon/newline-separated string or a JSON array into parts. */
-function splitListValue(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.map((v) => String(v).trim()).filter(Boolean)
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    if (trimmed.startsWith('[')) {
-      try {
-        const parsed = JSON.parse(trimmed)
-        if (Array.isArray(parsed)) return parsed.map((v) => String(v).trim()).filter(Boolean)
-      } catch {
-        // fall through to separator split
-      }
-    }
-    return trimmed.split(/[,;|\n]/u).map((s) => s.trim()).filter(Boolean)
-  }
-  return []
-}
-
 /*
  * Detect explicit dialogue context from a flat record.
  *
  * - HIGH-confidence canonical fields are auto-applied.
- * - MEDIUM-confidence fields (who/location/chapter/…) are preserved in `raw`
+ * - MEDIUM-confidence fields (location/chapter/…) are preserved in `raw`
  *   but NOT auto-applied — they await user mapping.
  * - `mappings` (from the Import "Context Mapping" review) override aliases.
  * - A display name is NEVER promoted to a stable `speakerId`/`listenerId`; an
@@ -361,187 +255,69 @@ export function detectDialogueContext(
 ): ParsedDialogueContext | undefined {
   const context: ParsedDialogueContext = {}
   const raw: Record<string, unknown> = {}
-
-  let speakerName: string | undefined
-  let speakerId: string | undefined
-  let listenerName: string | undefined
-  let listenerId: string | undefined
-  let listeners: string[] | undefined
-  let listenerIds: string[] | undefined
-  let speakerGender: string | undefined
-  let listenerGender: string | undefined
-  let speakerPronouns: string | undefined
-  let listenerPronouns: string | undefined
-  let hasSpeakerField = false
-
-  const mappingByField = new Map<string, GenericContextRole>()
-  for (const m of mappings ?? []) mappingByField.set(m.field.trim(), m.role)
-
-  const assign = (role: GenericContextRole, value: unknown, fieldName: string) => {
-    const stringValue = typeof value === 'string' ? value : (typeof value === 'number' ? String(value) : undefined)
-    switch (role) {
-      case 'speakerId':
-        hasSpeakerField = true
-        if (stringValue !== undefined) speakerId = stringValue
-        raw[fieldName] = value
-        break
-      case 'speaker': {
-        hasSpeakerField = true
-        const c = toCharacterValue(value)
-        if (c) {
-          speakerName = c.name ?? c.id
-          speakerId = c.id
-          if (c.gender) speakerGender = normalizeGender(c.gender)
-        } else if (stringValue !== undefined) {
-          speakerName = stringValue
-        }
-        raw[fieldName] = value
-        break
-      }
-      case 'listenerId':
-        if (stringValue !== undefined) listenerId = stringValue
-        raw[fieldName] = value
-        break
-      case 'listener': {
-        const c = toCharacterValue(value)
-        if (c) {
-          listenerName = c.name ?? c.id
-          listenerId = c.id
-          if (c.gender) listenerGender = normalizeGender(c.gender)
-        } else if (stringValue !== undefined) {
-          listenerName = stringValue
-        }
-        raw[fieldName] = value
-        break
-      }
-      case 'listeners':
-        listeners = splitListValue(value)
-        raw[fieldName] = value
-        break
-      case 'listenerIds':
-        listenerIds = splitListValue(value)
-        raw[fieldName] = value
-        break
-      case 'speakerGender':
-        hasSpeakerField = true
-        speakerGender = normalizeGender(value)
-        raw[fieldName] = value
-        break
-      case 'listenerGender':
-        listenerGender = normalizeGender(value)
-        raw[fieldName] = value
-        break
-      case 'speakerPronouns':
-        if (stringValue !== undefined) speakerPronouns = stringValue
-        raw[fieldName] = value
-        break
-      case 'listenerPronouns':
-        if (stringValue !== undefined) listenerPronouns = stringValue
-        raw[fieldName] = value
-        break
-      case 'scene':
-        if (stringValue !== undefined) context.scene = stringValue
-        raw[fieldName] = value
-        break
-      case 'conversationId':
-        if (stringValue !== undefined) context.conversationId = stringValue
-        raw[fieldName] = value
-        break
-      case 'dialogueId':
-        if (stringValue !== undefined) context.dialogueId = stringValue
-        raw[fieldName] = value
-        break
-      case 'nodeId':
-        if (stringValue !== undefined) context.nodeId = stringValue
-        raw[fieldName] = value
-        break
-      case 'choiceGroup':
-        if (stringValue !== undefined) context.choiceGroup = stringValue
-        raw[fieldName] = value
-        break
-      case 'voice':
-        if (stringValue !== undefined) context.voice = stringValue
-        raw[fieldName] = value
-        break
-      case 'portrait':
-        if (stringValue !== undefined) context.portrait = stringValue
-        raw[fieldName] = value
-        break
-      case 'ignore':
-        break
-      default:
-        break
-    }
-  }
-
+  const dialogueFields: DialogueRoleField[] = []
+  const mappingByField = new Map((mappings ?? []).map((m) => [m.field.trim(), m.role]))
   for (const [fieldName, value] of Object.entries(record)) {
     const normalized = normalizeContextFieldName(fieldName)
-
-    const explicitRole = mappingByField.get(fieldName)
-    if (explicitRole) {
-      assign(explicitRole, value, fieldName)
+    const mapped = mappingByField.get(fieldName.trim())
+    const role = mapped ?? highConfidenceRole(normalized)
+    const scalar = contextScalar(value)
+    // Empty fields carry neither a role value nor provenance.
+    if (value == null || value === '' || (Array.isArray(value) && !value.length)
+      || (typeof value === 'object' && value !== null && !Object.keys(value).length)) continue
+    if (role === 'ignore') continue
+    if (role || Object.hasOwn(MEDIUM_ROLE_SUGGESTIONS, normalized)) raw[fieldName] = value
+    if (!role) continue
+    if (['speaker', 'speakerId', 'listener', 'listeners', 'listenerId', 'listenerIds', 'speakerGender', 'listenerGender'].includes(role)) {
+      dialogueFields.push({ role: role as DialogueRole, value, provenance: mapped ? userMapped('high') : explicitField('high') })
       continue
     }
-
-    const highRole = highConfidenceRole(normalized)
-    if (highRole) {
-      assign(highRole, value, fieldName)
-      continue
-    }
-
-    // MEDIUM-confidence suggestions: preserve raw but do NOT auto-apply.
-    if (MEDIUM_ROLE_SUGGESTIONS[normalized]) {
-      raw[fieldName] = value
-    }
-  }
-
-  // A bare gender/sex is attributed to the speaker only when a speaker field
-  // is ALSO present (structural evidence); otherwise it stays raw.
-  if (speakerGender === undefined && hasSpeakerField) {
-    const bareGender = record.gender ?? record.sex
-    if (bareGender !== undefined) {
-      speakerGender = normalizeGender(bareGender)
+    if (scalar === undefined) continue
+    switch (role) {
+      case 'speakerPronouns': context.speakerPronouns = scalar; break
+      case 'listenerPronouns': context.listenerPronouns = scalar; break
+      case 'scene': context.scene = scalar; break
+      case 'conversationId': context.conversationId = scalar; break
+      case 'dialogueId': context.dialogueId = scalar; break
+      case 'nodeId': context.nodeId = scalar; break
+      case 'choiceGroup': context.choiceGroup = scalar; break
+      case 'voice': context.voice = scalar; break
+      case 'portrait': context.portrait = scalar; break
     }
   }
+  Object.assign(context, normalizeDialogueRoles(dialogueFields))
 
-  // Resolve names/ids against the character database. An ID is ONLY set from
-  // the character record's own `id` — a display name is never promoted to an ID.
-  if (characterDb && characterDb.size > 0) {
-    const speakerKey = speakerId ?? speakerName
-    if (speakerKey !== undefined) {
-      const c = characterDb.get(speakerKey)
-      if (c) {
-        if (c.name) speakerName = c.name
-        if (c.id) speakerId = c.id
-        if (speakerGender === undefined && c.gender) speakerGender = normalizeGender(c.gender)
-      }
-    }
-    const listenerKey = listenerId ?? listenerName
-    if (listenerKey !== undefined) {
-      const c = characterDb.get(listenerKey)
-      if (c) {
-        if (c.name) listenerName = c.name
-        if (c.id) listenerId = c.id
-        if (listenerGender === undefined && c.gender) listenerGender = normalizeGender(c.gender)
+  // Retain supported bare-gender evidence only for an actual speaker and only
+  // when the user has not remapped/ignored that field.
+  if (context.speaker && context.speakerGender === undefined) {
+    for (const [field, value] of Object.entries(record)) {
+      if (!mappingByField.has(field.trim()) && /^(gender|sex)$/u.test(normalizeContextFieldName(field)) && contextScalar(value) !== undefined) {
+        context.speakerGender = normalizeGender(value)
+        context.speakerGenderProvenance = explicitField('high')
       }
     }
   }
 
-  context.speaker = speakerName
-  context.speakerId = speakerId
-  context.listener = listenerName
-  context.listenerId = listenerId
-  context.listeners = listeners
-  context.listenerIds = listenerIds
-  context.speakerGender = speakerGender
-  context.listenerGender = listenerGender
-  context.speakerPronouns = speakerPronouns
-  context.listenerPronouns = listenerPronouns
-
-  const hasAny = Object.entries(context).some(([k, v]) => k !== 'raw' && v !== undefined)
-  if (!hasAny && Object.keys(raw).length === 0) return undefined
-
-  if (Object.keys(raw).length > 0) context.raw = raw
+  // Character-table evidence fills missing fields; a good explicit display
+  // name or explicit gender is never replaced by a database lookup.
+  for (const side of ['speaker', 'listener'] as const) {
+    const idKey = side === 'speaker' ? 'speakerId' : 'listenerId'
+    const genderKey = side === 'speaker' ? 'speakerGender' : 'listenerGender'
+    const genderProvenance = side === 'speaker' ? 'speakerGenderProvenance' : 'listenerGenderProvenance'
+    const key = context[idKey] ?? context[side]
+    if (side === 'listener' && context.listeners?.length) continue
+    const character = key ? characterDb?.get(key) : undefined
+    if (!character) continue
+    if (character.name && (!context[side] || context[side] === key)) context[side] = character.name
+    context[idKey] ??= character.id
+    if (context[genderKey] === undefined && character.gender !== undefined) {
+      context[genderKey] = normalizeGender(character.gender)
+      context[genderProvenance] = explicitField('high')
+    }
+  }
+  const hasAny = Object.values(context).some((value) => value !== undefined)
+  if (!hasAny && !Object.keys(raw).length) return undefined
+  if (Object.keys(raw).length) context.raw = raw
   return context
 }
 
@@ -585,7 +361,7 @@ export function detectContextFields(
         bump(fieldName, highRole, 'high', typeof value === 'string' ? value : undefined)
         continue
       }
-      const suggested = MEDIUM_ROLE_SUGGESTIONS[normalized]
+      const suggested = Object.hasOwn(MEDIUM_ROLE_SUGGESTIONS, normalized) ? MEDIUM_ROLE_SUGGESTIONS[normalized] : undefined
       if (suggested) {
         bump(fieldName, suggested, 'medium', typeof value === 'string' ? value : undefined)
       }
@@ -628,7 +404,7 @@ export function inspectUnmappedFields(
       if (typeof value !== 'string') continue
       const normalized = normalizeContextFieldName(fieldName)
       if (highConfidenceRole(normalized)) continue
-      if (MEDIUM_ROLE_SUGGESTIONS[normalized]) continue
+      if (Object.hasOwn(MEDIUM_ROLE_SUGGESTIONS, normalized)) continue
       if (exclude.has(fieldName)) continue
 
       let item = acc.get(fieldName)

@@ -1,6 +1,5 @@
 import type { LocalizationParseResult, ParsedLocalizationDocument } from './types'
-import { normalizeContextFieldName } from './contextDetection'
-import { normalizeGender } from '../extraction/contextInference'
+import { detectDialogueContext, normalizeContextFieldName } from './contextDetection'
 
 function decodeQuoted(value: string): string { try { return JSON.parse(value) as string } catch { return '' } }
 
@@ -14,30 +13,19 @@ function decodeQuoted(value: string): string { try { return JSON.parse(value) as
  *   #. Scene: School Hallway
  */
 function contextFromComments(comments: string[]): ParsedLocalizationDocument['entries'][number]['dialogueContext'] {
-  const context: NonNullable<ParsedLocalizationDocument['entries'][number]['dialogueContext']> = {}
+  const fields: Record<string, unknown> = {}
   for (const comment of comments) {
     const label = comment.replace(/^#(?:[.:,| ])*\s*/u, '').trim()
-    const match = label.match(/^(Speaker Gender|Listener Gender|Speaker|Listener|Gender|Scene|Conversation|Dialogue|Node|Choice|Voice|Portrait)\s*[:=]\s*(.+)$/iu)
+    const match = label.match(/^([A-Za-z][A-Za-z _-]*)\s*[:=]\s*(.+)$/u)
     if (!match) continue
     const key = normalizeContextFieldName(match[1])
     const value = match[2].trim()
-    switch (key) {
-      case 'speaker': context.speaker = value; break
-      case 'listener': context.listener = value; break
-      case 'speaker_gender': context.speakerGender = normalizeGender(value); break
-      case 'listener_gender': context.listenerGender = normalizeGender(value); break
-      case 'gender': context.speakerGender = normalizeGender(value); break
-      case 'scene': context.scene = value; break
-      case 'conversation': context.conversationId = value; break
-      case 'dialogue': context.dialogueId = value; break
-      case 'node': context.nodeId = value; break
-      case 'choice': context.choiceGroup = value; break
-      case 'voice': context.voice = value; break
-      case 'portrait': context.portrait = value; break
-    }
+    // Retain PO's established short labels; role aliases use shared detection.
+    const field = key === 'dialogue' ? 'dialogue_id' : key === 'choice' ? 'choice_group' : key === 'gender' ? 'speaker_gender' : key
+    fields[field] = value
   }
-  const hasAny = Object.entries(context).some(([k, v]) => k !== 'raw' && v !== undefined)
-  return hasAny ? context : undefined
+  const context = detectDialogueContext(fields)
+  return context && Object.entries(context).some(([key, value]) => key !== 'raw' && value !== undefined) ? context : undefined
 }
 
 function parseBlock(block: string, index: number) {

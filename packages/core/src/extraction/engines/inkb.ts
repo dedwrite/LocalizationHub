@@ -39,20 +39,20 @@ import { detectGodotInkbLocale, GODOT_NATIVE_FALLBACK_LOCALE } from '../godotLoc
 import type {
   ExtractedEntry,
   ExtractionResult,
+  EntryContext,
 } from '../types'
 import { buildEntry, toProtectedSegments } from './shared'
-import { explicitField, structuralInference } from '../provenance'
-import { recognizeContextField } from '../contextInference'
+import { structuralInference } from '../provenance'
+import { inferContextFromRecord } from '../contextInference'
+import { recognizeDialogueRole } from '../../dialogueRoles'
 
 export type InkbStoryType = 'scene' | 'dialogue' | 'chat'
 
-export type InkbMetadata = {
+export type InkbMetadata = Pick<EntryContext, 'listener' | 'listeners' | 'listenerId' | 'listenerGender' | 'listenerGenders' | 'listenerProvenance' | 'listenerGenderProvenance'> & {
   type: InkbStoryType
   /* display name → character id (e.g. "Mark" → "MarkBorja") */
   characters: Record<string, string>
   player?: string
-  listener?: string
-  listeners?: string[]
   hasExplicitListener?: boolean
 }
 
@@ -73,10 +73,14 @@ const METADATA_HEADER_PATTERN = /^[A-Za-z_][A-Za-z0-9_.-]*\s*:\s*["{]/u
 
 function isMetadataHeader(str: string): boolean {
   if (METADATA_HEADER_PATTERN.test(str)) return true
-  const arrayHeader = str.match(/^([A-Za-z_][A-Za-z0-9_.-]*)\s*:\s*\[/u)
+  return Boolean(listenerHeader(str))
+}
+
+function listenerHeader(str: string): RegExpMatchArray | undefined {
+  const field = str.match(/^([A-Za-z_][A-Za-z0-9_. -]*)\s*:\s*(.+)$/su)
   // Dialogue also starts with [.] / [..] / [$cmd]; only known listener
   // fields can be array-valued metadata, never an arbitrary speaker line.
-  return Boolean(arrayHeader && recognizeContextField(arrayHeader[1]) === 'listener')
+  return field && recognizeDialogueRole(field[1])?.startsWith('listener') ? field : undefined
 }
 
 /* Click-to-reveal text: [:text] — the inner text is translatable. */
@@ -134,7 +138,8 @@ export function readInkbTextStrings(buffer: Uint8Array): string[] {
  */
 export function parseInkbMetadata(strings: string[]): InkbMetadata {
   const metadata: InkbMetadata = { type: 'scene', characters: {} }
-  const explicitListeners: string[] = []
+  const listenerFields: Record<string, unknown> = {}
+  let malformedListener = false
 
   for (const str of strings) {
     if (str.startsWith('$')) break
@@ -158,23 +163,22 @@ export function parseInkbMetadata(strings: string[]): InkbMetadata {
       }
       continue
     }
-    const fieldMatch = str.match(/^([A-Za-z_][A-Za-z0-9_.-]*)\s*:\s*(.+)$/su)
-    if (fieldMatch && recognizeContextField(fieldMatch[1]) === 'listener') {
-      metadata.hasExplicitListener = true
+    const fieldMatch = listenerHeader(str)
+    if (fieldMatch) {
       try {
         const value: unknown = JSON.parse(fieldMatch[2])
-        const values = Array.isArray(value) ? value : [value]
-        for (const target of values) {
-          if (typeof target === 'string' && target.trim()) explicitListeners.push(target)
-        }
-      } catch { /* Retain the explicit-field flag so inference stays disabled. */ }
+        listenerFields[fieldMatch[1]] = value
+        if (value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length
+          && !inferContextFromRecord({ [fieldMatch[1]]: value }).context.listener) malformedListener = true
+      } catch { malformedListener = true }
     }
     // Other header keys (name, color, character_props, ...) are ignored.
     if (/^[A-Za-z_][A-Za-z0-9_.-]*\s*:/u.test(str)) continue
   }
 
-  if (explicitListeners.length === 1) metadata.listener = explicitListeners[0]
-  else if (explicitListeners.length > 1) metadata.listeners = [...new Set(explicitListeners)]
+  const listenerContext = inferContextFromRecord(listenerFields).context
+  Object.assign(metadata, listenerContext)
+  metadata.hasExplicitListener = Boolean(listenerContext.listener || listenerContext.listeners?.length || listenerContext.listenerId || malformedListener)
   return metadata
 }
 
@@ -190,7 +194,7 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
   const metadata = parseInkbMetadata(strings)
   const explicitListenerCharacters = Object.entries(metadata.characters).filter(([name, id]) =>
     typeof id === 'string' && id.trim() && (name === metadata.listener || id === metadata.listener))
-  const explicitListenerId = explicitListenerCharacters.length === 1 ? explicitListenerCharacters[0][1] : undefined
+  const explicitListenerId = metadata.listenerId ?? (explicitListenerCharacters.length === 1 ? explicitListenerCharacters[0][1] : undefined)
 
   // Culture-independent story identity: strip `locales/<culture>/` so locale
   // variants of the same story share one logical identity.
@@ -257,11 +261,14 @@ export function extractInkb(fileName: string, buffer: Uint8Array): ExtractionRes
       context: {
         speaker,
         speakerId: characterId,
-        ...(speaker && !isThought && spokenTurn && (metadata.listener || metadata.listeners?.length) ? {
+        ...(speaker && !isThought && spokenTurn ? {
           listener: metadata.listener,
           listeners: metadata.listeners,
           listenerId: explicitListenerId,
-          listenerProvenance: explicitField('high'),
+          listenerProvenance: metadata.listenerProvenance,
+          listenerGender: metadata.listenerGender,
+          listenerGenders: metadata.listenerGenders,
+          listenerGenderProvenance: metadata.listenerGenderProvenance,
         } : {}),
         conversationId,
         scene: storyId,
@@ -456,7 +463,7 @@ export function inferInkbListeners(spokenDialogue: ExtractedEntry[], metadata: I
     context.listener = listener.name
     context.listenerId = listener.id
     context.listenerProvenance = structuralInference('medium')
-    // INKB has no supported explicit gender field; names supply no evidence.
+    // Inference never supplies gender; only explicit metadata may carry it.
   }
 }
 

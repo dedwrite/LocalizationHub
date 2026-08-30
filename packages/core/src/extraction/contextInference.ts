@@ -10,18 +10,16 @@
 import type {
   EntryContext,
   FieldProvenance,
-  GenderValue,
 } from './types'
+import { normalizeDialogueRoles, normalizeGender, recognizeDialogueRole, type DialogueRole, type DialogueRoleField } from '../dialogueRoles'
+export { normalizeGender } from '../dialogueRoles'
 import {
   explicitField,
   userMapped,
 } from './provenance'
 
 export type ContextFieldRole =
-  | 'speaker'
-  | 'listener'
-  | 'speakerGender'
-  | 'listenerGender'
+  | DialogueRole
   | 'grammaticalGender'
   | 'scene'
   | 'conversationId'
@@ -47,11 +45,8 @@ export type ContextFieldMapping = {
   role: ContextFieldRole
 }
 
-const ALIASES: Record<ContextFieldRole, RegExp> = {
-  speaker: /^(speaker|speaker_id|speakerid|talker|actor|actor_id|actorid|character|character_id|characterid|charactername|character_name|owner|from|sourceactor|who)$/iu,
-  listener: /^(listener|listeners|listener_id|listenerid|target|targets|recipient|recipients|to|directedat|directed_at|audience|target_actor|targetactor)$/iu,
-  speakerGender: /^(gender|sex|grammaticalgender|grammatical_gender|speakergender|speaker_gender|sex_code)$/iu,
-  listenerGender: /^(listenergender|listener_gender|targetgender|target_gender|audiencegender)$/iu,
+const ALIASES: Partial<Record<ContextFieldRole, RegExp>> = {
+  speakerGender: /^(gender|sex|sexcode|sex_code)$/iu,
   grammaticalGender: /^(grammaticalgender|grammatical_gender|gramgender)$/iu,
   scene: /^(scene|scene_ref|sceneref|location|chapter|level|act)$/iu,
   conversationId: /^(conversation|conversationid|conversation_id|dialogue|dialogueid|dialogue_id|sequence)$/iu,
@@ -76,6 +71,9 @@ const ALIASES: Record<ContextFieldRole, RegExp> = {
 export function recognizeContextField(
   fieldName: string,
 ): ContextFieldRole | undefined {
+  const dialogueRole = recognizeDialogueRole(fieldName)
+  if (dialogueRole) return dialogueRole
+  // Non-participant aliases retain their existing compatibility rules.
   const normalized = fieldName.trim()
   for (const [role, pattern] of Object.entries(ALIASES)) {
     // "ignore" is never auto-recognized; it is only assigned by user mapping.
@@ -85,19 +83,6 @@ export function recognizeContextField(
     }
   }
   return undefined
-}
-
-export function normalizeGender(
-  value: unknown,
-): GenderValue {
-  if (value == null) return 'unknown'
-  const text = String(value).trim().toLowerCase()
-  if (text === '') return 'unknown'
-  if (/^(m|male|masculine|he|him|0)$/u.test(text)) return 'male'
-  if (/^(f|female|feminine|she|her|1)$/u.test(text)) return 'female'
-  if (/^(n|neutral|neuter|they|them|2|other)$/u.test(text)) return 'neutral'
-  if (text === 'unknown' || text === 'none') return 'unknown'
-  return 'custom'
 }
 
 /*
@@ -139,8 +124,7 @@ export function inferContextFromRecord(
   const context: EntryContext = {}
   const translatableFields: Array<{ field: string; role: ContextFieldRole }> = []
 
-  const listeners: string[] = []
-  const listenerGenders: GenderValue[] = []
+  const dialogueFields: DialogueRoleField[] = []
 
   for (const [fieldName, value] of Object.entries(record)) {
     if (value == null) continue
@@ -148,25 +132,13 @@ export function inferContextFromRecord(
     if (!resolved) continue
 
     const { role, provenance: prov } = resolved
+    if (['speaker', 'speakerId', 'listener', 'listeners', 'listenerId', 'listenerIds', 'speakerGender', 'listenerGender'].includes(role)) {
+      dialogueFields.push({ role: role as DialogueRole, value, provenance: prov })
+      continue
+    }
     const text = String(value)
 
     switch (role) {
-      case 'speaker':
-        context.speaker = text
-        context.speakerProvenance = prov
-        break
-      case 'listener':
-        listeners.push(text)
-        context.listenerProvenance = prov
-        break
-      case 'speakerGender':
-        context.speakerGender = normalizeGender(value)
-        context.speakerGenderProvenance = prov
-        break
-      case 'listenerGender':
-        listenerGenders.push(normalizeGender(value))
-        context.listenerGenderProvenance = prov
-        break
       case 'grammaticalGender':
         context.grammaticalGender = normalizeGender(value)
         break
@@ -213,17 +185,8 @@ export function inferContextFromRecord(
     }
   }
 
-  if (listeners.length === 1) {
-    context.listener = listeners[0]
-  } else if (listeners.length > 1) {
-    context.listeners = listeners
-  }
-
-  if (listenerGenders.length === 1) {
-    context.listenerGender = listenerGenders[0]
-  } else if (listenerGenders.length > 1) {
-    context.listenerGenders = listenerGenders
-  }
+  const { listenerIds: _pluralIds, ...dialogue } = normalizeDialogueRoles(dialogueFields)
+  Object.assign(context, dialogue) // EntryContext has no plural ID field.
 
   return { context, translatableFields }
 }

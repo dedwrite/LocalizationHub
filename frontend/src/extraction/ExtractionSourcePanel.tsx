@@ -44,12 +44,12 @@ export default function ExtractionSourcePanel({ entryId, metadata }: Props) {
         </dl>
       </section>
 
-      {context && (context.speaker || context.listener || context.scene || context.developerNote) && (
+      {context && (context.speaker || context.listener || context.listeners?.length || context.scene || context.developerNote) && (
         <section className="ex-section">
           <h3 className="ex-heading">Context</h3>
           <dl className="ex-detail">
             {context.speaker && <><dt>Speaker</dt><dd>{context.speaker}</dd></>}
-            {context.listener && <><dt>Listener</dt><dd>{context.listener}</dd></>}
+            {context.listener && <><dt>Listener</dt><dd>{context.listener}{context.listenerGender && context.listenerGender !== 'unknown' ? ` (${context.listenerGender})` : ''}</dd></>}
             {context.listeners && context.listeners.length > 0 && <><dt>Listeners</dt><dd>{context.listeners.join(', ')}</dd></>}
             {context.speakerGender && context.speakerGender !== 'unknown' && <><dt>Speaker gender</dt><dd>{context.speakerGender}</dd></>}
             {context.scene && <><dt>Scene</dt><dd>{context.scene}</dd></>}

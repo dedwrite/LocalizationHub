@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractProtectedTokens, type EntryContext, type TokenProfileId } from '@localizationhub/core'
+import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
 
@@ -50,7 +50,7 @@ function ProtectedSource({ text, profileId }: { text: string; profileId: TokenPr
  * Compact context strip for the translator: only the fields that are present,
  * never guessed values.
  */
-function DialogueContextStrip({ context }: { context: any }) {
+export function DialogueContextStrip({ context }: { context: EntryContext | ParsedDialogueContext }) {
   const { t } = useI18n()
   const genderKeys: Record<string, MessageKey> = {
     male: 'workspace.context.male', female: 'workspace.context.female', neutral: 'workspace.context.neutral',
@@ -61,7 +61,9 @@ function DialogueContextStrip({ context }: { context: any }) {
   if (context.speaker) {
     parts.push(<span key="speaker">{t('extraction.context.speaker')} <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
   }
-  if (context.listener) {
+  if (context.listeners?.length) {
+    parts.push(<span key="listeners">→ {t('extraction.source.listeners')}: {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
+  } else if (context.listener) {
     parts.push(<span key="listener">→ {t('extraction.context.listener')} <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
   }
   if (context.scene) parts.push(<span key="scene">{t('extraction.context.scene')} <bdi>{context.scene}</bdi></span>)
@@ -90,6 +92,7 @@ export default function EditorPanel(props: EditorPanelProps) {
     listeners: dialogueContext?.listeners,
     speakerGender: dialogueContext?.speakerGender,
     listenerGender: dialogueContext?.listenerGender,
+    listenerGenders: dialogueContext?.listenerGenders,
     scene: dialogueContext?.scene,
     conversationId: dialogueContext?.conversationId,
   }

@@ -3,7 +3,7 @@
  *
  * Pins the precision-safety behaviours required by the corrective pass:
  *   - custom-field Context Mapping (char_from/char_to/body → speaker/listener/text)
- *   - aggressive aliases (who/location/chapter/level/act/sprite/avatar) are
+ *   - ambiguous aliases (location/chapter/level/act/sprite/avatar) are
  *     MEDIUM confidence (suggested, NOT auto-applied)
  *   - stable ID vs display-name semantics (name is never promoted to an ID)
  *   - speaker/listener pronouns + multiple listeners
@@ -57,7 +57,7 @@ describe('custom-field Context Mapping', () => {
 })
 
 describe('aggressive aliases are MEDIUM (not auto-applied)', () => {
-  it('does NOT auto-map who/location/chapter/level/act/sprite/avatar', () => {
+  it('auto-maps the approved who alias but keeps location/chapter/level/act/sprite/avatar for review', () => {
     const ctx = detectDialogueContext({
       who: 'Mark',
       location: 'Hall',
@@ -68,7 +68,7 @@ describe('aggressive aliases are MEDIUM (not auto-applied)', () => {
       avatar: 'mark.png',
       text: 'hi',
     })
-    expect(ctx?.speaker).toBeUndefined()
+    expect(ctx?.speaker).toBe('Mark')
     expect(ctx?.scene).toBeUndefined()
     expect(ctx?.portrait).toBeUndefined()
     // But the values are preserved as raw for mapping review.
@@ -81,7 +81,7 @@ describe('aggressive aliases are MEDIUM (not auto-applied)', () => {
     const who = fields.find((f) => f.field === 'who')
     const location = fields.find((f) => f.field === 'location')
     expect(who?.role).toBe('speaker')
-    expect(who?.confidence).toBe('medium')
+    expect(who?.confidence).toBe('high')
     expect(location?.role).toBe('scene')
     expect(location?.confidence).toBe('medium')
   })

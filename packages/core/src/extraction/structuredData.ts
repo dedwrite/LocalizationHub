@@ -16,6 +16,7 @@ import {
   type ContextFieldMapping,
 } from './contextInference'
 import { mergeCustomProtectedSegments } from './engines/shared'
+import { participantObject } from '../dialogueRoles'
 import type {
   EntryClassification,
   ExtractedEntry,
@@ -238,6 +239,7 @@ export function walkStructuredData(
     order?: { value: number }
     maxDepth?: number
     forceFlatLeaves?: boolean
+    mappings?: ContextFieldMapping[]
   },
 ): void {
   const path = options.path ?? []
@@ -262,6 +264,13 @@ export function walkStructuredData(
     // Descend into nested objects/arrays so deep structures (Unity type
     // trees, nested dialogue databases, UAsset property trees) are reached.
     for (const [key, child] of Object.entries(value)) {
+      // Simple participant objects belong to the parent record's context,
+      // not a second set of translatable name/gender rows.
+      const role = resolveFieldRole(key, options.mappings)?.role
+      if (role && ['speaker', 'speakerId', 'listener', 'listeners', 'listenerId', 'listenerIds'].includes(role)) {
+        if (participantObject(child)) continue
+        if (Array.isArray(child) && child.every((item) => item == null || typeof item !== 'object' || participantObject(item))) continue
+      }
       if (isObject(child) || Array.isArray(child)) {
         walkStructuredData(child, {
           ...options,

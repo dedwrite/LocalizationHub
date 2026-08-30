@@ -82,6 +82,11 @@ export type ParsedDialogueContext = {
 
   speakerGender?: string
   listenerGender?: string
+  listenerGenders?: string[]
+  speakerProvenance?: import('../extraction/types').FieldProvenance
+  listenerProvenance?: import('../extraction/types').FieldProvenance
+  speakerGenderProvenance?: import('../extraction/types').FieldProvenance
+  listenerGenderProvenance?: import('../extraction/types').FieldProvenance
 
   /*
    * Explicit pronouns (e.g. "he/him", "she/her"). Never inferred.

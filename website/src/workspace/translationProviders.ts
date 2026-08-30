@@ -164,6 +164,7 @@ export function buildTranslationContext(context?: {
   listeners?: string[]
   speakerGender?: string
   listenerGender?: string
+  listenerGenders?: string[]
   scene?: string
   conversationId?: string
   previous?: string
@@ -175,7 +176,10 @@ export function buildTranslationContext(context?: {
   const gender = (g: string | undefined) => (g && g !== 'unknown' && g !== '' ? ` (${g})` : '')
   if (context.speaker) parts.push(`Speaker: ${context.speaker}${gender(context.speakerGender)}`)
   const listeners = context.listeners?.length ? context.listeners : (context.listener ? [context.listener] : [])
-  if (listeners.length > 0) parts.push(`Listener: ${listeners.join(', ')}${gender(context.listenerGender)}`)
+  if (listeners.length > 0) {
+    const labels = listeners.map((name, index) => name + gender(listeners.length === 1 ? context.listenerGender : context.listenerGenders?.length === listeners.length ? context.listenerGenders[index] : undefined))
+    parts.push(`Listener: ${labels.join(', ')}`)
+  }
   if (context.scene) parts.push(`Scene: ${context.scene}`)
   if (context.conversationId) parts.push(`Conversation: ${context.conversationId}`)
   if (context.previous) parts.push(`Previous: ${context.previous}`)

@@ -193,6 +193,7 @@ function extractUnrealStructuredJson(fileName: string, text: string, mappings: A
     walkStructuredData(parsed, {
       onRecord: (record) => extract(record.record, record.path),
       order,
+      mappings,
     })
   }
 
