@@ -26,7 +26,7 @@ it('Web Local, Web Cloud and Desktop preserve Sofia/KuyaGrab and explicit listen
   const local = normalizeLocalProject(projectFromLocalDocument(parsed.document, 'roles.json'), 'roles.json')
   expect(local.entries[0].dialogueContext).toMatchObject({ speaker: 'Sofia', speakerGender: 'female', listener: 'KuyaGrab', listenerGender: 'male' })
   expect(local.entries[1].dialogueContext).toMatchObject({ listeners: ['Mark', 'Ali'], listenerGenders: ['male', 'male'] })
-  const web = decodeCloudProject({ id: 'synthetic', name: 'Roles', role: 'owner', revision: 1, project: local })
+  const web = decodeCloudProject({ id: 'synthetic', name: 'Roles', role: 'owner', revision: 1, updatedAt: '2026-08-30T00:00:00Z', project: local })
   expect(web.project.entries).toEqual(local.entries)
   const directory = await mkdtemp(join(tmpdir(), 'lh-local-parity-'))
   const path = join(directory, 'roles.lhproj')

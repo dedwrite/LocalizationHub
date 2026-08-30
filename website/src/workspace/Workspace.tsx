@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { deleteProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
 import ProjectDeleteDialog from '../../../frontend/src/ProjectDeleteDialog'
 import { createTokenProfileConfig, displayTokenProfile, TOKEN_PROFILE_LABELS, updateTokenProfileConfig, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
@@ -79,6 +79,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   const autosaveTimer = useRef<any>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const leaveAction = useRef<(() => void) | null>(null)
+  const selectedRef = useRef(selected)
+  useLayoutEffect(() => { selectedRef.current = selected }, [selected])
 
   const tokenProfileConfig: TokenProfileConfig = draft?.tokenProfileConfig ?? createTokenProfileConfig(draft?.tokenProfile ?? 'generic', draft?.engineDetection)
   const tokenProfileId = tokenProfileConfig.resolvedProfile
@@ -206,7 +208,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     setSaveState('saving')
 
     const toSave = structuredClone(draftRef.current)
-    if (local) toSave.selectedEntryId = toSave.entries[selected]?.id ?? null
+    if (local) toSave.selectedEntryId = toSave.entries[selectedRef.current]?.id ?? null
     const baseRevision = snapshotRef.current.revision
     const versionAtSave = editVersionRef.current
 
@@ -238,10 +240,10 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       setNotice(local ? 'Could not save to this browser. Keep this view open and export a backup before retrying.' : (failure as any)?.code === 'revision-conflict' ? 'This project changed elsewhere. Reload before saving.' : failure instanceof Error ? failure.message : 'Save failed.')
     } finally {
       savingRef.current = false
-      if (dirtyRef.current && pendingSaveRef.current) {
+      if (pendingSaveRef.current) {
         pendingSaveRef.current = false
         if (local) void flushSave() // A second explicit Save, not local autosave.
-        else scheduleAutosave()
+        else if (dirtyRef.current) scheduleAutosave()
       }
     }
   }
@@ -306,7 +308,9 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   }, [selected, entries])
 
   // Keyboard shortcuts
-  useEffect(() => {
+  // Install the committed handler before paint: a key immediately after import
+  // or navigation must not see the previous render's read-only/selection state.
+  useLayoutEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement
       const typing = target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.tagName === 'SELECT'

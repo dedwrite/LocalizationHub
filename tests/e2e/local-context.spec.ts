@@ -10,6 +10,7 @@ for (const [index, example] of examples.entries()) for (const locale of ['en', '
   await page.locator('input[type="file"]').setInputFiles({ name: 'roles.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify([example.record])) })
   await page.locator('.lh-language-switcher select').selectOption(locale)
   await expect(page.locator('.dialogue-context-strip')).toHaveText(example[locale])
+  await page.locator('.translation-editor').focus()
   await page.keyboard.press('Control+s')
   await expect(page.getByRole('status')).toContainText(locale === 'en' ? 'Saved to this browser.' : 'حُفظ في هذا المتصفح.')
   await page.reload()

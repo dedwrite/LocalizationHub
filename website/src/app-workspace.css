@@ -36,7 +36,5 @@
 body:has(.workspace-shell) .lh-language-switcher { inset-block-start: 10px; }
 .workspace-page.workspace-shell .workspace-toolbar { padding-inline-end: 132px; }
 .mob-workspace .mob-header { margin-bottom: 36px; }
-@media (min-width: 769px) and (max-width: 1100px) {
-  .workspace-shell .editor-footer.local-entry-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .workspace-shell .local-entry-navigation .editor-hint { grid-row: 3; grid-column: 1 / -1; text-align: center; }
-}
+.workspace-shell .editor-footer.local-entry-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workspace-shell .local-entry-navigation .editor-hint { grid-column: 1 / -1; text-align: center; }

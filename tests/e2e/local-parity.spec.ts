@@ -122,6 +122,9 @@ test('local MT is explicit, sends only current text/context, and never saves to 
 })
 
 test('Local workspace responsive RTL, token errors, keyboard focus and accessibility', async ({ page }, testInfo) => {
+  // This test performs an axe scan and full-page capture for each locale/size,
+  // unlike the single interaction cases. Leave WebKit enough capture time.
+  test.setTimeout(60_000)
   const widths = testInfo.project.name === 'desktop' ? [1440, 1280] : [page.viewportSize()!.width]
   await openLocal(page)
   for (const width of widths) for (const locale of ['en', 'ar']) {
@@ -134,10 +137,15 @@ test('Local workspace responsive RTL, token errors, keyboard focus and accessibi
     await expect(page.locator('.source-text')).toHaveAttribute('dir', 'ltr')
     await expect(page.locator('.inline-qa')).toContainText(locale === 'ar' ? 'الرمز المحمي المفقود' : 'Missing protected token')
     await expect(page.locator('.source-token-list code')).toHaveCount(2)
+    await expect(page.locator('.source-section .section-label')).toHaveText(locale === 'ar' ? 'المرجع المصدر' : 'REFERENCE Source')
+    await expect(page.locator('.translation-section .section-label')).toHaveText(locale === 'ar' ? 'نسخة العمل الترجمة' : 'WORKING COPY Translation')
     const result = await new AxeBuilder({ page }).analyze()
     expect(result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([])
     await page.screenshot({ path: testInfo.outputPath(`local-${width}-${locale}.png`), fullPage: true })
   }
+  await page.locator('.lh-language-switcher select').selectOption('en')
+  await expect(page.locator('.source-section .section-label')).toHaveText('REFERENCE Source')
+  await expect(page.locator('.translation-section .section-label')).toHaveText('WORKING COPY Translation')
 })
 
 test('browser Back protects a fresh unsaved local import', async ({ page }) => {

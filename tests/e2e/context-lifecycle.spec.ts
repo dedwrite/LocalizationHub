@@ -28,6 +28,17 @@ async function fillImport(page: Page, name: string) {
   await page.locator('input[type="file"]').setInputFiles({ name: 'caloy-mark.json', mimeType: 'application/json', buffer: Buffer.from(text) })
 }
 
+function metadataReady(page: Page, id: string) {
+  // SPA navigation may retain an already-fired `networkidle` load state.
+  // Await the actual new revision's reads, not that historic document event.
+  return Promise.all(['members', 'assignments', 'comments-summary'].map((suffix) =>
+    page.waitForResponse((response) => {
+      const url = new URL(response.url())
+      return response.request().method() === 'GET' && url.pathname.startsWith(`/api/projects/${id}/`) && url.pathname.endsWith(`/${suffix}`)
+    }).then(async (response) => { expect(response.status()).toBe(200); await response.finished() }),
+  ))
+}
+
 test.beforeAll(async () => {
   const reservation = createServer()
   await new Promise<void>((resolve) => reservation.listen(0, '127.0.0.1', resolve))
@@ -78,6 +89,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   expect(snapshot.project.entries[0].dialogueContext).toEqual(body.project.entries[0].dialogueContext)
   await expect.poll(() => persisted.find((row) => row.id === id)?.project.entries[0].dialogueContext).toEqual(body.project.entries[0].dialogueContext)
   const loaded = page.waitForResponse((response) => response.request().method() === 'GET' && new URL(response.url()).pathname === `/api/projects/${id}`)
+  const initialMetadata = metadataReady(page, id)
   await page.getByRole('button', { name: `Open ${name}`, exact: true }).click()
   const fetched = (await (await loaded).json()).project
   expect(fetched.project.entries[0].dialogueContext).toEqual(body.project.entries[0].dialogueContext)
@@ -89,8 +101,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   await page.locator('.lh-language-switcher select').selectOption(locale)
   const visible = locale === 'en' ? 'Speaker: Caloy (male) · → Listener: Mark (male) · Scene: 4/Assembly.1d.inkb' : 'المتحدث: Caloy (ذكر) · → المستمع: Mark (ذكر) · المشهد: 4/Assembly.1d.inkb'
   await expect(page.locator('.dialogue-context-strip')).toHaveText(visible)
-  // Let the real metadata reads settle before reloading. WebKit reports
-  // interrupted same-origin fetches as access-control page errors on teardown.
+  await initialMetadata
   await page.waitForLoadState('networkidle')
   await page.reload()
   if (locale === 'ar') await page.locator('.lh-language-switcher select').selectOption('en')
@@ -104,6 +115,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   expect(instruction).toContain('Speaker: Caloy (male) | Listener: Mark (male) | Scene: 4/Assembly.1d.inkb')
   await page.locator('.lh-language-switcher select').selectOption('en')
   const saved = page.waitForResponse((response) => response.request().method() === 'PUT' && new URL(response.url()).pathname === `/api/projects/${id}`)
+  const savedMetadata = metadataReady(page, id)
   const translation = '[shake rate=32 level=8]ترجمة اختبارية.[/shake]'
   await page.getByLabel('Translation', { exact: true }).fill(translation)
   await page.keyboard.press('Control+s')
@@ -111,6 +123,7 @@ test(`real import -> HTTP persistence -> GET -> Workspace -> MT in ${locale}`, a
   expect(savedResponse.status()).toBe(200)
   expect((await savedResponse.json()).project.project.entries[0].dialogueContext).toEqual(body.project.entries[0].dialogueContext)
   await expect.poll(() => persisted.filter((row) => row.id === id).at(-1)?.project.entries[0].translation).toBe(translation)
+  await savedMetadata
   await page.waitForLoadState('networkidle')
   await page.reload()
   await openEditor(page)

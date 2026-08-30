@@ -185,7 +185,7 @@ export default function EditorPanel(props: EditorPanelProps) {
         <div className="editor-content-column">
         <section className="source-section">
           <div className="section-label-row">
-            <span className="section-label"><small>REFERENCE</small> Source</span>
+            <span className="section-label" data-i18n-skip><small>{t('workspace.reference')}</small> {t('workspace.source')}</span>
             <button className="link-button" onClick={copySource} title="Copy source">{copied ? 'Copied' : 'Copy'}</button>
           </div>
           <div className="source-text" dir={sourceDirection} data-i18n-content>
@@ -203,7 +203,7 @@ export default function EditorPanel(props: EditorPanelProps) {
 
         <section className="translation-section">
           <div className="section-label-row">
-            <span className="section-label translation-label"><small>WORKING COPY</small> Translation</span>
+            <span className="section-label translation-label" data-i18n-skip><small>{t('workspace.workingCopy')}</small> {t('workspace.translation')}</span>
             {!writable && <span className="readonly-badge">Read only</span>}
           </div>
           <textarea
@@ -251,11 +251,12 @@ export default function EditorPanel(props: EditorPanelProps) {
       </div>
 
       <div className={`editor-footer ${props.local ? 'local-entry-navigation' : ''}`}>
-        {mobile && props.local ? <>
+        {props.local ? <>
           <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>
           <button className="nav-button" onClick={onNext} disabled={position >= total - 1}>Next</button>
           <button className="nav-button" onClick={onPrevUntranslated}>Previous Untranslated</button>
           <button className="nav-button nav-primary" onClick={onNextUntranslated}>Next Untranslated</button>
+          {!mobile && <span className="editor-hint">Ctrl+S save · Alt+↓/↑ navigate</span>}
         </> : mobile ? (
           <>
             <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>
@@ -264,11 +265,9 @@ export default function EditorPanel(props: EditorPanelProps) {
           </>
         ) : (
           <>
-            {props.local && <button className="nav-button" onClick={onPrev} disabled={position <= 0}>Previous</button>}
             <button className="nav-button" onClick={onPrevUntranslated} disabled={!writable}>Previous Untranslated</button>
             <span className="editor-hint">Ctrl+S save · Alt+↓/↑ navigate</span>
             <button className="nav-button nav-primary" onClick={onNextUntranslated} disabled={!writable}>Next Untranslated</button>
-            {props.local && <button className="nav-button" onClick={onNext} disabled={position >= total - 1}>Next</button>}
           </>
         )}
       </div>
