@@ -1,6 +1,6 @@
 {
   "name": "localizationhub",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "LocalizationHub is a collaborative localization workspace designed for game translation teams.",
   "main": "index.js",
   "scripts": {

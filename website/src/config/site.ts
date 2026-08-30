@@ -1,9 +1,9 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.1',
-  releaseTitle: 'Local Workspace Parity',
+  version: '0.9.2',
+  releaseTitle: 'Web Experience Polish',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.1',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.2',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*
