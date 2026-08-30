@@ -285,6 +285,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
 
   function goto(index: number) {
     const clamped = Math.max(0, Math.min(entries.length - 1, index))
+    selectedRef.current = clamped
     setSelected(clamped)
     setQuery('')
   }
@@ -304,7 +305,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     for (let offset = 1; offset < entries.length; offset++) {
       const index = currentSelected + dir * offset
       if (index < 0 || index >= entries.length) break
-      if (!entries[index]?.translation) { setSelected(index); return }
+      if (!entries[index]?.translation) { selectedRef.current = index; setSelected(index); return }
     }
   }, [selected, entries])
 
