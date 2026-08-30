@@ -321,9 +321,9 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         saveNow()
         return
       }
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        event.preventDefault()
-        if (writable) { saveNow(); nextUntranslated(event.shiftKey ? -1 : 1) }
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault()
+          if (writable) { nextUntranslated(event.shiftKey ? -1 : 1); saveNow() }
         return
       }
         if (event.altKey && event.key === 'ArrowDown') { event.preventDefault(); goto(selectedRef.current + 1); return }
