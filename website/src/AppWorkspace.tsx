@@ -6,6 +6,7 @@ import { navigate } from './navigation'
 import LocalWorkspace from './LocalWorkspace'
 import Workspace from './workspace/Workspace'
 import NewProjectModal from './workspace/NewProjectModal'
+import { assertCurrentWebBuild } from './webBuild'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -64,6 +65,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
   async function handleCreate(name: string) { await createProject(name); await refresh() }
 
   async function handleImport(name: string, file: File) {
+    await assertCurrentWebBuild()
     const parsed = parseLocalizationFile(await file.text(), file.name)
     if (!parsed.ok) throw new Error(parsed.reason)
     const doc = parsed.document

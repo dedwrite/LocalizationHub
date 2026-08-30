@@ -14,6 +14,7 @@ async function createFixture() {
   await writeFile(path.join(directory, 'index.html'), '<!doctype html><title>Website</title>')
   await writeFile(path.join(directory, 'assets', 'app-abc123.js'), 'console.log(1)')
   await writeFile(path.join(directory, 'manifest.webmanifest'), '{"name":"LocalizationHub","display":"standalone"}')
+  await writeFile(path.join(directory, 'web-build.json'), '{"entries":["assets/app-abc123.js"]}')
   await writeFile(path.join(directory, 'localizationhub-logo.jpg'), 'jpg')
   await writeFile(path.join(path.dirname(directory), 'outside-secret.txt'), 'secret')
   return directory
@@ -34,6 +35,17 @@ afterEach(async () => {
 })
 
 describe('public website serving', () => {
+  it('never caches the deployed build identity, including HEAD responses', async () => {
+    const directory = await createFixture()
+    for (const method of ['GET', 'HEAD']) {
+      const response = responseRecorder()
+      assert.equal(await servePublicWebsite({ method, url: '/web-build.json' }, response, directory), true)
+      assert.equal(response.headers['Cache-Control'], 'no-store')
+      assert.equal(response.headers['Content-Type'], 'application/json; charset=utf-8')
+      if (method === 'HEAD') assert.equal(response.body, undefined)
+      else assert.deepEqual(JSON.parse(response.body), { entries: ['assets/app-abc123.js'] })
+    }
+  })
   it('serves the root and direct SPA routes from a fixture', async () => {
     const directory = await createFixture()
     for (const url of ['/', '/download', '/privacy', '/terms', '/some-random-page']) {

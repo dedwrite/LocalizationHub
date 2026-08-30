@@ -55,6 +55,7 @@ function getSafePathname(url) {
 }
 
 function cachePolicy(relativePath) {
+  if (relativePath === 'web-build.json') return 'no-store'
   if (relativePath.startsWith('assets/') && /-[A-Za-z0-9_-]{6,}\./u.test(relativePath)) {
     return 'public, max-age=31536000, immutable'
   }

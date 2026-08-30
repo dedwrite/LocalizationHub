@@ -1,6 +1,8 @@
 import type { MessageCatalog } from '../types'
 
 export const workspaceMessages = {
+  'projects.staleImport': { en: 'The Web App was updated while this page was open. Save any unsaved work, reload this page, then import the file again. No project was created.', ar: 'تم تحديث تطبيق الويب بينما كانت هذه الصفحة مفتوحة. احفظ أي عمل غير محفوظ، ثم أعد تحميل الصفحة واستورد الملف مجدداً. لم يتم إنشاء أي مشروع.' },
+  'projects.buildUnavailable': { en: 'Could not verify the current Web App version. Check your connection and retry importing. No project was created.', ar: 'تعذر التحقق من النسخة الحالية لتطبيق الويب. تحقق من اتصالك وأعد محاولة الاستيراد. لم يتم إنشاء أي مشروع.' },
   'workspace.context.conversation': { en: 'Conversation:', ar: 'المحادثة:' },
   'workspace.context.male': { en: 'male', ar: 'ذكر' },
   'workspace.context.female': { en: 'female', ar: 'أنثى' },
