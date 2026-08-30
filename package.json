@@ -4,6 +4,7 @@
   "description": "LocalizationHub is a collaborative localization workspace designed for game translation teams.",
   "main": "index.js",
   "scripts": {
+    "desktop:release": "tauri build --config src-tauri/tauri.release.conf.json",
     "test": "echo \"Error: no test specified\" && exit 1",
     "website:dev": "vite --config website/vite.config.ts --host 127.0.0.1 --port 5174",
     "website:build": "npm run build --workspace website",
