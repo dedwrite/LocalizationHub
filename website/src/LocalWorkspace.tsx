@@ -8,6 +8,7 @@ import ConfirmDialog from './workspace/ConfirmDialog'
 import { localWorkspaceStorage } from './workspace/storage'
 import TipCard from './delight/TipCard'
 import ResumeCard from './delight/ResumeCard'
+import { OnDeviceSecret } from './delight/LittleSecrets'
 import { latestDated, localCoverage } from './delight/recents'
 import ProjectMark from './delight/ProjectMark'
 import TimeGreeting from './delight/TimeGreeting'
@@ -64,7 +65,7 @@ export default function LocalWorkspace() {
     </header>
     <section className="local-drop">
       {resume && <ResumeCard kind="local" name={fileNameOf(resume)} {...localCoverage(resume.value)} onOpen={() => openSaved(resume)} />}
-      <div className="local-intro"><p className="app-kicker">{t('local.noAccount')}</p><TimeGreeting /><h1>{t('local.title')}</h1><p>{t('local.description')}</p><div className="local-trust-row"><span>{t('local.onDevice')}</span><span>{t('local.offline')}</span><span>{t('local.explicitExport')}</span></div></div>
+      <div className="local-intro"><p className="app-kicker">{t('local.noAccount')}</p><TimeGreeting /><h1>{t('local.title')}</h1><p>{t('local.description')}</p><div className="local-trust-row"><OnDeviceSecret label={t('local.onDevice')} /><span>{t('local.offline')}</span><span>{t('local.explicitExport')}</span></div></div>
       <div className="local-open-panel"><span className="local-panel-index">{t('local.openStep')}</span><div className="local-file-graphic" aria-hidden="true"><i /><i /><i /></div><h2>{t('local.openFile')}</h2><p>{t('local.formats')}</p><label className="file-button">{t('local.choose')}<input type="file" accept=".json,.csv,.po,.pot" onChange={(event) => { const file = event.target.files?.[0]; if (file) void openFile(file); event.target.value = '' }} /></label><small>{t('local.notUploaded')}</small></div>
       {notice && <div className="notice" role="status">{notice}</div>}
       {recent.length > 0 && <div className="recent-local"><div className="recent-local-heading"><div><span>{t('local.recentDevice')}</span><strong>{t('local.recent')}</strong></div><small>{t('local.storedDevice')}</small></div>{recent.map((row) => <div className="recent-local-row" key={row.id}><ProjectMark name={fileNameOf(row)} size="sm" /><button aria-label={fileNameOf(row)} onClick={() => openSaved(row)}><strong><bdi>{fileNameOf(row)}</bdi></strong><span>{t('local.entryCount', { count: row.value?.entries?.length ?? 0 })}</span></button><button onClick={() => setDeleting(row)}>{t('local.deleteCopy')}</button></div>)}</div>}

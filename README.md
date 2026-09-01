@@ -6,9 +6,9 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.9.6 — App Parity**
+**LocalizationHub v0.9.7 — Quiet Clarity**
 
-v0.9.6 clarifies dialogue roles, brings DeepL to the website through an explicit proxy, adds LH Radio to the Desktop app, and moves the language control to a quieter footer/dock — without weakening Local privacy, Cloud authorization, protected tokens, or Radio on the website.
+v0.9.7 calms the Desktop and Web workspace shell, expands translator craft tips and FAQ guidance, and adds a few quiet discoveries — without weakening Local privacy, Cloud authorization, protected tokens, or Radio.
 
 Earlier milestones remain intact, including bilingual English/Arabic UI, engine-aware token profiles, the v0.8 Web Experience and LH Radio foundation, and the read-only Game Text Extraction introduced in v0.7:
 
@@ -426,10 +426,10 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.9.6 — App Parity**
+**LocalizationHub v0.9.7 — Quiet Clarity**
 
 Windows builds are distributed through the project's GitHub Releases page.
 The repository remains private, so these assets require repository access.
 The [website and Web App](https://localizationhub.app/) remain publicly usable.
 
-Download the current release: [LocalizationHub v0.9.6 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.6).
+Download the current release: [LocalizationHub v0.9.7 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.7).

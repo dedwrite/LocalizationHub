@@ -5,8 +5,8 @@ Easter eggs. It ships in v0.9.3 and does not change LH Radio playback.
 
 ## Field notes
 
-- 64 distinct tips, each written in English and Arabic.
-- Five contextual decks, 14 tips each (some useful tips belong to more than one
+- 74 distinct tips, each written in English and Arabic.
+- Five contextual decks, 16 tips each (some useful tips belong to more than one
   deck): Landing, Local files, Cloud projects, editing and review.
 - A shuffled bag exhausts the current deck before repeating, and avoids an
   immediate repeat across bag boundaries. The bag is in component memory: a new
@@ -45,6 +45,9 @@ The full-coverage note explicitly recommends a final review.
 2. The existing Friday · 11:59 PM demo clock reveals an extra hotfix note on
    activation. Its original source, Arabic translation and protected tokens are
    unchanged. Activate again or press Escape to close it.
+3. The Local “on-device” trust badge reveals a quiet privacy note on activation.
+4. Completing a project on Sunday daytime can surface a seen-once behavior
+   secret (alongside the existing Friday-night and late-night save secrets).
 
 Both discoveries are inline/non-modal, accessible in both languages, silent and
 local-only. They never intercept global keyboard shortcuts or modify content.

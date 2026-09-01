@@ -5,19 +5,19 @@ import { chooseTip, setTipsHidden, shuffledTips, tipDecks, tipsHidden } from './
 afterEach(() => vi.unstubAllGlobals())
 describe('contextual tip decks', () => {
   it('has complete, unique bilingual tips in every deck', () => {
-    expect(new Set(Object.values(tipDecks).flat()).size).toBe(64)
+    expect(new Set(Object.values(tipDecks).flat()).size).toBe(74)
     for (const deck of Object.values(tipDecks)) {
       expect(new Set(deck).size).toBe(deck.length)
-      expect(deck.length).toBe(14)
+      expect(deck.length).toBe(16)
       for (const key of deck) { expect(messages[key].en).toBeTruthy(); expect(messages[key].ar).toBeTruthy() }
     }
   })
   it('exhausts every tip once before repetition and avoids a boundary repeat', () => {
     for (const sample of [0, .3, .8, 1]) {
-      const order = shuffledTips(14, -1, () => sample)
-      expect(new Set(order).size).toBe(14)
-      expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: 14 }, (_, index) => index))
-      expect(shuffledTips(14, order[13], () => sample)[0]).not.toBe(order[13])
+      const order = shuffledTips(16, -1, () => sample)
+      expect(new Set(order).size).toBe(16)
+      expect([...order].sort((a, b) => a - b)).toEqual(Array.from({ length: 16 }, (_, index) => index))
+      expect(shuffledTips(16, order[15], () => sample)[0]).not.toBe(order[15])
     }
   })
   it('never repeats the current tip on explicit next, including end samples', () => {

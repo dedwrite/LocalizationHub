@@ -19,3 +19,38 @@ export function FridayClock() {
   const [open, setOpen] = useState(false)
   return <><button type="button" className="friday-clock" aria-expanded={open} aria-controls={id} onClick={event => { setOpen(!open); event.currentTarget.focus() }} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}><bdi>Friday · 11:59 PM</bdi></button><span id={id} className="friday-note" hidden={!open} role="status" data-i18n-skip><b>{t('delight.friday')}</b> {t('delight.fridayBody')}</span></>
 }
+
+/** Quiet local-only discovery on the Local trust row. */
+export function OnDeviceSecret({ label }: { label: string }) {
+  const { t } = useI18n()
+  const id = useId()
+  const [open, setOpen] = useState(false)
+  return <span className="on-device-secret" data-i18n-skip>
+    <button type="button" className="on-device-secret-trigger" aria-expanded={open} aria-controls={id} onClick={event => { setOpen(value => !value); event.currentTarget.focus() }} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}>{label}</button>
+    <span id={id} className="on-device-secret-note" hidden={!open} role="status"><b>{t('delight.onDeviceSecret')}</b> {t('delight.onDeviceSecretBody')}</span>
+  </span>
+}
+
+/** Hidden footnote beside the FAQ heading — localization craft, not product chrome. */
+export function FaqLocaleSecret() {
+  const { t } = useI18n()
+  const id = useId()
+  const [open, setOpen] = useState(false)
+  return <span className="faq-locale-secret" data-i18n-skip>
+    <button
+      type="button"
+      className="faq-locale-secret-trigger"
+      aria-label={t(open ? 'delight.localeSecretClose' : 'delight.localeSecret')}
+      aria-expanded={open}
+      aria-controls={id}
+      title={t('delight.localeSecretHint')}
+      onClick={event => { setOpen(value => !value); event.currentTarget.focus() }}
+      onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}
+    >
+      <span aria-hidden="true">※</span>
+    </button>
+    <span id={id} className="faq-locale-secret-note" hidden={!open} role="status">
+      <b>{t('delight.localeSecretTitle')}</b> {t('delight.localeSecretBody')}
+    </span>
+  </span>
+}

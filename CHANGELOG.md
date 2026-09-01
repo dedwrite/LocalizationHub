@@ -2,6 +2,22 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.7] - 2026-09-01
+
+### Quiet Clarity
+
+- Softened the public shell around Desktop/Web with quiet gradients, hero depth,
+  clearer section rhythm, and restrained micro-motion.
+- Expanded translator craft tips across all decks and added quiet discoveries
+  for the Local on-device badge and Sunday completion.
+- Added FAQ answers for offline work, machine-translation privacy, Arabic/RTL,
+  and Local backups, with a hidden localization footnote beside the FAQ heading.
+
+### Reliability
+
+- Updated delight unit/e2e coverage for tip deck growth and new discoveries.
+- Kept Local privacy, Cloud authorization, protected tokens, and LH Radio intact.
+
 ## [0.9.6] - 2026-09-01
 
 ### App Parity
