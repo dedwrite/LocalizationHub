@@ -3,6 +3,7 @@ import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, 
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
 import type { EntryIssue } from './entryCollection'
+import { meterWidth, translationMetrics } from '../delight/translationMetrics'
 
 type EditorPanelProps = {
   local?: boolean
@@ -84,6 +85,10 @@ export default function EditorPanel(props: EditorPanelProps) {
 
   const source = entry?.source ?? ''
   const translation = entry?.translation ?? ''
+  const footprint = translationMetrics(source, translation)
+  const footprintMessage: Record<typeof footprint.tone, MessageKey> = {
+    empty: 'delight.length.empty', compact: 'delight.length.compact', balanced: 'delight.length.balanced', expanded: 'delight.length.expanded',
+  }
   const protectedTokens = extractProtectedTokens(source, tokenProfileId)
   const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
   // Extraction context stays in its canonical metadata location. Both display
@@ -216,6 +221,12 @@ export default function EditorPanel(props: EditorPanelProps) {
             placeholder="Write a translation…"
             aria-label="Translation"
           />
+          <div className={`translation-footprint footprint-${footprint.tone}`} data-i18n-skip>
+            <div className="footprint-heading"><span>{t('delight.length.title')}</span><strong>{t('delight.length.percent', { percent: footprint.percentage })}</strong></div>
+            <div className="footprint-track" aria-hidden="true"><i style={{ width: `${meterWidth(footprint)}%` }} /></div>
+            <div className="footprint-counts"><span>{t('delight.length.source', { count: footprint.sourceCharacters })}</span><span>{t('delight.length.translation', { count: footprint.translationCharacters })}</span></div>
+            <p>{t(footprintMessage[footprint.tone])}</p>
+          </div>
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (

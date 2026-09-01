@@ -50,8 +50,9 @@ test.describe('public routing and accessibility', () => {
     await page.goto('/#context')
     await expect(page.getByRole('heading', { name: 'The words arrive with their guardrails.' })).toBeVisible()
     await expect(page.getByText('TOKENS VALID')).toBeVisible()
-    await expect(page.getByText('{new_strings}').first()).toBeVisible()
-    await expect(page.getByText('Friday · 11:59 PM')).toBeVisible()
+    await expect(page.getByText('{player_name}').first()).toBeVisible()
+    await expect(page.getByText('Captain Veyra')).toBeVisible()
+    await expect(page.getByText('Northern Gate').first()).toBeVisible()
   })
 
   test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
@@ -64,7 +65,7 @@ test.describe('public routing and accessibility', () => {
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Localization work, without the mess.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Game localization that stays on your machine.' })).toBeVisible()
     await expect(page.locator('.engine-card')).toHaveCount(3)
     const state = await page.locator('.engine-card').first().evaluate((element: HTMLElement) => ({ opacity: getComputedStyle(element).opacity, transform: getComputedStyle(element).transform }))
     expect(state.opacity).toBe('1')
@@ -91,7 +92,7 @@ test.describe('Visual Batch 2 project surfaces', () => {
     await page.goto('/app/projects')
     await expect(page.getByText('No Cloud Projects yet.')).toBeVisible()
     await expect(page.getByRole('button', { name: '+ Create your first project' })).toBeVisible()
-    await expect(page.locator('.empty-graphic')).toBeVisible()
+    await expect(page.locator('.empty-constellation')).toBeVisible()
   })
 
   test('gives a single real project useful context and actions', async ({ page }) => {

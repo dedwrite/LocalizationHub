@@ -20,6 +20,11 @@ import { exportLocalProject } from '../localProjects'
 import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
 import { rememberCloudProject } from '../delight/recents'
+import CompletionMoment from '../delight/CompletionMoment'
+import BehaviorSecretBanner from '../delight/BehaviorSecretBanner'
+import { ExperienceSkeleton } from '../delight/ExperienceState'
+import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { useI18n } from '@localizationhub/i18n'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -71,6 +76,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   const [bulkOpen, setBulkOpen] = useState(false)
   const [collabOpen, setCollabOpen] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [recentlySaved, setRecentlySaved] = useState(false)
   const dirtyRef = useRef(false)
   const savingRef = useRef(false)
   const pendingSaveRef = useRef(false)
@@ -78,7 +84,6 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   const draftRef = useRef<any>(null)
   const snapshotRef = useRef<ProjectSnapshot | null>(null)
   const autosaveTimer = useRef<any>(null)
-  const searchRef = useRef<HTMLInputElement>(null)
   const leaveAction = useRef<(() => void) | null>(null)
   const selectedRef = useRef(selected)
   useLayoutEffect(() => { selectedRef.current = selected }, [selected])
@@ -123,6 +128,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   }, [projectId, snapshot?.revision, local])
 
   const entries = draft?.entries ?? []
+  const translationComplete = entries.length > 0 && entries.every((item: any) => typeof item.translation === 'string' && item.translation.trim().length > 0)
   const writable = snapshot ? canEdit(snapshot.role) : false
 
   const taggedEntryIds = useMemo(() => {
@@ -232,6 +238,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         setDraft(draftRef.current)
         dirtyRef.current = false
         setSaveState('saved')
+        setRecentlySaved(true)
+        window.setTimeout(() => setRecentlySaved(false), 2400)
         if (local) setNotice('Saved to this browser.')
       } else {
         // Newer edits arrived; keep them dirty against the new revision.
@@ -292,6 +300,21 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     setQuery('')
   }
 
+  function focusEntrySearch() {
+    document.querySelector<HTMLInputElement>('input[name="workspace-entry-search"]')?.focus()
+  }
+
+  function toggleFocusMode() {
+    setLayout((current) => {
+      const focused = current.entriesCollapsed && current.inspectorCollapsed
+      const next = focused
+        ? { ...current, entriesCollapsed: false, inspectorCollapsed: false }
+        : { ...current, entriesCollapsed: true, inspectorCollapsed: true }
+      saveLayout(next)
+      return next
+    })
+  }
+
   function exportFile() {
     try {
       const project = draftRef.current
@@ -332,7 +355,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         if (event.altKey && event.key === 'ArrowUp') { event.preventDefault(); goto(selectedRef.current - 1); return }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && !typing) {
         event.preventDefault()
-        searchRef.current?.focus()
+        focusEntrySearch()
         return
       }
       if (event.key === 'Escape') {
@@ -342,6 +365,19 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [saveNow, writable, selected, entries, nextUntranslated])
+
+  useLayoutEffect(() => {
+    function onCommand(event: Event) {
+      const action = (event as CustomEvent<{ action?: string }>).detail?.action
+      if (action === 'save') saveNow()
+      if (action === 'next') { if (writable) { nextUntranslated(1); saveNow() } }
+      if (action === 'search') focusEntrySearch()
+      if (action === 'overview') setOverviewOpen(true)
+      if (action === 'focus' && !isMobile) toggleFocusMode()
+    }
+    window.addEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+    return () => window.removeEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+  }, [isMobile, nextUntranslated, saveNow, writable])
 
   // Warn before leaving with unsaved changes.
   useEffect(() => {
@@ -410,7 +446,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     })
   }
 
-  if (loading) return <main className="workspace-page"><div className="empty-state">Loading project…</div></main>
+  if (loading) return <main className="workspace-page"><ExperienceSkeleton label="delight.loading.project" variant="workspace" /></main>
   if (error || !snapshot || !draft) return <main className="workspace-page"><div className="notice danger">{error || 'Project unavailable.'}</div><button className="primary-button" onClick={() => navigate('/app/projects')}>Back to projects</button></main>
 
   const assigneeOf = (entryId: string) => {
@@ -492,6 +528,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         setConfirmLeave={setConfirmLeave}
         notice={notice}
         setNotice={setNotice}
+        complete={translationComplete}
       />{deletionDialog}</>
     )
   }
@@ -517,8 +554,11 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         onToggleEntries={() => setLayout((l) => { const next = { ...l, entriesCollapsed: !l.entriesCollapsed }; saveLayout(next); return next })}
         onToggleInspector={() => setLayout((l) => { const next = { ...l, inspectorCollapsed: !l.inspectorCollapsed }; saveLayout(next); return next })}
         focusMode={focusMode}
-        onToggleFocus={() => setLayout((l) => { const next = focusMode ? { ...l, entriesCollapsed: false, inspectorCollapsed: false } : { ...l, entriesCollapsed: true, inspectorCollapsed: true }; saveLayout(next); return next })}
+        onToggleFocus={toggleFocusMode}
       />
+
+      <CompletionMoment projectId={projectId} complete={translationComplete} onReview={() => setOverviewOpen(true)} />
+      <BehaviorSecretBanner complete={translationComplete} justSaved={recentlySaved} />
 
       <div className="workspace-body">
         {!layout.entriesCollapsed && (
@@ -540,7 +580,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
                 commentEntryIds={commentEntryIds}
                 assigneeOf={assigneeOf}
                 onOpenBulk={() => setBulkOpen(true)}
-                onJumpTo={() => { searchRef.current?.focus() }}
+                onJumpTo={focusEntrySearch}
               />
             </div>
             <ResizeHandle onDrag={(dx) => setLayout((l) => { const next = { ...l, entriesWidth: Math.max(200, Math.min(520, l.entriesWidth + dx)) }; saveLayout(next); return next })} />
@@ -679,6 +719,7 @@ function Toolbar(props: {
   focusMode: boolean
   onToggleFocus: () => void
 }) {
+  const { t } = useI18n()
   const saveLabel = props.saveState === 'saving' ? 'Saving…' : props.saveState === 'failed' ? 'Save failed' : props.saveState === 'unsaved' ? 'Unsaved' : 'Saved'
   return (
     <header className="workspace-toolbar">
@@ -702,6 +743,7 @@ function Toolbar(props: {
         <button className="toolbar-button" onClick={props.onOverview}>Overview</button>
       </div>
       <div className="toolbar-group">
+        <button type="button" className="command-launcher toolbar-command" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}><span>Quick</span><kbd>⌘K</kbd></button>
         <button className="toolbar-button" onClick={props.onToggleEntries}>Entries</button>
         <button className="toolbar-button" onClick={props.onToggleInspector}>Inspector</button>
         <button className="toolbar-button" onClick={props.onToggleFocus} title="Toggle focus mode">{props.focusMode ? 'Exit Focus' : 'Focus'}</button>

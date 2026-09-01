@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import EntriesPanel from './EntriesPanel'
 import EditorPanel from './EditorPanel'
 import Inspector from './Inspector'
@@ -10,6 +10,9 @@ import type { BulkSelection, EntryFilterId, EntryIssue, EntryView } from './entr
 import type { ProjectSnapshot } from '../appApi'
 import { TOKEN_PROFILE_LABELS, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import TokenProfileStatus from './TokenProfileStatus'
+import CompletionMoment from '../delight/CompletionMoment'
+import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { useI18n } from '@localizationhub/i18n'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type Surface = 'entries' | 'editor' | 'tools'
@@ -84,11 +87,13 @@ export type MobileWorkspaceProps = {
   setConfirmLeave: (value: boolean) => void
   notice: string
   setNotice: (value: string) => void
+  complete: boolean
 }
 
 const STATUSES = ['draft', 'translated', 'needs-review', 'approved'] as const
 
 export default function MobileWorkspace(props: MobileWorkspaceProps) {
+  const { t } = useI18n()
   const [surface, setSurface] = useState<Surface>('editor')
   const { saveState } = props
 
@@ -99,6 +104,16 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
     setSurface('editor')
   }
 
+  useEffect(() => {
+    const onCommand = (event: Event) => {
+      if ((event as CustomEvent<{ action?: string }>).detail?.action !== 'search') return
+      setSurface('entries')
+      requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[name="workspace-entry-search"]')?.focus())
+    }
+    window.addEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+    return () => window.removeEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+  }, [])
+
   return (
     <main className="mob-workspace">
       <header className="mob-header">
@@ -107,8 +122,11 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
           <strong className="mob-project-name" data-i18n-content>{props.projectName}</strong>
           <span className={`save-state save-${saveState}`}>{saveLabel}</span>
         </div>
+        <button type="button" className="mob-command" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}>⌘</button>
         <button className="mob-save" onClick={props.onSave} disabled={saveState === 'saving'}>{props.local ? 'Save locally' : 'Save'}</button>
       </header>
+
+      <CompletionMoment projectId={props.projectId} complete={props.complete} onReview={() => props.setOverviewOpen(true)} />
 
       <div className="mob-surface">
         {surface === 'entries' && (

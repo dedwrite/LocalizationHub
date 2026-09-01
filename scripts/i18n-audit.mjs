@@ -13,9 +13,9 @@ const properNounExemptions = new Set([
   'JSON', 'CSV', 'PO', 'POT', 'PCK', 'LOCRES', 'LOCMETA', 'UAsset', 'MP3', 'ID3',
   'TOTP', 'MFA', 'RTL', 'API', 'Token', 'Generic', 'Auto', 'Codec', 'Smart Match ·',
   'English', 'العربية', 'Windows x64', 'WINDOWS X64', 'LH', 'MT', 'UI', 'A', 'B',
-  'Ctrl', 'S', 'Enter', 'Shift', 'Alt', 'LH-ABC123', 'ABCD-EFGH-JKLM-NPQR',
+  'Ctrl', 'S', 'Enter', 'Esc', 'Shift', 'Alt', 'LH-ABC123', 'ABCD-EFGH-JKLM-NPQR',
   'https://open.spotify.com/track/...', 'LocalizationHub_0.9.3_x64-setup.exe',
-  'JSON · CSV · PO · LH Project', 'JSON · CSV · PO · GAME FOLDERS',
+  'JSON · CSV · PO · LH Project', 'JSON · CSV · PO · GAME FOLDERS', 'JSON · CSV · PO · .lhproj', 'GODOT · UNREAL · UNITY',
   'LOCALIZATIONHUB /', 'ms',
 ])
 const contentExemptions = new Set([
@@ -23,6 +23,9 @@ const contentExemptions = new Set([
   'Adjust the game settings', 'ضبط إعدادات اللعبة', 'Assigned to samira',
   'Check the tone against the glossary.', 'v0.2', '01', '02', '03', '04', '05',
   'new lines before', 'midnight', '"هوتفكس بسيط. بس', 'سطر جديد قبل', 'منتصف الليل',
+  'quest.northern_gate', 'DIALOGUE', 'Hold the line,', 'Entry 01 of 48', 'does not fall tonight.',
+  'اثبت،', 'اثبت يا', 'البوابة الشمالية', 'لا تسقط الليلة.', 'مثال', '. البوابة الشمالية لا تسقط الليلة.',
+  'Captain Veyra', 'Northern Gate', 'Start game',
   'Motion:', 'Pointer:', 'Registered:', 'Revealed:',
 ])
 

@@ -13,6 +13,10 @@ import { assertCurrentWebBuild } from './webBuild'
 import TipCard from './delight/TipCard'
 import ResumeCard from './delight/ResumeCard'
 import { lastCloudProject, latestDated } from './delight/recents'
+import AmbientGreeting from './delight/AmbientGreeting'
+import ProjectMark from './delight/ProjectMark'
+import { EmptyConstellation, ExperienceSkeleton } from './delight/ExperienceState'
+import { openCommandCenter, PROJECT_SEARCH_EVENT } from './delight/CommandCenter'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -29,10 +33,10 @@ export default function AppWorkspace() {
   useEffect(() => { const onPop = () => setView(routeView()); window.addEventListener('popstate', onPop); return () => window.removeEventListener('popstate', onPop) }, [])
   useEffect(() => { restoreSession().then((restored) => { setUser(restored); setReady(true) }) }, [])
   useEffect(() => { if (!ready) return; if (!user && view !== 'login' && view !== 'register' && view !== 'local') navigate('/app/login'); if (user && (view === 'login' || view === 'register')) navigate('/app/projects') }, [ready, user, view])
-  if (!ready) return <div className="app-loading">Restoring workspace…</div>
+  if (!ready) return <main className="workspace-page"><ExperienceSkeleton label="delight.loading.restore" /></main>
   if (view === 'login' || view === 'register') return <AuthView mode={view} onAuth={(next) => { setUser(next); navigate('/app/projects') }} />
   if (view === 'local') return <LocalWorkspace />
-  if (!user) return <div className="app-loading">Opening workspace…</div>
+  if (!user) return <main className="workspace-page"><ExperienceSkeleton label="delight.loading.restore" /></main>
   if (view === 'editor') return <Workspace user={user} onHome={() => navigate('/app/projects')} />
   return <ProjectsView user={user} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} />
 }
@@ -44,13 +48,14 @@ function AuthView({ mode, onAuth }: { mode: 'login' | 'register'; onAuth: (user:
 }
 
 function AppHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
+  const { t } = useI18n()
   return <header className="app-header">
     <button className="app-brand" onClick={() => navigate('/app/projects')}><img className="brand-mark" src="/localizationhub-logo.jpg" alt="" /><span>LocalizationHub <small>WEB APP</small></span></button>
     <nav className="app-context-nav" aria-label="Project context">
       <button className="active" aria-current="page" onClick={() => navigate('/app/projects')}><span>Cloud</span><small>Collaborative</small></button>
       <button onClick={() => navigate('/app/local')}><span>Local</span><small>On this device</small></button>
     </nav>
-    <div className="account"><span>{user.username}<small>{user.emailVerified ? 'Verified account' : 'Email unverified'}</small></span><button onClick={onLogout}>Log out</button></div>
+    <button type="button" className="command-launcher" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}><span>{t('delight.command.quick')}</span><kbd>⌘K</kbd></button><div className="account"><span>{user.username}<small>{user.emailVerified ? 'Verified account' : 'Email unverified'}</small></span><button onClick={onLogout}>Log out</button></div>
   </header>
 }
 
@@ -62,9 +67,15 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
   const [notice, setNotice] = useState(() => new URLSearchParams(window.location.search).get('deleted') === '1' ? 'Cloud Project deleted permanently.' : '')
   const [newOpen, setNewOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
 
   async function refresh() { setLoading(true); setError(''); try { setProjects(await listProjects()) } catch (failure) { const typed = failure as any; if (typed.code === 'email-verification-required') setVerification(true); else setError(failure instanceof Error ? failure.message : 'Could not load projects.') } finally { setLoading(false) } }
   useEffect(() => { refresh() }, [])
+  useEffect(() => {
+    const focusSearch = () => searchRef.current?.focus()
+    window.addEventListener(PROJECT_SEARCH_EVENT, focusSearch)
+    return () => window.removeEventListener(PROJECT_SEARCH_EVENT, focusSearch)
+  }, [])
 
   async function resend() { try { await sendVerification(); setNotice('Verification email sent. Check your inbox.') } catch (failure) { setNotice(failure instanceof Error ? failure.message : 'Could not send verification email.') } }
 
@@ -108,7 +119,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
     <AppHeader user={user} onLogout={onLogout} />
     <section className="dashboard">
       <div className="dashboard-heading">
-        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><h1>Your translation work.</h1><p className="muted">Open a project, keep its workflow visible, and continue from any screen.</p></div>
+        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><h1>Your translation work.</h1><p className="muted">Open a project, keep its workflow visible, and continue from any screen.</p><AmbientGreeting /></div>
         <div className="heading-actions"><button onClick={refresh} title="Refresh projects">↻ Refresh</button><button className="primary-button" onClick={() => setNewOpen(true)}>+ New project</button></div>
       </div>
       {!loading && projects.length > 0 && <div className="project-summary" aria-label="Cloud Project summary">
@@ -121,10 +132,10 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
       {error && <div className="notice danger">{error}</div>}
       {!loading && !error && !verification && !search && resume && <ResumeCard kind={resume.id === openedId ? 'cloud-opened' : 'cloud-updated'} name={resume.name} total={resume.entryCount ?? 0} translated={resume.translatedCount ?? 0} onOpen={() => navigate(`/app/projects/${resume.id}`)} />}
       <div className="projects-toolbar">
-        <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
+        <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input ref={searchRef} type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
         <span className="result-count">{loading ? 'SYNCING' : `${filtered.length} OF ${projects.length} PROJECTS`}</span>
       </div>
-      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
+      {loading ? <ExperienceSkeleton label="delight.loading.projects" variant="compact" /> : filtered.length === 0 ? <div className="empty-state intentional-empty"><EmptyConstellation kind={projects.length === 0 ? 'project' : 'search'} /><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
       <TipCard context="projects" />
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
@@ -149,7 +160,7 @@ function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; 
   return (
     <div className="project-card-shell">
     <button className="project-card" onClick={onOpen} aria-label={`Open ${project.name}`}>
-      <div className="project-card-top"><span className="project-glyph" aria-hidden="true">{extension.slice(0, 4)}</span><span className="project-role">{friendlyStatus(project.role)}</span></div>
+      <div className="project-card-top"><ProjectMark seed={project.id} label={project.name} detail={extension} /><span className="project-role">{friendlyStatus(project.role)}</span></div>
       <div className="project-title"><strong>{project.name}</strong><span aria-hidden="true">↗</span></div>
       <span className="project-file">{sourceLabel}</span>
       <div className="project-progress-label"><span>Translation progress</span><strong>{percent}%</strong></div>
