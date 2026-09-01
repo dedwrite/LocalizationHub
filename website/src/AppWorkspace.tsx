@@ -10,6 +10,9 @@ import LocalWorkspace from './LocalWorkspace'
 import Workspace from './workspace/Workspace'
 import NewProjectModal from './workspace/NewProjectModal'
 import { assertCurrentWebBuild } from './webBuild'
+import TipCard from './delight/TipCard'
+import ResumeCard from './delight/ResumeCard'
+import { lastCloudProject, latestDated } from './delight/recents'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -98,6 +101,8 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
     const translated = projects.reduce((sum, project) => sum + (project.translatedCount ?? 0), 0)
     return { entries, translated, completion: entries ? Math.round((translated / entries) * 100) : 0 }
   }, [projects])
+  const openedId = useMemo(() => lastCloudProject(user.id), [user.id, projects])
+  const resume = projects.find(project => project.id === openedId) ?? latestDated(projects, project => project.updatedAt)
 
   return <main className="workspace-page projects-page">
     <AppHeader user={user} onLogout={onLogout} />
@@ -110,16 +115,17 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
         <div><span>PROJECTS</span><strong>{projects.length}</strong><small>Available to you</small></div>
         <div><span>ENTRIES</span><strong>{projectSummary.entries.toLocaleString()}</strong><small>Across real project data</small></div>
         <div><span>TRANSLATED</span><strong>{projectSummary.completion}%</strong><small>{projectSummary.translated.toLocaleString()} entries with text</small></div>
-        <aside><span>DID YOU KNOW?</span><p>Protected tokens are checked before export.</p></aside>
       </div>}
       {verification && <div className="notice warning"><strong>Verify your email to open Cloud Projects.</strong><button onClick={resend}>Resend verification email</button></div>}
       {notice && <div className="notice">{notice}</div>}
       {error && <div className="notice danger">{error}</div>}
+      {!loading && !error && !verification && !search && resume && <ResumeCard kind={resume.id === openedId ? 'cloud-opened' : 'cloud-updated'} name={resume.name} total={resume.entryCount ?? 0} translated={resume.translatedCount ?? 0} onOpen={() => navigate(`/app/projects/${resume.id}`)} />}
       <div className="projects-toolbar">
         <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
         <span className="result-count">{loading ? 'SYNCING' : `${filtered.length} OF ${projects.length} PROJECTS`}</span>
       </div>
       {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
+      <TipCard context="projects" />
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
     <MobileNav />

@@ -19,6 +19,7 @@ import { cloudWorkspaceStorage, type WorkspaceStorage } from './storage'
 import { exportLocalProject } from '../localProjects'
 import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
+import { rememberCloudProject } from '../delight/recents'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -96,6 +97,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         draftRef.current = project
         setSnapshot(result)
         setDraft(project)
+        if (!local) rememberCloudProject(user.id, result.id)
         if (local && !storage.persisted) { dirtyRef.current = true; setSaveState('unsaved') }
         setSelected(Math.max(0, project.entries.findIndex((item: any) => item.id === project.selectedEntryId)))
         if (result.migratedFromVersion) {

@@ -1,0 +1,96 @@
+/* Field notes and quiet discoveries. All decoration is CSS, not network media;
+   no continuous animation or listeners tied to scroll, pointer movement or typing. */
+.field-notes {
+  width: min(1240px, calc(100% - 64px)); margin: 0 auto; padding: 32px 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;
+  border-bottom: 1px solid #252735;
+}
+.field-notes-kicker, .resume-kicker { color: #b7a5ed; font-size: 10px; font-weight: 600; letter-spacing: .08em; line-height: 1.7; }
+.field-notes h2 { margin: 9px 0; color: #e6e3ef; font-size: clamp(22px, 2.3vw, 30px); line-height: 1.4; font-weight: 500; }
+.field-notes > div > p { color: #a7a5b5; font-size: 13px; line-height: 1.8; margin: 0; }
+.field-tip { padding: 18px 20px 10px; min-width: 0; color: #c4c6d4; border: 1px solid #353244; border-radius: 12px; background: linear-gradient(120deg, #211c30aa, #11161f); text-align: start; }
+.field-tip-heading { display: flex; align-items: center; gap: 10px; color: #bba9ec; font-size: 11px; }
+.field-tip-glyph { font-family: monospace; font-size: 19px; line-height: 1; }
+.field-tip-copy { font-size: 13px; line-height: 1.85; margin: 10px 0 5px; overflow-wrap: anywhere; }
+.field-tip-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.field-tip .field-tip-actions button { display: inline-flex; gap: 8px; align-items: center; background: transparent; border: 0; padding: 6px 0; min-height: 40px; color: #c7b9ee; font: inherit; font-size: 11px; cursor: pointer; border-radius: 4px; }
+.field-tip .field-tip-actions button:last-child { color: #a6adbd; margin-inline-start: auto; }
+.field-tip .field-tip-actions button:hover { color: #eee8ff; }
+.field-tip.is-hidden { padding-block: 4px; background: transparent; border-style: dashed; border-color: #333344; }
+.field-tip.is-hidden .field-tip-actions button { margin-inline-start: 0; }
+.local-drop > .field-tip, .local-drop > .resume-card { grid-column: 1 / -1; }
+.dashboard > .field-tip { margin-top: 24px; max-width: 760px; }
+.inspector-content > .field-tip { margin-top: 24px; padding: 14px 14px 5px; }
+.inspector-content .field-tip-copy { font-size: 12px; }
+.projects-page .project-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.projects-page .project-summary > div:last-child { border-inline-end: 0; }
+.resume-card {
+  position: relative; isolation: isolate; min-width: 0; display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) minmax(240px, .75fr); gap: 24px; align-items: center;
+  padding: 24px; border: 1px solid #46395f; border-radius: 14px; background: #161823;
+  box-shadow: 0 10px 28px #0002; text-align: start;
+}
+.resume-card::before { content: ''; pointer-events: none; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 5% 0%, #66509924, transparent 65%); }
+.dashboard > .resume-card { margin-bottom: 24px; }
+.resume-emblem { color: #a993de; width: 56px; height: 68px; border: 1px solid #55436e; border-radius: 9px; display: grid; place-items: center; background: #252035; transform: rotate(-5deg); }
+.resume-emblem > span { display: flex; align-items: center; gap: 4px; font: 26px monospace; direction: ltr; }
+.resume-emblem i { width: 7px; height: 7px; border-radius: 50%; background: #b49af0; }
+.resume-copy { min-width: 0; }
+.resume-copy h2 { margin: 6px 0 8px; color: #eeeaf6; font-size: clamp(20px, 2vw, 26px); font-weight: 500; line-height: 1.4; }
+.resume-name { display: block; color: #d3c9e7; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.resume-copy p { margin: 6px 0 0; font-size: 11px; line-height: 1.75; color: #a8adbd; }
+.resume-progress { display: grid; min-width: 0; gap: 10px; }
+.resume-progress > div { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: 11px; line-height: 1.6; color: #b3b7c5; }
+.resume-progress > div > strong { color: #d5c2ff; font: 18px monospace; direction: ltr; }
+.resume-progress progress { appearance: none; width: 100%; height: 5px; border: 0; border-radius: 99px; background: #302c40; color: #ad93e5; overflow: hidden; }
+.resume-progress progress::-webkit-progress-bar { background: #302c40; border-radius: 99px; }
+.resume-progress progress::-webkit-progress-value { background: #ad93e5; border-radius: 99px; }
+.resume-progress progress::-moz-progress-bar { background: #ad93e5; border-radius: 99px; }
+.resume-progress small { font-size: 11px; color: #a8adbd; line-height: 1.65; }
+.resume-progress .resume-milestone { color: #a3cdb9; }
+.resume-card .resume-progress button { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 42px; padding: 10px 14px; border: 1px solid #7861b0; border-radius: 8px; background: #49357a; color: #f0eaff; cursor: pointer; font: inherit; font-size: 12px; transition: background 150ms ease; }
+.resume-card .resume-progress button:hover { background: #59418f; }
+.local-home:has(.resume-card) .local-intro h1 { font-size: clamp(2rem, 3vw, 3rem); }
+.local-home:has(.resume-card) .local-open-panel { padding-block: 22px; }
+.local-home:has(.resume-card) .local-file-graphic { height: 64px; margin-block: 12px; }
+.local-home:has(.resume-card) .local-file-graphic i { height: 50px; width: 40px; }
+.little-secret { position: relative; display: inline-flex; align-items: center; }
+footer { position: relative; }
+body:has(.lh-radio-capsule) footer { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
+.little-secret .secret-trigger { background: transparent; border: 1px solid #41374e; border-radius: 8px; width: 42px; min-height: 42px; color: #b49bcc; font: 15px monospace; cursor: pointer; }
+.little-secret .secret-trigger:hover, .little-secret .secret-trigger[aria-expanded='true'] { background: #231d31; color: #e0cbfc; border-color: #8263a4; }
+.secret-note { position: absolute; inset-inline-end: 0; bottom: calc(100% + 12px); width: min(280px, calc(100vw - 48px)); padding: 16px; border: 1px solid #62467f; background: #1a1525; border-radius: 12px; box-shadow: 0 8px 24px #0005; color: #c4b8d6; text-align: start; z-index: 2; line-height: 1.8; }
+.secret-note strong, .secret-note span { display: block; }
+.secret-note strong { color: #e0c7ff; font-size: 13px; margin-bottom: 4px; }
+.secret-note span { font-size: 12px; }
+.context-people .friday-clock { font: inherit; color: inherit; background: none; border: 0; border-bottom: 1px dotted #9476b7; padding: 4px 0; min-height: 36px; text-align: start; cursor: pointer; }
+.context-people .friday-clock:hover { color: #e2c7ff; }
+.friday-note { display: block; margin-top: 10px; padding: 10px 12px; border-inline-start: 2px solid #9476b7; font-size: 11px; font-weight: 400; line-height: 1.9; color: #c8bed9; }
+.friday-note b { color: #e1cefa; font-weight: 500; }
+.secret-note[hidden], .friday-note[hidden] { display: none; }
+:is(.field-tip, .resume-card, .little-secret, .context-people) button:focus-visible { outline: 2px solid #c4a8fa; outline-offset: 4px; }
+:is(.workspace-shell, .mob-workspace) .save-saved { animation: saved-settle 400ms ease-out; }
+@keyframes saved-settle { from { color: #deffe9; } to { color: #71bf98; } }
+html[dir='rtl'] :is(.field-notes-kicker, .resume-kicker) { letter-spacing: 0; }
+@media (max-width: 1000px) {
+  .field-notes { width: min(760px, calc(100% - 40px)); gap: 24px; }
+  .resume-card { grid-template-columns: minmax(0, 1fr) minmax(200px, .8fr); gap: 20px; }
+  .resume-emblem { display: none; }
+}
+@media (max-width: 767px) {
+  .field-notes { width: calc(100% - 32px); grid-template-columns: 1fr; gap: 18px; padding-block: 28px; }
+  .field-notes h2 { font-size: 23px; }
+  .field-tip { padding: 16px 16px 8px; }
+  .field-tip .field-tip-actions button { min-height: 44px; }
+  .resume-card { grid-template-columns: 1fr; gap: 18px; padding: 20px; }
+  .resume-copy h2 { font-size: 24px; }
+  .resume-card .resume-progress button { min-height: 44px; }
+  .resume-name { font-size: 14px; }
+  .little-secret .secret-trigger, .context-people .friday-clock { min-height: 44px; }
+  .little-secret { position: static; }
+  .secret-note { inset-inline: 0; margin-inline: auto; bottom: calc(100% + 10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.workspace-shell, .mob-workspace) .save-saved { animation: none; }
+  .resume-card .resume-progress button { transition: none; }
+}

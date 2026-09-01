@@ -2,6 +2,28 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.3] - 2026-09-01
+
+### Web Delight
+
+- Added 64 bilingual, context-aware translation tips across the Landing page,
+  Local Projects, Cloud Projects, the editor, and review surfaces.
+- Added shuffled tip decks that avoid repeats until a deck is exhausted, plus
+  explicit next-tip and hide/show controls with resilient local preferences.
+- Added honest Local and user-scoped Cloud resume cards with progress summaries
+  that never replace server authorization or upload local project content.
+- Added restrained Friday and footer discoveries that remain keyboard
+  accessible, RTL-safe, and clear of LH Radio.
+- Refined empty-space balance and responsive presentation across desktop,
+  phones, Safari/WebKit, English, and Arabic.
+
+### Reliability
+
+- Added focused unit and Playwright regression coverage for tips, resume flows,
+  optional-storage failures, keyboard behavior, RTL, and mobile layouts.
+- Preserved Local privacy, Cloud permission checks, protected-token behavior,
+  and the accepted LH Radio implementation.
+
 ## [0.8.0] - 2026-08-29
 
 ### Web Experience

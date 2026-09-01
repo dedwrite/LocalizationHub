@@ -82,7 +82,7 @@ function dynamicArabicText(text: string) {
   if (text === '↻ Refresh') return '↻ تحديث'
   if (text.includes('Web Experience Update')) return text.replace('Web Experience Update', 'تحديث تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Local Workspace Parity')) return text.replace('Local Workspace Parity', 'تكافؤ مساحة العمل المحلية').replace(/^v(?=\d)/u, 'الإصدار ')
-  if (text.includes('Web Experience Polish')) return text.replace('Web Experience Polish', 'تحسين تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
+  if (text.includes('Web Delight')) return text.replace('Web Delight', 'لمسات تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
   return text
 }
 

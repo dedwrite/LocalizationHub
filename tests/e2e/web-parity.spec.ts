@@ -182,7 +182,7 @@ test.describe('web workspace parity', () => {
     await mockCloudApi(page, 'viewer')
     await signIn(page)
     await page.goto('/app/projects/proj-1')
-    await expect(page.getByLabel('Translation')).not.toBeEditable()
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).not.toBeEditable()
     await expect(page.getByText('Read only')).toBeVisible()
   })
 
