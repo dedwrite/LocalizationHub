@@ -144,11 +144,19 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('.lh-language-switcher select').selectOption(locale)
     const secret = page.getByRole('button', { name: labels.secret, exact: true })
     await expect(page.locator('.lh-radio-capsule-title')).toHaveText('Quiet review')
-    await secret.scrollIntoViewIfNeeded()
-    expect(await secret.evaluate(button => {
+    await page.evaluate(async () => {
+      await document.fonts.ready
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    })
+    // scrollIntoViewIfNeeded does not account for fixed overlays and can place
+    // a target directly beneath Radio. Exercise the actual footer resting
+    // position after fonts and layout have settled before measuring its dock.
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
+    await expect.poll(() => page.evaluate(() => Math.abs(document.documentElement.scrollHeight - (window.scrollY + window.innerHeight)))).toBeLessThanOrEqual(1)
+    await expect.poll(async () => secret.evaluate(button => {
       const b = button.getBoundingClientRect(), r = document.querySelector('.lh-radio-capsule')!.getBoundingClientRect()
       return b.left < r.right && b.right > r.left && b.top < r.bottom && b.bottom > r.top
-    })).toBe(false)
+    }), { timeout: 5_000 }).toBe(false)
     await secret.focus()
     await page.keyboard.press('Enter'); await page.keyboard.press('Enter')
     await expect(page.locator('.secret-note')).toBeHidden()
