@@ -61,7 +61,7 @@ export const websiteMessages = {
   /* The public release heading is authored as two visual lines. Arabic reads
    * naturally right-to-left when the semantic phrase is split in this order. */
   'website.release.localWorkspace': { en: 'Web', ar: 'لمسات' },
-  'website.release.currentTitle': { en: 'Web Delight', ar: 'لمسات تجربة الويب' },
+  'website.release.currentTitle': { en: 'Quiet Polish', ar: 'لمسات هادئة' },
   'website.release.parity': { en: 'Delight', ar: 'تجربة الويب' },
   'website.release.description': { en: 'Context-aware bilingual tips, honest resume cards, and quiet discoveries make Local, Cloud, and the translation workspace more useful without compromising privacy or LH Radio.', ar: 'تلميحات سياقية ثنائية اللغة، وبطاقات استئناف صادقة، ولمسات هادئة تجعل المشاريع المحلية والسحابية ومساحة الترجمة أكثر فائدة، مع الحفاظ على الخصوصية وLH Radio.' },
   'website.faq.kicker': { en: '05 / GOOD QUESTIONS', ar: '05 / أسئلة مهمة' },

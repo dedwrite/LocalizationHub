@@ -20,6 +20,11 @@ import { exportLocalProject } from '../localProjects'
 import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
 import { rememberCloudProject } from '../delight/recents'
+import PageSkeleton from '../delight/PageSkeleton'
+import QualityCelebration from '../delight/QualityCelebration'
+import BehaviorSecretBanner from '../delight/BehaviorSecretBanner'
+import { registerQuietCommands } from '../delight/quietCommands'
+import { coverage } from '../delight/recents'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -71,6 +76,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   const [bulkOpen, setBulkOpen] = useState(false)
   const [collabOpen, setCollabOpen] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [settleIn, setSettleIn] = useState(false)
+  const [recentlySaved, setRecentlySaved] = useState(false)
   const dirtyRef = useRef(false)
   const savingRef = useRef(false)
   const pendingSaveRef = useRef(false)
@@ -105,7 +112,12 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         }
       })
       .catch((failure) => setError(failure instanceof Error ? failure.message : 'Could not load project.'))
-      .finally(() => { if (active) setLoading(false) })
+      .finally(() => {
+        if (!active) return
+        setLoading(false)
+        setSettleIn(true)
+        window.setTimeout(() => { if (active) setSettleIn(false) }, 280)
+      })
     return () => { active = false; window.clearTimeout(autosaveTimer.current) }
   }, [storage])
 
@@ -232,6 +244,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         setDraft(draftRef.current)
         dirtyRef.current = false
         setSaveState('saved')
+        setRecentlySaved(true)
+        window.setTimeout(() => setRecentlySaved(false), 2400)
         if (local) setNotice('Saved to this browser.')
       } else {
         // Newer edits arrived; keep them dirty against the new revision.
@@ -310,6 +324,56 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       if (!entries[index]?.translation) { selectedRef.current = index; setSelected(index); return }
     }
   }, [selected, entries])
+
+  useEffect(() => {
+    if (loading || !snapshot) return
+    return registerQuietCommands([
+      {
+        id: 'workspace.save',
+        label: 'Save project',
+        keywords: 'save persist',
+        group: 'workspace',
+        hint: 'Ctrl/⌘ S',
+        run: () => { void saveNow() },
+      },
+      {
+        id: 'workspace.search',
+        label: 'Focus entry search',
+        keywords: 'find filter entries',
+        group: 'workspace',
+        hint: 'Ctrl/⌘ F',
+        run: () => searchRef.current?.focus(),
+      },
+      {
+        id: 'workspace.replace',
+        label: 'Open search and replace',
+        keywords: 'replace find',
+        group: 'workspace',
+        run: () => setReplaceOpen(true),
+      },
+      {
+        id: 'workspace.overview',
+        label: 'Open project overview',
+        keywords: 'overview review stats',
+        group: 'workspace',
+        run: () => setOverviewOpen(true),
+      },
+      ...(local ? [{
+        id: 'workspace.export',
+        label: 'Export localization file',
+        keywords: 'export download file',
+        group: 'project' as const,
+        run: () => exportFile(),
+      }] : []),
+      {
+        id: 'workspace.home',
+        label: local ? 'Back to Local Projects' : 'Back to Cloud Projects',
+        keywords: 'home projects leave',
+        group: 'navigate',
+        run: () => goHome(),
+      },
+    ])
+  }, [loading, snapshot, local, projectId])
 
   // Keyboard shortcuts
   // Install the committed handler before paint: a key immediately after import
@@ -410,8 +474,10 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     })
   }
 
-  if (loading) return <main className="workspace-page"><div className="empty-state">Loading project…</div></main>
+  if (loading) return <main className="workspace-page" aria-busy="true"><PageSkeleton kind="workspace" /></main>
   if (error || !snapshot || !draft) return <main className="workspace-page"><div className="notice danger">{error || 'Project unavailable.'}</div><button className="primary-button" onClick={() => navigate('/app/projects')}>Back to projects</button></main>
+
+  const projectCoverage = coverage(entries.length, entries.filter((item: any) => Boolean(item?.translation?.trim())).length)
 
   const assigneeOf = (entryId: string) => {
     const userId = assignments[entryId]
@@ -497,7 +563,9 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   }
 
   return (
-    <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''}`}>
+    <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''} ${settleIn ? 'is-settling' : ''}`}>
+      <QualityCelebration complete={projectCoverage.complete} projectName={snapshot.name} />
+      <BehaviorSecretBanner complete={projectCoverage.complete} justSaved={recentlySaved} />
       <Toolbar
         local={local}
         onExport={exportFile}

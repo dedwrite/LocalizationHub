@@ -153,8 +153,8 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 .recent-local { margin-top: 0; }
 .recent-local-row { align-items: center; border-radius: 8px; padding: 4px 8px; }
 .recent-local-row:hover { background: #151925; }
-.recent-local-row > button:first-child { text-align: start; }
-.recent-local-row > button:last-child { border-radius: 7px; }
+.recent-local-row > button:first-of-type { text-align: start; }
+.recent-local-row > button:last-of-type { border-radius: 7px; }
 .app-context-nav { border-radius: 10px; }
 .app-context-nav button { border-radius: 7px; text-align: start; }
 .projects-page .dashboard-heading .muted { color: #a5adbb; }

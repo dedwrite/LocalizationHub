@@ -57,6 +57,7 @@ import {
   verifyEmailCode,
   verifyUserEmailAdmin,
 } from './adminApi'
+import PageSkeleton from './delight/PageSkeleton'
 import './admin-console.css'
 
 type Page = 'security' | 'dashboard' | 'users' | 'user-detail' | 'projects' | 'project-detail' | 'audit' | 'radio'
@@ -426,7 +427,7 @@ function UsersView({ onNavigate }: { onNavigate: Navigate }) {
         <button className="admin-btn admin-btn-primary" type="submit">Search</button>
       </form>
       {loading ? (
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       ) : error ? (
         <ActionError message={error} />
       ) : users.length === 0 ? (
@@ -526,7 +527,7 @@ function UserDetailView({ userId, run, onNavigate }: { userId: string; run: RunA
   if (loading) {
     return (
       <section className="admin-section">
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       </section>
     )
   }
@@ -710,7 +711,7 @@ function ProjectsView({ onNavigate }: { onNavigate: Navigate }) {
         <button className="admin-btn admin-btn-primary" type="submit">Search</button>
       </form>
       {loading ? (
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       ) : error ? (
         <ActionError message={error} />
       ) : projects.length === 0 ? (
@@ -797,7 +798,7 @@ function ProjectDetailView({ projectId, run, onNavigate }: { projectId: string; 
   if (loading) {
     return (
       <section className="admin-section">
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       </section>
     )
   }
@@ -983,7 +984,7 @@ function AuditView() {
         </label>
       </div>
       {loading ? (
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       ) : error ? (
         <ActionError message={error} />
       ) : logs.length === 0 ? (
@@ -1183,7 +1184,7 @@ function RadioView({ run }: { run: RunAction }) {
       )}
 
       {loading ? (
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       ) : !error && tracks.length === 0 ? (
         <div className="admin-empty">
           <strong>No tracks yet.</strong>
@@ -1625,7 +1626,7 @@ export default function AdminConsole() {
   if (!authChecked) {
     return (
       <main className="admin-console">
-        <p className="admin-message">Loading…</p>
+        <PageSkeleton kind="admin" />
       </main>
     )
   }

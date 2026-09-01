@@ -2,6 +2,33 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.4] - 2026-09-01
+
+### Quiet Polish
+
+- Added a Command Palette (`Ctrl/⌘ + K`) for jumping between Local/Cloud,
+  workspace actions, export, language switching, and the shortcuts center.
+- Added a Shortcuts Center (`?`) that lists the core keyboard workflow.
+- Added deterministic project visual identity marks on Cloud cards, Local
+  recents, and Resume cards.
+- Enriched empty states for projects, search, filtered entries, review-clear,
+  and clean quality checks.
+- Added a restrained “Ship it.” moment when every entry has text.
+- Added quiet time-of-day greetings and late-night tips without theme changes.
+- Replaced plain Loading copy with page-shaped skeletons for Projects,
+  Workspace, and Admin.
+- Added a calm source/translation length cue with overflow guidance for UI
+  strings.
+- Extended personality with rare behavior-linked discoveries (Friday-night
+  completion, after-midnight saves) while keeping existing tips and Easter eggs.
+- Added soft panel settle transitions that respect `prefers-reduced-motion`.
+
+### Reliability
+
+- Added unit and Playwright coverage for identity, length cues, commands,
+  ambience, behavior secrets, palette/shortcuts, and completion states.
+- Preserved Local privacy, Cloud authorization, protected tokens, and LH Radio.
+
 ## [0.9.3] - 2026-09-01
 
 ### Web Delight

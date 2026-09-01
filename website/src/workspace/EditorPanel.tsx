@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
+import TranslationLengthCue from '../delight/TranslationLengthCue'
 import type { EntryIssue } from './entryCollection'
 
 type EditorPanelProps = {
@@ -216,6 +217,7 @@ export default function EditorPanel(props: EditorPanelProps) {
             placeholder="Write a translation…"
             aria-label="Translation"
           />
+          <TranslationLengthCue source={source} translation={translation} />
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (
