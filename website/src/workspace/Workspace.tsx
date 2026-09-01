@@ -19,12 +19,17 @@ import { cloudWorkspaceStorage, type WorkspaceStorage } from './storage'
 import { exportLocalProject } from '../localProjects'
 import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
-import { rememberCloudProject } from '../delight/recents'
+import { rememberCloudProject, coverage } from '../delight/recents'
 import PageSkeleton from '../delight/PageSkeleton'
 import QualityCelebration from '../delight/QualityCelebration'
 import BehaviorSecretBanner from '../delight/BehaviorSecretBanner'
-import { registerQuietCommands } from '../delight/quietCommands'
-import { coverage } from '../delight/recents'
+import { registerQuietCommands, registerQuietDynamicProvider } from '../delight/quietCommands'
+import { entryJumpCommands } from '../delight/entryJump'
+import { buildExportChecklist } from '../delight/exportChecklist'
+import ExportChecklistDialog from '../delight/ExportChecklistDialog'
+import SessionPulse from '../delight/SessionPulse'
+import { loadProgressPulse, recordProgressPulse, type ProgressPulseState } from '../delight/pulseState'
+import { metadata } from '../appApi'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -76,8 +81,10 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   const [bulkOpen, setBulkOpen] = useState(false)
   const [collabOpen, setCollabOpen] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [exportChecklistOpen, setExportChecklistOpen] = useState(false)
   const [settleIn, setSettleIn] = useState(false)
   const [recentlySaved, setRecentlySaved] = useState(false)
+  const [pulse, setPulse] = useState<ProgressPulseState>(() => loadProgressPulse())
   const dirtyRef = useRef(false)
   const savingRef = useRef(false)
   const pendingSaveRef = useRef(false)
@@ -286,7 +293,10 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
 
   function updateTranslation(value: string) {
     updateDraft((current: any) => {
-      if (current.entries[selected].translation === value) return current
+      const previous = current.entries[selected]?.translation ?? ''
+      if (previous === value) return current
+      const becameTranslated = !String(previous).trim() && Boolean(String(value).trim())
+      if (becameTranslated) setPulse(recordProgressPulse({ becameTranslated: true }))
       const nextEntries = current.entries.slice()
       nextEntries[selected] = { ...nextEntries[selected], translation: value }
       return { ...current, entries: nextEntries }
@@ -294,6 +304,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
   }
 
   function updateStatus(nextStatus: string) {
+    const previous = entry ? (draft?.workflow?.entries?.[entry.id]?.status ?? (entry.translation ? 'translated' : 'untranslated')) : ''
+    if (nextStatus === 'approved' && previous !== 'approved') setPulse(recordProgressPulse({ becameApproved: true }))
     updateDraft((current: any) => {
       return { ...current, workflow: { ...current.workflow, entries: { ...current.workflow?.entries, [entry.id]: { status: nextStatus } } } }
     })
@@ -306,15 +318,32 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     setQuery('')
   }
 
-  function exportFile() {
+  function performExport() {
     try {
       const project = draftRef.current
       const url = URL.createObjectURL(new Blob([exportLocalProject(project)], { type: 'text/plain;charset=utf-8' }))
       const link = document.createElement('a')
       link.href = url; link.download = project.sourceFileName; link.click()
       window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-    } catch { setNotice('Export failed. Your local project was not changed.') }
+      setExportChecklistOpen(false)
+    } catch { setNotice('Export failed. Your local project was not changed.'); setExportChecklistOpen(false) }
   }
+
+  function requestExport() {
+    if (!local) return
+    setExportChecklistOpen(true)
+  }
+
+  const exportChecklist = useMemo(() => {
+    if (!draft) return null
+    const data = metadata(draft)
+    return buildExportChecklist({
+      entries: draft.entries ?? [],
+      workflow: draft.workflow?.entries ?? {},
+      glossary: data.glossary,
+      tokenProfileId,
+    })
+  }, [draft, tokenProfileId])
 
   const nextUntranslated = useCallback((dir: 1 | -1) => {
     const currentSelected = selectedRef.current
@@ -361,9 +390,9 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       ...(local ? [{
         id: 'workspace.export',
         label: 'Export localization file',
-        keywords: 'export download file',
+        keywords: 'export download file checklist',
         group: 'project' as const,
-        run: () => exportFile(),
+        run: () => requestExport(),
       }] : []),
       {
         id: 'workspace.home',
@@ -374,6 +403,11 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       },
     ])
   }, [loading, snapshot, local, projectId])
+
+  useEffect(() => {
+    if (loading || !draft) return
+    return registerQuietDynamicProvider((query) => entryJumpCommands(draft.entries ?? [], query, goto))
+  }, [loading, draft])
 
   // Keyboard shortcuts
   // Install the committed handler before paint: a key immediately after import
@@ -490,13 +524,18 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     onDelete={() => deleteProject(projectId)}
     onDeleted={() => { dirtyRef.current = false; window.clearTimeout(autosaveTimer.current); navigate('/app/projects?deleted=1') }}
     onCancel={() => setDeleteOpen(false)} /> : null
+  const glossary = metadata(draft).glossary
+  const exportDialog = exportChecklistOpen && exportChecklist ? (
+    <ExportChecklistDialog checklist={exportChecklist} onExport={performExport} onCancel={() => setExportChecklistOpen(false)} />
+  ) : null
 
   if (isMobile) {
     return (
-      <><MobileWorkspace
+      <><SessionPulse state={pulse} /><MobileWorkspace
         onDelete={!local && snapshot.role === 'owner' ? () => setDeleteOpen(true) : undefined}
         local={local}
-        onExport={exportFile}
+        onExport={requestExport}
+        glossary={glossary}
         user={user}
         projectId={projectId}
         projectName={snapshot.name}
@@ -558,7 +597,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         setConfirmLeave={setConfirmLeave}
         notice={notice}
         setNotice={setNotice}
-      />{deletionDialog}</>
+      />{deletionDialog}{exportDialog}</>
     )
   }
 
@@ -566,9 +605,10 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''} ${settleIn ? 'is-settling' : ''}`}>
       <QualityCelebration complete={projectCoverage.complete} projectName={snapshot.name} />
       <BehaviorSecretBanner complete={projectCoverage.complete} justSaved={recentlySaved} />
+      <SessionPulse state={pulse} />
       <Toolbar
         local={local}
-        onExport={exportFile}
+        onExport={requestExport}
         projectName={snapshot.name}
         role={snapshot.role}
         saveState={saveState}
@@ -626,6 +666,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
             writable={writable}
             tokenProfileId={tokenProfileId}
             issues={issues}
+            glossary={glossary}
             sourceDirection={sourceDirection}
             direction={direction}
             position={selected}
@@ -683,6 +724,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       {replaceOpen && (
         <SearchReplace entries={entries} writable={writable} onApply={applyReplace} onClose={() => setReplaceOpen(false)} />
       )}
+
+      {exportDialog}
 
       {bulkOpen && (
         <div className="dialog-backdrop" role="presentation" onClick={(event) => { if (event.target === event.currentTarget) setBulkOpen(false) }}>

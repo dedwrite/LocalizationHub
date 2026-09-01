@@ -2,6 +2,25 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.5] - 2026-09-01
+
+### Quiet Workflow
+
+- Extended the Command Palette with search-driven entry jumps and recent
+  Local/Cloud project open commands.
+- Added calm glossary notes under the translation editor when a source term
+  matches project terminology.
+- Added an export checklist for Local projects covering empty entries, token
+  warnings, UI length, review queue, and glossary notes.
+- Added a quiet session progress pulse for newly filled and approved entries
+  without gamification.
+
+### Reliability
+
+- Added unit and Playwright coverage for entry jumps, export checklist, and
+  session progress.
+- Preserved Local privacy, Cloud authorization, protected tokens, and LH Radio.
+
 ## [0.9.4] - 2026-09-01
 
 ### Quiet Polish

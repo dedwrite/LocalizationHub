@@ -48,7 +48,7 @@
 .workspace-shell .source-section,
 .workspace-shell .translation-section { position: relative; }
 .workspace-shell .section-label { display: inline-flex; align-items: baseline; gap: 8px; color: #b3aaff; }
-.workspace-shell .section-label small { color: #9197a5; font: 700 .5rem 'DM Mono', monospace; letter-spacing: .12em; }
+.workspace-shell .section-label small { color: #b4bac8; font: 700 .5rem 'DM Mono', monospace; letter-spacing: .12em; }
 .workspace-shell .source-text { border-color: #343a49; background: linear-gradient(145deg, #121720, #0c1016); color: #d0d5df; }
 .workspace-shell .translation-section { padding: 18px 20px 20px; border: 1px solid #3d3761; background: linear-gradient(145deg, rgba(31, 27, 52, .54), rgba(14, 16, 24, .72)); box-shadow: 0 12px 30px rgba(0, 0, 0, .14); }
 .workspace-shell .translation-section .section-label { color: #e0dcff; }

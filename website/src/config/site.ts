@@ -1,9 +1,10 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.4',
-  releaseTitle: 'Quiet Polish',
+  version: '0.9.5',
+  releaseTitle: 'Quiet Workflow',
+  releaseBlurb: 'Smarter command palette jumps, calm glossary notes, an export checklist, and a quiet session progress pulse — without compromising privacy or LH Radio.',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.4',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.5',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*

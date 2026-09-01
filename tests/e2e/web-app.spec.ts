@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
-import { openTools } from './helpers'
+import { confirmLocalExport, openTools } from './helpers'
 
 const jsonFile = { name: 'browser.json', mimeType: 'application/json', buffer: Buffer.from('{"menu.start":"Start","menu.quit":"Quit"}') }
 const csvFile = { name: 'browser.csv', mimeType: 'text/csv', buffer: Buffer.from('key,source,translation\nmenu.start,Start,\n') }
@@ -57,7 +57,7 @@ test.describe('public routing and accessibility', () => {
   test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('v0.9.4')
+    await expect(answer).toContainText('v0.9.5')
     await expect(answer).not.toContainText('v0.4.0')
   })
 
@@ -125,7 +125,7 @@ test.describe('browser-local files', () => {
     await page.getByRole('button', { name: 'browser.json', exact: true }).click()
     await openTools(page)
     const download = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Export' }).click()
+    await confirmLocalExport(page)
     const content = await (await download).createReadStream()
     expect(content).not.toBeNull()
   })
@@ -135,7 +135,7 @@ test.describe('browser-local files', () => {
     await page.locator('textarea').fill('Start translated')
     await openTools(page)
     const download = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Export' }).click()
+    await confirmLocalExport(page)
     expect((await (await download).createReadStream())?.readable).toBe(true)
   })
 
@@ -144,7 +144,7 @@ test.describe('browser-local files', () => {
     await page.locator('textarea').fill('Commencer')
     await openTools(page)
     const download = page.waitForEvent('download')
-    await page.getByRole('button', { name: 'Export' }).click()
+    await confirmLocalExport(page)
     expect((await (await download).createReadStream())?.readable).toBe(true)
   })
 

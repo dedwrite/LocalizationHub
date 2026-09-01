@@ -61,9 +61,9 @@ export const websiteMessages = {
   /* The public release heading is authored as two visual lines. Arabic reads
    * naturally right-to-left when the semantic phrase is split in this order. */
   'website.release.localWorkspace': { en: 'Web', ar: 'لمسات' },
-  'website.release.currentTitle': { en: 'Quiet Polish', ar: 'لمسات هادئة' },
+  'website.release.currentTitle': { en: 'Quiet Workflow', ar: 'سير عمل هادئ' },
   'website.release.parity': { en: 'Delight', ar: 'تجربة الويب' },
-  'website.release.description': { en: 'Context-aware bilingual tips, honest resume cards, and quiet discoveries make Local, Cloud, and the translation workspace more useful without compromising privacy or LH Radio.', ar: 'تلميحات سياقية ثنائية اللغة، وبطاقات استئناف صادقة، ولمسات هادئة تجعل المشاريع المحلية والسحابية ومساحة الترجمة أكثر فائدة، مع الحفاظ على الخصوصية وLH Radio.' },
+  'website.release.description': { en: 'Smarter command palette jumps, calm glossary notes, an export checklist, and a quiet session progress pulse — without compromising privacy or LH Radio.', ar: 'قفز أذكى من لوحة الأوامر، وملاحظات مصطلحات هادئة، وقائمة فحص قبل التصدير، ونبضة تقدم للجلسة — دون المساس بالخصوصية أو LH Radio.' },
   'website.faq.kicker': { en: '05 / GOOD QUESTIONS', ar: '05 / أسئلة مهمة' },
   'website.faq.title': { en: 'Before you start translating.', ar: 'قبل أن تبدأ الترجمة.' },
   'website.download.description': { en: 'A focused Windows workspace for translating, reviewing, and managing the localization files you already have.', ar: 'مساحة عمل مركزة على Windows لترجمة ملفات التوطين الحالية ومراجعتها وإدارتها.' },

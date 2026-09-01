@@ -68,6 +68,43 @@
   100% { background-position: -100% 0; }
 }
 
+.glossary-nudge {
+  margin-top: 10px; padding: 10px 12px; border: 1px solid #353244; border-radius: 10px;
+  background: #171925; color: #b8b5c6; font-size: 12px; line-height: 1.65;
+}
+.glossary-nudge-kicker {
+  display: block; color: #b7a5ed; font-size: 10px; font-weight: 600; letter-spacing: .08em; margin-bottom: 6px;
+}
+.glossary-nudge ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.glossary-nudge li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.glossary-nudge li strong { color: #e6e3ef; font-weight: 500; }
+.glossary-nudge li[data-kind='forbidden'] span { color: #d5a08f; }
+.glossary-nudge li[data-kind='preferred'] span { color: #a3cdb9; }
+
+.export-checklist {
+  list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px;
+}
+.export-checklist li {
+  display: flex; justify-content: space-between; gap: 16px; align-items: center;
+  padding: 10px 12px; border-radius: 8px; background: #171925; border: 1px solid #2c3040;
+  color: #c8ced8; font-size: 13px;
+}
+.export-checklist li strong { font: 14px/1 'DM Mono', monospace; color: #d5c2ff; direction: ltr; }
+.export-checklist li[data-severity='ok'] strong { color: #8fceb0; }
+.export-checklist li[data-severity='warning'] strong { color: #d5a08f; }
+.export-checklist li[data-severity='info'] strong { color: #c9b58a; }
+
+.progress-pulse {
+  display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline;
+  margin: 0 0 10px; padding: 8px 12px; border: 1px solid #2f3344; border-radius: 10px;
+  background: #141722; color: #a8adbd; font-size: 12px; line-height: 1.6;
+}
+.progress-pulse-kicker { color: #b7a5ed; font-size: 10px; font-weight: 600; letter-spacing: .08em; }
+.workspace-shell > .progress-pulse,
+.mob-workspace .progress-pulse { margin-inline: 16px; }
+html[dir='rtl'] .glossary-nudge-kicker,
+html[dir='rtl'] .progress-pulse-kicker { letter-spacing: 0; }
+
 .time-greeting {
   display: grid; gap: 4px; margin: 0 0 10px;
   color: #a8adbd; font-size: 12px; line-height: 1.7;

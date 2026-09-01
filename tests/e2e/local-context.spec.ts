@@ -12,7 +12,7 @@ for (const [index, example] of examples.entries()) for (const locale of ['en', '
   await expect(page.locator('.dialogue-context-strip > span')).toHaveText(example[locale].split(' · '))
   await page.locator('.translation-editor').focus()
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText(locale === 'en' ? 'Saved to this browser.' : 'حُفظ في هذا المتصفح.')
+  await expect(page.locator('.toast')).toContainText(locale === 'en' ? 'Saved to this browser.' : 'حُفظ في هذا المتصفح.')
   await page.reload()
   await page.getByRole('button', { name: 'roles.json', exact: true }).click()
   await expect(page.locator('.dialogue-context-strip > span')).toHaveText(example[locale].split(' · '))
