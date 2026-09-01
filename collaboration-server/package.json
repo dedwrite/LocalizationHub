@@ -1,6 +1,6 @@
 {
   "name": "localizationhub-collaboration-server",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "private": true,
   "description": "WebSocket collaboration relay for LocalizationHub.",
   "type": "module",

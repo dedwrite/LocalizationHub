@@ -64,12 +64,12 @@ export function DialogueContextStrip({ context }: { context: EntryContext | Pars
     ? ` (${genderKeys[value] ? t(genderKeys[value]) : value})` : ''
   const parts: React.ReactNode[] = []
   if (context.speaker) {
-    parts.push(<span className="context-person" key="speaker"><span className="context-field-label">{t('extraction.context.speaker')}</span> <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
+    parts.push(<span className="context-person" data-role="speaker" key="speaker"><span className="context-field-label">{t('extraction.context.speaker')}</span> <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
   }
   if (context.listeners?.length) {
-    parts.push(<span className="context-person" key="listeners">→ <span className="context-field-label">{t('extraction.source.listeners')}:</span> {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
+    parts.push(<span className="context-person" data-role="listener" key="listeners">→ <span className="context-field-label">{t('extraction.source.listeners')}:</span> {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
   } else if (context.listener) {
-    parts.push(<span className="context-person" key="listener">→ <span className="context-field-label">{t('extraction.context.listener')}</span> <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
+    parts.push(<span className="context-person" data-role="listener" key="listener">→ <span className="context-field-label">{t('extraction.context.listener')}</span> <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
   }
   if (context.scene) parts.push(<span className="context-detail" key="scene"><span className="context-field-label">{t('extraction.context.scene')}</span> <bdi>{context.scene}</bdi></span>)
   if (context.conversationId) parts.push(<span className="context-detail" key="conversation"><span className="context-field-label">{t('workspace.context.conversation')}</span> <bdi>{context.conversationId}</bdi></span>)
@@ -245,7 +245,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           </div>
         )}
 
-        {props.local && <p className="muted local-mt-privacy">Your project stays on this device. Using Machine Translation sends the current text/context to the selected provider.</p>}
+        {props.local && <p className="muted local-mt-privacy">{t('local.mtPrivacy')}</p>}
         <MachineTranslationPanel
           sourceText={source}
           sourceLocale={sourceLocale}

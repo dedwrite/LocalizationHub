@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react'
-import { buildTranslationContext, DEFAULT_GEMINI_MODEL, GEMINI_MODELS, LANGUAGE_OPTIONS, PROVIDER_API_KEY_LABELS, PROVIDER_API_KEY_PLACEHOLDERS, PROVIDER_LABELS, translateWithGemini, type GeminiModelId, type TranslationProviderId } from './translationProviders'
+import {
+  buildTranslationContext,
+  DEFAULT_GEMINI_MODEL,
+  GEMINI_MODELS,
+  LANGUAGE_OPTIONS,
+  PROVIDER_API_KEY_LABELS,
+  PROVIDER_API_KEY_PLACEHOLDERS,
+  PROVIDER_LABELS,
+  translateWithDeepL,
+  translateWithGemini,
+  type GeminiModelId,
+  type TranslationProviderId,
+} from './translationProviders'
 
 /*
  * Machine Translation Reference panel (Web).
  *
  * Reference only — the API key is held in memory for this component's lifetime
- * and never persisted or sent to the LocalizationHub backend. Reloading the
- * page drops the key, which is acceptable.
+ * and never persisted or written into project data. Reloading the page drops
+ * the key. DeepL requests travel once through LocalizationHub's proxy to DeepL
+ * and are not stored server-side.
  */
 export default function MachineTranslationPanel({
   sourceText,
@@ -20,7 +33,7 @@ export default function MachineTranslationPanel({
   context?: { speaker?: string; listener?: string; listeners?: string[]; speakerGender?: string; listenerGender?: string; listenerGenders?: string[]; scene?: string; conversationId?: string; previous?: string; next?: string }
 }) {
   const [open, setOpen] = useState(false)
-  const [provider] = useState<TranslationProviderId>('gemini')
+  const [provider, setProvider] = useState<TranslationProviderId>('gemini')
   const [model, setModel] = useState<GeminiModelId>(DEFAULT_GEMINI_MODEL)
   const [apiKey, setApiKey] = useState('')
   const [inputText, setInputText] = useState('')
@@ -51,7 +64,9 @@ export default function MachineTranslationPanel({
     setElapsedMs(null)
     const started = performance.now()
     try {
-      const res = await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model, context: buildTranslationContext(context) })
+      const res = provider === 'deepl'
+        ? await translateWithDeepL({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage })
+        : await translateWithGemini({ apiKey: apiKey.trim(), text: inputText, sourceLanguage, targetLanguage, model, context: buildTranslationContext(context) })
       setResult(res.translatedText)
       setElapsedMs(Math.round(performance.now() - started))
     } catch (failure) {
@@ -83,23 +98,39 @@ export default function MachineTranslationPanel({
       </button>
       {open && (
         <div className="mt-body">
-          <p className="mt-warning">Reference only. Your key stays in this browser tab and is never saved or shared.</p>
+          <p className="mt-warning">
+            {provider === 'deepl'
+              ? 'Reference only. Your DeepL key stays in this tab. When you press Translate, LocalizationHub forwards the current text to DeepL once and does not save the key or text.'
+              : 'Reference only. Your key stays in this browser tab and is never saved or shared.'}
+          </p>
           <div className="mt-grid">
             <label className="dialog-field">
               Provider
-              <select value={provider} disabled>
+              <select
+                value={provider}
+                onChange={(event) => {
+                  setProvider(event.target.value as TranslationProviderId)
+                  setApiKey('')
+                  setResult('')
+                  setError('')
+                  setShowKey(false)
+                }}
+              >
                 <option value="gemini">{PROVIDER_LABELS.gemini}</option>
+                <option value="deepl">{PROVIDER_LABELS.deepl}</option>
               </select>
             </label>
-            <label className="dialog-field">
-              Model
-              <select value={model} onChange={(event) => { setModel(event.target.value as GeminiModelId); setResult(''); setError('') }}>
-                {GEMINI_MODELS.map((item) => {
-                  const speed = item.speedClass === 'fastest' ? 'Fastest' : item.speedClass === 'balanced' ? 'Balanced' : 'Highest quality'
-                  return <option key={item.id} value={item.id}>{item.label} — {speed}</option>
-                })}
-              </select>
-            </label>
+            {provider === 'gemini' && (
+              <label className="dialog-field">
+                Model
+                <select value={model} onChange={(event) => { setModel(event.target.value as GeminiModelId); setResult(''); setError('') }}>
+                  {GEMINI_MODELS.map((item) => {
+                    const speed = item.speedClass === 'fastest' ? 'Fastest' : item.speedClass === 'balanced' ? 'Balanced' : 'Highest quality'
+                    return <option key={item.id} value={item.id}>{item.label} — {speed}</option>
+                  })}
+                </select>
+              </label>
+            )}
             <label className="dialog-field">
               {PROVIDER_API_KEY_LABELS[provider]}
               <span className="secret-input-row">

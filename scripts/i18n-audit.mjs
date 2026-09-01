@@ -14,7 +14,7 @@ const properNounExemptions = new Set([
   'TOTP', 'MFA', 'RTL', 'API', 'Token', 'Generic', 'Auto', 'Codec', 'Smart Match ·',
   'English', 'العربية', 'Windows x64', 'WINDOWS X64', 'LH', 'MT', 'UI', 'A', 'B',
   'Ctrl', 'S', 'Enter', 'Shift', 'Alt', 'LH-ABC123', 'ABCD-EFGH-JKLM-NPQR',
-  'https://open.spotify.com/track/...', 'LocalizationHub_0.9.5_x64-setup.exe',
+  'https://open.spotify.com/track/...', 'LocalizationHub_0.9.6_x64-setup.exe',
   'JSON · CSV · PO · LH Project', 'JSON · CSV · PO · GAME FOLDERS',
   'LOCALIZATIONHUB /', 'ms',
 ])

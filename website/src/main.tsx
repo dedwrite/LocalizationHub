@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { I18nProvider, LanguageSwitcher } from '@localizationhub/i18n'
+import { I18nProvider } from '@localizationhub/i18n'
 import App from './App'
 import AppErrorBoundary from './AppErrorBoundary'
 import '@localizationhub/i18n/styles.css'
@@ -14,7 +14,6 @@ if (typeof globalThis.structuredClone !== 'function') {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
-      <LanguageSwitcher />
       <AppErrorBoundary>
         <App />
       </AppErrorBoundary>

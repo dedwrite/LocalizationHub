@@ -178,7 +178,6 @@ import ConfirmationModal from './ConfirmationModal'
 import {
   showConfirmation,
 } from './confirmation'
-
 import './App.css'
 
 type TranslationEntry =
@@ -4700,6 +4699,15 @@ try {
                           .source
                       }
                     </div>
+
+                    {
+                      selectedDialogueContext &&
+                      (
+                        <div className="source-context">
+                          <DialogueContextStrip context={selectedDialogueContext} />
+                        </div>
+                      )
+                    }
                   </div>
 
                   <MachineTranslationPanel
@@ -4795,19 +4803,6 @@ try {
                               .notes
                           }
                         </div>
-                      </div>
-                    )
-                  }
-
-                  {
-                    selectedDialogueContext &&
-                    (
-                      <div className="editor-section">
-                        <label>
-                          Context
-                        </label>
-
-                        <DialogueContextStrip context={selectedDialogueContext} />
                       </div>
                     )
                   }
