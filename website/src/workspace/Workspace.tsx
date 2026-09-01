@@ -31,6 +31,7 @@ import SessionPulse from '../delight/SessionPulse'
 import { loadProgressPulse, recordProgressPulse, type ProgressPulseState } from '../delight/pulseState'
 import { metadata } from '../appApi'
 import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { useI18n } from '@localizationhub/i18n'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -815,6 +816,7 @@ function Toolbar(props: {
   focusMode: boolean
   onToggleFocus: () => void
 }) {
+  const { t } = useI18n()
   const saveLabel = props.saveState === 'saving' ? 'Saving…' : props.saveState === 'failed' ? 'Save failed' : props.saveState === 'unsaved' ? 'Unsaved' : 'Saved'
   return (
     <header className="workspace-toolbar">
@@ -838,7 +840,7 @@ function Toolbar(props: {
         <button className="toolbar-button" onClick={props.onOverview}>Overview</button>
       </div>
       <div className="toolbar-group">
-        <button className="toolbar-button toolbar-command" type="button" onClick={() => openCommandCenter()} aria-label="Open command center">⌘</button>
+        <button className="toolbar-button toolbar-command" type="button" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}>⌘</button>
         <button className="toolbar-button" onClick={props.onToggleEntries}>Entries</button>
         <button className="toolbar-button" onClick={props.onToggleInspector}>Inspector</button>
         <button className="toolbar-button" onClick={props.onToggleFocus} title="Toggle focus mode">{props.focusMode ? 'Exit Focus' : 'Focus'}</button>

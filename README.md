@@ -6,9 +6,9 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.9.7 — Quiet Clarity**
+**LocalizationHub v0.9.8 — Game-First Experience**
 
-v0.9.7 calms the Desktop and Web workspace shell, expands translator craft tips and FAQ guidance, and adds a few quiet discoveries — without weakening Local privacy, Cloud authorization, protected tokens, or Radio.
+v0.9.8 sharpens the Landing around game localization, adds a ready-to-open Local sample project, improves workspace flow, and makes the public pages easier to crawl — while preserving all 74 translator tips, quiet discoveries, Local privacy, Cloud authorization, protected tokens, and Radio.
 
 Earlier milestones remain intact, including bilingual English/Arabic UI, engine-aware token profiles, the v0.8 Web Experience and LH Radio foundation, and the read-only Game Text Extraction introduced in v0.7:
 
@@ -426,10 +426,10 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.9.7 — Quiet Clarity**
+**LocalizationHub v0.9.8 — Game-First Experience**
 
 Windows builds are distributed through the project's GitHub Releases page.
 The repository remains private, so these assets require repository access.
 The [website and Web App](https://localizationhub.app/) remain publicly usable.
 
-Download the current release: [LocalizationHub v0.9.7 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.7).
+Download the current release: [LocalizationHub v0.9.8 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.8).

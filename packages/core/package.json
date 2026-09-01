@@ -1,12 +1,12 @@
 {
-    "name":  "@localizationhub/core",
-    "private":  true,
-    "version":  "0.9.7",
-    "type":  "module",
-    "exports":  {
-                    ".":  "./src/index.ts"
-                },
-    "dependencies":  {
-                         "lossless-json":  "^4.3.1"
-                     }
+    "name": "@localizationhub/core",
+    "private": true,
+    "version": "0.9.8",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "dependencies": {
+        "lossless-json": "^4.3.1"
+    }
 }

@@ -1,10 +1,10 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.7',
-  releaseTitle: 'Quiet Clarity',
-  releaseBlurb: 'A calmer Desktop and Web workspace with richer translator craft tips, clearer guidance before you start, and quiet discoveries — Local privacy and Cloud authorization stay unchanged.',
+  version: '0.9.8',
+  releaseTitle: 'Game-First Experience',
+  releaseBlurb: 'A sharper game-localization story, an activation-ready Local sample project, richer workspace flow, and crawlable public pages — with all 74 translator tips and quiet discoveries intact.',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.7',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.8',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*
