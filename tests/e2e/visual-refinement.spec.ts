@@ -51,6 +51,12 @@ test('landing preview changes the real UI locale, with bounded section spacing',
   await populatedRadio(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
+  await expect(page.locator('.site-header')).toBeVisible()
+  await expect(page.locator('.workflow-strip > span')).toHaveCount(4)
+  expect(await page.locator('.site-header, .workflow-strip').evaluateAll(elements => elements.every(element => {
+    const box = element.getBoundingClientRect()
+    return box.left >= 0 && box.right <= document.documentElement.clientWidth
+  }))).toBe(true)
   const preview = page.locator('.preview-controls')
   await preview.getByRole('button', { name: 'العربية', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')

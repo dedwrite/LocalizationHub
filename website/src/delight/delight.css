@@ -276,7 +276,7 @@ html[dir='rtl'] :is(.field-notes-kicker, .resume-kicker) { letter-spacing: 0; }
 .shortcut-guide > button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; border: 1px solid #675589; border-radius: 9px; color: #e7ddfb; background: #2a223b; cursor: pointer; }
 .command-launcher { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 10px; border: 1px solid #3b3a47; border-radius: 8px; color: #ddd6ea; background: #161821; cursor: pointer; white-space: nowrap; }
 .command-launcher kbd { color: #9f93b8; font: 9px 'DM Mono', monospace; direction: ltr; }
-.site-header .site-command-launcher { margin-inline-start: auto; }.site-header .header-cta { margin-inline-start: 0; }
+.site-header .site-command-launcher { margin-inline-start: 8px; border-color: #40374f; background: linear-gradient(135deg, #1d1927, #13151d); box-shadow: inset 0 1px #ffffff0a; }.site-header .header-cta { margin-inline-start: 0; }
 .toolbar-command { min-height: 34px; border-radius: 5px; font-size: 11px; }
 .mob-command { flex: 0 0 auto; width: 40px; height: 44px; border: 1px solid #353945; border-radius: 9px; color: #cbbcea; background: #181b24; font: 15px 'DM Mono', monospace; cursor: pointer; }
 @keyframes command-arrive { from { transform: translateY(-8px) scale(.985); } }
@@ -340,6 +340,9 @@ html[dir='rtl'] :is(.field-notes-kicker, .resume-kicker) { letter-spacing: 0; }
   .local-header > .command-launcher { margin-inline-start: auto; }.local-header > .command-launcher span { display: none; }
   .translation-footprint { padding: 10px; }.translation-footprint > p { font-size: 11px; }
   .local-home .local-empty-companion { padding: 16px; }.local-empty-companion .empty-constellation { display: none; }
+}
+@media (max-width: 1000px) {
+  .site-header .site-command-launcher { margin-inline-start: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .experience-skeleton i { animation: none; background: #181d27; }
