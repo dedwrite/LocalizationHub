@@ -17,5 +17,5 @@ export function FridayClock() {
   const { t } = useI18n()
   const id = useId()
   const [open, setOpen] = useState(false)
-  return <><button type="button" className="friday-clock" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}><bdi>Friday · 11:59 PM</bdi></button><span id={id} className="friday-note" hidden={!open} role="status" data-i18n-skip><b>{t('delight.friday')}</b> {t('delight.fridayBody')}</span></>
+  return <><button type="button" className="friday-clock" aria-expanded={open} aria-controls={id} onClick={event => { setOpen(!open); event.currentTarget.focus() }} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}><bdi>Friday · 11:59 PM</bdi></button><span id={id} className="friday-note" hidden={!open} role="status" data-i18n-skip><b>{t('delight.friday')}</b> {t('delight.fridayBody')}</span></>
 }
