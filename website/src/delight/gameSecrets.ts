@@ -10,6 +10,14 @@ export const GAME_MEME_KEYS = [
   'delight.gameSecret.memeWildString',
   'delight.gameSecret.memePlaceholder',
   'delight.gameSecret.memeCake',
+  'delight.gameSecret.memeWarNeverChanges',
+  'delight.gameSecret.memeFinallyLocalized',
+  'delight.gameSecret.memeAnotherLocale',
+  'delight.gameSecret.memeKeptWaiting',
+  'delight.gameSecret.memeKindly',
+  'delight.gameSecret.memePraiseGlossary',
+  'delight.gameSecret.memeAllYourSource',
+  'delight.gameSecret.memeAmongUs',
 ] as const satisfies readonly MessageKey[]
 
 export const OPEN_GAME_SECRET_EVENT = 'localizationhub:open-game-secret'

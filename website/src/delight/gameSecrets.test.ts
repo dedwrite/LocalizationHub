@@ -11,6 +11,6 @@ describe('game culture secrets', () => {
   it('recovers cleanly after a wrong key and keeps several distinct references', () => {
     expect(advanceKonamiProgress(4, 'x')).toBe(0)
     expect(advanceKonamiProgress(5, 'ArrowUp')).toBe(1)
-    expect(new Set(GAME_MEME_KEYS).size).toBe(4)
+    expect(new Set(GAME_MEME_KEYS).size).toBe(12)
   })
 })

@@ -174,4 +174,12 @@ export const delightMessages = {
   'delight.gameSecret.memeWildString': { en: 'A wild untranslated string appeared.', ar: 'ظهر نص غير مترجم في البرية.' },
   'delight.gameSecret.memePlaceholder': { en: 'You died. The placeholder survived.', ar: 'لقد متّ. المتغير نجا.' },
   'delight.gameSecret.memeCake': { en: 'The cake is still in the source file.', ar: 'الكعكة ما زالت في ملف المصدر.' },
+  'delight.gameSecret.memeWarNeverChanges': { en: 'Localization. Localization never changes.', ar: 'التوطين. التوطين لا يتغير أبداً.' },
+  'delight.gameSecret.memeFinallyLocalized': { en: 'Hey, you. You’re finally localized.', ar: 'مهلاً، أنت. أخيراً تم توطينك.' },
+  'delight.gameSecret.memeAnotherLocale': { en: 'The princess is in another locale.', ar: 'الأميرة في لغة أخرى.' },
+  'delight.gameSecret.memeKeptWaiting': { en: 'Kept you waiting, untranslated string?', ar: 'جعلتك تنتظر يا أيها السطر غير المترجم؟' },
+  'delight.gameSecret.memeKindly': { en: 'Would you kindly preserve the placeholders?', ar: 'هل تتكرم وتحافظ على المتغيرات؟' },
+  'delight.gameSecret.memePraiseGlossary': { en: 'Praise the glossary.', ar: 'سبّح بحمد القاموس.' },
+  'delight.gameSecret.memeAllYourSource': { en: 'All your source are belong to context.', ar: 'كل مصادركم صارت للسياق.' },
+  'delight.gameSecret.memeAmongUs': { en: 'The typo was among us.', ar: 'كان الخطأ المطبعي بيننا.' },
 } satisfies MessageCatalog
