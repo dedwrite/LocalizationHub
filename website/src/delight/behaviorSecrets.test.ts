@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { discoverBehaviorSecret, fridayNightComplete, lateNightHour, markSecretSeen, secretSeen } from './behaviorSecrets'
+import { discoverBehaviorSecret, fridayNightComplete, lateNightHour, markSecretSeen, secretSeen, sundayDaytimeComplete } from './behaviorSecrets'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -8,6 +8,12 @@ describe('behaviorSecrets', () => {
     expect(fridayNightComplete(new Date('2026-09-04T20:00:00'))).toBe(true) // Friday
     expect(fridayNightComplete(new Date('2026-09-05T02:00:00'))).toBe(true) // Saturday early
     expect(fridayNightComplete(new Date('2026-09-04T12:00:00'))).toBe(false)
+  })
+
+  it('detects Sunday daytime completion windows', () => {
+    expect(sundayDaytimeComplete(new Date('2026-09-06T11:00:00'))).toBe(true) // Sunday
+    expect(sundayDaytimeComplete(new Date('2026-09-06T07:00:00'))).toBe(false)
+    expect(sundayDaytimeComplete(new Date('2026-09-05T11:00:00'))).toBe(false)
   })
 
   it('discovers rare secrets once and respects storage', () => {
@@ -26,6 +32,16 @@ describe('behaviorSecrets', () => {
     expect(discoverBehaviorSecret({
       complete: true,
       now: new Date('2026-09-04T21:15:00'),
+    })).toBeNull()
+    const sunday = discoverBehaviorSecret({
+      complete: true,
+      now: new Date('2026-09-06T11:00:00'),
+    })
+    expect(sunday?.id).toBe('sundayComplete')
+    markSecretSeen('sundayComplete')
+    expect(discoverBehaviorSecret({
+      complete: true,
+      now: new Date('2026-09-06T11:00:00'),
     })).toBeNull()
     expect(lateNightHour(new Date('2026-09-01T02:00:00'))).toBe(true)
     const late = discoverBehaviorSecret({

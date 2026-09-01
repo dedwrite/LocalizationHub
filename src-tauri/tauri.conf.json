@@ -1,45 +1,45 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "LocalizationHub",
-  "version": "0.9.6",
-  "identifier": "com.localizationhub.desktop",
-  "build": {
-    "frontendDist": "../frontend/dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm --prefix frontend run dev",
-    "beforeBuildCommand": "npm --prefix frontend run build:release"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "LocalizationHub",
-        "width": 1280,
-        "height": 800,
-        "minWidth": 1000,
-        "minHeight": 650,
-        "center": true,
-        "resizable": true,
-        "fullscreen": false
-      }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
-  "bundle": {
-    "active": true,
-    "targets": [
-      "nsis"
-    ],
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "android": {
-      "debugApplicationIdSuffix": ".debug"
-    }
-  }
+    "$schema":  "../node_modules/@tauri-apps/cli/config.schema.json",
+    "productName":  "LocalizationHub",
+    "version":  "0.9.7",
+    "identifier":  "com.localizationhub.desktop",
+    "build":  {
+                  "frontendDist":  "../frontend/dist",
+                  "devUrl":  "http://localhost:5173",
+                  "beforeDevCommand":  "npm --prefix frontend run dev",
+                  "beforeBuildCommand":  "npm --prefix frontend run build:release"
+              },
+    "app":  {
+                "windows":  [
+                                {
+                                    "title":  "LocalizationHub",
+                                    "width":  1280,
+                                    "height":  800,
+                                    "minWidth":  1000,
+                                    "minHeight":  650,
+                                    "center":  true,
+                                    "resizable":  true,
+                                    "fullscreen":  false
+                                }
+                            ],
+                "security":  {
+                                 "csp":  null
+                             }
+            },
+    "bundle":  {
+                   "active":  true,
+                   "targets":  [
+                                   "nsis"
+                               ],
+                   "icon":  [
+                                "icons/32x32.png",
+                                "icons/128x128.png",
+                                "icons/128x128@2x.png",
+                                "icons/icon.icns",
+                                "icons/icon.ico"
+                            ],
+                   "android":  {
+                                   "debugApplicationIdSuffix":  ".debug"
+                               }
+               }
 }

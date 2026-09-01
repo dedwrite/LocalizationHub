@@ -1,10 +1,10 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.6',
-  releaseTitle: 'App Parity',
-  releaseBlurb: 'Clearer speaker and listener chips, DeepL on the website through an explicit proxy, LH Radio in the desktop app, and a quieter language control in the footer.',
+  version: '0.9.7',
+  releaseTitle: 'Quiet Clarity',
+  releaseBlurb: 'A calmer Desktop and Web workspace with richer translator craft tips, clearer guidance before you start, and quiet discoveries — Local privacy and Cloud authorization stay unchanged.',
   repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.6',
+  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.7',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*

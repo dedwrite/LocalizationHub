@@ -1,26 +1,26 @@
 {
-  "name": "localizationhub-collaboration-server",
-  "version": "0.9.6",
-  "private": true,
-  "description": "WebSocket collaboration relay for LocalizationHub.",
-  "type": "module",
-  "scripts": {
-    "dev": "node dev.mjs",
-    "start": "node server.mjs",
-    "check": "node --check server.mjs",
-    "test": "set NODE_ENV=test&& node --test tests/*.test.mjs",
-    "smoke:v0.4": "node scripts/v0.4-workflow-smoke.mjs",
-    "db:migrate": "node migrate.mjs"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "music-metadata": "^11.15.0",
-    "pg": "^8.23.0",
-    "ws": "^8.18.0"
-  },
-  "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
-  }
+    "name":  "localizationhub-collaboration-server",
+    "version":  "0.9.7",
+    "private":  true,
+    "description":  "WebSocket collaboration relay for LocalizationHub.",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "node dev.mjs",
+                    "start":  "node server.mjs",
+                    "check":  "node --check server.mjs",
+                    "test":  "set NODE_ENV=test\u0026\u0026 node --test tests/*.test.mjs",
+                    "smoke:v0.4":  "node scripts/v0.4-workflow-smoke.mjs",
+                    "db:migrate":  "node migrate.mjs"
+                },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "dependencies":  {
+                         "music-metadata":  "^11.15.0",
+                         "pg":  "^8.23.0",
+                         "ws":  "^8.18.0"
+                     },
+    "devDependencies":  {
+                            "@electric-sql/pglite":  "^0.5.8"
+                        }
 }

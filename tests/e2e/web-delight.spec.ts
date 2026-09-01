@@ -28,7 +28,7 @@ async function accessible(page: Page, selector: string) {
 for (const locale of ['en', 'ar'] as const) {
   const labels = text[locale]
   test(`tips change only by request, retain focus and remember hide/show in ${locale}`, async ({ page }) => {
-    // This deliberately walks all 14 tips plus locale/storage round trips.
+    // This deliberately walks all 16 tips plus locale/storage round trips.
     // Windows WebKit traces show ~2.3s per successful pointer action, so the
     // cumulative scenario needs 60s; individual assertions/retries are unchanged.
     test.setTimeout(60_000)
@@ -41,7 +41,7 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('.lh-language-switcher select').selectOption(locale)
     await expect(tip.locator('p')).toHaveText(before)
     const seen = new Set([before])
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 15; i++) {
       const current = await tip.locator('p').innerText()
       await tip.getByRole('button', { name: labels.next, exact: true }).click()
       await expect(tip.locator('p')).not.toHaveText(current)
@@ -175,6 +175,10 @@ for (const locale of ['en', 'ar'] as const) {
     await accessible(page, '.context-demo')
     await page.keyboard.press('Escape')
     await expect(page.locator('.friday-note')).toBeHidden()
+    await page.locator('.faq-locale-secret-trigger').click()
+    await expect(page.locator('.faq-locale-secret-note')).toContainText(locale === 'ar' ? 'قاعدة هادئة للتوطين.' : 'A quiet rule of localization.')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.faq-locale-secret-note')).toBeHidden()
     expect(errors).toEqual([])
   })
 }
@@ -194,6 +198,10 @@ test('optional preference storage failures do not break tips or the page', async
   await page.getByRole('button', { name: 'Show translation tips', exact: true }).click()
   await page.getByRole('button', { name: 'Another tip', exact: true }).click()
   await expect(page.locator('.field-tip-copy')).toBeVisible()
+  await page.locator('.on-device-secret-trigger').click()
+  await expect(page.locator('.on-device-secret-note')).toContainText('Still on this device.')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('.on-device-secret-note')).toBeHidden()
   expect(errors).toEqual([])
 })
 

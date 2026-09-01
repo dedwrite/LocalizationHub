@@ -61,9 +61,9 @@ export const websiteMessages = {
   /* The public release heading is authored as two visual lines. Arabic reads
    * naturally right-to-left when the semantic phrase is split in this order. */
   'website.release.localWorkspace': { en: 'Web', ar: 'لمسات' },
-  'website.release.currentTitle': { en: 'App Parity', ar: 'تكافؤ التطبيق' },
+  'website.release.currentTitle': { en: 'Quiet Clarity', ar: 'وضوح هادئ' },
   'website.release.parity': { en: 'Delight', ar: 'تجربة الويب' },
-  'website.release.description': { en: 'Clearer speaker and listener chips, DeepL on the website through an explicit proxy, LH Radio in the desktop app, and a quieter language control in the footer.', ar: 'بطاقات أوضح للمتحدث والمستمع، وDeepL على الموقع عبر وسيط صريح، وLH Radio في تطبيق سطح المكتب، ومبدّل لغة أهدأ في التذييل.' },
+  'website.release.description': { en: 'A calmer Desktop and Web workspace with richer translator craft tips, clearer guidance before you start, and quiet discoveries — Local privacy and Cloud authorization stay unchanged.', ar: 'مساحة عمل أهدأ على سطح المكتب والويب، مع تلميحات ترجمة أغنى وإرشاد أوضح قبل أن تبدأ واكتشافات هادئة — مع بقاء خصوصية المشاريع المحلية وصلاحيات السحابة كما هي.' },
   'website.faq.kicker': { en: '05 / GOOD QUESTIONS', ar: '05 / أسئلة مهمة' },
   'website.faq.title': { en: 'Before you start translating.', ar: 'قبل أن تبدأ الترجمة.' },
   'website.download.description': { en: 'A focused Windows workspace for translating, reviewing, and managing the localization files you already have.', ar: 'مساحة عمل مركزة على Windows لترجمة ملفات التوطين الحالية ومراجعتها وإدارتها.' },
