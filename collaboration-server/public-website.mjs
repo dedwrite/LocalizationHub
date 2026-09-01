@@ -14,8 +14,10 @@ const MIME_TYPES = new Map([
   ['.manifest', 'application/manifest+json; charset=utf-8'],
   ['.png', 'image/png'],
   ['.svg', 'image/svg+xml'],
+  ['.txt', 'text/plain; charset=utf-8'],
   ['.webmanifest', 'application/manifest+json; charset=utf-8'],
   ['.webp', 'image/webp'],
+  ['.xml', 'application/xml; charset=utf-8'],
 ])
 
 export function resolvePublicWebsiteDirectory() {
