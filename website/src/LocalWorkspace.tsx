@@ -14,6 +14,7 @@ import AmbientGreeting from './delight/AmbientGreeting'
 import ProjectMark from './delight/ProjectMark'
 import { EmptyConstellation } from './delight/ExperienceState'
 import { openCommandCenter } from './delight/CommandCenter'
+import { registerQuietCommands } from './delight/quietCommands'
 import './workspace-tools.css'
 
 type LocalRow = { id: string; value: any; savedAt: string }
@@ -63,6 +64,16 @@ export default function LocalWorkspace() {
     try { await deleteLocalProject(deleting.id); setDeleting(null); refresh(); setNotice(t('local.deleted')) }
     catch { setDeleting(null); setNotice(t('local.deleteFailed')) }
   }
+  useEffect(() => {
+    if (opened) return
+    return registerQuietCommands(recent.slice(0, 5).map((row) => ({
+      id: `local.recent.${row.id}`,
+      label: `Open ${fileNameOf(row)}`,
+      keywords: `recent local ${fileNameOf(row)}`,
+      group: 'project' as const,
+      run: () => openSaved(row),
+    })))
+  }, [opened, recent])
   if (opened && storage) return <Workspace key={opened.id} storage={storage} user={localUser} onHome={() => { setOpened(null); refresh() }} />
   return <main className="local-page local-home" data-i18n-skip>
     <header className="local-header">
@@ -76,7 +87,7 @@ export default function LocalWorkspace() {
       <div className="local-open-panel"><span className="local-panel-index">{t('local.openStep')}</span><div className="local-file-graphic" aria-hidden="true"><i /><i /><i /></div><h2>{t('local.openFile')}</h2><p>{t('local.formats')}</p><label className="file-button">{t('local.choose')}<input type="file" accept=".json,.csv,.po,.pot" onChange={(event) => { const file = event.target.files?.[0]; if (file) void openFile(file); event.target.value = '' }} /></label><small>{t('local.notUploaded')}</small><button type="button" className="button button-quiet" onClick={() => openSample()}>{t('local.openSample')}</button><small>{t('local.openSampleHint')}</small></div>
       {notice && <div className="notice" role="status">{notice}</div>}
       {recent.length === 0 && <div className="local-empty-companion"><EmptyConstellation /><div><strong>{t('delight.localEmptyTitle')}</strong><span>{t('delight.localEmptyBody')}</span></div></div>}
-      {recent.length > 0 && <div className="recent-local"><div className="recent-local-heading"><div><span>{t('local.recentDevice')}</span><strong>{t('local.recent')}</strong></div><small>{t('local.storedDevice')}</small></div>{recent.map((row) => <div className="recent-local-row" key={row.id}><button aria-label={fileNameOf(row)} onClick={() => openSaved(row)}><ProjectMark seed={row.id} label={fileNameOf(row)} compact /><span><strong><bdi>{fileNameOf(row)}</bdi></strong><span>{t('local.entryCount', { count: row.value?.entries?.length ?? 0 })}</span></span></button><button onClick={() => setDeleting(row)}>{t('local.deleteCopy')}</button></div>)}</div>}
+      {recent.length > 0 && <div className="recent-local"><div className="recent-local-heading"><div><span>{t('local.recentDevice')}</span><strong>{t('local.recent')}</strong></div><small>{t('local.storedDevice')}</small></div>{recent.map((row) => <div className="recent-local-row" key={row.id}><button aria-label={fileNameOf(row)} onClick={() => openSaved(row)}><ProjectMark name={fileNameOf(row)} size="sm" /><span><strong><bdi>{fileNameOf(row)}</bdi></strong><span>{t('local.entryCount', { count: row.value?.entries?.length ?? 0 })}</span></span></button><button onClick={() => setDeleting(row)}>{t('local.deleteCopy')}</button></div>)}</div>}
       <TipCard context="local" />
     </section>
     {deleting && <ConfirmDialog title={t('local.deleteCopy')} body={t('local.deleteExplanation')} confirmLabel={t('local.deleteCopy')} cancelLabel={t('common.actions.cancel')} danger onConfirm={() => { void removeCopy() }} onCancel={() => setDeleting(null)} />}

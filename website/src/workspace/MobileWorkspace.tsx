@@ -8,7 +8,7 @@ import BrowserCollaboration from '../BrowserCollaboration'
 import ConfirmDialog from './ConfirmDialog'
 import type { BulkSelection, EntryFilterId, EntryIssue, EntryView } from './entryCollection'
 import type { ProjectSnapshot } from '../appApi'
-import { TOKEN_PROFILE_LABELS, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
+import { TOKEN_PROFILE_LABELS, type GlossaryEntry, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import TokenProfileStatus from './TokenProfileStatus'
 import CompletionMoment from '../delight/CompletionMoment'
 import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
@@ -21,6 +21,7 @@ export type MobileWorkspaceProps = {
   onDelete?: () => void
   local?: boolean
   onExport: () => void
+  glossary?: GlossaryEntry[]
   user: { id: string; username: string }
   projectId: string
   projectName: string
@@ -160,6 +161,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
             writable={props.writable}
             tokenProfileId={props.tokenProfileId}
             issues={props.issues}
+            glossary={props.glossary}
             sourceDirection={props.sourceDirection}
             direction={props.direction}
             position={props.position}

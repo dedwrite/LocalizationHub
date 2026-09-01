@@ -17,6 +17,7 @@ import AmbientGreeting from './delight/AmbientGreeting'
 import ProjectMark from './delight/ProjectMark'
 import { EmptyConstellation, ExperienceSkeleton } from './delight/ExperienceState'
 import { openCommandCenter, PROJECT_SEARCH_EVENT } from './delight/CommandCenter'
+import { registerQuietCommands } from './delight/quietCommands'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -115,6 +116,19 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
   const openedId = useMemo(() => lastCloudProject(user.id), [user.id, projects])
   const resume = projects.find(project => project.id === openedId) ?? latestDated(projects, project => project.updatedAt)
 
+  useEffect(() => {
+    const recent = [...projects]
+      .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
+      .slice(0, 5)
+    return registerQuietCommands(recent.map((project) => ({
+      id: `cloud.recent.${project.id}`,
+      label: `Open ${project.name}`,
+      keywords: `recent cloud ${project.name} ${project.sourceFileName ?? ''}`,
+      group: 'project' as const,
+      run: () => navigate(`/app/projects/${project.id}`),
+    })))
+  }, [projects])
+
   return <main className="workspace-page projects-page">
     <AppHeader user={user} onLogout={onLogout} />
     <section className="dashboard">
@@ -156,11 +170,10 @@ function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; 
   const translated = project.translatedCount ?? 0
   const percent = total ? Math.round((translated / total) * 100) : 0
   const sourceLabel = project.sourceFileName || 'LocalizationHub Project'
-  const extension = project.sourceFileName?.split('.').pop()?.toUpperCase() || 'LH'
   return (
     <div className="project-card-shell">
     <button className="project-card" onClick={onOpen} aria-label={`Open ${project.name}`}>
-      <div className="project-card-top"><ProjectMark seed={project.id} label={project.name} detail={extension} /><span className="project-role">{friendlyStatus(project.role)}</span></div>
+      <div className="project-card-top"><ProjectMark name={project.name} size="md" className="project-glyph" /><span className="project-role">{friendlyStatus(project.role)}</span></div>
       <div className="project-title"><strong>{project.name}</strong><span aria-hidden="true">↗</span></div>
       <span className="project-file">{sourceLabel}</span>
       <div className="project-progress-label"><span>Translation progress</span><strong>{percent}%</strong></div>

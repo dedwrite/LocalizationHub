@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { navigateInternal } from '../internalNavigation'
+import { listDynamicQuietCommands, listQuietCommands, subscribeQuietCommands } from './quietCommands'
 
 export const OPEN_COMMAND_CENTER_EVENT = 'localizationhub:open-command-center'
 export const WORKSPACE_COMMAND_EVENT = 'localizationhub:workspace-command'
@@ -28,6 +29,7 @@ export default function CommandCenter() {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [path, setPath] = useState(window.location.pathname)
+  const [quietTick, setQuietTick] = useState(0)
   const returnFocus = useRef<HTMLElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/u.test(navigator.platform)
@@ -77,6 +79,7 @@ export default function CommandCenter() {
   }, [mode])
 
   useEffect(() => { if (mode === 'palette') requestAnimationFrame(() => inputRef.current?.focus()) }, [mode])
+  useEffect(() => subscribeQuietCommands(() => setQuietTick(value => value + 1)), [])
 
   const workspaceOpen = mode !== null && Boolean(document.querySelector('.workspace-shell, .mob-workspace'))
   const projectListOpen = path === '/app/projects' && Boolean(document.querySelector('.projects-page'))
@@ -97,8 +100,21 @@ export default function CommandCenter() {
       { id: 'overview', label: t('delight.command.overview'), meta: 'O', group: 'actions', run: () => dispatchWorkspace('overview') },
       { id: 'focus', label: t('delight.command.focus'), meta: 'F', group: 'actions', run: () => dispatchWorkspace('focus') },
     )
+    const labels = new Set(items.map(command => command.label.toLocaleLowerCase()))
+    for (const command of [...listDynamicQuietCommands(query), ...listQuietCommands()]) {
+      const label = command.label.toLocaleLowerCase()
+      if (labels.has(label)) continue
+      labels.add(label)
+      items.push({
+        id: `quiet:${command.id}`,
+        label: command.label,
+        meta: command.hint ?? '↗',
+        group: command.group === 'navigate' ? 'navigate' : 'actions',
+        run: command.run,
+      })
+    }
     return items
-  }, [locale, mod, path, projectListOpen, setLocale, t, workspaceOpen])
+  }, [locale, mod, path, projectListOpen, query, quietTick, setLocale, t, workspaceOpen])
   const filtered = commands.filter(command => `${command.label} ${command.meta}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
 
   useEffect(() => { if (active >= filtered.length) setActive(Math.max(0, filtered.length - 1)) }, [active, filtered.length])

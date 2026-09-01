@@ -12,7 +12,7 @@ export default function ResumeCard({ name, total, translated, position = 0, kind
   const local = kind === 'local'
   const label: MessageKey = local ? 'delight.lastSaved' : kind === 'cloud-opened' ? 'delight.lastOpened' : 'delight.updated'
   return <section className="resume-card" aria-label={t('delight.resume')} data-i18n-skip>
-    <ProjectMark seed={`${kind}:${name}`} label={name} detail={local ? 'LOCAL' : 'CLOUD'} />
+    <ProjectMark name={name} size="lg" className="resume-emblem" />
     <div className="resume-copy"><span className="resume-kicker">{t(label)}</span><h2>{t('delight.resume')}</h2><strong className="resume-name"><bdi>{name}</bdi></strong><p>{t(local ? 'delight.localOnly' : 'delight.cloudFresh')}</p></div>
     <div className="resume-progress"><div><span>{countLabel}</span><strong>{counts.percent}%</strong></div><progress max={counts.total || 1} value={counts.translated} aria-label={countLabel} />
       {local && position > 0 && position <= counts.total && <small>{t('delight.savedEntry', { position, total: counts.total })}</small>}

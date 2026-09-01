@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
+import { extractProtectedTokens, type EntryContext, type GlossaryEntry, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
+import GlossaryHint from '../delight/GlossaryHint'
 import type { EntryIssue } from './entryCollection'
 import { meterWidth, translationMetrics } from '../delight/translationMetrics'
 
@@ -13,6 +14,7 @@ type EditorPanelProps = {
   writable: boolean
   tokenProfileId: TokenProfileId
   issues: EntryIssue[]
+  glossary?: GlossaryEntry[]
   sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
@@ -62,12 +64,12 @@ export function DialogueContextStrip({ context }: { context: EntryContext | Pars
     ? ` (${genderKeys[value] ? t(genderKeys[value]) : value})` : ''
   const parts: React.ReactNode[] = []
   if (context.speaker) {
-    parts.push(<span className="context-person" key="speaker"><span className="context-field-label">{t('extraction.context.speaker')}</span> <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
+    parts.push(<span className="context-person" data-role="speaker" key="speaker"><span className="context-field-label">{t('extraction.context.speaker')}</span> <bdi>{context.speaker}</bdi>{gender(context.speakerGender)}</span>)
   }
   if (context.listeners?.length) {
-    parts.push(<span className="context-person" key="listeners">→ <span className="context-field-label">{t('extraction.source.listeners')}:</span> {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
+    parts.push(<span className="context-person" data-role="listener" key="listeners">→ <span className="context-field-label">{t('extraction.source.listeners')}:</span> {context.listeners.map((name, index) => <span key={index}>{index > 0 && ', '}<bdi>{name}</bdi>{gender(context.listenerGenders?.[index])}</span>)}</span>)
   } else if (context.listener) {
-    parts.push(<span className="context-person" key="listener">→ <span className="context-field-label">{t('extraction.context.listener')}</span> <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
+    parts.push(<span className="context-person" data-role="listener" key="listener">→ <span className="context-field-label">{t('extraction.context.listener')}</span> <bdi>{context.listener}</bdi>{gender(context.listenerGender)}</span>)
   }
   if (context.scene) parts.push(<span className="context-detail" key="scene"><span className="context-field-label">{t('extraction.context.scene')}</span> <bdi>{context.scene}</bdi></span>)
   if (context.conversationId) parts.push(<span className="context-detail" key="conversation"><span className="context-field-label">{t('workspace.context.conversation')}</span> <bdi>{context.conversationId}</bdi></span>)
@@ -89,6 +91,7 @@ export default function EditorPanel(props: EditorPanelProps) {
   const footprintMessage: Record<typeof footprint.tone, MessageKey> = {
     empty: 'delight.length.empty', compact: 'delight.length.compact', balanced: 'delight.length.balanced', expanded: 'delight.length.expanded',
   }
+  const quietLengthKind = footprint.tone === 'expanded' ? 'very-long' : footprint.tone === 'compact' ? 'short' : footprint.tone
   const protectedTokens = extractProtectedTokens(source, tokenProfileId)
   const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
   // Extraction context stays in its canonical metadata location. Both display
@@ -221,12 +224,13 @@ export default function EditorPanel(props: EditorPanelProps) {
             placeholder="Write a translation…"
             aria-label="Translation"
           />
-          <div className={`translation-footprint footprint-${footprint.tone}`} data-i18n-skip>
+          <div className={`translation-footprint length-cue footprint-${footprint.tone}`} data-kind={quietLengthKind} data-i18n-skip>
             <div className="footprint-heading"><span>{t('delight.length.title')}</span><strong>{t('delight.length.percent', { percent: footprint.percentage })}</strong></div>
             <div className="footprint-track" aria-hidden="true"><i style={{ width: `${meterWidth(footprint)}%` }} /></div>
             <div className="footprint-counts"><span>{t('delight.length.source', { count: footprint.sourceCharacters })}</span><span>{t('delight.length.translation', { count: footprint.translationCharacters })}</span></div>
             <p>{t(footprintMessage[footprint.tone])}</p>
           </div>
+          <GlossaryHint source={source} translation={translation} glossary={props.glossary ?? []} />
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (
@@ -251,7 +255,7 @@ export default function EditorPanel(props: EditorPanelProps) {
           </div>
         )}
 
-        {props.local && <p className="muted local-mt-privacy">Your project stays on this device. Using Machine Translation sends the current text/context to the selected provider.</p>}
+        {props.local && <p className="muted local-mt-privacy">{t('local.mtPrivacy')}</p>}
         <MachineTranslationPanel
           sourceText={source}
           sourceLocale={sourceLocale}

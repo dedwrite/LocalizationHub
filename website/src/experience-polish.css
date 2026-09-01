@@ -417,10 +417,10 @@
 .recent-local-heading > div { display: grid; gap: 7px; }
 .recent-local-heading strong { font-size: 1.25rem; }
 .recent-local-heading small { color: #747d89; }
-.recent-local-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; border-top: 1px solid #262d37; }
-.recent-local-row > button:first-child { display: grid; gap: 5px; border: 0; background: transparent; }
-.recent-local-row > button:first-child span { color: #777f8c; font: 0.6rem 'DM Mono', monospace; }
-.recent-local-row > button:last-child { align-self: center; }
+.recent-local-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; border-top: 1px solid #262d37; }
+.recent-local-row > button:first-of-type { display: grid; gap: 5px; border: 0; background: transparent; }
+.recent-local-row > button:first-of-type span { color: #777f8c; font: 0.6rem 'DM Mono', monospace; }
+.recent-local-row > button:last-of-type { align-self: center; }
 
 .local-editor-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px clamp(16px, 4vw, 56px); border-bottom: 1px solid #2a303a; }
 .local-editor-actions > div { display: flex; gap: 8px; }

@@ -5,13 +5,13 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('behaviorSecrets', () => {
   it('detects Friday-night completion windows', () => {
-    expect(fridayNightComplete(new Date('2026-09-04T20:00:00'))).toBe(true)
-    expect(fridayNightComplete(new Date('2026-09-05T02:00:00'))).toBe(true)
+    expect(fridayNightComplete(new Date('2026-09-04T20:00:00'))).toBe(true) // Friday
+    expect(fridayNightComplete(new Date('2026-09-05T02:00:00'))).toBe(true) // Saturday early
     expect(fridayNightComplete(new Date('2026-09-04T12:00:00'))).toBe(false)
   })
 
   it('detects Sunday daytime completion windows', () => {
-    expect(sundayDaytimeComplete(new Date('2026-09-06T11:00:00'))).toBe(true)
+    expect(sundayDaytimeComplete(new Date('2026-09-06T11:00:00'))).toBe(true) // Sunday
     expect(sundayDaytimeComplete(new Date('2026-09-06T07:00:00'))).toBe(false)
     expect(sundayDaytimeComplete(new Date('2026-09-05T11:00:00'))).toBe(false)
   })

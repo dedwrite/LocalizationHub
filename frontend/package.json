@@ -1,44 +1,44 @@
 {
-  "name": "localizationhub",
-  "private": true,
-  "version": "0.9.3",
-  "description": "Desktop localization editor for structured game text and protected-token workflows.",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "node scripts/validate-production-config.mjs && tsc -b && vite build",
-    "build:release": "node scripts/validate-production-config.mjs && tsc -b && vite build",
-    "verify:production": "node scripts/verify-production-build.mjs",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "test:tokens": "vitest run src/tokens"
-  },
-  "dependencies": {
-    "@codemirror/commands": "^6.11.0",
-    "@codemirror/state": "^6.7.1",
-    "@codemirror/view": "^6.43.9",
-    "@tauri-apps/plugin-dialog": "^2.7.2",
-    "@tauri-apps/plugin-fs": "^2.5.1",
-    "@tauri-apps/plugin-opener": "^2.5.4",
-    "@localizationhub/i18n": "0.9.3",
-    "lossless-json": "^4.3.1",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "@localizationhub/core": "0.9.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
-    "eslint": "^10.8.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.3",
-    "globals": "^17.7.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.65.0",
-    "vite": "^8.2.0",
-    "vitest": "^4.1.11"
-  }
+    "name":  "localizationhub",
+    "private":  true,
+    "version":  "0.9.7",
+    "description":  "Desktop localization editor for structured game text and protected-token workflows.",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "node scripts/validate-production-config.mjs \u0026\u0026 tsc -b \u0026\u0026 vite build",
+                    "build:release":  "node scripts/validate-production-config.mjs \u0026\u0026 tsc -b \u0026\u0026 vite build",
+                    "verify:production":  "node scripts/verify-production-build.mjs",
+                    "lint":  "eslint .",
+                    "preview":  "vite preview",
+                    "test:tokens":  "vitest run src/tokens"
+                },
+    "dependencies":  {
+                         "@codemirror/commands":  "^6.11.0",
+                         "@codemirror/state":  "^6.7.1",
+                         "@codemirror/view":  "^6.43.9",
+                         "@tauri-apps/plugin-dialog":  "^2.7.2",
+                         "@tauri-apps/plugin-fs":  "^2.5.1",
+                         "@tauri-apps/plugin-opener":  "^2.5.4",
+                         "@localizationhub/i18n":  "0.9.7",
+                         "lossless-json":  "^4.3.1",
+                         "react":  "^19.2.8",
+                         "react-dom":  "^19.2.8",
+                         "@localizationhub/core":  "0.9.7"
+                     },
+    "devDependencies":  {
+                            "@eslint/js":  "^10.0.1",
+                            "@types/node":  "^24.13.3",
+                            "@types/react":  "^19.2.17",
+                            "@types/react-dom":  "^19.2.3",
+                            "@vitejs/plugin-react":  "^6.0.4",
+                            "eslint":  "^10.8.0",
+                            "eslint-plugin-react-hooks":  "^7.1.1",
+                            "eslint-plugin-react-refresh":  "^0.5.3",
+                            "globals":  "^17.7.0",
+                            "typescript":  "~6.0.2",
+                            "typescript-eslint":  "^8.65.0",
+                            "vite":  "^8.2.0",
+                            "vitest":  "^4.1.11"
+                        }
 }

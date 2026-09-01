@@ -138,7 +138,7 @@ export const delightMessages = {
   'delight.shortcuts.save': { en: 'Save project', ar: 'حفظ المشروع' },
   'delight.shortcuts.find': { en: 'Find entries', ar: 'البحث في الإدخالات' },
   'delight.shortcuts.move': { en: 'Previous / next entry', ar: 'الإدخال السابق / التالي' },
-  'delight.shortcuts.advance': { en: 'Save and next untranslated', ar: 'حفظ ثم الانتقال لغير المترجم' },
+  'delight.shortcuts.advance': { en: 'Save and next untranslated', ar: 'حفظ ثم التالي غير المترجم' },
   'delight.shortcuts.escape': { en: 'Close the current layer', ar: 'إغلاق النافذة الحالية' },
   'delight.length.title': { en: 'Text footprint', ar: 'مساحة النص' },
   'delight.length.source': { en: 'Source {count}', ar: 'المصدر {count}' },

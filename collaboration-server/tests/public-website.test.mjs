@@ -16,6 +16,8 @@ async function createFixture() {
   await writeFile(path.join(directory, 'manifest.webmanifest'), '{"name":"LocalizationHub","display":"standalone"}')
   await writeFile(path.join(directory, 'web-build.json'), '{"entries":["assets/app-abc123.js"]}')
   await writeFile(path.join(directory, 'localizationhub-logo.jpg'), 'jpg')
+  await writeFile(path.join(directory, 'robots.txt'), 'User-agent: *\nAllow: /\n\nSitemap: https://localizationhub.app/sitemap.xml\n')
+  await writeFile(path.join(directory, 'sitemap.xml'), '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://localizationhub.app/</loc></url></urlset>\n')
   await writeFile(path.join(path.dirname(directory), 'outside-secret.txt'), 'secret')
   return directory
 }
@@ -76,6 +78,21 @@ describe('public website serving', () => {
     assert.equal(response.statusCode, 200)
     assert.equal(response.headers['Content-Type'], 'application/manifest+json; charset=utf-8')
     assert.equal(response.headers['Cache-Control'], 'public, max-age=86400')
+  })
+
+  it('serves robots.txt and sitemap.xml with crawl-friendly MIME types', async () => {
+    const directory = await createFixture()
+    const robots = responseRecorder()
+    assert.equal(await servePublicWebsite({ method: 'GET', url: '/robots.txt' }, robots, directory), true)
+    assert.equal(robots.statusCode, 200)
+    assert.equal(robots.headers['Content-Type'], 'text/plain; charset=utf-8')
+    assert.match(String(robots.body), /Sitemap:\s+https:\/\/localizationhub\.app\/sitemap\.xml/)
+
+    const sitemap = responseRecorder()
+    assert.equal(await servePublicWebsite({ method: 'GET', url: '/sitemap.xml' }, sitemap, directory), true)
+    assert.equal(sitemap.statusCode, 200)
+    assert.equal(sitemap.headers['Content-Type'], 'application/xml; charset=utf-8')
+    assert.match(String(sitemap.body), /https:\/\/localizationhub\.app\//)
   })
 
   it('supports HEAD without a response body', async () => {

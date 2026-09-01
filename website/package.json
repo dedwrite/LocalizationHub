@@ -1,21 +1,21 @@
 {
-  "name": "localizationhub-website",
-  "private": true,
-  "version": "0.9.3",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@localizationhub/core": "0.9.3",
-    "@localizationhub/i18n": "0.9.3",
-    "@vitejs/plugin-react": "^6.0.4",
-    "qrcode.react": "^4.2.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "typescript": "~6.0.2",
-    "vite": "^8.2.0"
-  }
+    "name":  "localizationhub-website",
+    "private":  true,
+    "version":  "0.9.7",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "tsc -b \u0026\u0026 vite build",
+                    "preview":  "vite preview"
+                },
+    "dependencies":  {
+                         "@localizationhub/core":  "0.9.7",
+                         "@localizationhub/i18n":  "0.9.7",
+                         "@vitejs/plugin-react":  "^6.0.4",
+                         "qrcode.react":  "^4.2.0",
+                         "react":  "^19.2.8",
+                         "react-dom":  "^19.2.8",
+                         "typescript":  "~6.0.2",
+                         "vite":  "^8.2.0"
+                     }
 }

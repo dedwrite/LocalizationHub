@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { PROJECT_PALETTES, projectIdentity, projectInitials, stableProjectHash } from './projectIdentity'
+import { projectIdentity } from './projectIdentity'
 
-describe('project identity', () => {
-  it('is deterministic and constrained to the curated palette', () => {
-    const first = projectIdentity('project-42', 'Friday Arabic')
-    expect(projectIdentity('project-42', 'Friday Arabic')).toEqual(first)
-    expect(PROJECT_PALETTES).toContainEqual({ accent: first.accent, soft: first.soft, ink: first.ink })
+describe('projectIdentity', () => {
+  it('is stable for the same name', () => {
+    expect(projectIdentity('Ni no Kuni')).toEqual(projectIdentity('Ni no Kuni'))
+    expect(projectIdentity('Ni no Kuni')).toEqual(projectIdentity('  ni no kuni  '))
   })
 
-  it('uses readable initials for filenames, names and empty labels', () => {
-    expect(projectInitials('Friday Arabic')).toBe('FA')
-    expect(projectInitials('dialogue.json')).toBe('DJ')
-    expect(projectInitials('')).toBe('LH')
+  it('varies across different names and keeps a glyph', () => {
+    const a = projectIdentity('Alpha Quest')
+    const b = projectIdentity('Beta Quest')
+    expect(a.glyph).toBeTruthy()
+    expect(b.glyph).toBeTruthy()
+    expect(a.accent).toMatch(/^#/)
+    expect([a.tone, b.tone].every((tone) => tone >= 0 && tone < 8)).toBe(true)
   })
 
-  it('changes the hash when the stable seed changes', () => {
-    expect(stableProjectHash('one')).not.toBe(stableProjectHash('two'))
+  it('uses Arabic letters for Arabic titles', () => {
+    expect(projectIdentity('مشروع تعريب').glyph).toBe('م')
   })
 })

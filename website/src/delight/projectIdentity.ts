@@ -1,32 +1,48 @@
-export const PROJECT_PALETTES = [
-  { accent: '#a78bfa', soft: '#2b2142', ink: '#eee8ff' },
-  { accent: '#7dd3fc', soft: '#172b3a', ink: '#e4f7ff' },
-  { accent: '#6ee7b7', soft: '#17342d', ink: '#e4fff6' },
-  { accent: '#f0abfc', soft: '#39203d', ink: '#fff0ff' },
-  { accent: '#fbbf7a', soft: '#3b291b', ink: '#fff4e5' },
-  { accent: '#93c5fd', soft: '#1d2d46', ink: '#eaf3ff' },
+/** Stable, deterministic visual identity for a project name. No network, no images. */
+
+export type ProjectIdentity = {
+  accent: string
+  accentSoft: string
+  glyph: string
+  tone: number
+}
+
+const PALETTE = [
+  { accent: '#a993de', soft: '#66509933' },
+  { accent: '#7eb8c9', soft: '#3d6e7a33' },
+  { accent: '#c9a07e', soft: '#7a5a3d33' },
+  { accent: '#8fc49a', soft: '#3d7a4d33' },
+  { accent: '#d09bb8', soft: '#7a3d5f33' },
+  { accent: '#9aa7d8', soft: '#3d4a7a33' },
+  { accent: '#c9c07e', soft: '#7a733d33' },
+  { accent: '#7ec9b0', soft: '#3d7a6833' },
 ] as const
 
-export type ProjectIdentity = (typeof PROJECT_PALETTES)[number] & { initials: string; index: number }
-
-export function stableProjectHash(seed: string): number {
+function hashName(name: string): number {
   let hash = 2166136261
-  for (const character of seed.trim().toLocaleLowerCase()) {
-    hash ^= character.codePointAt(0) ?? 0
+  const normalized = name.trim().toLocaleLowerCase()
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i)
     hash = Math.imul(hash, 16777619)
   }
   return hash >>> 0
 }
 
-export function projectInitials(label: string): string {
-  const parts = label.trim().split(/[\s._-]+/u).filter(Boolean)
-  if (parts.length === 0) return 'LH'
-  const first = Array.from(parts[0])[0] ?? 'L'
-  const last = parts.length > 1 ? Array.from(parts.at(-1) ?? '')[0] ?? '' : Array.from(parts[0])[1] ?? ''
-  return `${first}${last}`.toLocaleUpperCase()
+function firstGlyph(name: string): string {
+  const trimmed = name.trim()
+  if (!trimmed) return '·'
+  const match = trimmed.match(/[\p{L}\p{N}]/u)
+  const char = match?.[0] ?? trimmed[0]
+  return char.toLocaleUpperCase()
 }
 
-export function projectIdentity(seed: string, label = seed): ProjectIdentity {
-  const index = stableProjectHash(seed || label) % PROJECT_PALETTES.length
-  return { ...PROJECT_PALETTES[index], initials: projectInitials(label), index }
+export function projectIdentity(name: string): ProjectIdentity {
+  const tone = hashName(name || 'untitled') % PALETTE.length
+  const swatch = PALETTE[tone]
+  return {
+    accent: swatch.accent,
+    accentSoft: swatch.soft,
+    glyph: firstGlyph(name || 'untitled'),
+    tone,
+  }
 }

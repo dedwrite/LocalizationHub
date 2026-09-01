@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useI18n } from '@localizationhub/i18n'
+import { LanguageSwitcher, useI18n } from '@localizationhub/i18n'
 import { site } from './config/site'
 import useScrollReveal from './hooks/useScrollReveal'
 import usePointerDepth from './hooks/usePointerDepth'
@@ -19,7 +19,9 @@ import './styles.css'
 import './experience-polish.css'
 import './workspace-deep-polish.css'
 import './visual-refinement.css'
+import './marketing-atmosphere.css'
 import './delight/delight.css'
+import './delight/quiet-polish.css'
 
 const nav = [
   ['Product', '/#product'],
@@ -123,7 +125,7 @@ function Landing() {
     <section className="field-notes" data-i18n-skip><div><span className="field-notes-kicker">{t('delight.notes')}</span><h2>{t('delight.notesTitle')}</h2><p>{t('delight.notesBody')}</p><AmbientGreeting /></div><TipCard context="landing" /></section>
 
     <Reveal variant="fade"><section className="section faq-section" id="faq"><div className="section-intro"><p className="eyebrow">GOOD QUESTIONS</p><h2>Before you<br /><i>start translating.</i><FaqLocaleSecret /></h2></div><div className="faq-list">{[
-      ['Is LocalizationHub free?', 'The current v0.9.3 release is available through GitHub Releases. Local Projects work without an account.'],
+      ['Is LocalizationHub free?', `The current v${site.version} release is available through GitHub Releases. Local Projects work without an account.`],
       ['Do I need an account?', 'No. Local Projects work without an account. An account is only needed for Cloud Projects and online collaboration.'],
       ['What can I open?', 'Localization files — JSON, CSV, gettext PO, and LocalizationHub Project files (.lhproj) — parse, edit, and export. Game projects — Godot, Unreal, and Unity folders — scan, extract, and review.'],
       ['Does LocalizationHub extract files from games?', 'Yes. Read-only extraction from Godot, Unreal, and Unity game folders. Some deep binary formats remain partial; see the engine compatibility notes.'],
@@ -135,7 +137,7 @@ function Landing() {
 }
 
 
-function DownloadPage() { return <><Header /><main className="inner-page download-page"><p className="eyebrow">RELEASE / {site.version}</p><div className="download-layout"><div><h1>LocalizationHub<br /><i>{site.releaseTitle}</i></h1><p className="page-lede">A local-first Windows workspace for game localization, plus JSON, CSV, and PO files.</p><a className="button button-primary" href={site.releaseUrl}>Download from GitHub <span>↗</span></a><a className="button button-quiet" href={site.releaseUrl}>View release notes <span>↗</span></a></div><div className="download-panel"><div className="panel-mark"><img src="/localizationhub-logo.jpg" alt="" /></div><span className="panel-kicker">CURRENT STABLE RELEASE</span><h2>v{site.version}</h2><div className="download-fact"><span>Installer</span><strong>LocalizationHub_0.9.3_x64-setup.exe</strong></div><div className="download-fact"><span>Platform</span><strong>Windows x64</strong></div><div className="download-fact"><span>Works with</span><strong>Local Projects · Optional Cloud Projects</strong></div></div></div></main><Footer /></> }
+function DownloadPage() { return <><Header /><main className="inner-page download-page"><p className="eyebrow">RELEASE / {site.version}</p><div className="download-layout"><div><h1>LocalizationHub<br /><i>{site.releaseTitle}</i></h1><p className="page-lede">A local-first Windows workspace for game localization, plus JSON, CSV, and PO files.</p><a className="button button-primary" href={site.releaseUrl}>Download from GitHub <span>↗</span></a><a className="button button-quiet" href={site.releaseUrl}>View release notes <span>↗</span></a></div><div className="download-panel"><div className="panel-mark"><img src="/localizationhub-logo.jpg" alt="" /></div><span className="panel-kicker">CURRENT STABLE RELEASE</span><h2>v{site.version}</h2><div className="download-fact"><span>Installer</span><strong data-i18n-skip>{['LocalizationHub_', site.version, '_x64-setup.exe'].join('')}</strong></div><div className="download-fact"><span>Platform</span><strong>Windows x64</strong></div><div className="download-fact"><span>Works with</span><strong>Local Projects · Optional Cloud Projects</strong></div></div></div></main><Footer /></> }
 
 function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) {
   const privacy = kind === 'privacy'
@@ -167,12 +169,13 @@ function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) {
 }
 
 function NotFound() { return <><Header /><main className="inner-page not-found"><p className="eyebrow">404 / ENTRY NOT FOUND</p><h1>Page not found.</h1><p>The route you requested does not exist.</p><InternalLink className="button button-primary" href="/">Back to LocalizationHub</InternalLink></main><Footer /></> }
-function Footer() { return <footer><InternalLink className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></InternalLink><span>v{site.version} · {site.releaseTitle}</span><div><a href={site.repositoryUrl}>GitHub</a><a href={site.releaseUrl}>Releases</a><span className="muted">Documentation / upcoming</span><a className="creator-signature" href="https://dedwrite.xyz/" target="_blank" rel="noopener noreferrer">DEDWRITE</a><FooterSecret /></div></footer> }
+function Footer() { return <footer><InternalLink className="brand" href="/"><img className="brand-icon" src="/localizationhub-logo.jpg" alt="" /><span>{site.name}</span></InternalLink><span>v{site.version} · {site.releaseTitle}</span><div><LanguageSwitcher /><a href={site.repositoryUrl}>GitHub</a><a href={site.releaseUrl}>Releases</a><span className="muted">Documentation / upcoming</span><a className="creator-signature" href="https://dedwrite.xyz/" target="_blank" rel="noopener noreferrer">DEDWRITE</a><FooterSecret /></div></footer> }
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
   useEffect(() => { const handle = (event: PopStateEvent) => { if (allowHistoryNavigation(event)) setPath(window.location.pathname) }; window.addEventListener('popstate', handle); return () => window.removeEventListener('popstate', handle) }, [])
   const suppressRadio = path === '/app/admin' || path.startsWith('/app/admin/')
-  return <><RoutedPage path={path} />{!suppressRadio && <><CommandCenter /><LhRadio /></>}</>
+  const isAppSurface = path.startsWith('/app')
+  return <><RoutedPage path={path} /><CommandCenter />{!suppressRadio && <LhRadio />}{isAppSurface && <LanguageSwitcher dock />}</>
 }
 
 function RoutedPage({ path }: { path: string }) {

@@ -52,5 +52,5 @@ export const parityMessages = {
   'local.deleted': { en: 'Browser copy deleted.', ar: 'حُذفت نسخة المتصفح.' },
   'local.deleteFailed': { en: 'Could not delete the local copy. Please retry.', ar: 'تعذر حذف النسخة المحلية. يرجى إعادة المحاولة.' },
   'local.exportFailed': { en: 'Export failed. Your local project was not changed.', ar: 'تعذر التصدير. لم يتغير مشروعك المحلي.' },
-  'local.mtPrivacy': { en: 'Your project stays on this device. Using Machine Translation sends the current text/context to the selected provider.', ar: 'يبقى مشروعك على هذا الجهاز. يؤدي استخدام مرجع الترجمة الآلية إلى إرسال النص والسياق الحاليين إلى مقدم الخدمة المحدد.' },
+  'local.mtPrivacy': { en: 'Your project stays on this device. Using Machine Translation sends the current text/context to the selected provider. DeepL on the website forwards that request once through LocalizationHub and does not save the key or text.', ar: 'يبقى مشروعك على هذا الجهاز. يؤدي استخدام مرجع الترجمة الآلية إلى إرسال النص والسياق الحاليين إلى مقدم الخدمة المحدد. DeepL على الموقع يمرّر الطلب مرة واحدة عبر LocalizationHub دون حفظ المفتاح أو النص.' },
 } satisfies MessageCatalog

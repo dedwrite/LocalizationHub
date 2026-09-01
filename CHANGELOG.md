@@ -2,6 +2,86 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.7] - 2026-09-01
+
+### Quiet Clarity
+
+- Softened the public shell around Desktop/Web with quiet gradients, hero depth,
+  clearer section rhythm, and restrained micro-motion.
+- Expanded translator craft tips across all decks and added quiet discoveries
+  for the Local on-device badge and Sunday completion.
+- Added FAQ answers for offline work, machine-translation privacy, Arabic/RTL,
+  and Local backups, with a hidden localization footnote beside the FAQ heading.
+
+### Reliability
+
+- Updated delight unit/e2e coverage for tip deck growth and new discoveries.
+- Kept Local privacy, Cloud authorization, protected tokens, and LH Radio intact.
+
+## [0.9.6] - 2026-09-01
+
+### App Parity
+
+- Distinguished Speaker and Listener dialogue chips on Desktop and Web.
+- Added DeepL to the Web Machine Translation panel via an explicit
+  LocalizationHub proxy that does not persist keys or text.
+- Brought LH Radio into the Desktop app with absolute Cloud media URLs and a
+  quiet floating capsule.
+- Moved the interface language control to the public footer and a quiet
+  bottom dock on app/desktop shells.
+
+### Reliability
+
+- Added unit, server, and Playwright coverage for dialogue chips, DeepL proxy
+  helpers, desktop radio URL rewriting, and language placement.
+- Updated privacy copy for the explicit DeepL proxy path.
+
+## [0.9.5] - 2026-09-01
+
+### Quiet Workflow
+
+- Extended the Command Palette with search-driven entry jumps and recent
+  Local/Cloud project open commands.
+- Added calm glossary notes under the translation editor when a source term
+  matches project terminology.
+- Added an export checklist for Local projects covering empty entries, token
+  warnings, UI length, review queue, and glossary notes.
+- Added a quiet session progress pulse for newly filled and approved entries
+  without gamification.
+
+### Reliability
+
+- Added unit and Playwright coverage for entry jumps, export checklist, and
+  session progress.
+- Preserved Local privacy, Cloud authorization, protected tokens, and LH Radio.
+
+## [0.9.4] - 2026-09-01
+
+### Quiet Polish
+
+- Added a Command Palette (`Ctrl/⌘ + K`) for jumping between Local/Cloud,
+  workspace actions, export, language switching, and the shortcuts center.
+- Added a Shortcuts Center (`?`) that lists the core keyboard workflow.
+- Added deterministic project visual identity marks on Cloud cards, Local
+  recents, and Resume cards.
+- Enriched empty states for projects, search, filtered entries, review-clear,
+  and clean quality checks.
+- Added a restrained “Ship it.” moment when every entry has text.
+- Added quiet time-of-day greetings and late-night tips without theme changes.
+- Replaced plain Loading copy with page-shaped skeletons for Projects,
+  Workspace, and Admin.
+- Added a calm source/translation length cue with overflow guidance for UI
+  strings.
+- Extended personality with rare behavior-linked discoveries (Friday-night
+  completion, after-midnight saves) while keeping existing tips and Easter eggs.
+- Added soft panel settle transitions that respect `prefers-reduced-motion`.
+
+### Reliability
+
+- Added unit and Playwright coverage for identity, length cues, commands,
+  ambience, behavior secrets, palette/shortcuts, and completion states.
+- Preserved Local privacy, Cloud authorization, protected tokens, and LH Radio.
+
 ## [0.9.3] - 2026-09-01
 
 ### Web Delight

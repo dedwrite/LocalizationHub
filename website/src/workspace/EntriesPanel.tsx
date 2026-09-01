@@ -2,6 +2,7 @@ import { useMemo, useState, type KeyboardEvent } from 'react'
 import { ENTRY_FILTERS, type BulkSelection, type EntryFilterId, type EntryView } from './entryCollection'
 import VirtualList from './VirtualList'
 import { useI18n } from '@localizationhub/i18n'
+import EmptyState from '../delight/EmptyState'
 
 type EntriesPanelProps = {
   local?: boolean
@@ -219,7 +220,9 @@ export default function EntriesPanel(props: EntriesPanelProps) {
         )}
 
         <div className="entries-list">
-          <VirtualList items={views} rowHeight={68} renderRow={renderRow} />
+          {views.length === 0
+            ? <EmptyState kind={filter === 'needs-review' ? 'review-done' : query || filter !== 'all' ? 'entries' : 'entries'} />
+            : <VirtualList items={views} rowHeight={68} renderRow={renderRow} />}
         </div>
       </div>
     )
@@ -280,7 +283,9 @@ export default function EntriesPanel(props: EntriesPanelProps) {
         </div>
       )}
       <div className="entries-list">
-        <VirtualList items={views} rowHeight={52} renderRow={renderRow} />
+        {views.length === 0
+          ? <EmptyState kind={filter === 'needs-review' ? 'review-done' : 'entries'} />
+          : <VirtualList items={views} rowHeight={52} renderRow={renderRow} />}
       </div>
     </div>
   )

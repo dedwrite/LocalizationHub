@@ -25,10 +25,17 @@
   line-height: 1.7;
   text-align: start;
 }
-.context-person { padding: 9px 12px; background: #171b25; border: 1px solid #2c3241; border-radius: 8px; }
+.context-person {
+  padding: 9px 12px; background: #171b25; border: 1px solid #2c3241; border-radius: 8px;
+  border-inline-start-width: 3px;
+}
+.context-person[data-role='speaker'] { border-inline-start-color: #8f7ae0; background: #181627; }
+.context-person[data-role='listener'] { border-inline-start-color: #5f9aa0; background: #151c22; }
 .context-person bdi { color: #e2deef; font-weight: 600; }
 .context-field-label { color: #afa5cf; }
-.context-detail { grid-column: 1 / -1; padding: 3px 2px; font-size: 11px; }
+.context-person[data-role='speaker'] .context-field-label { color: #b7a5ed; }
+.context-person[data-role='listener'] .context-field-label { color: #8eb8bc; }
+.context-detail { grid-column: 1 / -1; padding: 3px 2px; font-size: 11px; color: #a8adbd; }
 .dialogue-context-strip bdi { overflow-wrap: anywhere; }
 .workspace-shell .translation-section { margin-top: 22px; padding: 16px; border-radius: var(--web-panel-radius); box-shadow: none; }
 .workspace-shell .translation-editor { min-height: clamp(168px, 24vh, 240px); padding: 16px; border-radius: 8px; }
@@ -153,8 +160,8 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 .recent-local { margin-top: 0; }
 .recent-local-row { align-items: center; border-radius: 8px; padding: 4px 8px; }
 .recent-local-row:hover { background: #151925; }
-.recent-local-row > button:first-child { text-align: start; }
-.recent-local-row > button:last-child { border-radius: 7px; }
+.recent-local-row > button:first-of-type { text-align: start; }
+.recent-local-row > button:last-of-type { border-radius: 7px; }
 .app-context-nav { border-radius: 10px; }
 .app-context-nav button { border-radius: 7px; text-align: start; }
 .projects-page .dashboard-heading .muted { color: #a5adbb; }

@@ -1,0 +1,315 @@
+/* Quiet marketing atmosphere — same palette, more depth.
+   CSS-only decoration; no network media; no scroll/pointer listeners. */
+
+body:has(.landing-main),
+body:has(.inner-page) {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 55% at 12% -8%, rgba(126, 104, 217, 0.16), transparent 58%),
+    radial-gradient(ellipse 70% 45% at 92% 8%, rgba(88, 120, 170, 0.07), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 70% 95%, rgba(90, 70, 150, 0.09), transparent 55%);
+  background-attachment: fixed;
+}
+
+body:has(.landing-main)::before,
+body:has(.inner-page)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    radial-gradient(rgba(167, 156, 255, 0.045) 0.6px, transparent 0.7px);
+  background-size: 3px 3px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 75%);
+}
+
+body:has(.landing-main) > *,
+body:has(.inner-page) > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Sticky header with quiet glass — marketing pages only. */
+body:has(.landing-main) .site-header,
+body:has(.inner-page) .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: min(1240px, calc(100% - 64px));
+  margin-inline: auto;
+  padding-inline: 0;
+  background: rgba(9, 10, 13, 0.72);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  border-bottom-color: rgba(167, 156, 255, 0.12);
+}
+
+/* ---- Hero polish ---- */
+.landing-main .hero {
+  position: relative;
+}
+
+.landing-main .hero::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -8% -12% auto -18%;
+  height: min(520px, 70vh);
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(167, 156, 255, 0.12), transparent 55%),
+    radial-gradient(ellipse at 70% 20%, rgba(135, 197, 160, 0.05), transparent 45%);
+  filter: blur(8px);
+}
+
+.landing-main .hero h1 {
+  text-shadow: 0 0 48px rgba(167, 156, 255, 0.08);
+}
+
+.landing-main .hero-description {
+  color: #c0c2cb;
+}
+
+.landing-main .preview-aura {
+  inset: -2% -12% -14% 0;
+  border-radius: 46%;
+  background:
+    radial-gradient(circle at 40% 40%, rgba(167, 156, 255, 0.28), transparent 58%),
+    radial-gradient(circle at 70% 70%, rgba(95, 154, 160, 0.12), transparent 50%);
+  filter: blur(34px);
+  opacity: 0.9;
+}
+
+.landing-main .editor-preview {
+  border-color: #3d4152;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(167, 156, 255, 0.06),
+    18px 22px 0 #12141a;
+}
+
+.landing-main .visual-caption {
+  color: #8a8e9c;
+}
+
+.landing-main .hero-signals span {
+  border-color: #35384a;
+  background: rgba(17, 19, 28, 0.65);
+}
+
+/* ---- Section rhythm ---- */
+.landing-main .signal-strip {
+  position: relative;
+  padding-block: 18px;
+  border-color: rgba(167, 156, 255, 0.1);
+  background: linear-gradient(90deg, rgba(20, 18, 32, 0.55), rgba(14, 16, 22, 0.25), rgba(20, 18, 32, 0.55));
+  border-radius: 10px;
+}
+
+.landing-main .field-notes {
+  padding-block: 40px;
+  border-bottom-color: rgba(167, 156, 255, 0.1);
+  background: linear-gradient(180deg, rgba(22, 20, 34, 0.35), transparent);
+  border-radius: 14px;
+  padding-inline: clamp(0px, 2vw, 12px);
+}
+
+.landing-main :is(.extraction-section, .context-section, .features, .workflow-section, .split-section, .formats-section, .faq-section) {
+  position: relative;
+}
+
+.landing-main .extraction-section::before,
+.landing-main .context-section::before {
+  border-block-color: rgba(167, 156, 255, 0.1);
+  background: linear-gradient(110deg, rgba(22, 20, 34, 0.72), rgba(12, 13, 18, 0.18));
+}
+
+.landing-main .feature {
+  border-color: #313547;
+  background:
+    linear-gradient(165deg, rgba(28, 26, 42, 0.55), rgba(14, 16, 22, 0.92));
+  box-shadow: inset 0 1px 0 rgba(199, 185, 255, 0.05);
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-main .feature:hover {
+  border-color: #5a537f;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 185, 255, 0.08),
+    0 14px 32px rgba(0, 0, 0, 0.22);
+}
+
+.landing-main .engine-card {
+  box-shadow: inset 0 1px 0 rgba(199, 185, 255, 0.04);
+}
+
+.landing-main .context-demo {
+  border: 1px solid #35384a;
+  background: linear-gradient(160deg, #161822, #101218);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(167, 156, 255, 0.05);
+}
+
+.landing-main .surface {
+  background: linear-gradient(160deg, rgba(22, 24, 34, 0.9), rgba(12, 13, 18, 0.95));
+  box-shadow: inset 0 1px 0 rgba(199, 185, 255, 0.04);
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.landing-main .surface:hover {
+  transform: translateY(-2px);
+}
+
+.landing-main .surface-cloud {
+  border-color: #56507a;
+  background: linear-gradient(160deg, rgba(28, 26, 46, 0.95), rgba(16, 15, 24, 0.95));
+}
+
+.landing-main .format-row {
+  border-radius: 8px;
+  transition: background 160ms ease, padding-inline 160ms ease;
+}
+
+.landing-main .format-row:hover {
+  background: rgba(36, 34, 56, 0.45);
+}
+
+.landing-main .faq-list details {
+  border-radius: 10px;
+  padding-inline: 14px;
+  transition: background 160ms ease;
+}
+
+.landing-main .faq-list details:hover,
+.landing-main .faq-list details[open] {
+  background: rgba(28, 26, 42, 0.4);
+}
+
+.landing-main .release-section {
+  position: relative;
+  padding-block: clamp(72px, 8vw, 112px);
+  border-top-color: rgba(167, 156, 255, 0.12);
+  text-align: start;
+  unicode-bidi: isolate;
+}
+
+.landing-main .release-section::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 10% 5% auto;
+  height: 55%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 20% 40%, rgba(126, 104, 217, 0.14), transparent 65%);
+  filter: blur(10px);
+}
+
+.landing-main .workflow-step > span {
+  border: 1px solid rgba(167, 156, 255, 0.22);
+  border-radius: 50%;
+  background: #0f1016;
+  box-shadow: 0 0 0 4px rgba(9, 10, 13, 0.9);
+}
+
+/* Download / document pages share the same quiet depth. */
+.inner-page.download-page .download-panel,
+.inner-page .download-panel {
+  border-color: #3a3e50;
+  background: linear-gradient(160deg, #171922, #111318);
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.28),
+    14px 16px 0 #12141a;
+}
+
+footer {
+  border-top-color: rgba(167, 156, 255, 0.1);
+  background: linear-gradient(180deg, transparent, rgba(14, 12, 22, 0.45));
+}
+
+/* ---- Micro motion (opt-in via lh-motion; honor reduced-motion) ---- */
+html.lh-motion .landing-main .preview-aura {
+  animation: lh-aura-breathe 9s ease-in-out infinite;
+}
+
+html.lh-motion .landing-main .caption-dot {
+  animation: lh-caption-pulse 2.8s ease-in-out infinite;
+}
+
+html.lh-motion [data-reveal].is-revealed {
+  animation-duration: 640ms;
+  animation-timing-function: cubic-bezier(0.18, 0.9, 0.22, 1);
+}
+
+html.lh-motion .landing-main .feature:hover,
+html.lh-motion .landing-main .surface:hover,
+html.lh-motion .landing-main .engine-card:hover {
+  transition-duration: 220ms;
+}
+
+@keyframes lh-aura-breathe {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.045); }
+}
+
+@keyframes lh-caption-pulse {
+  0%, 100% { opacity: 0.75; box-shadow: 0 0 0 4px rgba(135, 197, 160, 0.08); }
+  50% { opacity: 1; box-shadow: 0 0 0 6px rgba(135, 197, 160, 0.14); }
+}
+
+@media (max-width: 1000px) {
+  body:has(.landing-main) .site-header,
+  body:has(.inner-page) .site-header {
+    width: min(100% - 40px, 760px);
+  }
+}
+
+@media (max-width: 640px) {
+  body:has(.landing-main) .site-header,
+  body:has(.inner-page) .site-header {
+    width: calc(100% - 32px);
+  }
+
+  .landing-main .hero::before {
+    inset: -4% -8% auto -8%;
+    height: 280px;
+  }
+
+  .landing-main .preview-aura {
+    inset: 8% -4% -6% -4%;
+    filter: blur(26px);
+  }
+
+  .landing-main .editor-preview {
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.3),
+      10px 12px 0 #12141a;
+  }
+
+  .landing-main .feature:hover,
+  .landing-main .surface:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.lh-motion .landing-main .preview-aura,
+  html.lh-motion .landing-main .caption-dot {
+    animation: none;
+  }
+
+  .landing-main .feature,
+  .landing-main .surface,
+  .landing-main .engine-card {
+    transition: none;
+  }
+
+  .landing-main .feature:hover,
+  .landing-main .surface:hover,
+  .landing-main .engine-card:hover {
+    transform: none;
+  }
+}

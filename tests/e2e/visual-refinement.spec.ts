@@ -105,6 +105,9 @@ test('project metadata restores English whitespace and language control clears a
     }
     const language = await page.locator('.lh-language-switcher').boundingBox()
     const logout = await page.locator('.account button').boundingBox()
-    expect(language && logout && language.x < logout.x + logout.width && language.x + language.width > logout.x && language.y < logout.y + logout.height && language.y + language.height > logout.y).toBe(false)
+    expect(language).not.toBeNull()
+    expect(logout).not.toBeNull()
+    // Language lives in the quiet bottom dock; it must not overlap the account header.
+    expect(language!.y).toBeGreaterThan(logout!.y + logout!.height)
   }
 })

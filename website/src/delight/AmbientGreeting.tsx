@@ -13,5 +13,5 @@ export function greetingKey(date: Date): MessageKey {
 export default function AmbientGreeting({ className = '' }: { className?: string }) {
   const { t } = useI18n()
   const key = useMemo(() => greetingKey(new Date()), [])
-  return <p className={`ambient-greeting ${className}`.trim()} data-i18n-skip><span aria-hidden="true">✦</span>{t(key)}</p>
+  return <p className={`ambient-greeting time-greeting ${className}`.trim()} data-i18n-skip><span aria-hidden="true">✦</span>{t(key)}</p>
 }

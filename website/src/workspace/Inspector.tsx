@@ -5,6 +5,7 @@ import {
 import ConfirmDialog from './ConfirmDialog'
 import { useI18n } from '@localizationhub/i18n'
 import TipCard from '../delight/TipCard'
+import EmptyState from '../delight/EmptyState'
 
 type InspectorTab = 'workflow' | 'quality' | 'comments' | 'assignments' | 'history' | 'tags' | 'memory' | 'glossary'
 
@@ -262,7 +263,7 @@ function QualityTab({ entry, draft }: { entry: any; draft: any }) {
     <div className="inspector-section">
       <h3>Quality</h3>
       {(!entry || entry.translation === '') && <p className="muted">Untranslated entries have no quality issues yet.</p>}
-      {issues.length === 0 && entry?.translation && <p className="muted">No glossary issues detected.</p>}
+      {issues.length === 0 && entry?.translation && <EmptyState kind="quality-clean" />}
       {issues.map((issue, index) => (
         <div key={index} className="qa-item"><p data-i18n-skip><bdi>{issue.term.sourceTerm}</bdi> — {t(issue.forbidden ? 'local.forbiddenTerm' : 'local.preferredMissing')}</p></div>
       ))}
