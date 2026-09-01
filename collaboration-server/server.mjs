@@ -40,6 +40,9 @@ import {
 import {
   applyCorsHeaders,
 } from './cors.mjs'
+import {
+  proxyDeepLTranslate,
+} from './mt-deepl.mjs'
 import { serveBinary } from './binary-response.mjs'
 import {
   getDatabasePool,
@@ -3210,6 +3213,25 @@ const httpServer =
           const failure = formatAdminRequestError(error)
           if (failure.unexpected) console.error('Admin request failed:', error)
           sendJson(response, failure.status, failure.body)
+        }
+        return
+      }
+
+      // ---- Machine Translation proxy (DeepL; session key, never persisted) ----
+      if (
+        request.method === 'POST' &&
+        request.url === '/api/mt/deepl'
+      ) {
+        try {
+          const body = await readJsonBody(request)
+          const result = await proxyDeepLTranslate(request, body)
+          sendJson(response, result.status, result.body)
+        } catch (error) {
+          if (error?.message === 'request-too-large') {
+            sendJson(response, 413, { error: 'invalid-request', message: 'The text is too large for a single DeepL request.' })
+            return
+          }
+          sendJson(response, 500, { error: 'internal-error', message: 'Translation proxy failed.' })
         }
         return
       }

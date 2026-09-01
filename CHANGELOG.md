@@ -2,6 +2,24 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.6] - 2026-09-01
+
+### App Parity
+
+- Distinguished Speaker and Listener dialogue chips on Desktop and Web.
+- Added DeepL to the Web Machine Translation panel via an explicit
+  LocalizationHub proxy that does not persist keys or text.
+- Brought LH Radio into the Desktop app with absolute Cloud media URLs and a
+  quiet floating capsule.
+- Moved the interface language control to the public footer and a quiet
+  bottom dock on app/desktop shells.
+
+### Reliability
+
+- Added unit, server, and Playwright coverage for dialogue chips, DeepL proxy
+  helpers, desktop radio URL rewriting, and language placement.
+- Updated privacy copy for the explicit DeepL proxy path.
+
 ## [0.9.5] - 2026-09-01
 
 ### Quiet Workflow

@@ -2,16 +2,15 @@
  * Machine Translation Reference providers for the Web Workspace.
  *
  * The API key is session-only and lives in React state (memory). It is never
- * written to localStorage/sessionStorage, never sent to the LocalizationHub
- * backend, and never included in project data.
+ * written to localStorage/sessionStorage and never included in project data.
  *
- * Requests go DIRECTLY to the provider from the browser where CORS permits.
- * Gemini (Google AI Studio) exposes a browser-callable REST endpoint, so it is
- * supported here. Providers that do not permit direct browser calls are
- * deliberately not silently proxied through the LocalizationHub backend.
+ * Gemini calls the provider directly from the browser (CORS-capable).
+ * DeepL has no browser CORS support, so the browser posts the session key and
+ * current text to LocalizationHub's explicit `/api/mt/deepl` proxy, which
+ * forwards once to DeepL and does not persist key or text.
  */
 
-export type TranslationProviderId = 'gemini'
+export type TranslationProviderId = 'gemini' | 'deepl'
 
 export type GeminiModelId = 'gemini-3.5-flash-lite' | 'gemini-3.6-flash' | 'gemini-3.7-flash'
 
@@ -72,14 +71,17 @@ function geminiUrl(model: GeminiModelId): string {
 
 export const PROVIDER_LABELS: Record<TranslationProviderId, string> = {
   gemini: 'Gemini · Google AI Studio',
+  deepl: 'DeepL',
 }
 
 export const PROVIDER_API_KEY_LABELS: Record<TranslationProviderId, string> = {
   gemini: 'Gemini API Key',
+  deepl: 'DeepL API Key',
 }
 
 export const PROVIDER_API_KEY_PLACEHOLDERS: Record<TranslationProviderId, string> = {
   gemini: 'Google AI Studio key · session only',
+  deepl: 'DeepL API key · session only',
 }
 
 export const LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
@@ -273,4 +275,50 @@ export async function translateWithGemini(request: TranslateRequest): Promise<Tr
   const translatedText = data?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? '').join('').trim() ?? ''
   if (!translatedText) throw new TranslationProviderError('provider', 'Gemini returned no translation.')
   return { translatedText }
+}
+
+export async function translateWithDeepL(request: TranslateRequest): Promise<TranslateResult> {
+  let response: Response
+  try {
+    response = await fetch('/api/mt/deepl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey: request.apiKey,
+        text: request.text,
+        sourceLanguage: request.sourceLanguage,
+        targetLanguage: request.targetLanguage,
+      }),
+    })
+  } catch {
+    throw new TranslationProviderError('network', 'Could not reach the DeepL proxy. Check your connection and try again.')
+  }
+
+  let data: any = null
+  try {
+    data = await response.json()
+  } catch {
+    data = null
+  }
+
+  if (!response.ok) {
+    const message = typeof data?.message === 'string' ? data.message : 'DeepL translation failed.'
+    if (response.status === 401 || response.status === 403 || /api key/i.test(message)) {
+      throw new TranslationProviderError('invalid-key', message)
+    }
+    if (response.status === 429 || response.status === 456 || /quota|rate/i.test(message)) {
+      throw new TranslationProviderError('quota', message)
+    }
+    if (response.status >= 500) {
+      throw new TranslationProviderError('network', message)
+    }
+    throw new TranslationProviderError('provider', message)
+  }
+
+  const translatedText = typeof data?.translatedText === 'string' ? data.translatedText.trim() : ''
+  if (!translatedText) throw new TranslationProviderError('provider', 'DeepL returned no translation.')
+  return {
+    translatedText,
+    detectedSourceLanguage: typeof data?.detectedSourceLanguage === 'string' ? data.detectedSourceLanguage : undefined,
+  }
 }
