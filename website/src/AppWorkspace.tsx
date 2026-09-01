@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import ProjectDeleteDialog from '../../frontend/src/ProjectDeleteDialog'
 import { deleteProject } from './appApi'
@@ -13,6 +13,11 @@ import { assertCurrentWebBuild } from './webBuild'
 import TipCard from './delight/TipCard'
 import ResumeCard from './delight/ResumeCard'
 import { lastCloudProject, latestDated } from './delight/recents'
+import ProjectMark from './delight/ProjectMark'
+import EmptyState from './delight/EmptyState'
+import PageSkeleton from './delight/PageSkeleton'
+import TimeGreeting from './delight/TimeGreeting'
+import { projectIdentity } from './delight/projectIdentity'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -29,10 +34,10 @@ export default function AppWorkspace() {
   useEffect(() => { const onPop = () => setView(routeView()); window.addEventListener('popstate', onPop); return () => window.removeEventListener('popstate', onPop) }, [])
   useEffect(() => { restoreSession().then((restored) => { setUser(restored); setReady(true) }) }, [])
   useEffect(() => { if (!ready) return; if (!user && view !== 'login' && view !== 'register' && view !== 'local') navigate('/app/login'); if (user && (view === 'login' || view === 'register')) navigate('/app/projects') }, [ready, user, view])
-  if (!ready) return <div className="app-loading">Restoring workspace…</div>
+  if (!ready) return <div className="app-loading" aria-busy="true"><PageSkeleton kind="projects" /></div>
   if (view === 'login' || view === 'register') return <AuthView mode={view} onAuth={(next) => { setUser(next); navigate('/app/projects') }} />
   if (view === 'local') return <LocalWorkspace />
-  if (!user) return <div className="app-loading">Opening workspace…</div>
+  if (!user) return <div className="app-loading" aria-busy="true"><PageSkeleton kind="projects" /></div>
   if (view === 'editor') return <Workspace user={user} onHome={() => navigate('/app/projects')} />
   return <ProjectsView user={user} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} />
 }
@@ -55,6 +60,7 @@ function AppHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void })
 }
 
 function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
+  const { t } = useI18n()
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -108,7 +114,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
     <AppHeader user={user} onLogout={onLogout} />
     <section className="dashboard">
       <div className="dashboard-heading">
-        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><h1>Your translation work.</h1><p className="muted">Open a project, keep its workflow visible, and continue from any screen.</p></div>
+        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><TimeGreeting /><h1>Your translation work.</h1><p className="muted">Open a project, keep its workflow visible, and continue from any screen.</p></div>
         <div className="heading-actions"><button onClick={refresh} title="Refresh projects">↻ Refresh</button><button className="primary-button" onClick={() => setNewOpen(true)}>+ New project</button></div>
       </div>
       {!loading && projects.length > 0 && <div className="project-summary" aria-label="Cloud Project summary">
@@ -124,7 +130,7 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
         <div className="project-search" role="search"><span aria-hidden="true">⌕</span><input type="search" name="workspace-project-search" role="searchbox" spellCheck={false} enterKeyHint="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by project or source file" aria-label="Search projects" /></div>
         <span className="result-count">{loading ? 'SYNCING' : `${filtered.length} OF ${projects.length} PROJECTS`}</span>
       </div>
-      {loading ? <div className="empty-state loading-state"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>Opening Cloud Projects…</strong><span>Restoring the latest project summaries.</span></div> : filtered.length === 0 ? <div className="empty-state intentional-empty"><span className="empty-graphic" aria-hidden="true"><i /><i /><i /></span><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
+      {loading ? <PageSkeleton kind="projects" /> : filtered.length === 0 ? <EmptyState kind={projects.length === 0 ? 'projects' : 'search'} action={<button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? t('quiet.createFirst') : t('quiet.clearSearch')}</button>} /> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
       <TipCard context="projects" />
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
@@ -145,11 +151,11 @@ function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; 
   const translated = project.translatedCount ?? 0
   const percent = total ? Math.round((translated / total) * 100) : 0
   const sourceLabel = project.sourceFileName || 'LocalizationHub Project'
-  const extension = project.sourceFileName?.split('.').pop()?.toUpperCase() || 'LH'
+  const identity = projectIdentity(project.name)
   return (
-    <div className="project-card-shell">
+    <div className="project-card-shell" style={{ '--project-accent': identity.accent } as CSSProperties}>
     <button className="project-card" onClick={onOpen} aria-label={`Open ${project.name}`}>
-      <div className="project-card-top"><span className="project-glyph" aria-hidden="true">{extension.slice(0, 4)}</span><span className="project-role">{friendlyStatus(project.role)}</span></div>
+      <div className="project-card-top"><ProjectMark name={project.name} size="md" className="project-glyph" /><span className="project-role">{friendlyStatus(project.role)}</span></div>
       <div className="project-title"><strong>{project.name}</strong><span aria-hidden="true">↗</span></div>
       <span className="project-file">{sourceLabel}</span>
       <div className="project-progress-label"><span>Translation progress</span><strong>{percent}%</strong></div>

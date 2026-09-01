@@ -10,6 +10,7 @@ import { websiteMessages } from './website'
 import { workspaceMessages } from './workspace'
 import { parityMessages } from './parity'
 import { delightMessages } from './delight'
+import { quietMessages } from './quiet'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
@@ -24,6 +25,7 @@ export const messages = {
   ...workspaceMessages,
   ...parityMessages,
   ...delightMessages,
+  ...quietMessages,
   ...radioMessages,
 } satisfies MessageCatalog
 

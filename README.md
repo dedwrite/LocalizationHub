@@ -6,9 +6,11 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.9.0 — Arabic UI & Engine-Aware Tokens**
+**LocalizationHub v0.9.4 — Quiet Polish**
 
-v0.9.0 adds bilingual English/Arabic UI, engine-aware token profiles, and the accepted v0.8 Web Experience and LH Radio foundation, while preserving the read-only Game Text Extraction introduced in v0.7:
+v0.9.4 adds restrained Web App polish on top of the accepted v0.9.3 Web Delight foundation: a Command Palette, project visual identity, richer empty/completion states, quiet motion, skeletons, time ambience, length cues, and rare behavior-linked discoveries — without changing Local privacy, Cloud authorization, protected tokens, or LH Radio.
+
+Earlier milestones remain intact, including bilingual English/Arabic UI, engine-aware token profiles, the v0.8 Web Experience and LH Radio foundation, and the read-only Game Text Extraction introduced in v0.7:
 
 - **Native LH Radio** — Admin-managed first-party MP3 playback with a persistent custom player across the public website and Web App.
 - **Smarter Radio ingestion** — ID3/audio analysis, embedded artwork recovery, metadata-only Spotify/YouTube suggestions, Smart Match evidence, and optional ffmpeg optimization when available.
@@ -35,7 +37,7 @@ LocalizationHub's browser workspace runs the same translator workflow as the des
 - **Search & Replace** — project-wide find/replace with Replace All confirmation.
 - **Project Overview** — project facts, revision, members, and statistics.
 - **Save** — manual Save with clear Saved / Unsaved / Saving / Failed state, plus debounced autosave for Cloud Projects.
-- **Keyboard workflow** — Ctrl+S save, Ctrl+Enter commit-and-advance, Alt+Down/Up navigation, Ctrl+F search, Escape dismiss.
+- **Keyboard workflow** — Ctrl/⌘+K command palette, `?` shortcuts center, Ctrl+S save, Ctrl+Enter commit-and-advance, Alt+Down/Up navigation, Ctrl+F search, Escape dismiss.
 - **Large-project virtualization** — windowed entry list for 10,000+ entries.
 - **Browser-local workflows** — JSON, CSV, and gettext PO import/export with IndexedDB recovery, no account required.
 
@@ -424,10 +426,10 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.9.3 — Web Delight**
+**LocalizationHub v0.9.4 — Quiet Polish**
 
 Windows builds are distributed through the project's GitHub Releases page.
 The repository remains private, so these assets require repository access.
 The [website and Web App](https://localizationhub.app/) remain publicly usable.
 
-Download the current release: [LocalizationHub v0.9.3 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.3).
+Download the current release: [LocalizationHub v0.9.4 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.4).

@@ -57,7 +57,7 @@ test.describe('public routing and accessibility', () => {
   test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('v0.9.3')
+    await expect(answer).toContainText('v0.9.4')
     await expect(answer).not.toContainText('v0.4.0')
   })
 
