@@ -60,10 +60,10 @@ export const websiteMessages = {
   'website.formats.title': { en: 'Bring your format. Keep your structure.', ar: 'أحضر صيغتك. واحتفظ ببنيتها.' },
   /* The public release heading is authored as two visual lines. Arabic reads
    * naturally right-to-left when the semantic phrase is split in this order. */
-  'website.release.localWorkspace': { en: 'Web Experience', ar: 'تحسين' },
-  'website.release.currentTitle': { en: 'Web Experience Polish', ar: 'تحسين تجربة الويب' },
-  'website.release.parity': { en: 'Polish', ar: 'تجربة الويب' },
-  'website.release.description': { en: 'A more balanced website and Web App, clearer dialogue context, and comfortable navigation beside LH Radio. Local privacy and Cloud project controls stay intact.', ar: 'موقع وتطبيق ويب أكثر توازناً، وسياق حوار أوضح، وتنقل مريح بجوار LH Radio. مع الحفاظ على خصوصية الملفات المحلية وأدوات المشاريع السحابية.' },
+  'website.release.localWorkspace': { en: 'Web', ar: 'لمسات' },
+  'website.release.currentTitle': { en: 'Web Delight', ar: 'لمسات تجربة الويب' },
+  'website.release.parity': { en: 'Delight', ar: 'تجربة الويب' },
+  'website.release.description': { en: 'Context-aware bilingual tips, honest resume cards, and quiet discoveries make Local, Cloud, and the translation workspace more useful without compromising privacy or LH Radio.', ar: 'تلميحات سياقية ثنائية اللغة، وبطاقات استئناف صادقة، ولمسات هادئة تجعل المشاريع المحلية والسحابية ومساحة الترجمة أكثر فائدة، مع الحفاظ على الخصوصية وLH Radio.' },
   'website.faq.kicker': { en: '05 / GOOD QUESTIONS', ar: '05 / أسئلة مهمة' },
   'website.faq.title': { en: 'Before you start translating.', ar: 'قبل أن تبدأ الترجمة.' },
   'website.download.description': { en: 'A focused Windows workspace for translating, reviewing, and managing the localization files you already have.', ar: 'مساحة عمل مركزة على Windows لترجمة ملفات التوطين الحالية ومراجعتها وإدارتها.' },

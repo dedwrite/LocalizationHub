@@ -1,8 +1,7 @@
-# Web delight — local review
+# Web delight — v0.9.3
 
 This follow-up adds contextual field notes, resume-work cards and two small
-Easter eggs. It does not change the release version, publish a release, move a
-tag, deploy production or change LH Radio playback.
+Easter eggs. It ships in v0.9.3 and does not change LH Radio playback.
 
 ## Field notes
 
