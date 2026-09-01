@@ -2865,3 +2865,35 @@ body::-webkit-scrollbar-thumb:hover {
   pointer-events: none;
 }
 .desktop-chrome-footer .lh-language-switcher { pointer-events: auto; }
+
+/* Desktop parity: nested editor and Radio scrollers should never fall back to
+   bright native chrome inside the charcoal/purple product shell. */
+:root {
+  --lh-scroll-track: #090b11;
+  --lh-scroll-thumb: #4e416f;
+  --lh-scroll-thumb-hover: #6d58a0;
+  --lh-scroll-thumb-active: #8b70c7;
+}
+
+html,
+body,
+#root,
+#root * { scrollbar-color: var(--lh-scroll-thumb) var(--lh-scroll-track); }
+
+body::-webkit-scrollbar,
+#root *::-webkit-scrollbar { width: 12px; height: 12px; }
+body::-webkit-scrollbar-track,
+#root *::-webkit-scrollbar-track { background: var(--lh-scroll-track); }
+body::-webkit-scrollbar-thumb,
+#root *::-webkit-scrollbar-thumb {
+  min-height: 42px;
+  border: 3px solid var(--lh-scroll-track);
+  border-radius: 999px;
+  background: var(--lh-scroll-thumb);
+}
+body::-webkit-scrollbar-thumb:hover,
+#root *::-webkit-scrollbar-thumb:hover { background: var(--lh-scroll-thumb-hover); }
+body::-webkit-scrollbar-thumb:active,
+#root *::-webkit-scrollbar-thumb:active { background: var(--lh-scroll-thumb-active); }
+body::-webkit-scrollbar-corner,
+#root *::-webkit-scrollbar-corner { background: var(--lh-scroll-track); }

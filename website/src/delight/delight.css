@@ -281,6 +281,51 @@ html[dir='rtl'] :is(.field-notes-kicker, .resume-kicker) { letter-spacing: 0; }
 .mob-command { flex: 0 0 auto; width: 40px; height: 44px; border: 1px solid #353945; border-radius: 9px; color: #cbbcea; background: #181b24; font: 15px 'DM Mono', monospace; cursor: pointer; }
 @keyframes command-arrive { from { transform: translateY(-8px) scale(.985); } }
 
+/* Hidden gaming-culture layer. It appears only after the classic sequence or
+   the tiny rune inside the RTL proof card, never as normal marketing chrome. */
+.game-secret-toast {
+  position: fixed;
+  z-index: 1700;
+  inset-block-start: 82px;
+  inset-inline-start: 50%;
+  width: min(620px, calc(100% - 32px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #7960a8;
+  border-radius: 16px;
+  color: #eee9f7;
+  background: linear-gradient(120deg, #21182fef, #10131cef 62%, #17221fef);
+  box-shadow: 0 28px 80px #000b, 0 0 36px #8f6bd329, inset 0 1px #ffffff12;
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
+  animation: game-secret-arrive 220ms ease-out both;
+}
+.game-secret-pixel { display: grid; grid-template-columns: repeat(3, 7px); gap: 3px; transform: rotate(45deg); }
+.game-secret-pixel i { width: 7px; height: 7px; border-radius: 2px; background: #9d7be1; box-shadow: 0 0 10px #9d7be188; }
+.game-secret-pixel i:nth-child(2) { background: #66a999; }
+.game-secret-copy { min-width: 0; }
+.game-secret-copy > span { display: block; color: #a98ce3; font: 650 8px/1.5 'DM Mono', monospace; letter-spacing: .11em; }
+.game-secret-copy > strong { display: block; margin-top: 3px; color: #f4efff; font-size: 14px; }
+.game-secret-copy p { margin: 5px 0; color: #d2cadf; font-size: 12px; }
+.game-secret-copy small { color: #858492; font-size: 9px; }
+.game-secret-copy kbd { padding: 3px 5px; border: 1px solid #42394f; border-radius: 5px; color: #b9a4dc; background: #14131b; font: 8px 'DM Mono', monospace; direction: ltr; }
+.game-secret-actions { display: flex; align-items: center; gap: 6px; }
+.game-secret-actions button { min-height: 34px; padding: 7px 9px; border: 1px solid #4b405d; border-radius: 8px; color: #c8b9e3; background: #1d1927; cursor: pointer; font-size: 10px; }
+.game-secret-actions button:hover { border-color: #7962a4; color: #f4edff; background: #292036; }
+.game-secret-actions .game-secret-close { width: 34px; padding: 0; font-size: 17px; }
+.game-secret-actions button:focus-visible { outline: 2px solid #ab8dec; outline-offset: 2px; }
+@keyframes game-secret-arrive { from { transform: translate(-50%, -10px) scale(.98); } }
+
+@media (max-width: 600px) {
+  .game-secret-toast { inset-block-start: 68px; grid-template-columns: auto 1fr; gap: 12px; }
+  .game-secret-actions { grid-column: 1 / -1; justify-content: flex-end; }
+  .game-secret-copy small { display: none; }
+}
+
 /* Page-level motion is brief and one-shot; it never follows the pointer or
    competes with typing. */
 :is(.dashboard, .local-drop, .workspace-canvas) { animation: delight-surface-in 260ms ease-out both; }
@@ -300,4 +345,5 @@ html[dir='rtl'] :is(.field-notes-kicker, .resume-kicker) { letter-spacing: 0; }
   .experience-skeleton i { animation: none; background: #181d27; }
   .command-center, :is(.dashboard, .local-drop, .workspace-canvas) { animation: none; }
   .completion-orbit { box-shadow: none; }
+  .game-secret-toast { animation: none; }
 }

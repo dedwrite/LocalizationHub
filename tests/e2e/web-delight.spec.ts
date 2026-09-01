@@ -189,6 +189,47 @@ for (const locale of ['en', 'ar'] as const) {
   })
 }
 
+test('RTL showcase preserves mixed-direction game text and reveals the hidden game shelf', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', error => errors.push(error.message))
+  await radio(page)
+  await page.goto('/#arabic')
+
+  const showcase = page.locator('.rtl-showcase')
+  await expect(showcase).toBeVisible()
+  await expect(showcase).toHaveAttribute('dir', 'rtl')
+  await expect(showcase.locator('.rtl-showcase-source')).toHaveAttribute('dir', 'ltr')
+  await expect(showcase.locator('.rtl-showcase-translation mark')).toHaveAttribute('dir', 'ltr')
+  await expect(showcase).toContainText('الكابتن فيرا')
+  await expect(showcase).toContainText('{player_name}')
+  await accessible(page, '.rtl-showcase')
+
+  const rune = showcase.getByRole('button', { name: 'Open the hidden game shelf' })
+  await rune.click()
+  const secret = page.locator('.game-secret-toast')
+  await expect(secret).toBeVisible()
+  await expect(secret).toContainText('Press F to pay respects to the missing context.')
+  await expect(secret.getByRole('button', { name: 'Close game secret' })).toBeFocused()
+  await accessible(page, '.game-secret-toast')
+  await secret.getByRole('button', { name: 'Reroll' }).click()
+  await expect(secret).toContainText('A wild untranslated string appeared.')
+  await page.keyboard.press('Escape')
+  await expect(secret).toHaveCount(0)
+  await expect(rune).toBeFocused()
+  expect(errors).toEqual([])
+})
+
+test('classic game sequence opens the localization meme secret without changing landing content', async ({ page }) => {
+  await radio(page)
+  await page.goto('/')
+  const hero = await page.locator('.hero h1').innerText()
+  for (const key of ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a']) {
+    await page.keyboard.press(key)
+  }
+  await expect(page.locator('.game-secret-toast')).toContainText('Press F to pay respects to the missing context.')
+  expect(await page.locator('.hero h1').innerText()).toBe(hero)
+})
+
 test('optional preference storage failures do not break tips or the page', async ({ page }) => {
   await page.addInitScript(() => {
     const read = Storage.prototype.getItem, write = Storage.prototype.setItem

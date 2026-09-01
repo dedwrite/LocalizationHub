@@ -313,3 +313,150 @@ html.lh-motion .landing-main .engine-card:hover {
     transform: none;
   }
 }
+
+/* Arabic is shown as a real translation surface rather than a loose sample
+   sentence. The source stays LTR while context, copy, and punctuation stay RTL. */
+.landing-main .rtl-section {
+  grid-template-columns: minmax(0, .82fr) minmax(480px, 1.18fr);
+  align-items: center;
+  gap: clamp(36px, 6vw, 88px);
+}
+
+.rtl-showcase {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #3c3553;
+  border-radius: 20px;
+  color: #eeeaf7;
+  background:
+    radial-gradient(circle at 88% 4%, #6f50ab24, transparent 32%),
+    linear-gradient(145deg, #15131f, #0d1017 54%, #12101a);
+  box-shadow: 0 30px 74px #0007, inset 0 1px #ffffff0c;
+}
+
+.rtl-showcase::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: .22;
+  background-image: linear-gradient(#ffffff06 1px, transparent 1px), linear-gradient(90deg, #ffffff05 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(135deg, #000, transparent 72%);
+}
+
+.rtl-showcase-head,
+.rtl-showcase-context,
+.rtl-showcase-translation > div,
+.rtl-showcase-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rtl-showcase-head {
+  padding: 0 2px 14px;
+  border-bottom: 1px solid #302b40;
+  color: #a999cf;
+  font: 650 9px/1.4 'DM Mono', monospace;
+  letter-spacing: .12em;
+}
+
+.rtl-showcase-head > div { display: flex; align-items: center; gap: 8px; }
+.rtl-showcase-head i,
+.rtl-showcase-foot i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #9e7ee7; box-shadow: 0 0 12px #9e7ee7; }
+
+.rtl-game-rune {
+  width: 34px;
+  height: 30px;
+  border: 1px solid #463b60;
+  border-radius: 9px;
+  color: #a990dc;
+  background: #1d1829;
+  cursor: pointer;
+  font: 17px/1 monospace;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+.rtl-game-rune:hover { color: #eadfff; border-color: #7b62aa; background: #2b213c; transform: translateY(-1px); }
+.rtl-game-rune:focus-visible { outline: 2px solid #a889ed; outline-offset: 3px; }
+
+.rtl-showcase-context {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding: 15px 2px 5px;
+}
+.rtl-showcase-context > span {
+  display: grid;
+  gap: 3px;
+  min-width: 118px;
+  padding: 8px 11px;
+  border: 1px solid #302b41;
+  border-radius: 9px;
+  background: #12121a99;
+}
+.rtl-showcase-context small,
+.rtl-showcase-source small,
+.rtl-showcase-translation small { color: #9186aa; font: 650 8px/1.5 'DM Mono', monospace; letter-spacing: .08em; }
+.rtl-showcase-context strong { color: #d9d2e7; font-size: 11px; font-weight: 600; }
+
+.rtl-showcase-source,
+.rtl-showcase-translation {
+  margin-top: 12px;
+  padding: 15px 17px;
+  border: 1px solid #2f2d3b;
+  border-radius: 12px;
+  background: #0c0f15c9;
+}
+.rtl-showcase-source p { margin: 7px 0 0; color: #9b9ba8; font-size: 12px; line-height: 1.7; }
+.rtl-showcase mark,
+.rtl-showcase code {
+  unicode-bidi: isolate;
+  padding: 2px 5px;
+  border: 1px solid #54426f;
+  border-radius: 5px;
+  color: #d7c4ff;
+  background: #281f37;
+  font: .84em 'DM Mono', monospace;
+}
+.rtl-showcase-translation {
+  border-color: #55456e;
+  background: linear-gradient(135deg, #211a2f, #12121b 70%);
+  box-shadow: inset -3px 0 #8f72d1;
+}
+.rtl-showcase-translation > div > span { color: #a9d5c5; font-size: 9px; }
+.rtl-showcase-translation p {
+  margin: 13px 0 4px;
+  color: #fbf9ff;
+  font-family: 'Noto Sans Arabic', Tahoma, 'Manrope', sans-serif;
+  font-size: clamp(21px, 2.2vw, 28px);
+  font-weight: 600;
+  line-height: 1.9;
+  text-wrap: balance;
+}
+.rtl-showcase-translation em { color: #cab5ff; font-style: normal; text-shadow: 0 0 22px #8c67de55; }
+
+.rtl-showcase-foot {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding: 14px 3px 1px;
+  color: #9994a8;
+  font-size: 9px;
+}
+.rtl-showcase-foot > span { display: inline-flex; align-items: center; gap: 7px; color: #b6d4c8; }
+.rtl-showcase-foot b { margin-inline-start: auto; color: #a791d7; font: 650 8px 'DM Mono', monospace; letter-spacing: .09em; }
+
+@media (max-width: 900px) {
+  .landing-main .rtl-section { grid-template-columns: 1fr; }
+  .rtl-showcase { width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .rtl-showcase { padding: 12px; border-radius: 15px; }
+  .rtl-showcase-context > span { flex: 1 1 30%; min-width: 94px; }
+  .rtl-showcase-source, .rtl-showcase-translation { padding: 13px; }
+  .rtl-showcase-translation p { font-size: 20px; line-height: 1.85; }
+}

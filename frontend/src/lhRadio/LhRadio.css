@@ -450,7 +450,20 @@
   padding: 12px 12px 14px;
   max-height: 220px;
   overflow-y: auto;
+  scrollbar-width: auto;
+  scrollbar-color: #5f4b87 #0a0c12;
 }
+
+.lh-radio-playlist::-webkit-scrollbar { width: 11px; }
+.lh-radio-playlist::-webkit-scrollbar-track { background: #0a0c12; }
+.lh-radio-playlist::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 3px solid #0a0c12;
+  border-radius: 999px;
+  background: #5f4b87;
+}
+.lh-radio-playlist::-webkit-scrollbar-thumb:hover { background: #7961a8; }
+.lh-radio-playlist::-webkit-scrollbar-thumb:active { background: #9475cf; }
 
 .lh-radio-playlist-label {
   display: block;

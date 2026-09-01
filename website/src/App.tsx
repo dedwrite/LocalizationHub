@@ -15,6 +15,8 @@ import TipCard from './delight/TipCard'
 import { FaqLocaleSecret, FooterSecret, FridayClock } from './delight/LittleSecrets'
 import AmbientGreeting from './delight/AmbientGreeting'
 import CommandCenter, { openCommandCenter } from './delight/CommandCenter'
+import GameMemeSecret from './delight/GameMemeSecret'
+import RtlShowcase from './components/RtlShowcase'
 import './styles.css'
 import './experience-polish.css'
 import './workspace-deep-polish.css'
@@ -115,7 +117,7 @@ function Landing() {
 
     <Reveal variant="up"><section className="section rtl-section" id="arabic">
       <div className="section-intro"><p className="eyebrow">ARABIC / RTL</p><h2>Arabic is a first-class<br /><i>editing direction.</i></h2><p>The public site, Web App, and translation fields follow the interface language. Switch to Arabic to work right-to-left without a separate product mode.</p></div>
-      <div className="rtl-sample" lang="ar" dir="rtl" data-i18n-skip><small>مثال</small><p>اثبت يا {'{player_name}'}. البوابة الشمالية لا تسقط الليلة.</p></div>
+      <RtlShowcase />
     </section></Reveal>
 
     <Reveal variant="right"><section className="section" id="privacy">
@@ -133,7 +135,7 @@ function Landing() {
       ['Does my work stay on this machine?', 'Local Projects stay in this browser until you delete them. Keep your own backups. Cloud Projects persist for the project and its members until an authorized member removes them.'],
       ['What is a Cloud Project?', 'An optional shared project with persistent workflow data, assignments, comments, activity, and Owner, Editor, and Viewer permissions.'],
     ].map(([q, a]) => <details key={q}><summary>{q}<span>+</span></summary><p>{a}</p></details>)}</div></section></Reveal>
-  </main><Footer /></>
+  </main><GameMemeSecret /><Footer /></>
 }
 
 
