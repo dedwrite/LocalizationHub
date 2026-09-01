@@ -73,7 +73,7 @@ test.describe('cloud save regression', () => {
 
   test('manual save sends a real project object and persists on reload', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
-    await page.getByLabel('Translation').fill('Commencer')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('Commencer')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible()
 
@@ -85,12 +85,12 @@ test.describe('cloud save regression', () => {
     expect(last.project.entries[0].translation).toBe('Commencer')
 
     await page.reload()
-    await expect(page.getByLabel('Translation')).toHaveValue('Commencer')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toHaveValue('Commencer')
   })
 
   test('autosave sends a valid object and persists on reload', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
-    await page.getByLabel('Translation').fill('Autosaved text')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('Autosaved text')
     await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
@@ -99,7 +99,7 @@ test.describe('cloud save regression', () => {
     expect(last.project.entries[0].translation).toBe('Autosaved text')
 
     await page.reload()
-    await expect(page.getByLabel('Translation')).toHaveValue('Autosaved text')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toHaveValue('Autosaved text')
   })
 
   test('functional draft updater (toggle tag) never serializes a function', async ({ page }) => {
@@ -147,14 +147,14 @@ test.describe('cloud save regression', () => {
     expect(last.project.entries[0].translation).toBe('Commencer')
 
     await page.reload()
-    await expect(page.getByLabel('Translation')).toHaveValue('Commencer')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toHaveValue('Commencer')
   })
 
   test('rapid edits before debounce produce a single coherent save of the final value', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
-    await page.getByLabel('Translation').fill('First draft')
-    await page.getByLabel('Translation').fill('Second draft')
-    await page.getByLabel('Translation').fill('Final value')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('First draft')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('Second draft')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('Final value')
     await expect(page.getByText('Unsaved', { exact: true })).toBeVisible()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible({ timeout: 6000 })
 
@@ -163,14 +163,14 @@ test.describe('cloud save regression', () => {
     expect(last.project.entries[0].translation).toBe('Final value')
 
     await page.reload()
-    await expect(page.getByLabel('Translation')).toHaveValue('Final value')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toHaveValue('Final value')
   })
 
   test('viewer performs no write requests', async ({ page }) => {
     await mockCloudApi(page, 'viewer')
     await signIn(page)
     await page.goto('/app/projects/proj-1')
-    await expect(page.getByLabel('Translation')).not.toBeEditable()
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).not.toBeEditable()
     await expect(page.getByText('Read only')).toBeVisible()
     expect(state.saves.length).toBe(0)
   })

@@ -53,7 +53,7 @@ test.describe('mobile workflow', () => {
     await page.goto('/app/projects/proj-1')
 
     // Editor is the default surface with the first entry.
-    await expect(page.getByLabel('Translation')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toBeVisible()
 
     // Browse Entries, search, select a different entry.
     await openEntries(page)
@@ -63,8 +63,8 @@ test.describe('mobile workflow', () => {
     await page.locator('.entry-row', { hasText: 'menu.settings' }).click()
 
     // Selecting an entry returns to the Editor.
-    await expect(page.getByLabel('Translation')).toBeVisible()
-    await page.getByLabel('Translation').fill('مُحدّث')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toBeVisible()
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('مُحدّث')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible()
 
@@ -76,20 +76,20 @@ test.describe('mobile workflow', () => {
     await openTools(page)
     await expect(page.getByRole('tab', { name: 'Workflow', exact: true })).toBeVisible()
     await openEditor(page)
-    await expect(page.getByLabel('Translation')).toBeVisible()
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toBeVisible()
   })
 
   test('RTL Arabic translation text is directionally correct', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
     await page.locator('.entry-key').count() // ensure loaded via editor default
     // Source is LTR, translation is RTL (project translationDirection: rtl).
-    const dir = await page.getByLabel('Translation').getAttribute('dir')
+    const dir = await page.getByRole('textbox', { name: 'Translation', exact: true }).getAttribute('dir')
     expect(dir).toBe('rtl')
   })
 
   test('mobile editor does not auto-zoom inputs below 16px', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
-    const fontSize = await page.getByLabel('Translation').evaluate((el) => getComputedStyle(el).fontSize)
+    const fontSize = await page.getByRole('textbox', { name: 'Translation', exact: true }).evaluate((el) => getComputedStyle(el).fontSize)
     expect(parseFloat(fontSize)).toBeGreaterThanOrEqual(16)
   })
 

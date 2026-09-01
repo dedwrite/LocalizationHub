@@ -69,7 +69,7 @@ test.describe('legacy cloud project migration', () => {
 
     // Edit + manual save.
     await openEditor(page)
-    await page.getByLabel('Translation').fill('Commencer')
+    await page.getByRole('textbox', { name: 'Translation', exact: true }).fill('Commencer')
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Saved', { exact: true })).toBeVisible()
 
@@ -81,7 +81,7 @@ test.describe('legacy cloud project migration', () => {
 
     // Reload now returns the stored V3 payload.
     await page.reload()
-    await expect(page.getByLabel('Translation')).toHaveValue('Commencer')
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).toHaveValue('Commencer')
   })
 
   test('viewer loads V2 in memory but performs zero writes', async ({ page }) => {
@@ -91,7 +91,7 @@ test.describe('legacy cloud project migration', () => {
     await openEntries(page)
     await expect(page.locator('.entry-key').filter({ hasText: 'menu.start' })).toBeVisible()
     await openEditor(page)
-    await expect(page.getByLabel('Translation')).not.toBeEditable()
+    await expect(page.getByRole('textbox', { name: 'Translation', exact: true })).not.toBeEditable()
     await expect(page.getByText('Read only')).toBeVisible()
     expect(putCount).toBe(0)
   })
