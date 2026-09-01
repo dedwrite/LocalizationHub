@@ -11,6 +11,7 @@ import ResumeCard from './delight/ResumeCard'
 import { latestDated, localCoverage } from './delight/recents'
 import ProjectMark from './delight/ProjectMark'
 import TimeGreeting from './delight/TimeGreeting'
+import { registerQuietCommands } from './delight/quietCommands'
 import './workspace-tools.css'
 
 type LocalRow = { id: string; value: any; savedAt: string }
@@ -45,6 +46,16 @@ export default function LocalWorkspace() {
     try { await deleteLocalProject(deleting.id); setDeleting(null); refresh(); setNotice(t('local.deleted')) }
     catch { setDeleting(null); setNotice(t('local.deleteFailed')) }
   }
+  useEffect(() => {
+    if (opened) return
+    return registerQuietCommands(recent.slice(0, 5).map((row) => ({
+      id: `local.recent.${row.id}`,
+      label: `Open ${fileNameOf(row)}`,
+      keywords: `recent local ${fileNameOf(row)}`,
+      group: 'project' as const,
+      run: () => openSaved(row),
+    })))
+  }, [opened, recent])
   if (opened && storage) return <Workspace key={opened.id} storage={storage} user={localUser} onHome={() => { setOpened(null); refresh() }} />
   return <main className="local-page local-home" data-i18n-skip>
     <header className="local-header">

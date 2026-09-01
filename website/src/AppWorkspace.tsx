@@ -18,6 +18,7 @@ import EmptyState from './delight/EmptyState'
 import PageSkeleton from './delight/PageSkeleton'
 import TimeGreeting from './delight/TimeGreeting'
 import { projectIdentity } from './delight/projectIdentity'
+import { registerQuietCommands } from './delight/quietCommands'
 import './app-workspace.css'
 import './workspace/workspace.css'
 import './app-workspace.mobile.css'
@@ -109,6 +110,19 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
   }, [projects])
   const openedId = useMemo(() => lastCloudProject(user.id), [user.id, projects])
   const resume = projects.find(project => project.id === openedId) ?? latestDated(projects, project => project.updatedAt)
+
+  useEffect(() => {
+    const recent = [...projects]
+      .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))
+      .slice(0, 5)
+    return registerQuietCommands(recent.map((project) => ({
+      id: `cloud.recent.${project.id}`,
+      label: `Open ${project.name}`,
+      keywords: `recent cloud ${project.name} ${project.sourceFileName ?? ''}`,
+      group: 'project' as const,
+      run: () => navigate(`/app/projects/${project.id}`),
+    })))
+  }, [projects])
 
   return <main className="workspace-page projects-page">
     <AppHeader user={user} onLogout={onLogout} />

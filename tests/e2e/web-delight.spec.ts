@@ -71,7 +71,7 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('.editor-footer').getByRole('button', { name: 'Next', exact: true }).click()
     await page.locator('.lh-language-switcher select').selectOption(locale)
     await page.getByRole('button', { name: labels.save, exact: true }).click()
-    await expect(page.getByRole('status')).toContainText(labels.saved)
+    await expect(page.locator('.toast')).toContainText(labels.saved)
     await page.getByRole('button', { name: labels.back, exact: true }).click()
     const card = page.locator('.resume-card')
     await expect(card).toContainText('delight-synthetic.json')

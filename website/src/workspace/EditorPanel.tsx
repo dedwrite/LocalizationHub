@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { extractProtectedTokens, type EntryContext, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
+import { extractProtectedTokens, type EntryContext, type GlossaryEntry, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
 import TranslationLengthCue from '../delight/TranslationLengthCue'
+import GlossaryHint from '../delight/GlossaryHint'
 import type { EntryIssue } from './entryCollection'
 
 type EditorPanelProps = {
@@ -13,6 +14,7 @@ type EditorPanelProps = {
   writable: boolean
   tokenProfileId: TokenProfileId
   issues: EntryIssue[]
+  glossary?: GlossaryEntry[]
   sourceDirection: 'ltr' | 'rtl' | 'auto'
   direction: 'ltr' | 'rtl' | 'auto'
   position: number
@@ -218,6 +220,7 @@ export default function EditorPanel(props: EditorPanelProps) {
             aria-label="Translation"
           />
           <TranslationLengthCue source={source} translation={translation} />
+          <GlossaryHint source={source} translation={translation} glossary={props.glossary ?? []} />
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (

@@ -3,6 +3,7 @@ import { useI18n } from '@localizationhub/i18n'
 import { navigate } from '../navigation'
 import {
   isEditableTarget,
+  listDynamicQuietCommands,
   listQuietCommands,
   matchQuietCommands,
   registerQuietCommands,
@@ -61,15 +62,23 @@ export default function CommandPalette() {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [extra, setExtra] = useState<QuietCommand[]>(() => listQuietCommands())
+  const [dynamicTick, setDynamicTick] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => subscribeQuietCommands(() => setExtra(listQuietCommands())), [])
+  useEffect(() => subscribeQuietCommands(() => {
+    setExtra(listQuietCommands())
+    setDynamicTick((value) => value + 1)
+  }), [])
 
   const commands = useMemo(() => {
     const merged = new Map<string, QuietCommand>()
     for (const command of [...baseCommands(setLocale, locale), ...extra]) merged.set(command.id, command)
-    return matchQuietCommands(query, [...merged.values()])
-  }, [extra, locale, query, setLocale])
+    const staticMatches = matchQuietCommands(query, [...merged.values()])
+    const dynamicMatches = listDynamicQuietCommands(query)
+    const out = new Map<string, QuietCommand>()
+    for (const command of [...dynamicMatches, ...staticMatches]) out.set(command.id, command)
+    return [...out.values()]
+  }, [dynamicTick, extra, locale, query, setLocale])
 
   useEffect(() => {
     setActive(0)

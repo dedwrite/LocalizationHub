@@ -598,7 +598,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 .nav-primary { background: #4f3db5; border-color: #6f61d8; font-weight: 700; }
 .nav-button:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.editor-hint { color: #8b93a7; font-size: 11px; }
+.editor-hint { color: #b4bac8; font-size: 11px; }
 
 /* Inspector */
 .inspector { display: flex; flex-direction: column; height: 100%; min-height: 0; }

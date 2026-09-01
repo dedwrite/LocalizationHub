@@ -3,13 +3,17 @@ export type QuietCommand = {
   label: string
   hint?: string
   keywords?: string
-  group?: 'navigate' | 'workspace' | 'project' | 'system'
+  group?: 'navigate' | 'workspace' | 'project' | 'system' | 'entry'
   run: () => void
 }
+
+/** Search-driven commands that only appear when the palette query is non-empty. */
+export type QuietDynamicProvider = (query: string) => QuietCommand[]
 
 type Listener = () => void
 
 const registry = new Map<string, QuietCommand>()
+const providers = new Set<QuietDynamicProvider>()
 const listeners = new Set<Listener>()
 
 function notify() {
@@ -27,8 +31,32 @@ export function registerQuietCommands(commands: QuietCommand[]): () => void {
   }
 }
 
+export function registerQuietDynamicProvider(provider: QuietDynamicProvider): () => void {
+  providers.add(provider)
+  notify()
+  return () => {
+    providers.delete(provider)
+    notify()
+  }
+}
+
 export function listQuietCommands(): QuietCommand[] {
   return [...registry.values()]
+}
+
+export function listDynamicQuietCommands(query: string): QuietCommand[] {
+  const needle = query.trim()
+  if (needle.length < 2) return []
+  const seen = new Set<string>()
+  const out: QuietCommand[] = []
+  for (const provider of providers) {
+    for (const command of provider(needle)) {
+      if (seen.has(command.id)) continue
+      seen.add(command.id)
+      out.push(command)
+    }
+  }
+  return out
 }
 
 export function subscribeQuietCommands(listener: Listener): () => void {

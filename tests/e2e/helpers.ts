@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 
 /*
  * Shared helpers for tests that run on both desktop and mobile projects.
@@ -33,4 +33,15 @@ export async function openEditor(page: Page) {
 
 export async function openTools(page: Page) {
   await openSurface(page, 'Tools')
+}
+
+export async function confirmLocalExport(page: Page) {
+  await page.getByRole('button', { name: 'Export', exact: true }).click()
+  const dialog = page.locator('.export-checklist-dialog')
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: /Export file|تصدير/ }).click()
+}
+
+export function localToast(page: Page) {
+  return page.locator('.toast')
 }

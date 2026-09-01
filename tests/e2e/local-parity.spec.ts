@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { openEditor, openEntries, openTools } from './helpers'
+import { confirmLocalExport, localToast, openEditor, openEntries, openTools } from './helpers'
 import { parseLocalizationFile } from '../../packages/core/src/parsers'
 import AxeBuilder from '@axe-core/playwright'
 
@@ -31,7 +31,7 @@ for (const locale of ['en', 'ar'] as const) test(`Local editing, profiles, workf
   if ((page.viewportSize()?.width ?? 0) < 768) await openTools(page)
   await page.getByLabel('Token profile', { exact: true }).selectOption('unity')
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText('Saved to this browser.')
+  await expect(localToast(page)).toContainText('Saved to this browser.')
   expect(requests).toEqual([])
   await page.reload()
   await page.getByRole('button', { name: 'caloy-mark.json', exact: true }).click()
@@ -44,7 +44,7 @@ for (const locale of ['en', 'ar'] as const) test(`Local editing, profiles, workf
   await expect(page.getByRole('tab', { name: 'Comments', exact: true })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Collaboration', exact: true })).toHaveCount(0)
   const download = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Export', exact: true }).click()
+  await confirmLocalExport(page)
   const file = await download
   expect(file.suggestedFilename()).toBe('caloy-mark.json')
   const exported = JSON.parse(readFileSync((await file.path())!, 'utf8'))
@@ -68,7 +68,7 @@ test('legacy browser copy migration preserves data without rewriting storage on 
   const stored = await page.evaluate(async () => new Promise<any>((resolve) => { const open = indexedDB.open('localizationhub-web-local', 1); open.onsuccess = () => { const db = open.result; const get = db.transaction('projects').objectStore('projects').get('legacy.json:json'); get.onsuccess = () => { db.close(); resolve(get.result) } } }))
   expect(stored.value).toEqual(parsed.document)
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText('Saved to this browser.')
+  await expect(localToast(page)).toContainText('Saved to this browser.')
   await page.reload()
   await expect(page.getByRole('button', { name: 'legacy.json', exact: true })).toHaveCount(1)
 })
@@ -80,7 +80,7 @@ test('unsaved edits survive cancelled navigation and local-copy deletion is deli
   await page.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(page.locator('.translation-editor')).toHaveValue('Keep this draft')
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText('Saved to this browser.')
+  await expect(localToast(page)).toContainText('Saved to this browser.')
   await page.locator('.toolbar-brand:visible, .mob-back:visible').click()
   await page.getByRole('button', { name: 'Delete local copy', exact: true }).click()
   await page.getByRole('button', { name: 'Cancel', exact: true }).click()
@@ -168,11 +168,11 @@ test('quota failure preserves unsaved work and allows original-format backup exp
   await page.locator('.translation-editor').fill('backup translation')
   await page.evaluate(() => { IDBObjectStore.prototype.put = () => { throw new DOMException('Synthetic quota failure', 'QuotaExceededError') } })
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText('Keep this view open and export a backup')
+  await expect(localToast(page)).toContainText('Keep this view open and export a backup')
   await expect(page.locator('.translation-editor')).toHaveValue('backup translation')
   await openTools(page)
   const download = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Export', exact: true }).click()
+  await confirmLocalExport(page)
   expect(JSON.parse(readFileSync((await (await download).path())!, 'utf8'))[0].text_ar).toBe('backup translation')
 })
 
@@ -191,7 +191,7 @@ test('navigation, selected entry and all five profile choices remain local', asy
     await expect(page.getByLabel('Token profile', { exact: true })).toHaveValue(profile)
   }
   await page.keyboard.press('Control+s')
-  await expect(page.getByRole('status')).toContainText('Saved to this browser.')
+  await expect(localToast(page)).toContainText('Saved to this browser.')
   await page.reload()
   await page.getByRole('button', { name: 'navigation.json', exact: true }).click()
   await expect(page.locator('.source-text')).toContainText('Two')

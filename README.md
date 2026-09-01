@@ -6,9 +6,9 @@ It combines a structured desktop editor with a full browser workspace, optional 
 
 ## Current Release
 
-**LocalizationHub v0.9.4 — Quiet Polish**
+**LocalizationHub v0.9.5 — Quiet Workflow**
 
-v0.9.4 adds restrained Web App polish on top of the accepted v0.9.3 Web Delight foundation: a Command Palette, project visual identity, richer empty/completion states, quiet motion, skeletons, time ambience, length cues, and rare behavior-linked discoveries — without changing Local privacy, Cloud authorization, protected tokens, or LH Radio.
+v0.9.5 deepens the quiet Web App workflow: smarter Command Palette entry jumps and recent projects, calm glossary notes while typing, a Local export checklist, and a session progress pulse — without changing Local privacy, Cloud authorization, protected tokens, or LH Radio.
 
 Earlier milestones remain intact, including bilingual English/Arabic UI, engine-aware token profiles, the v0.8 Web Experience and LH Radio foundation, and the read-only Game Text Extraction introduced in v0.7:
 
@@ -426,10 +426,10 @@ LocalizationHub is currently developed primarily as a Windows desktop applicatio
 
 The latest release is:
 
-**LocalizationHub v0.9.4 — Quiet Polish**
+**LocalizationHub v0.9.5 — Quiet Workflow**
 
 Windows builds are distributed through the project's GitHub Releases page.
 The repository remains private, so these assets require repository access.
 The [website and Web App](https://localizationhub.app/) remain publicly usable.
 
-Download the current release: [LocalizationHub v0.9.4 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.4).
+Download the current release: [LocalizationHub v0.9.5 on GitHub](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.5).
