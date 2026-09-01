@@ -61,7 +61,7 @@ function cachePolicy(relativePath) {
   if (relativePath.startsWith('assets/') && /-[A-Za-z0-9_-]{6,}\./u.test(relativePath)) {
     return 'public, max-age=31536000, immutable'
   }
-  if (relativePath === 'index.html') return 'no-cache'
+  if (relativePath === 'index.html' || relativePath.endsWith('/index.html') || relativePath.endsWith('.html')) return 'no-cache'
   return 'public, max-age=86400'
 }
 
@@ -90,13 +90,24 @@ export async function servePublicWebsite(request, response, distDir) {
   }
 
   const requestedPath = pathname === '/' ? 'index.html' : pathname.slice(1)
-  const isAsset = requestedPath.startsWith('assets/') || requestedPath.includes('.')
-  const resource = await readResource(distDir, requestedPath)
-  const fallback = !isAsset ? await readResource(distDir, 'index.html') : null
+  const isAsset = requestedPath.startsWith('assets/') || (requestedPath.includes('.') && !requestedPath.endsWith('.html'))
+  const candidates = []
+  if (pathname === '/') candidates.push('index.html')
+  else {
+    candidates.push(`${requestedPath}/index.html`)
+    if (!requestedPath.includes('.')) candidates.push(`${requestedPath}.html`)
+    candidates.push(requestedPath)
+  }
+  let resource = null
+  let relativePath = 'index.html'
+  for (const candidate of candidates) {
+    resource = await readResource(distDir, candidate)
+    if (resource) { relativePath = candidate; break }
+  }
+  const fallback = !resource && !isAsset ? await readResource(distDir, 'index.html') : null
   const selected = resource ?? fallback
   if (!selected) return false
-
-  const relativePath = resource ? requestedPath : 'index.html'
+  if (!resource) relativePath = 'index.html'
   response.writeHead(200, {
     'Content-Type': MIME_TYPES.get(path.extname(relativePath).toLowerCase()) ?? 'application/octet-stream',
     'Content-Length': selected.size,

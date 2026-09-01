@@ -15,7 +15,7 @@ export default function SessionPulse({ state }: { state: ProgressPulseState }) {
   if (parts.length === 0) return null
 
   return (
-    <p className="progress-pulse" data-i18n-skip role="status">
+    <p className="progress-pulse" data-i18n-skip role="note">
       <span className="progress-pulse-kicker">{t('quiet.pulseKicker')}</span>
       <span>{parts.join(' · ')}</span>
     </p>

@@ -31,7 +31,7 @@ async function accessible(page: Page, selector: string) {
 test('command palette jumps to an entry by source text', async ({ page }) => {
   await openLocal(page)
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+K' : 'Control+K')
-  const palette = page.locator('.command-palette')
+  const palette = page.locator('.command-center')
   await expect(palette).toBeVisible()
   await palette.locator('input').fill('Save game')
   await expect(palette.getByRole('option').first()).toContainText(/Save|menu|Go to/i)
@@ -41,6 +41,7 @@ test('command palette jumps to an entry by source text', async ({ page }) => {
 
 test('export opens a quiet checklist before downloading', async ({ page }) => {
   await openLocal(page)
+  if (page.viewportSize()!.width < 768) await page.getByRole('button', { name: 'Tools', exact: true }).click()
   await page.getByRole('button', { name: 'Export', exact: true }).click()
   const dialog = page.locator('.export-checklist-dialog')
   await expect(dialog).toBeVisible()

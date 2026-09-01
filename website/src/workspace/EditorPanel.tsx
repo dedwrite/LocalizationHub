@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { extractProtectedTokens, type EntryContext, type GlossaryEntry, type ParsedDialogueContext, type TokenProfileId } from '@localizationhub/core'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 import MachineTranslationPanel from './MachineTranslationPanel'
-import TranslationLengthCue from '../delight/TranslationLengthCue'
 import GlossaryHint from '../delight/GlossaryHint'
 import type { EntryIssue } from './entryCollection'
+import { meterWidth, translationMetrics } from '../delight/translationMetrics'
 
 type EditorPanelProps = {
   local?: boolean
@@ -87,6 +87,11 @@ export default function EditorPanel(props: EditorPanelProps) {
 
   const source = entry?.source ?? ''
   const translation = entry?.translation ?? ''
+  const footprint = translationMetrics(source, translation)
+  const footprintMessage: Record<typeof footprint.tone, MessageKey> = {
+    empty: 'delight.length.empty', compact: 'delight.length.compact', balanced: 'delight.length.balanced', expanded: 'delight.length.expanded',
+  }
+  const quietLengthKind = footprint.tone === 'expanded' ? 'very-long' : footprint.tone === 'compact' ? 'short' : footprint.tone
   const protectedTokens = extractProtectedTokens(source, tokenProfileId)
   const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
   // Extraction context stays in its canonical metadata location. Both display
@@ -219,7 +224,12 @@ export default function EditorPanel(props: EditorPanelProps) {
             placeholder="Write a translation…"
             aria-label="Translation"
           />
-          <TranslationLengthCue source={source} translation={translation} />
+          <div className={`translation-footprint length-cue footprint-${footprint.tone}`} data-kind={quietLengthKind} data-i18n-skip>
+            <div className="footprint-heading"><span>{t('delight.length.title')}</span><strong>{t('delight.length.percent', { percent: footprint.percentage })}</strong></div>
+            <div className="footprint-track" aria-hidden="true"><i style={{ width: `${meterWidth(footprint)}%` }} /></div>
+            <div className="footprint-counts"><span>{t('delight.length.source', { count: footprint.sourceCharacters })}</span><span>{t('delight.length.translation', { count: footprint.translationCharacters })}</span></div>
+            <p>{t(footprintMessage[footprint.tone])}</p>
+          </div>
           <GlossaryHint source={source} translation={translation} glossary={props.glossary ?? []} />
           {issues.length > 0 && (
             <div className="inline-qa">

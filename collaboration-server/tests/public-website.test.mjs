@@ -111,6 +111,18 @@ describe('public website serving', () => {
     }
   })
 
+
+  it('serves unique prerendered privacy HTML instead of the home shell', async () => {
+    const directory = await createFixture()
+    await mkdir(path.join(directory, 'privacy'))
+    await writeFile(path.join(directory, 'privacy', 'index.html'), '<!doctype html><title>Privacy — LocalizationHub</title><link rel="canonical" href="https://localizationhub.app/privacy" />')
+    const response = responseRecorder()
+    assert.equal(await servePublicWebsite({ method: 'GET', url: '/privacy' }, response, directory), true)
+    assert.equal(response.statusCode, 200)
+    assert.match(String(response.body), /Privacy — LocalizationHub/)
+    assert.match(String(response.body), /rel="canonical" href="https:\/\/localizationhub.app\/privacy"/)
+    assert.equal(response.headers['Cache-Control'], 'no-cache')
+  })
   it('fails clearly when the enabled website build is missing', async () => {
     assert.throws(() => ensurePublicWebsiteDirectory(path.join(tmpdir(), 'missing-localizationhub-website')), /website build is missing/i)
   })

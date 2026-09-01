@@ -83,6 +83,7 @@ function dynamicArabicText(text: string) {
   if (text.includes('Web Experience Update')) return text.replace('Web Experience Update', 'تحديث تجربة الويب').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Local Workspace Parity')) return text.replace('Local Workspace Parity', 'تكافؤ مساحة العمل المحلية').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Quiet Clarity')) return text.replace('Quiet Clarity', 'وضوح هادئ').replace(/^v(?=\d)/u, 'الإصدار ')
+  if (text.includes('Game-First Experience')) return text.replace('Game-First Experience', 'تجربة تضع الألعاب أولاً').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('App Parity')) return text.replace('App Parity', 'تكافؤ التطبيق').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Quiet Workflow')) return text.replace('Quiet Workflow', 'سير عمل هادئ').replace(/^v(?=\d)/u, 'الإصدار ')
   if (text.includes('Quiet Polish')) return text.replace('Quiet Polish', 'لمسات هادئة').replace(/^v(?=\d)/u, 'الإصدار ')

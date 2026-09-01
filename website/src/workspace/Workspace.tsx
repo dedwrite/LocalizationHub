@@ -21,7 +21,7 @@ import TokenProfileStatus from './TokenProfileStatus'
 import type { ProjectSnapshot } from '../appApi'
 import { rememberCloudProject, coverage } from '../delight/recents'
 import PageSkeleton from '../delight/PageSkeleton'
-import QualityCelebration from '../delight/QualityCelebration'
+import CompletionMoment from '../delight/CompletionMoment'
 import BehaviorSecretBanner from '../delight/BehaviorSecretBanner'
 import { registerQuietCommands, registerQuietDynamicProvider } from '../delight/quietCommands'
 import { entryJumpCommands } from '../delight/entryJump'
@@ -30,6 +30,8 @@ import ExportChecklistDialog from '../delight/ExportChecklistDialog'
 import SessionPulse from '../delight/SessionPulse'
 import { loadProgressPulse, recordProgressPulse, type ProgressPulseState } from '../delight/pulseState'
 import { metadata } from '../appApi'
+import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { useI18n } from '@localizationhub/i18n'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -441,6 +443,28 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [saveNow, writable, selected, entries, nextUntranslated])
 
+  useLayoutEffect(() => {
+    function onCommand(event: Event) {
+      const action = (event as CustomEvent<{ action?: string }>).detail?.action
+      if (action === 'save') saveNow()
+      if (action === 'next' && writable) { nextUntranslated(1); saveNow() }
+      if (action === 'search') searchRef.current?.focus()
+      if (action === 'overview') setOverviewOpen(true)
+      if (action === 'focus' && !isMobile) {
+        setLayout((current) => {
+          const focused = current.entriesCollapsed && current.inspectorCollapsed
+          const next = focused
+            ? { ...current, entriesCollapsed: false, inspectorCollapsed: false }
+            : { ...current, entriesCollapsed: true, inspectorCollapsed: true }
+          saveLayout(next)
+          return next
+        })
+      }
+    }
+    window.addEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+    return () => window.removeEventListener(WORKSPACE_COMMAND_EVENT, onCommand)
+  }, [isMobile, nextUntranslated, saveNow, writable])
+
   // Warn before leaving with unsaved changes.
   useEffect(() => {
     function beforeUnload(event: BeforeUnloadEvent) {
@@ -597,13 +621,13 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         setConfirmLeave={setConfirmLeave}
         notice={notice}
         setNotice={setNotice}
+        complete={projectCoverage.complete}
       />{deletionDialog}{exportDialog}</>
     )
   }
 
   return (
     <main className={`workspace-page workspace-shell ${focusMode ? 'focus-mode' : ''} ${settleIn ? 'is-settling' : ''}`}>
-      <QualityCelebration complete={projectCoverage.complete} projectName={snapshot.name} />
       <BehaviorSecretBanner complete={projectCoverage.complete} justSaved={recentlySaved} />
       <SessionPulse state={pulse} />
       <Toolbar
@@ -627,6 +651,8 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
         focusMode={focusMode}
         onToggleFocus={() => setLayout((l) => { const next = focusMode ? { ...l, entriesCollapsed: false, inspectorCollapsed: false } : { ...l, entriesCollapsed: true, inspectorCollapsed: true }; saveLayout(next); return next })}
       />
+
+      <CompletionMoment projectId={projectId} complete={projectCoverage.complete} onReview={() => setOverviewOpen(true)} />
 
       <div className="workspace-body">
         {!layout.entriesCollapsed && (
@@ -790,6 +816,7 @@ function Toolbar(props: {
   focusMode: boolean
   onToggleFocus: () => void
 }) {
+  const { t } = useI18n()
   const saveLabel = props.saveState === 'saving' ? 'Saving…' : props.saveState === 'failed' ? 'Save failed' : props.saveState === 'unsaved' ? 'Unsaved' : 'Saved'
   return (
     <header className="workspace-toolbar">
@@ -813,6 +840,7 @@ function Toolbar(props: {
         <button className="toolbar-button" onClick={props.onOverview}>Overview</button>
       </div>
       <div className="toolbar-group">
+        <button className="toolbar-button toolbar-command" type="button" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}>⌘</button>
         <button className="toolbar-button" onClick={props.onToggleEntries}>Entries</button>
         <button className="toolbar-button" onClick={props.onToggleInspector}>Inspector</button>
         <button className="toolbar-button" onClick={props.onToggleFocus} title="Toggle focus mode">{props.focusMode ? 'Exit Focus' : 'Focus'}</button>

@@ -403,7 +403,8 @@
 .local-file-graphic i:nth-child(3) { left: 40px; border-color: #786bc1; background: #211d35; }
 .local-open-panel h2 { max-width: 360px; margin: 0 0 14px; font-size: 1.7rem; letter-spacing: -0.04em; }
 .local-open-panel p { color: #969eab; font-size: 0.83rem; line-height: 1.7; }
-.local-open-panel .file-button { display: inline-flex; margin-top: 13px; border-color: #7467bd; background: #574ca2; font-weight: 700; transition: transform 160ms ease, background 160ms ease; }
+.local-open-panel .file-button { display: inline-flex; margin-top: 13px; border-color: #8d82d6; background: #3a3178; color: #f7f4ff; font-weight: 700; transition: transform 160ms ease, background 160ms ease; }
+.local-open-panel .button.button-quiet { color: #eef2f7; background: #222836; border-color: #5a6270; }
 .local-open-panel .file-button:hover { background: #675bb5; transform: translateY(-2px); }
 .local-open-panel > small { display: block; margin-top: 14px; color: #69717e; font: 0.56rem 'DM Mono', monospace; }
 .local-home .notice,
@@ -483,7 +484,9 @@
   .local-context-nav { display: none; }
   .local-home .local-drop { grid-template-columns: 1fr; gap: 42px; width: calc(100% - 32px); padding: 52px 0 90px; }
   .local-intro h1 { font-size: clamp(2.8rem, 13vw, 4.2rem); }
-  .local-open-panel { min-height: 390px; padding: 24px; box-shadow: 9px 10px 0 rgba(15, 17, 23, 0.75); }
+  .local-open-panel { min-height: 0; max-width: 100%; padding: 20px; box-shadow: 0 10px 0 rgba(15, 17, 23, 0.75); }
+  .local-open-panel h2 { max-width: 100%; }
+  .local-home .local-drop { min-width: 0; }
   .local-tip { align-items: flex-start; flex-direction: column; gap: 7px; }
   .recent-local-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
   .local-editor-actions { align-items: flex-start; flex-wrap: wrap; }
@@ -491,6 +494,9 @@
 }
 
 @media (max-width: 430px) {
+  .local-page, .local-home, .local-drop, .local-open-panel { max-width: 100%; min-width: 0; }
+  .local-home .local-drop { width: calc(100% - 20px); }
+  .local-header { gap: 8px; padding-inline: 12px; }
   .project-summary { grid-template-columns: 1fr; }
   .project-summary > div { border-right: 0; border-top: 1px solid #2d3440; }
   .project-summary > div:first-child { border-top: 0; }

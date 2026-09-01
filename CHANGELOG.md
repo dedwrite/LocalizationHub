@@ -2,6 +2,28 @@
 
 All notable LocalizationHub release milestones are documented here.
 
+## [0.9.8] - 2026-09-01
+
+### Game-First Experience
+
+- Reframed the public Landing around game localization while keeping JSON,
+  CSV, and gettext PO workflows visible.
+- Added a ready-to-open Northern Gate Local sample project, clearer Arabic/RTL
+  proof, and a tighter extraction → context → workspace narrative.
+- Added route-specific metadata, canonical links, an Open Graph card, and
+  prerendered public-route shells for more reliable discovery.
+- Preserved all 74 translator tips and the existing Friday, FAQ, on-device,
+  footer, completion, Sunday, and late-night quiet discoveries.
+
+### Workspace and reliability
+
+- Integrated Quiet Clarity commands, entry jumps, glossary hints, progress
+  pulse, export checklist, and the current command center/text footprint flow.
+- Kept the mobile language dock above workspace navigation so it cannot cover
+  the Tools control on narrow phones.
+- Added and updated responsive Playwright coverage for the combined Web App
+  experience across Chromium and WebKit profiles.
+
 ## [0.9.7] - 2026-09-01
 
 ### Quiet Clarity
