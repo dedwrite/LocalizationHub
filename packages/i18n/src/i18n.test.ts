@@ -20,7 +20,7 @@ describe('LocalizationHub UI message catalog', () => {
 
   it('uses Arabic plural-friendly dynamic count and pagination copy', () => {
     expect(translateUiText('ar', 'Page 2 of 7')).toBe('الصفحة 2 من 7')
-    expect(translateUiText('ar', '15 entries')).toBe('15 إدخال')
+    expect(translateUiText('ar', '15 entries')).toBe('15 نص')
     expect(translateUiText('en', '15 entries')).toBe('15 entries')
   })
 
@@ -31,7 +31,7 @@ describe('LocalizationHub UI message catalog', () => {
 
   it('localizes dynamic workspace status and accessibility labels', () => {
     expect(translateUiText('ar', 'Saved')).toBe('محفوظ')
-    expect(translateUiText('ar', 'Manual profile selected')).toBe('تم اختيار الملف يدوياً')
+    expect(translateUiText('ar', 'Manual profile selected')).toBe('اختيرت قواعد الحماية يدويًا')
     expect(translateUiText('ar', 'Assigned to Me')).toBe('مُعيّن لي')
     expect(translateUiText('ar', 'Select menu.start')).toBe('تحديد menu.start')
     expect(translateUiText('ar', '5 — Untranslated')).toBe('5 — غير مترجم')

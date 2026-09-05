@@ -13,7 +13,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'set SERVE_PUBLIC_WEBSITE=1&& set ENABLE_EXPERIMENTAL_CLOUD_API=0&& set PORT=8787&& node collaboration-server/server.mjs',
+    command: 'node scripts/serve-website.mjs',
+    env: { PORT: '8787' },
     url: 'http://127.0.0.1:8787/health',
     reuseExistingServer: false,
     timeout: 30_000,

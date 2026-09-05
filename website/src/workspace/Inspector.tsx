@@ -262,7 +262,7 @@ function QualityTab({ entry, draft }: { entry: any; draft: any }) {
   return (
     <div className="inspector-section">
       <h3>Quality</h3>
-      {(!entry || entry.translation === '') && <p className="muted">Untranslated entries have no quality issues yet.</p>}
+      {(!entry || entry.translation === '') && <p className="muted">Add a translation to check its quality.</p>}
       {issues.length === 0 && entry?.translation && <EmptyState kind="quality-clean" />}
       {issues.map((issue, index) => (
         <div key={index} className="qa-item"><p data-i18n-skip><bdi>{issue.term.sourceTerm}</bdi> — {t(issue.forbidden ? 'local.forbiddenTerm' : 'local.preferredMissing')}</p></div>

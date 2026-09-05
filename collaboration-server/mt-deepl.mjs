@@ -1,3 +1,5 @@
+import { createRateLimiter } from './rate-limit.mjs'
+
 /*
  * DeepL translation proxy for the Web App.
  *
@@ -14,7 +16,7 @@ const DEEPL_PRO_URL = 'https://api.deepl.com/v2/translate'
 const REQUEST_TIMEOUT_MS = 20_000
 const MAX_TEXT_CHARS = 50_000
 
-const rateBuckets = new Map()
+const rateLimiter = createRateLimiter({ limit: 30, windowMs: 60_000 })
 
 function deeplEndpoint(apiKey) {
   return apiKey.endsWith(':fx') ? DEEPL_FREE_URL : DEEPL_PRO_URL
@@ -67,23 +69,8 @@ function clientKey(request) {
   return request.socket?.remoteAddress || 'unknown'
 }
 
-function allowRate(request) {
-  const key = clientKey(request)
-  const now = Date.now()
-  const windowMs = 60_000
-  const limit = 30
-  const bucket = rateBuckets.get(key) || { count: 0, resetAt: now + windowMs }
-  if (now > bucket.resetAt) {
-    bucket.count = 0
-    bucket.resetAt = now + windowMs
-  }
-  bucket.count += 1
-  rateBuckets.set(key, bucket)
-  return bucket.count <= limit
-}
-
 export async function proxyDeepLTranslate(request, body) {
-  if (!allowRate(request)) {
+  if (!rateLimiter.allow(clientKey(request))) {
     return { status: 429, body: { error: 'rate-limited', message: 'Too many translation requests. Try again shortly.' } }
   }
 

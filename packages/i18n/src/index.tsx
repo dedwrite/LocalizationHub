@@ -31,10 +31,10 @@ function dynamicArabicText(text: string) {
   const page = /^Page\s+(\d+)\s+of\s+(\d+)$/u.exec(text)
   if (page) return `الصفحة ${page[1]} من ${page[2]}`
   const entry = /^Entry\s+(\d+)\s+of\s+(\d+)$/iu.exec(text)
-  if (entry) return `الإدخال ${entry[1]} من ${entry[2]}`
+  if (entry) return `النص ${entry[1]} من ${entry[2]}`
   const count = /^(\d+)\s+(entries|projects|users|tracks|comments|files|warnings|errors)$/iu.exec(text)
   if (count) {
-    const nouns: Record<string, string> = { entries: 'إدخال', projects: 'مشروع', users: 'مستخدم', tracks: 'مقطع', comments: 'تعليق', files: 'ملف', warnings: 'تحذير', errors: 'خطأ' }
+    const nouns: Record<string, string> = { entries: 'نص', projects: 'مشروع', users: 'مستخدم', tracks: 'مقطع', comments: 'تعليق', files: 'ملف', warnings: 'تحذير', errors: 'خطأ' }
     return `${count[1]} ${nouns[count[2].toLowerCase()]}`
   }
   if (text === 'Assigned to Me') return 'مُعيّن لي'
@@ -189,6 +189,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       if (node.nodeType === Node.TEXT_NODE) localizeTextNode(node as Text)
       if (node.nodeType !== Node.ELEMENT_NODE) return
       const element = node as Element
+      // Keyed components and user content own their text. Skip the entire subtree.
+      if (element.matches('[data-i18n-skip], [data-i18n-content], code, pre, kbd, samp, [contenteditable="true"]')) return
       localizeElement(element)
       for (const child of element.childNodes) scan(child)
     }

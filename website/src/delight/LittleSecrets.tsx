@@ -17,7 +17,7 @@ export function FridayClock({ hidden = false }: { hidden?: boolean }) {
   const { t } = useI18n()
   const id = useId()
   const [open, setOpen] = useState(false)
-  return <span className={`friday-discovery${hidden ? ' friday-discovery-hidden' : ''}`}><button type="button" className={hidden ? 'demo-status friday-clock-secret-trigger' : 'friday-clock'} aria-label={hidden ? 'Friday · 11:59 PM' : undefined} aria-expanded={open} aria-controls={id} onClick={event => { setOpen(!open); event.currentTarget.focus() }} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}>{hidden ? <><i /> TOKENS VALID</> : <bdi>Friday · 11:59 PM</bdi>}</button><span id={id} className="friday-note" hidden={!open} role="status" data-i18n-skip><b>{t('delight.friday')}</b> {t('delight.fridayBody')}</span></span>
+  return <span className={`friday-discovery${hidden ? ' friday-discovery-hidden' : ''}`}><button type="button" className={hidden ? 'demo-status friday-clock-secret-trigger' : 'friday-clock'} aria-label={hidden ? 'Friday · 11:59 PM' : undefined} aria-expanded={open} aria-controls={id} onClick={event => { setOpen(!open); event.currentTarget.focus() }} onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}>{hidden ? <><i /> {t('website.context.tokensValid')}</> : <bdi>Friday · 11:59 PM</bdi>}</button><span id={id} className="friday-note" hidden={!open} role="status" data-i18n-skip><b>{t('delight.friday')}</b> {t('delight.fridayBody')}</span></span>
 }
 
 /** Quiet local-only discovery on the Local trust row. */

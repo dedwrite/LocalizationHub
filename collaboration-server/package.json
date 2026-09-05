@@ -8,7 +8,7 @@
         "dev": "node dev.mjs",
         "start": "node server.mjs",
         "check": "node --check server.mjs",
-        "test": "set NODE_ENV=test&& node --test tests/*.test.mjs",
+        "test": "node ../scripts/test-server.mjs",
         "smoke:v0.4": "node scripts/v0.4-workflow-smoke.mjs",
         "db:migrate": "node migrate.mjs"
     },

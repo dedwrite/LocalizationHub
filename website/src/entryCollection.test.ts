@@ -50,6 +50,20 @@ describe('entry collection filtering', () => {
     expect(collection.views[0].entry.id).toBe('entry-42')
   })
 
+  it('searches the stored review status rather than guessing it from translation text', () => {
+    const collection = buildEntryCollection({ entries, workflow: workflowEntries, filter: 'all', query: 'status:needs-review' })
+    expect(collection.views.map(view => view.entry.id)).toEqual(['entry-2'])
+  })
+
+  it('keeps unstarted entries out of the live token-error queue', () => {
+    for (const translation of ['', '   ']) {
+      expect(entryIssues({ source: 'Hello {0}', translation })).toEqual([])
+    }
+    const collection = buildEntryCollection({ entries: [{ id: 'empty', source: 'Hello {0}', translation: '' }], workflow: {}, filter: 'errors', query: '' })
+    expect(collection.views).toEqual([])
+    expect(collection.counts.untranslated).toBe(1)
+  })
+
   it('detects protected token errors', () => {
     // Source has a protected token {0} but translation drops it.
     const issues = entryIssues({ source: 'Hello {0}', translation: 'Bonjour' }, 'generic')

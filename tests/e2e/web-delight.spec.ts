@@ -6,7 +6,7 @@ import { projectFromLocalDocument } from '../../website/src/localProjects'
 const source = JSON.stringify([{ entry_id: '1', speaker: 'Caloy', receiver: 'Mark', text_en: 'First {name}', text_ar: '' }, { entry_id: '2', speaker: 'Mark', receiver: 'Caloy', text_en: 'Second {name}', text_ar: '' }])
 const text = {
   en: { next: 'Another tip', hide: 'Hide these tips', show: 'Show translation tips', resume: 'Resume saved project', saved: 'Saved to this browser.', save: 'Save locally', back: 'Back to local files', secret: 'A little translator secret', close: 'Close the little secret', end: 'You found the last string.', friday: 'The famous “five-minute” hotfix.', position: 'Saved at entry 2 of 2' },
-  ar: { next: 'تلميحة أخرى', hide: 'إخفاء هذه التلميحات', show: 'إظهار تلميحات الترجمة', resume: 'متابعة المشروع المحفوظ', saved: 'حُفظ في هذا المتصفح.', save: 'حفظ محلياً', back: 'العودة إلى الملفات المحلية', secret: 'سر صغير للمترجمين', close: 'إغلاق السر الصغير', end: 'لقيت آخر سطر.', friday: 'الهوتفكس الشهير: «خمس دقايق بس».', position: 'محفوظ عند الإدخال 2 من 2' },
+  ar: { next: 'نصيحة أخرى', hide: 'إخفاء النصائح', show: 'إظهار تلميحات الترجمة', resume: 'متابعة المشروع المحفوظ', saved: 'حُفظ في هذا المتصفح.', save: 'حفظ محلياً', back: 'العودة إلى الملفات المحلية', secret: 'سر صغير للمترجمين', close: 'إغلاق السر الصغير', end: 'لقيت آخر سطر.', friday: 'الهوتفكس الشهير: «خمس دقايق بس».', position: 'محفوظ عند النص 2 من 2' },
 }
 async function radio(page: Page, populated = false) {
   await page.route('**/api/radio/**', route => new URL(route.request().url()).pathname === '/api/radio/tracks'
@@ -166,7 +166,7 @@ for (const locale of ['en', 'ar'] as const) {
     await accessible(page, '.little-secret')
     await page.keyboard.press('Escape')
     await expect(page.locator('.secret-note')).toBeHidden()
-    await expect(page.getByText('Captain Veyra')).toBeVisible()
+    await expect(page.getByText(locale === 'ar' ? 'الكابتن فيرا' : 'Captain Veyra', { exact: true }).first()).toBeVisible()
     await expect(page.getByText('Northern Gate').first()).toBeVisible()
     await expect(page.getByText('{player_name}').first()).toBeVisible()
     await expect(page.locator('.protected-row code')).toHaveCount(2)
@@ -182,7 +182,7 @@ for (const locale of ['en', 'ar'] as const) {
     const faqSecret = page.locator('.faq-locale-secret-trigger')
     await expect(faqSecret).toHaveAttribute('title', locale === 'ar' ? 'بعض الهوامش تختبئ في العنوان.' : 'Some footnotes hide in the heading.')
     await faqSecret.click()
-    await expect(page.locator('.faq-locale-secret-note')).toContainText(locale === 'ar' ? 'قاعدة هادئة للتوطين.' : 'A quiet rule of localization.')
+    await expect(page.locator('.faq-locale-secret-note')).toContainText(locale === 'ar' ? 'اكتبها كأنها وُلدت بالعربية.' : 'Make it sound written, not translated.')
     await page.keyboard.press('Escape')
     await expect(page.locator('.faq-locale-secret-note')).toBeHidden()
     expect(errors).toEqual([])

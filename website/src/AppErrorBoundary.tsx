@@ -27,7 +27,7 @@ export default class AppErrorBoundary extends Component<Props, State> {
     return (
       <main className="app-error">
         <h1>Workspace unavailable.</h1>
-        <p>Something went wrong while opening this view.</p>
+        <p>We couldn't open this page. Reload it to try again.</p>
         <button onClick={() => window.location.reload()}>Reload workspace</button>
       </main>
     )
