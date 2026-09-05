@@ -53,6 +53,9 @@ export function entryStatus(entry: any, workflow: EntryWorkflowMap): string {
 }
 
 export function entryIssues(entry: any, tokenProfileId: TokenProfileId = 'generic'): EntryIssue[] {
+  // Unstarted entries belong in Untranslated, not in the live error queue.
+  // Export validation remains strict and still checks the original project.
+  if (!entry.translation?.trim()) return []
   const result = validateProtectedTokens(entry.source ?? '', entry.translation ?? '', tokenProfileId)
   const issues: EntryIssue[] = []
   for (const token of result.missingTokens ?? []) issues.push({ severity: 'error', kind: 'missing', token, message: `Missing protected token: ${token.raw}` })
@@ -80,14 +83,15 @@ export type CollectionOptions = {
   assignments?: Record<string, string | null>
 }
 
-function matchesQuery(entry: any, rawQuery: string): boolean {
+function matchesQuery(view: EntryView, rawQuery: string): boolean {
+  const { entry, status } = view
   const text = rawQuery.trim().toLowerCase()
   if (!text) return true
   const parts = text.split(/\s+/u).filter(Boolean)
   const haystack = `${entry.id} ${entry.key ?? ''} ${entry.source ?? ''} ${entry.translation ?? ''} ${entry.context ?? ''} ${entry.notes ?? ''}`.toLowerCase()
   return parts.every((part) => {
     const [key, value] = part.split(':', 2)
-    if (key === 'status') return value === undefined || entryStatus(entry, {}) === value
+    if (key === 'status') return value === undefined || status === value
     if (key === 'untranslated') return !entry.translation
     if (key === 'translated') return Boolean(entry.translation)
     return haystack.includes(part)
@@ -133,7 +137,7 @@ export function buildEntryCollection(options: CollectionOptions): EntryCollectio
     views.push(view)
   }
 
-  const filtered = views.filter((view) => matchesQuery(view.entry, options.query) && matchesFilter(view, options))
+  const filtered = views.filter((view) => matchesQuery(view, options.query) && matchesFilter(view, options))
   return { views: filtered, counts, total: entries.length }
 }
 

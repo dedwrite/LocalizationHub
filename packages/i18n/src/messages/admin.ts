@@ -63,7 +63,7 @@ export const adminMessages = {
   'admin.projects.none': { en: 'No projects found.', ar: 'لم يتم العثور على مشاريع.' },
   'admin.projects.owner': { en: 'Owner', ar: 'المالك' },
   'admin.projects.members': { en: 'Members', ar: 'الأعضاء' },
-  'admin.projects.entries': { en: 'Entries', ar: 'الإدخالات' },
+  'admin.projects.entries': { en: "Entries", ar: "النصوص" },
   'admin.projects.back': { en: '← Projects', ar: 'المشاريع →' },
   'admin.projects.details': { en: 'Details', ar: 'التفاصيل' },
   'admin.projects.noMembers': { en: 'No members.', ar: 'لا يوجد أعضاء.' },

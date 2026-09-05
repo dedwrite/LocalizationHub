@@ -101,7 +101,7 @@ export default function MachineTranslationPanel({
           <p className="mt-warning">
             {provider === 'deepl'
               ? 'Reference only. Your DeepL key stays in this tab. When you press Translate, LocalizationHub forwards the current text to DeepL once and does not save the key or text.'
-              : 'Reference only. Your key stays in this browser tab and is never saved or shared.'}
+              : 'Reference only. Requests send your text and API key to the translation service. The key is not saved; web DeepL requests pass through LocalizationHub.'}
           </p>
           <div className="mt-grid">
             <label className="dialog-field">

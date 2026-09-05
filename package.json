@@ -1,34 +1,35 @@
 {
-    "name":  "localizationhub",
-    "version":  "0.9.8",
-    "description":  "LocalizationHub is a collaborative localization workspace designed for game translation teams.",
-    "main":  "index.js",
-    "scripts":  {
-                    "desktop:release":  "tauri build --config src-tauri/tauri.release.conf.json",
-                    "test":  "echo \"Error: no test specified\" \u0026\u0026 exit 1",
-                    "website:dev":  "vite --config website/vite.config.ts --host 127.0.0.1 --port 5174",
-                    "website:build":  "npm run build --workspace website",
-                    "test:e2e":  "playwright test",
-                    "test:performance":  "vitest run .\\website\\src\\performance.test.ts",
-                    "test:i18n":  "node scripts/i18n-audit.mjs \u0026\u0026 vitest run packages/i18n/src",
-                    "website:serve":  "set SERVE_PUBLIC_WEBSITE=1\u0026\u0026 set ENABLE_EXPERIMENTAL_CLOUD_API=0\u0026\u0026 node collaboration-server/server.mjs"
-                },
-    "keywords":  [
-
-                 ],
-    "author":  "",
-    "license":  "ISC",
-    "type":  "commonjs",
-    "devDependencies":  {
-                            "@axe-core/playwright":  "^4.13.0",
-                            "@playwright/test":  "^1.62.1",
-                            "@tauri-apps/cli":  "^2.11.4"
-                        },
-    "private":  true,
-    "workspaces":  [
-                       "frontend",
-                       "collaboration-server",
-                       "website",
-                       "packages/*"
-                   ]
+  "name": "localizationhub",
+  "version": "0.9.8",
+  "description": "LocalizationHub is a collaborative localization workspace designed for game translation teams.",
+  "main": "index.js",
+  "scripts": {
+    "desktop:release": "tauri build --config src-tauri/tauri.release.conf.json",
+    "test": "npm run test:unit && npm run test:server",
+    "website:dev": "vite --config website/vite.config.ts --host 127.0.0.1 --port 5174",
+    "website:build": "npm run build --workspace website",
+    "test:e2e": "playwright test",
+    "test:performance": "vitest run website/src/performance.test.ts",
+    "test:i18n": "node scripts/i18n-audit.mjs && vitest run packages/i18n/src",
+    "website:serve": "node scripts/serve-website.mjs",
+    "test:unit": "vitest run",
+    "test:server": "node scripts/test-server.mjs",
+    "dev": "vite --config website/vite.config.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.62.1",
+    "@tauri-apps/cli": "^2.11.4"
+  },
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "collaboration-server",
+    "website",
+    "packages/*"
+  ]
 }

@@ -12,8 +12,8 @@ const publicPages = [
     relative: 'index.html',
     title: 'LocalizationHub — Game localization, local-first',
     description: META_DESCRIPTION,
-    heading: 'Game localization that stays on your machine.',
-    body: 'A local-first workspace for Godot, Unreal, and Unity game text, and for JSON, CSV, and gettext PO files.',
+    heading: 'Your game. Your words.',
+    body: 'Translate and review game text. Open JSON, CSV, or PO files in the browser, or extract supported game text with the Windows app.',
   },
   {
     route: '/privacy',
@@ -75,6 +75,7 @@ function prerenderPublicPages(): Plugin {
 
 export default defineConfig({
   root: process.cwd().endsWith('website') ? '.' : 'website',
+  server: { host: '0.0.0.0', allowedHosts: ['terminal.local'] },
   plugins: [react(), {
     name: 'web-build-manifest',
     generateBundle(_options, bundle) {

@@ -65,7 +65,7 @@ test.describe('public routing and accessibility', () => {
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'Game localization that stays on your machine.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Your game. Your words.' })).toBeVisible()
     await expect(page.locator('.engine-card')).toHaveCount(3)
     const state = await page.locator('.engine-card').first().evaluate((element: HTMLElement) => ({ opacity: getComputedStyle(element).opacity, transform: getComputedStyle(element).transform }))
     expect(state.opacity).toBe('1')

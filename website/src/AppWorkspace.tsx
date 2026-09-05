@@ -133,12 +133,12 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
     <AppHeader user={user} onLogout={onLogout} />
     <section className="dashboard">
       <div className="dashboard-heading">
-        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><h1>Your translation work.</h1><p className="muted">Open a project, keep its workflow visible, and continue from any screen.</p><AmbientGreeting /></div>
+        <div><p className="app-kicker">CLOUD PROJECTS / COLLABORATIVE</p><h1>Your projects.</h1><p className="muted">Open a shared project and pick up where your team left off.</p><AmbientGreeting /></div>
         <div className="heading-actions"><button onClick={refresh} title="Refresh projects">↻ Refresh</button><button className="primary-button" onClick={() => setNewOpen(true)}>+ New project</button></div>
       </div>
       {!loading && projects.length > 0 && <div className="project-summary" aria-label="Cloud Project summary">
         <div><span>PROJECTS</span><strong>{projects.length}</strong><small>Available to you</small></div>
-        <div><span>ENTRIES</span><strong>{projectSummary.entries.toLocaleString()}</strong><small>Across real project data</small></div>
+        <div><span>ENTRIES</span><strong>{projectSummary.entries.toLocaleString()}</strong><small>Across your projects</small></div>
         <div><span>TRANSLATED</span><strong>{projectSummary.completion}%</strong><small>{projectSummary.translated.toLocaleString()} entries with text</small></div>
       </div>}
       {verification && <div className="notice warning"><strong>Verify your email to open Cloud Projects.</strong><button onClick={resend}>Resend verification email</button></div>}
@@ -192,8 +192,8 @@ function ProjectSupportPanel({ project, onOpen, onNew }: { project: ProjectSumma
   const translated = project.translatedCount ?? 0
   return <aside className="project-support" aria-label="Project quick actions">
     <span className="support-kicker">ONE PROJECT / KEEP MOVING</span>
-    <h2>A clear next step.</h2>
-    <p>Open the editor to continue this project, or keep the next file on-device until it is ready for Cloud.</p>
+    <h2>Continue working.</h2>
+    <p>Open a project to continue translating, or open a local file without uploading it.</p>
     <div className="support-facts"><div><span>Source</span><strong>{project.sourceFileName || 'LocalizationHub Project'}</strong></div><div><span>Coverage</span><strong>{translated.toLocaleString()} of {total.toLocaleString()} entries translated</strong></div><div><span>Access</span><strong>{friendlyStatus(project.role)} · Rev {project.revision}</strong></div></div>
     <div className="support-actions"><button className="primary-button" onClick={onOpen}>Open project <span aria-hidden="true">↗</span></button><button onClick={onNew}>+ New Cloud Project</button><button onClick={() => navigate('/app/local')}>Open Local Project</button></div>
   </aside>

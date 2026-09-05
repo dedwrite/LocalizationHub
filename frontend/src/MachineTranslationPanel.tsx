@@ -777,7 +777,7 @@ function MachineTranslationPanel({
                     )
                   }
                 }
-                placeholder="Copy and paste a word, phrase, or sentence from the source..."
+                placeholder="Paste a word, phrase, or sentence from the source."
                 dir="auto"
                 rows={
                   4

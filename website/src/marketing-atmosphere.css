@@ -477,3 +477,50 @@ html.lh-motion .landing-main .engine-card:hover {
   .rtl-showcase-source, .rtl-showcase-translation { padding: 13px; }
   .rtl-showcase-translation p { font-size: 20px; line-height: 1.85; }
 }
+
+/* Public copy: readable labels and independent directions for bilingual examples. */
+.skip-content {
+  position: fixed;
+  inset-block-start: 8px;
+  inset-inline-start: 16px;
+  z-index: 1000;
+  transform: translateY(-160%);
+  padding: 12px 18px;
+  border-radius: 6px;
+  color: #fff;
+  background: #373052;
+}
+.skip-content:focus { transform: translateY(0); }
+.route-loading { min-block-size: 65vh; display: grid; place-items: center; color: var(--soft); }
+.landing-main .section-note { font-size: .8rem; line-height: 1.8; color: #a6a2b4; }
+.landing-main .preview-search,
+.landing-main .preview-footer { font-size: .72rem; line-height: 1.65; }
+.landing-main .preview-source p,
+.landing-main .preview-translation p,
+.landing-main .demo-copy p { text-align: start; }
+.landing-main .demo-copy mark { unicode-bidi: isolate; }
+.landing-main .preview-main { min-inline-size: 0; }
+.landing-main .preview-breadcrumb { flex-wrap: wrap; overflow-wrap: anywhere; }
+.site-header .lh-language-switcher { flex-shrink: 0; }
+
+html[lang='ar'] :is(.site-header, .landing-main, .inner-page, footer) {
+  font-family: 'Noto Sans Arabic', Tahoma, sans-serif;
+}
+html[lang='ar'] :is(.landing-main, .inner-page) :is(h1, h2, h3, h1 i, h2 i) {
+  font-family: inherit;
+  font-style: normal;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+html[lang='ar'] .landing-main .hero h1 { font-size: clamp(2.5rem, 4.5vw, 4.6rem); }
+html[lang='ar'] :is(.landing-main, .inner-page) :is(.eyebrow, .visual-caption, .section-note, .surface-tag, .preview-footer, .preview-sidebar-top, .signal-strip) {
+  font-family: inherit;
+  letter-spacing: 0;
+  line-height: 1.8;
+}
+html[lang='ar'] .landing-main :is(.hero-description, .section-intro > p:last-child, .surface p) { line-height: 2; }
+@media (max-width: 640px) {
+  .site-header .lh-language-switcher select { max-inline-size: 95px; padding-inline: 8px 22px; }
+  .site-header .header-cta { display: none; }
+  html[lang='ar'] .landing-main .hero h1 { font-size: clamp(2.3rem, 10vw, 3.6rem); }
+}

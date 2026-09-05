@@ -1896,7 +1896,7 @@ function App() {
 
       showToast(
         'success',
-        'The project copy was saved successfully.',
+        'Project copy saved.',
       )
     } catch (
       error
@@ -2183,8 +2183,8 @@ try {
           : 'success',
 
         loaded.migratedFromVersion === 1
-          ? 'The older project was opened and migrated to the current format.'
-          : 'Project opened successfully.',
+          ? 'Project opened and updated to the current format.'
+          : 'Project opened.',
       )
     } catch (
       error
@@ -3273,7 +3273,7 @@ try {
 
       showToast(
         'success',
-        'The JSON file was exported successfully.',
+        'JSON file exported.',
       )
     } catch (
       error
@@ -3556,8 +3556,7 @@ try {
             </h1>
 
             <p>
-              A collaborative workspace
-              for game localization.
+              A workspace for game translators and their teams.
             </p>
 
             <div className="welcome-actions">

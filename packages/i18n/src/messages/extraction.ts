@@ -2,7 +2,7 @@ import type { MessageCatalog } from '../types'
 
 export const extractionMessages = {
   'extraction.scan.title': { en: 'Scan Game', ar: 'فحص لعبة' },
-  'extraction.scan.description': { en: 'Read-only extraction of localization text from game resources.', ar: 'استخراج نصوص التوطين من موارد اللعبة للقراءة فقط.' },
+  'extraction.scan.description': { en: "Read-only extraction of localization text from game resources.", ar: "استخراج نصوص التعريب من موارد اللعبة للقراءة فقط." },
   'extraction.scan.folder': { en: 'Select Game Folder', ar: 'اختيار مجلد اللعبة' },
   'extraction.scan.resource': { en: 'Select Resource / File', ar: 'اختيار مورد أو ملف' },
   'extraction.scan.aes': { en: 'AES key (encrypted archives, optional)', ar: 'مفتاح AES (للأرشيفات المشفرة، اختياري)' },
@@ -27,7 +27,7 @@ export const extractionMessages = {
   'extraction.review.none': { en: 'No translatable text was extracted from this game.', ar: 'لم يُستخرج نص قابل للترجمة من هذه اللعبة.' },
   'extraction.review.filters': { en: 'Review filters', ar: 'فلاتر المراجعة' },
   'extraction.review.searchPlaceholder': { en: 'Search text, key, or speaker', ar: 'ابحث في النص أو المفتاح أو المتحدث' },
-  'extraction.review.search': { en: 'Search extracted entries', ar: 'بحث في الإدخالات المستخرجة' },
+  'extraction.review.search': { en: "Search extracted entries", ar: "بحث في النصوص المستخرجة" },
   'extraction.review.excludeVisible': { en: 'Exclude visible', ar: 'استبعاد الظاهر' },
   'extraction.review.includeVisible': { en: 'Include visible', ar: 'تضمين الظاهر' },
   'extraction.review.sources': { en: 'Sources (', ar: 'المصادر (' },
@@ -55,7 +55,7 @@ export const extractionMessages = {
   'extraction.diagnostics.groups': { en: 'groups', ar: 'مجموعات' },
   'extraction.diagnostics.none': { en: 'No diagnostics.', ar: 'لا توجد تشخيصات.' },
   'extraction.diagnostics.files': { en: 'files', ar: 'ملفات' },
-  'extraction.source.none': { en: 'This entry has no extraction provenance.', ar: 'لا يحتوي هذا الإدخال على معلومات مصدر الاستخراج.' },
+  'extraction.source.none': { en: "This entry has no extraction provenance.", ar: "لا يحتوي هذا النص على معلومات مصدر الاستخراج." },
   'extraction.source.engine': { en: 'Engine', ar: 'المحرك' },
   'extraction.source.container': { en: 'Container', ar: 'الحاوية' },
   'extraction.source.resource': { en: 'Resource', ar: 'المورد' },
