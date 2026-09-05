@@ -100,6 +100,8 @@ export const desktopMessages = {
   'desktop.noFileToExport': { en: 'There is no file to export.', ar: 'لا يوجد ملف لتصديره.' },
   'desktop.exportWarnings': { en: 'Export was cancelled so you can review the warnings.', ar: 'تم إلغاء التصدير لتتمكن من مراجعة التحذيرات.' },
   'desktop.jsonExported': { en: "JSON file exported.", ar: "صُدّر ملف JSON." },
+  'desktop.csvExported': { en: 'CSV file exported.', ar: 'صُدّر ملف CSV.' },
+  'desktop.poExported': { en: 'gettext PO file exported.', ar: 'صُدّر ملف gettext PO.' },
   'desktop.exportFailed': { en: 'Failed to export the file. The project may be old and missing its original source data.', ar: 'فشل تصدير الملف. قد يكون المشروع قديماً ولا يحتوي على بيانات المصدر الأصلية.' },
   'desktop.unsavedWarning': { en: 'You have unsaved changes. If you continue, those changes will be lost.', ar: 'لديك تغييرات غير محفوظة. إذا تابعت، ستفقد هذه التغييرات.' },
   'parser.invalidJson': { en: 'The file is not valid JSON.', ar: 'الملف ليس JSON صالحاً.' },

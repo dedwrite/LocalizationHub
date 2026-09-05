@@ -9,7 +9,7 @@ export const websiteMessages = {
   'website.nav.download': { en: 'Download', ar: 'تنزيل' },
   'website.hero.eyebrow': { en: "GAME LOCALIZATION, ON YOUR TERMS", ar: "تعريب الألعاب، بأدواتك وعلى جهازك" },
   'website.hero.title': { en: "Your game. Your words. Your workspace.", ar: "ألعاب تحبها. وترجمة تليق بها." },
-  'website.hero.description': { en: "Translate and review game text in one place. Open JSON, CSV, or PO files, or extract supported game text with the desktop app. Work locally or bring in your team.", ar: "ترجم نصوص الألعاب وراجعها في مكان واحد. افتح ملفات JSON أو CSV أو PO، أو استخرج النصوص المدعومة بتطبيق سطح المكتب. اشتغل على جهازك أو شارك المشروع مع فريقك." },
+  'website.hero.description': { en: "Translate and review game text in one place. Keep the dialogue clear and the code intact, from the first line to the final file.", ar: "ترجم نصوص الألعاب وراجعها في مكان واحد. خلّ الحوار واضحًا والرموز سليمة، من أول سطر إلى الملف النهائي." },
   'website.hero.downloadWindows': { en: "Download for Windows", ar: "تنزيل لويندوز" },
   'website.hero.viewGithub': { en: 'View on GitHub', ar: 'عرض على GitHub' },
   'website.hero.characteristics': { en: 'Product characteristics', ar: 'خصائص المنتج' },
