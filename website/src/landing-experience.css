@@ -6,7 +6,7 @@
   .live-preview .preview-short-label {
     display: block;
     font-size: 0.75rem;
-    color: #d5c9af;
+    color: #baafd5;
   }
   .live-preview .preview-entry strong {
     display: none;
@@ -14,7 +14,7 @@
 }
 .landing-main .section-note .engine-boundary {
   position: static;
-  color: #b8b8a3;
+  color: #a9a3b8;
   margin-inline-end: 10px;
 }
 .live-preview .preview-translation > .preview-hint {
@@ -35,12 +35,12 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-block-end: 14px;
-  color: #eeeade;
+  color: #e3deee;
   font-size: 0.85rem;
 }
 .live-preview-heading > span:last-child {
   margin-inline-start: auto;
-  color: #b6b8a6;
+  color: #aba6b8;
   font-size: 0.7rem;
 }
 .live-dot {
@@ -62,7 +62,7 @@
 }
 .live-preview .preview-sidebar-top {
   font-size: 0.65rem;
-  color: #bdbca9;
+  color: #afa9bd;
 }
 .live-preview .preview-entry {
   inline-size: 100%;
@@ -81,24 +81,24 @@
   min-inline-size: 0;
 }
 .live-preview .preview-entry strong {
-  color: #d0cbb4;
+  color: #bcb4d0;
   font-size: 0.65rem;
 }
 .live-preview .preview-entry small {
   font-size: 0.65rem;
-  color: #b6b5a1;
+  color: #a7a1b6;
 }
 .live-preview .preview-entry.selected {
   border-inline-start-color: var(--accent);
-  background: #303024;
+  background: #272430;
 }
 .live-preview .preview-entry:hover {
-  background: #262a20;
+  background: #23202a;
 }
 .preview-entry-number {
-  color: #d19c77;
+  color: #9177d1;
   font:
-    0.65rem "DM Mono",
+    0.65rem 'DM Mono',
     monospace;
 }
 .landing-main .live-preview .preview-main {
@@ -113,7 +113,7 @@
 }
 .preview-field-label,
 .live-preview .preview-main label {
-  color: #bdbca9;
+  color: #afa9bd;
   font-family: inherit;
   font-size: 0.7rem;
 }
@@ -138,12 +138,12 @@
   resize: vertical;
   margin-block: 12px;
   padding: 12px;
-  border: 1px solid #686b54;
+  border: 1px solid #5b546b;
   border-radius: 8px;
-  background: #13170f;
-  color: #f5efdb;
+  background: #110f17;
+  color: #e3dcf3;
   font:
-    1rem/1.85 "Noto Sans Arabic",
+    1rem/1.85 'Noto Sans Arabic',
     Tahoma,
     sans-serif;
   caret-color: var(--accent);
@@ -157,7 +157,7 @@
   padding: 5px;
   border: 0;
   background: transparent;
-  color: #ed977d;
+  color: #a590da;
   font: inherit;
   font-size: 0.7rem;
   cursor: pointer;
@@ -165,7 +165,7 @@
 .live-preview .preview-main .preview-hint {
   min-block-size: 3em;
   margin: 0;
-  color: #b8b7a4;
+  color: #aaa4b8;
   font-size: 0.72rem;
   line-height: 1.65;
 }
@@ -177,7 +177,7 @@
   padding-block-start: 14px;
   font-size: 0.74rem;
   line-height: 1.6;
-  color: #b8b7a4;
+  color: #aaa4b8;
 }
 .preview-check.is-valid {
   color: #9cd9b4;
@@ -196,16 +196,16 @@
 }
 .format-guide {
   margin-block-start: 28px;
-  border: 1px solid #454b3a;
+  border: 1px solid #3f3a4b;
   border-radius: 14px;
   overflow: hidden;
-  background: #191d15;
+  background: #17151d;
   scroll-margin-top: 100px;
 }
 .format-options {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-block-end: 1px solid #454b3a;
+  border-block-end: 1px solid #3f3a4b;
 }
 .format-options button {
   display: flex;
@@ -217,25 +217,25 @@
   border: 0;
   border-block-end: 3px solid transparent;
   background: transparent;
-  color: #b7bba5;
+  color: #aba5bb;
   cursor: pointer;
   font: inherit;
   font-size: 0.88rem;
 }
 .format-options button > span {
   font:
-    0.8rem "DM Mono",
+    0.8rem 'DM Mono',
     monospace;
   opacity: 0.7;
 }
-.format-options button[aria-pressed="true"] {
+.format-options button[aria-pressed='true'] {
   border-block-end-color: var(--accent);
-  background: #343325;
-  color: #f4ead0;
+  background: #292534;
+  color: #dcd3f0;
 }
 .format-options button:hover {
-  background: #292e21;
-  color: #f4ead0;
+  background: #25212e;
+  color: #dcd3f0;
 }
 .format-result {
   display: flex;
@@ -243,7 +243,7 @@
   gap: 36px;
   min-block-size: 254px;
   padding: 32px;
-  background: radial-gradient(ellipse at 95% 100%, #c49b5120, transparent 65%);
+  background: radial-gradient(ellipse at 95% 100%, #7251c420, transparent 65%);
 }
 .format-result-copy {
   flex: 1;
@@ -252,14 +252,14 @@
 }
 .format-result-copy h3 {
   margin-block: 12px;
-  color: #f1e8d0;
+  color: #dad1f0;
   font-size: clamp(1.2rem, 2.2vw, 1.6rem);
   line-height: 1.5;
 }
 .format-result-copy > p:not(.eyebrow) {
   max-inline-size: 65ch;
   margin-block-end: 18px;
-  color: #c1bda8;
+  color: #afa8c1;
   font-size: 0.9rem;
   line-height: 1.85;
 }
@@ -272,16 +272,16 @@
   gap: 8px;
 }
 .format-pills bdi {
-  border: 1px solid #515440;
+  border: 1px solid #464054;
   border-radius: 5px;
   padding: 5px 9px;
-  color: #d6cbae;
+  color: #baaed6;
   font:
-    0.7rem "DM Mono",
+    0.7rem 'DM Mono',
     monospace;
 }
 .extraction-details {
-  border-block-end: 1px solid #3f4536;
+  border-block-end: 1px solid #3a3645;
 }
 .extraction-details summary {
   display: flex;
@@ -289,7 +289,7 @@
   justify-content: space-between;
   gap: 16px;
   padding-block: 20px;
-  color: #d8ceb3;
+  color: #beb3d8;
   font-size: 0.9rem;
   cursor: pointer;
   list-style: none;
@@ -314,7 +314,7 @@
   width: min(1240px, calc(100% - 64px));
   margin: 0 auto;
   padding: 28px;
-  border: 1px solid #444936;
+  border: 1px solid #3c3649;
   border-radius: 14px;
 }
 .privacy-brief > div,
@@ -331,19 +331,19 @@
 .privacy-brief p {
   margin: 0;
   max-inline-size: 80ch;
-  color: #bcbba8;
+  color: #aea8bc;
   font-size: 0.85rem;
   line-height: 1.85;
 }
 .privacy-brief > a {
   flex-shrink: 0;
-  color: #ed977d;
+  color: #a590da;
   font-size: 0.8rem;
 }
 .closing-invite {
   padding: 40px;
   margin-block: 0 64px;
-  background: linear-gradient(110deg, #343122, #171c12 80%);
+  background: linear-gradient(110deg, #272234, #15121c 80%);
 }
 .closing-invite h2 {
   margin-block-end: 14px;
@@ -353,7 +353,7 @@
 .closing-invite p {
   margin: 0;
   max-inline-size: 60ch;
-  color: #c4c0ad;
+  color: #b4adc4;
   line-height: 1.8;
   font-size: 0.9rem;
 }
@@ -452,5 +452,115 @@
   }
   .live-preview .preview-entry {
     transition: none;
+  }
+}
+
+/* Practical guidance stays next to the control it explains. */
+.preview-token-guide {
+  margin-block-start: 16px;
+}
+.preview-token-guide > p {
+  margin: 0 0 8px;
+  color: var(--soft);
+  font-size: 0.7rem;
+  line-height: 1.7;
+}
+.preview-token-guide ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.preview-token-guide li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #454052;
+  border-radius: 6px;
+  color: #b9d4c4;
+  font-size: 0.65rem;
+}
+.preview-token-guide code {
+  color: #d5c7f4;
+  overflow-wrap: anywhere;
+}
+.preview-token-guide [data-missing='true'] {
+  border-color: #80504f;
+  color: #ffb9b0;
+  background: #382023;
+}
+.sample-downloads {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 22px 32px;
+  border-block-start: 1px solid var(--line);
+  background: #17151f;
+}
+.sample-downloads > div:first-child {
+  flex: 1;
+}
+.sample-downloads strong {
+  color: #e1d8f2;
+  font-size: 0.86rem;
+}
+.sample-downloads p {
+  margin: 7px 0 0;
+  color: #b6aec7;
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.sample-downloads [role='group'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sample-downloads a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #514663;
+  border-radius: 6px;
+  color: #d7c8ff;
+  font:
+    0.75rem 'DM Mono',
+    monospace;
+}
+.sample-downloads a:hover {
+  background: #292233;
+  border-color: var(--accent);
+}
+.sample-downloads a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .sample-downloads {
+    padding: 22px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .sample-downloads [role='group'] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sample-downloads a {
+    padding-inline: 8px;
+  }
+}
+
+.format-guide:has(.sample-downloads) .format-result {
+  min-block-size: 220px;
+}
+@media (max-width: 640px) {
+  .format-guide:has(.sample-downloads) .format-result {
+    min-block-size: 0;
   }
 }

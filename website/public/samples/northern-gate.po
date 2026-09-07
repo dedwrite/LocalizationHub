@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ar\n"
+
+msgctxt "ui.menu.start"
+msgid "Start game"
+msgstr ""
+
+msgctxt "quest.northern_gate"
+msgid "Hold the line, {player_name}."
+msgstr ""
+
+msgctxt "npc.veyra.line"
+msgid "The <b>Northern Gate</b> holds."
+msgstr ""
