@@ -28,9 +28,8 @@ const contentExemptions = new Set([
   'Captain Veyra', 'Northern Gate', 'Start game',
   // Editable game examples in LiveEditorPreview; these are not UI labels.
   'اثبت يا {player_name}.', 'ابدأ اللعبة', 'لا تزال <b>البوابة الشمالية</b> صامدة.',
-  'AR / RTL PREVIEW', 'RTL · AUTO', 'SOURCE / EN',
-  'المتحدث', 'الكابتن فيرا', 'المشهد', 'الاتجاه', 'الترجمة / AR',
-  'جاهزة للمراجعة', 'اثبُت يا', '. لن تسقط', 'الليلة.', 'الرموز المحمية سليمة',
+  // Fictional dialogue in the bilingual scene; UI labels use the catalog.
+  'اثبُت يا', '. لن تسقط', 'الليلة.',
   'Motion:', 'Pointer:', 'Registered:', 'Revealed:',
 ])
 

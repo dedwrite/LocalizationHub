@@ -1,6 +1,12 @@
 import type { MessageCatalog } from '../types'
 
 export const landingExperienceMessages = {
+  'landing.nav.editor': { en: 'Inside the editor', ar: 'داخل المحرر' },
+  'landing.nav.files': { en: 'Files & engines', ar: 'الملفات والمحركات' },
+  'landing.context.example': { en: 'SCENE 01 / TRANSLATION NOTES', ar: 'المشهد 01 / ملاحظات الترجمة' },
+  'landing.context.review': { en: 'Ready for review', ar: 'جاهزة للمراجعة' },
+  'landing.context.directions': { en: 'Independent text direction', ar: 'اتجاه مستقل لكل نص' },
+  'landing.faq.windowsQuestion': { en: 'Where is the Windows download?', ar: 'وين ألقى نسخة ويندوز؟' },
   'landing.try.title': { en: 'Try a line.', ar: 'جرّب ترجمة سطر.' },
   'landing.try.badge': { en: 'Interactive demo', ar: 'تجربة مباشرة' },
   'landing.try.entries': { en: 'Sample entries', ar: 'نصوص التجربة' },
