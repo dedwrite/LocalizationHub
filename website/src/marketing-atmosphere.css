@@ -1,15 +1,15 @@
-/* Public site identity: ink, parchment, and the warm red of the app mark.
+/* Public site identity: charcoal surfaces and restrained violet accents.
    Scoped to public pages so the working editor keeps its own visual system. */
 body:has(.landing-main),
 body:has(.inner-page) {
-  --bg: #111210;
-  --accent: #ed977d;
-  --accent-strong: #ffd2ba;
-  --muted: #b1b2a7;
-  --soft: #d2d0c2;
-  --line: #363a32;
+  --bg: #101014;
+  --accent: #b1a0ed;
+  --accent-strong: #d7c8ff;
+  --muted: #aaa7b2;
+  --soft: #c7c2d2;
+  --line: #34323a;
   background: var(--bg);
-  color: #eeeade;
+  color: #e3deee;
 }
 body:has(.landing-main) .site-header,
 body:has(.inner-page) .site-header {
@@ -18,7 +18,7 @@ body:has(.inner-page) .site-header {
   z-index: 30;
   width: min(1440px, calc(100% - 48px));
   margin-inline: auto;
-  background: #111210f5;
+  background: #111012f5;
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(12px);
 }
@@ -30,13 +30,13 @@ body:has(.landing-main) :is(.header-cta, .button-primary),
 body:has(.inner-page) :is(.header-cta, .button-primary) {
   background: var(--accent);
   border-color: var(--accent);
-  color: #201712;
+  color: #16131f;
   box-shadow: none;
 }
 body:has(.landing-main) :is(.header-cta, .button-primary):hover,
 body:has(.inner-page) :is(.header-cta, .button-primary):hover {
-  background: #ffc2a5;
-  border-color: #ffc2a5;
+  background: #c9bbe8;
+  border-color: #c9bbe8;
 }
 .landing-main .hero {
   position: relative;
@@ -50,19 +50,19 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
 }
 .landing-main .hero h1 {
   text-shadow: none;
-  color: #f3eedf;
+  color: #e5dff3;
 }
 .landing-main .hero h1 i {
   color: var(--accent);
 }
 .landing-main .eyebrow {
-  color: #c6bca7;
+  color: #b0a7c6;
 }
 .landing-main .eyebrow-line {
   background: var(--accent);
 }
 .landing-main .hero-description {
-  color: #bdbeb2;
+  color: #b5b2be;
 }
 .landing-main .hero-signals {
   gap: 8px 18px;
@@ -71,7 +71,7 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
   padding: 0;
   border: 0;
   background: none;
-  color: #bcbcac;
+  color: #b1acbc;
 }
 .landing-main .section {
   padding-block: 72px;
@@ -80,7 +80,7 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
   font-size: clamp(2rem, 3.4vw, 3.4rem);
 }
 .landing-main .section-intro h2 i {
-  color: #d9cbb4;
+  color: #bfb4d9;
 }
 .landing-main .section-intro > p:last-child {
   max-width: 48ch;
@@ -142,11 +142,11 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
   min-height: 0;
   padding: 28px;
   border: 1px solid var(--line);
-  background: #1a1d17;
+  background: #19171d;
   box-shadow: none;
 }
 .landing-main .surface-cloud {
-  background: #141712;
+  background: #131217;
   border-inline-start: 0;
 }
 .landing-main .surface h2 {
@@ -157,7 +157,7 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
   max-width: 50ch;
 }
 .landing-main .surface-tag {
-  color: #b6b7a5;
+  color: #aaa5b7;
 }
 .landing-main .split-section .privacy-brief {
   grid-column: 1 / -1;
@@ -178,25 +178,25 @@ body:has(.inner-page) :is(.header-cta, .button-primary):hover {
   border-radius: 0;
 }
 .landing-main .faq-list details[open] {
-  background: #1a1d17;
+  background: #19171d;
 }
 .landing-main .closing-invite {
   position: relative;
   border-radius: 4px;
-  border-color: #645448;
+  border-color: #504864;
   border-inline-start: 4px solid var(--accent);
-  background: #25251c;
+  background: #1f1c25;
 }
 .landing-main .closing-invite h2 {
-  color: #f1e5cd;
+  color: #d8cfef;
 }
 .landing-main .closing-invite p {
-  color: #c4c0ad;
+  color: #b4adc4;
 }
 .inner-page .download-panel {
   border-color: var(--line);
-  background: #1a1d17;
-  box-shadow: 12px 12px 0 #25281f;
+  background: #19171d;
+  box-shadow: 12px 12px 0 #221f28;
 }
 body:has(.landing-main) footer,
 body:has(.inner-page) footer {
@@ -242,12 +242,12 @@ body:has(.inner-page) footer {
   overflow: hidden;
   min-width: 0;
   padding: 18px;
-  border: 1px solid #424638;
+  border: 1px solid #3c3846;
   border-radius: 20px;
-  color: #eeeade;
+  color: #e3deee;
   background:
-    radial-gradient(circle at 88% 4%, #ca734024, transparent 32%),
-    linear-gradient(145deg, #1d2019, #12150f 54%, #1a1d16);
+    radial-gradient(circle at 88% 4%, #6b48c224, transparent 32%),
+    linear-gradient(145deg, #1b1920, #110f15 54%, #18161d);
   box-shadow:
     0 30px 74px #0007,
     inset 0 1px #ffffff0c;
@@ -278,8 +278,8 @@ body:has(.inner-page) footer {
 
 .rtl-showcase-head {
   padding: 0 2px 14px;
-  border-bottom: 1px solid #3d4235;
-  color: #cbbd9e;
+  border-bottom: 1px solid #393542;
+  color: #ab9ecb;
   font:
     650 9px/1.4 "DM Mono",
     monospace;
@@ -297,17 +297,17 @@ body:has(.inner-page) footer {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #db926e;
-  box-shadow: 0 0 12px #db926e;
+  background: #9177d2;
+  box-shadow: 0 0 12px #9177d2;
 }
 
 .rtl-game-rune {
   width: 34px;
   height: 30px;
-  border: 1px solid #58513d;
+  border: 1px solid #453d58;
   border-radius: 9px;
-  color: #ed977d;
-  background: #29271d;
+  color: #a590da;
+  background: #201d29;
   cursor: pointer;
   font: 17px/1 monospace;
   transition:
@@ -317,13 +317,13 @@ body:has(.inner-page) footer {
     transform 140ms ease;
 }
 .rtl-game-rune:hover {
-  color: #ffe5cc;
-  border-color: #b78363;
-  background: #3c3021;
+  color: #e0d9f2;
+  border-color: #7b63b7;
+  background: #2a233a;
   transform: translateY(-1px);
 }
 .rtl-game-rune:focus-visible {
-  outline: 2px solid #ed977d;
+  outline: 2px solid #a590da;
   outline-offset: 3px;
 }
 
@@ -337,21 +337,21 @@ body:has(.inner-page) footer {
   gap: 3px;
   min-width: 118px;
   padding: 8px 11px;
-  border: 1px solid #363d2e;
+  border: 1px solid #322e3d;
   border-radius: 9px;
-  background: #171b1499;
+  background: #16141b99;
 }
 .rtl-showcase-context small,
 .rtl-showcase-source small,
 .rtl-showcase-translation small {
-  color: #bab6a2;
+  color: #a9a2ba;
   font:
     650 8px/1.5 "DM Mono",
     monospace;
   letter-spacing: 0.08em;
 }
 .rtl-showcase-context strong {
-  color: #e5dfc9;
+  color: #d1c9e5;
   font-size: 11px;
   font-weight: 600;
 }
@@ -360,13 +360,13 @@ body:has(.inner-page) footer {
 .rtl-showcase-translation {
   margin-top: 12px;
   padding: 15px 17px;
-  border: 1px solid #353b2f;
+  border: 1px solid #322f3b;
   border-radius: 12px;
-  background: #10150dc9;
+  background: #0f0d15c9;
 }
 .rtl-showcase-source p {
   margin: 7px 0 0;
-  color: #c0c1b2;
+  color: #b6b2c1;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -374,18 +374,18 @@ body:has(.inner-page) footer {
 .rtl-showcase code {
   unicode-bidi: isolate;
   padding: 2px 5px;
-  border: 1px solid #68543b;
+  border: 1px solid #483b68;
   border-radius: 5px;
-  color: #ffd2a2;
-  background: #34291d;
+  color: #c7b9e8;
+  background: #241f32;
   font:
     0.84em "DM Mono",
     monospace;
 }
 .rtl-showcase-translation {
-  border-color: #68573d;
-  background: linear-gradient(135deg, #2b2b1d, #181c14 70%);
-  box-shadow: inset -3px 0 #db926e;
+  border-color: #493d68;
+  background: linear-gradient(135deg, #211d2b, #16141c 70%);
+  box-shadow: inset -3px 0 #9177d2;
 }
 .rtl-showcase-translation > div > span {
   color: #a9d5c5;
@@ -393,7 +393,7 @@ body:has(.inner-page) footer {
 }
 .rtl-showcase-translation p {
   margin: 13px 0 4px;
-  color: #f8f1de;
+  color: #e7e1f5;
   font-family: "Noto Sans Arabic", Tahoma, "Manrope", sans-serif;
   font-size: clamp(21px, 2.2vw, 28px);
   font-weight: 600;
@@ -401,7 +401,7 @@ body:has(.inner-page) footer {
   text-wrap: balance;
 }
 .rtl-showcase-translation em {
-  color: #ffc993;
+  color: #beaee4;
   font-style: normal;
   text-shadow: 0 0 22px #0000;
 }
@@ -410,7 +410,7 @@ body:has(.inner-page) footer {
   justify-content: flex-start;
   flex-wrap: wrap;
   padding: 14px 3px 1px;
-  color: #b5b6a4;
+  color: #a9a4b6;
   font-size: 9px;
 }
 .rtl-showcase-foot > span {
@@ -421,7 +421,7 @@ body:has(.inner-page) footer {
 }
 .rtl-showcase-foot b {
   margin-inline-start: auto;
-  color: #cdbb95;
+  color: #a595cd;
   font:
     650 8px "DM Mono",
     monospace;
@@ -466,7 +466,7 @@ body:has(.inner-page) footer {
   padding: 12px 18px;
   border-radius: 6px;
   color: #fff;
-  background: #5d3b2b;
+  background: #3d3454;
 }
 .skip-content:focus {
   transform: translateY(0);
@@ -480,7 +480,7 @@ body:has(.inner-page) footer {
 .landing-main .section-note {
   font-size: 0.8rem;
   line-height: 1.8;
-  color: #b9b9a7;
+  color: #aca7b9;
 }
 .landing-main .preview-search,
 .landing-main .preview-footer {
@@ -554,8 +554,8 @@ html[lang="ar"]
 /* Scene labels follow the interface; the example itself keeps its own language. */
 .landing-main .context-demo.rtl-showcase {
   border-color: var(--line);
-  background: #1a1d16;
-  box-shadow: 10px 10px 0 #22261c;
+  background: #18161d;
+  box-shadow: 10px 10px 0 #1f1c26;
 }
 .rtl-showcase
   :is(
@@ -590,27 +590,27 @@ html[lang="ar"]
   content: none;
 }
 .landing-main .live-preview .editor-preview {
-  background: #181c15;
-  border-color: #454b3a;
+  background: #17151c;
+  border-color: #3f3a4b;
 }
 .landing-main .live-preview .preview-sidebar {
-  background: #141810;
+  background: #121018;
 }
 .landing-main .live-preview .preview-main {
-  background: #191d16;
+  background: #18161d;
 }
 .landing-main .live-preview .preview-sidebar-top {
-  color: #c1c2af;
+  color: #b5afc2;
 }
 body:has(.landing-main) .site-header :is(select, .command-launcher),
 body:has(.inner-page) .site-header :is(select, .command-launcher) {
-  background: #24271e;
-  border-color: #484d3c;
-  color: #e3dec9;
+  background: #211e27;
+  border-color: #413c4d;
+  color: #d1c9e3;
 }
 .landing-main .surface:hover {
   transform: none;
-  border-color: #827655;
+  border-color: #625582;
 }
 .landing-main .rtl-showcase {
   scroll-margin-top: 100px;

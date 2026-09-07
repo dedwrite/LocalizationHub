@@ -141,6 +141,31 @@ export default function LiveEditorPreview() {
               )}
             </p>
           </div>
+          {validation.sourceTokens.length > 0 && (
+            <div className="preview-token-guide">
+              <p>{t('landing.try.keepTokens')}</p>
+              <ul aria-label={t('landing.try.keepTokens')}>
+                {validation.sourceTokens.map((token, index) => {
+                  const missing = validation.missingTokens.some(
+                    (item) => item.raw === token.raw,
+                  )
+                  return (
+                    <li key={`${token.raw}-${index}`} data-missing={missing}>
+                      <span aria-hidden="true">{missing ? '!' : '✓'}</span>
+                      <code dir="ltr">{token.raw}</code>
+                      <span>
+                        {t(
+                          missing
+                            ? 'landing.try.tokenMissing'
+                            : 'landing.try.tokenKept',
+                        )}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
           <div
             id={`${id}-status`}
             className={`preview-check is-${state}`}

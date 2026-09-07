@@ -56,11 +56,11 @@ test.describe('public routing and accessibility', () => {
     await expect(page.getByText('Northern Gate').first()).toBeVisible()
   })
 
-  test('Landing FAQ reflects the current v0.9 release', async ({ page }) => {
+  test('Landing FAQ explains Windows repository access', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('v0.9.8')
-    await expect(answer).not.toContainText('v0.4.0')
+    await expect(answer).toContainText('private GitHub repository')
+    await expect(answer).toContainText('web editor is available to everyone')
   })
 
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
+import { landingSamples } from '../landingSamples'
 import { InternalLink } from '../internalNavigation'
 
 const options = ['files', 'godot', 'unreal', 'unity'] as const
 const formats = {
   files: ['JSON', 'CSV', 'PO / POT'],
-  godot: ['PCK', 'Scenes', 'PO / CSV', 'INKB'],
+  godot: ['PCK', '.tscn / .tres', 'PO / CSV', 'INKB'],
   unreal: ['LOCRES', 'LOCMETA', 'PAK', 'IOSTORE'],
   unity: ['TextAsset', 'Localization', 'MonoBehaviour'],
 }
@@ -66,6 +67,26 @@ export default function FormatGuide() {
           <span aria-hidden="true">↗</span>
         </InternalLink>
       </div>
+      {selected === 'files' && (
+        <div className="sample-downloads">
+          <div>
+            <strong>{t('landing.samples.title')}</strong>
+            <p>{t('landing.samples.body')}</p>
+          </div>
+          <div role="group" aria-label={t('landing.samples.choose')}>
+            {landingSamples.map(({ format, href }) => (
+              <a
+                key={format}
+                href={href}
+                download
+                aria-label={t('landing.samples.download', { format })}
+              >
+                <span aria-hidden="true">↓</span> <bdi>{format}</bdi>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
