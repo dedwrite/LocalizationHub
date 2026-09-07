@@ -47,23 +47,33 @@ for (const locale of ['en', 'ar'] as const) {
   })
 }
 
-test('landing preview changes the real UI locale, with bounded section spacing', async ({ page }) => {
+test('landing preview preserves edits across UI locales, with bounded section spacing', async ({ page }) => {
   await populatedRadio(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/')
   await expect(page.locator('.site-header')).toBeVisible()
-  await expect(page.locator('.workflow-strip > span')).toHaveCount(4)
-  expect(await page.locator('.site-header, .workflow-strip').evaluateAll(elements => elements.every(element => {
+  await expect(page.locator('.format-options button')).toHaveCount(4)
+  expect(await page.locator('.site-header, .format-guide').evaluateAll(elements => elements.every(element => {
     const box = element.getBoundingClientRect()
     return box.left >= 0 && box.right <= document.documentElement.clientWidth
   }))).toBe(true)
-  const preview = page.locator('.preview-controls')
-  await preview.getByRole('button', { name: 'العربية', exact: true }).click()
+  const preview = page.locator('.live-preview')
+  await preview.locator('textarea').fill('تجربة {player_name}.')
+  await page.locator('.lh-language-switcher select').selectOption('ar')
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-  await expect(page.locator('.lh-language-switcher select')).toHaveValue('ar')
-  await expect(preview.getByRole('button', { name: 'العربية', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await preview.getByRole('button', { name: 'English', exact: true }).click()
+  await expect(preview.locator('textarea')).toHaveValue('تجربة {player_name}.')
+  await expect(preview.getByRole('status')).toContainText('الرموز سليمة.')
+  await preview.locator('textarea').fill('تجربة')
+  await expect(preview.getByRole('status')).toContainText('فيه رمز محمي ناقص أو تغيّر.')
+  await page.locator('.lh-language-switcher select').selectOption('en')
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
+  await expect(preview.locator('textarea')).toHaveValue('تجربة')
+  await expect(preview.getByRole('status')).toContainText('A protected token is missing or changed.')
+  await preview.getByRole('button', { name: 'Reset line', exact: true }).click()
+  await expect(preview.getByRole('status')).toContainText('Token check passed.')
+  await page.getByRole('button', { name: 'Unity', exact: true }).click()
+  await expect(page.locator('.format-result')).toContainText('Missing type information')
+  await expect(page.locator('.format-result a')).toHaveAttribute('href', '/download')
   const spacings = await page.locator('.landing-main .section').evaluateAll(elements => elements.map(e => parseFloat(getComputedStyle(e).paddingTop)))
   expect(Math.max(...spacings)).toBeLessThanOrEqual(104)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)

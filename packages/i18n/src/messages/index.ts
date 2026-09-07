@@ -4,6 +4,7 @@ import { desktopMessages } from './desktop'
 import { extractionMessages } from './extraction'
 import { coverageMessages } from './coverage'
 import { landingDetailMessages } from './landingDetails'
+import { landingExperienceMessages } from './landingExperience'
 import { legalMessages } from './legal'
 import { radioMessages } from './radio'
 import { websiteMessages } from './website'
@@ -20,6 +21,7 @@ export const messages = {
   ...extractionMessages,
   ...coverageMessages,
   ...landingDetailMessages,
+  ...landingExperienceMessages,
   ...legalMessages,
   ...websiteMessages,
   ...workspaceMessages,

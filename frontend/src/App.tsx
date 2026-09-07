@@ -1,5 +1,6 @@
 import { parse as losslessParse } from 'lossless-json'
 import { stringify as losslessStringify } from 'lossless-json'
+import { exportSuccessMessage } from './exportFeedback'
 import {
   useCallback,
   useEffect,
@@ -3273,7 +3274,7 @@ try {
 
       showToast(
         'success',
-        'JSON file exported.',
+        exportSuccessMessage(currentDocument.parser),
       )
     } catch (
       error

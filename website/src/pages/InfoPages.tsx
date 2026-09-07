@@ -26,12 +26,14 @@ export function DownloadPage() {
               <i>{site.releaseTitle}</i>
             </h1>
             <p className="page-lede">{t('website.download.description')}</p>
-            <a className="button button-primary" href={site.releaseUrl}>
-              {t('website.download.github')}
-              <span>↗</span>
-            </a>
+            <p className="download-access-note">
+              {t('landing.download.access')}
+            </p>
+            <InternalLink className="button button-primary" href="/app/local">
+              {t('website.hero.openLocal')}
+            </InternalLink>
             <a className="button button-quiet" href={site.releaseUrl}>
-              {t('website.download.releaseNotes')}
+              {t('website.download.github')}
               <span>↗</span>
             </a>
           </div>
