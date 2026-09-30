@@ -4,8 +4,8 @@ import { allowHistoryNavigation } from './navigation'
 import Landing from './pages/LandingPage'
 import { DownloadPage, DocumentPage, NotFound } from './pages/InfoPages'
 import { updateRouteMetadata } from './publicMetadata'
+import CommandCenter from './delight/CommandCenter'
 const LhRadio = lazy(() => import('./lhRadio/LhRadio'))
-const CommandCenter = lazy(() => import('./delight/CommandCenter'))
 
 const AppWorkspace = lazy(() => import('./AppWorkspace'))
 const LocalWorkspace = lazy(() => import('./LocalWorkspace'))
@@ -52,8 +52,8 @@ export default function App({ initialPath = '/' }: { initialPath?: string }) {
       <Suspense fallback={<RouteLoading />}>
         <RoutedPage path={path} />
       </Suspense>
+      <CommandCenter />
       <Suspense fallback={null}>
-        {clientReady && <CommandCenter />}
         {clientReady && !suppressRadio && <LhRadio />}
       </Suspense>
       {isAppSurface && <LanguageSwitcher dock />}

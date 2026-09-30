@@ -144,9 +144,11 @@ test(`open Web tab across deployment blocks stale import without a POST, then re
   await page.route('**/web-build.json', (route) => deployed
     ? route.fulfill({ json: { entries: [nextEntry] }, headers: { 'Cache-Control': 'no-store' } })
     : route.continue())
-  await page.route(`**/${nextEntry}`, (route) => route.fulfill({ path: `website/dist/${entry}`, contentType: 'text/javascript' }))
+  // A new bootstrap imports the real module once. Serving its bytes under a
+  // second URL would execute two React roots when lazy chunks import the entry.
+  await page.route(`**/${nextEntry}`, (route) => route.fulfill({ body: `import "./${entry.split('/').pop()}";`, contentType: 'text/javascript' }))
   await page.route(`${baseURL}/app/projects`, (route) => deployed && route.request().isNavigationRequest()
-    ? route.fulfill({ body: readFileSync('website/dist/index.html', 'utf8').replace(entry, nextEntry), contentType: 'text/html' })
+    ? route.fulfill({ body: readFileSync('website/dist/app-shell.html', 'utf8').replace(entry, nextEntry), contentType: 'text/html' })
     : route.continue())
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))

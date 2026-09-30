@@ -18,6 +18,7 @@ Fast-forwarded the clean local `main` from `c707bc8` to GitHub's `ed66957` befor
 - Collaboration server: 158 passed; syntax check passed.
 - Playwright: 392 passed, six intentional device-specific skips across desktop, 360px phone, Safari desktop and 390px iPhone profiles. Covers public quality, delight, Radio, visual/accessibility checks, Web App, local parity/save, Safari, i18n and Admin.
 - Additional repeated sample/tip lifecycle checks: 36 passed.
+- Final follow-up: kept the small command center in the initial client bundle so immediate keyboard shortcuts cannot race a lazy load. Shortcut/quiet-workflow checks passed 28/28 across four profiles; real import/persistence and stale-deployment recovery passed 12/12 on desktop and Safari. Updated the deployment fixture to use the app shell and one module bootstrap, rather than accidentally mounting two React roots under different module URLs.
 - Website and desktop UI builds passed. i18n audit passed with 1,326 keys; production dependency audit reported zero known vulnerabilities. `git diff --check` passed.
 
 ## Hosting and limitations

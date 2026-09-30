@@ -20,7 +20,7 @@ export default function CommandCenter() {
   const [mode, setMode] = useState<CenterMode | null>(null)
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
-  const [path, setPath] = useState(window.location.pathname)
+  const [path, setPath] = useState(() => typeof window === 'undefined' ? '/' : window.location.pathname)
   const [quietTick, setQuietTick] = useState(0)
   const returnFocus = useRef<HTMLElement | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
