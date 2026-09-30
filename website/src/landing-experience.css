@@ -1,4 +1,28 @@
 /* Interactions own their space; movement follows a user action. */
+.hero-surface-note { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-block: 16px; color: var(--soft); font-size: 0.73rem; line-height: 1.8; }
+.sample-entry-link { display: inline-flex; flex-direction: column; gap: 5px; margin-block: 4px 8px; color: #d2c0fb; font-size: 0.84rem; }
+.sample-entry-link small { color: var(--soft); font-size: 0.7rem; }
+.sample-entry-link:hover > span, .sample-inline-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.sample-inline-link { display: inline-block; margin-block-start: 12px; color: #d2c0fb; font-size: 0.8rem; }
+.mobile-site-menu { display: none; }
+.rtl-showcase mark { unicode-bidi: isolate; }
+@media (max-width: 1000px) {
+  .site-header { position: relative; }
+  .mobile-site-menu { display: block; margin-inline-start: auto; }
+  .mobile-site-menu summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #19161f; cursor: pointer; font-size: 0.75rem; list-style: none; }
+  .mobile-site-menu summary::-webkit-details-marker { display: none; }
+  .mobile-site-menu nav { position: absolute; inset-block-start: calc(100% + 8px); inset-inline-end: 0; z-index: 30; inline-size: min(300px, 100%); padding: 8px; border: 1px solid #514563; border-radius: 12px; background: #17151d; box-shadow: 0 16px 40px #0008; }
+  .mobile-site-menu nav a { display: flex; justify-content: space-between; gap: 12px; min-height: 44px; padding: 12px; color: #ddd3ee; font-size: 0.85rem; }
+  .mobile-site-menu nav a:hover { background: #292333; border-radius: 6px; }
+}
+@media (max-width: 640px) {
+  .site-header .brand { gap: 7px; font-size: 0.85rem; }
+  .site-header .brand-icon { width: 28px; height: 28px; }
+  .site-header { gap: 8px; }
+  .site-header .site-command-launcher { display: none; }
+  .mobile-site-menu summary { padding: 8px; }
+  .site-header .lh-language-switcher select { width: 76px; padding-inline: 7px; }
+}
 .preview-short-label {
   display: none;
 }

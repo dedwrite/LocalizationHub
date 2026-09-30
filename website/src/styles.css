@@ -2,7 +2,9 @@
 
 :root { font-family: 'Manrope', sans-serif; color: #e9e8ed; background: #090a0d; font-synthesis: none; text-rendering: optimizeLegibility; --bg: #090a0d; --surface: #111318; --surface-2: #17191f; --line: #292c35; --muted: #8e929e; --soft: #b6b8c1; --accent: #a79cff; --accent-strong: #c8c1ff; --green: #87c5a0; }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
+/* Only intentional section navigation animates. Focus, history restoration,
+   and interactive controls must not drift during pointer activation in Safari. */
+html { scroll-behavior: auto; overflow-x: hidden; }
 body { margin: 0; min-width: 320px; max-width: 100%; overflow-x: hidden; background: var(--bg); }
 html.lh-motion [data-reveal] { opacity: 0; transform-origin: center; }
 html.lh-motion [data-reveal='left'] { transform: translateX(-64px) scale(0.985); }

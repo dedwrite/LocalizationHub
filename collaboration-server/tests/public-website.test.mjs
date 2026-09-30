@@ -70,6 +70,17 @@ describe('public website serving', () => {
     assert.equal(await servePublicWebsite({ method: 'GET', url: '/localizationhub-logo.jpg' }, logo, directory), true)
     assert.equal(logo.headers['Content-Type'], 'image/jpeg')
   })
+  it('uses a clean app shell for deep links without serving the prerendered landing', async () => {
+    const directory = await createFixture()
+    await writeFile(path.join(directory, 'app-shell.html'), '<!doctype html><title>Workspace</title><div id="root"></div>')
+    for (const method of ['GET', 'HEAD']) {
+      const response = responseRecorder()
+      assert.equal(await servePublicWebsite({ method, url: '/app/local?sample=northern-gate' }, response, directory), true)
+      assert.equal(response.headers['Cache-Control'], 'no-cache')
+      if (method === 'GET') assert.match(String(response.body), /<title>Workspace<\/title>/)
+      else assert.equal(response.body, undefined)
+    }
+  })
 
   it('serves manifest.webmanifest with the correct JSON MIME type', async () => {
     const directory = await createFixture()

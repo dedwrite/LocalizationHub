@@ -405,6 +405,12 @@
 .local-open-panel p { color: #969eab; font-size: 0.83rem; line-height: 1.7; }
 .local-open-panel .file-button { display: inline-flex; margin-top: 13px; border-color: #8d82d6; background: #3a3178; color: #f7f4ff; font-weight: 700; transition: transform 160ms ease, background 160ms ease; }
 .local-open-panel .button.button-quiet { color: #eef2f7; background: #222836; border-color: #5a6270; }
+.local-home { color-scheme: dark; }
+.local-sample-choice { display: grid; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #353041; }
+.local-sample-choice > strong { color: #b7aec8; font-size: 12px; font-weight: 500; }
+.local-sample-choice > small { color: #a3a0b2; font-size: 12px; line-height: 1.6; }
+.local-sample-choice .button.button-quiet { justify-content: space-between; gap: 16px; margin: 0; background: #211e2b; border-color: #554768; color: #e5dbfa; }
+.local-sample-choice .button.button-quiet:hover { border-color: #aa8cdb; background: #2c253e; }
 .local-open-panel .file-button:hover { background: #675bb5; transform: translateY(-2px); }
 .local-open-panel > small { display: block; margin-top: 14px; color: #69717e; font: 0.56rem 'DM Mono', monospace; }
 .local-home .notice,

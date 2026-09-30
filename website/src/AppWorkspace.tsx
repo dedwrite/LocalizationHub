@@ -16,7 +16,8 @@ import { lastCloudProject, latestDated } from './delight/recents'
 import AmbientGreeting from './delight/AmbientGreeting'
 import ProjectMark from './delight/ProjectMark'
 import { EmptyConstellation, ExperienceSkeleton } from './delight/ExperienceState'
-import { openCommandCenter, PROJECT_SEARCH_EVENT } from './delight/CommandCenter'
+import { openCommandCenter, PROJECT_SEARCH_EVENT } from './delight/commandEvents'
+import ShortcutKey from './components/ShortcutKey'
 import { registerQuietCommands } from './delight/quietCommands'
 import './app-workspace.css'
 import './workspace/workspace.css'
@@ -56,7 +57,7 @@ function AppHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void })
       <button className="active" aria-current="page" onClick={() => navigate('/app/projects')}><span>Cloud</span><small>Collaborative</small></button>
       <button onClick={() => navigate('/app/local')}><span>Local</span><small>On this device</small></button>
     </nav>
-    <button type="button" className="command-launcher" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}><span>{t('delight.command.quick')}</span><kbd>⌘K</kbd></button><div className="account"><span>{user.username}<small>{user.emailVerified ? 'Verified account' : 'Email unverified'}</small></span><button onClick={onLogout}>Log out</button></div>
+    <button type="button" className="command-launcher" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}><span>{t('delight.command.quick')}</span><ShortcutKey /></button><div className="account"><span>{user.username}<small>{user.emailVerified ? 'Verified account' : 'Email unverified'}</small></span><button onClick={onLogout}>Log out</button></div>
   </header>
 }
 

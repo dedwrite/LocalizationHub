@@ -134,6 +134,9 @@ export function buildEntryCollection(options: CollectionOptions): EntryCollectio
     counts[status] = (counts[status] ?? 0) + 1
     if (view.hasError) counts.errors += 1
     if (view.hasWarning) counts.warnings += 1
+    if (options.taggedEntryIds?.has(entry.id)) counts.tags += 1
+    if (options.commentEntryIds?.has(entry.id)) counts.comments += 1
+    if (options.currentUserId && (options.assignments ? options.assignments[entry.id] === options.currentUserId : options.assignedEntryIds?.has(entry.id))) counts['assigned-to-me'] += 1
     views.push(view)
   }
 

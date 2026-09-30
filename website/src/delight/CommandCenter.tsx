@@ -1,18 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useI18n } from '@localizationhub/i18n'
+import { useI18n, translateUiText } from '@localizationhub/i18n'
 import { navigateInternal } from '../internalNavigation'
 import { listDynamicQuietCommands, listQuietCommands, subscribeQuietCommands } from './quietCommands'
 
-export const OPEN_COMMAND_CENTER_EVENT = 'localizationhub:open-command-center'
-export const WORKSPACE_COMMAND_EVENT = 'localizationhub:workspace-command'
-export const PROJECT_SEARCH_EVENT = 'localizationhub:project-search'
-
-type CenterMode = 'palette' | 'shortcuts'
+import { OPEN_COMMAND_CENTER_EVENT, WORKSPACE_COMMAND_EVENT, PROJECT_SEARCH_EVENT, type CenterMode } from './commandEvents'
 type Command = { id: string; label: string; meta: string; group: 'navigate' | 'actions'; run: () => void }
-
-export function openCommandCenter(mode: CenterMode = 'palette') {
-  window.dispatchEvent(new CustomEvent(OPEN_COMMAND_CENTER_EVENT, { detail: { mode } }))
-}
 
 function dispatchWorkspace(action: string) {
   window.dispatchEvent(new CustomEvent(WORKSPACE_COMMAND_EVENT, { detail: { action } }))
@@ -102,12 +94,12 @@ export default function CommandCenter() {
     )
     const labels = new Set(items.map(command => command.label.toLocaleLowerCase()))
     for (const command of [...listDynamicQuietCommands(query), ...listQuietCommands()]) {
-      const label = command.label.toLocaleLowerCase()
-      if (labels.has(label)) continue
-      labels.add(label)
+      const label = translateUiText(locale, command.label)
+      if (labels.has(label.toLocaleLowerCase())) continue
+      labels.add(label.toLocaleLowerCase())
       items.push({
         id: `quiet:${command.id}`,
-        label: command.label,
+        label,
         meta: command.hint ?? '↗',
         group: command.group === 'navigate' ? 'navigate' : 'actions',
         run: command.run,

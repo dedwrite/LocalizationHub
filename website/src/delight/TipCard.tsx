@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { shuffledTips, setTipsHidden, tipDecks, tipsHidden, type TipContext } from './tips'
 
@@ -10,9 +10,11 @@ export default function TipCard({ context }: { context: TipContext }) {
 function TipDeck({ context }: { context: TipContext }) {
   const { t } = useI18n()
   const deck = tipDecks[context]
-  const [order, setOrder] = useState(() => shuffledTips(deck.length))
-  const [hidden, setHidden] = useState(() => tipsHidden(context))
-  return <aside className={`field-tip${hidden ? ' is-hidden' : ''}`} data-tip-context={context} aria-label={t('delight.tip')} data-i18n-skip>
+  const [order, setOrder] = useState(() => Array.from({ length: deck.length }, (_, index) => index))
+  const [hidden, setHidden] = useState(false)
+  const [ready, setReady] = useState(false)
+  useEffect(() => { setOrder(shuffledTips(deck.length)); setHidden(tipsHidden(context)); setReady(true) }, [context, deck.length])
+  return <aside className={`field-tip${hidden ? ' is-hidden' : ''}`} data-tip-context={context} aria-busy={!ready} aria-label={t('delight.tip')} data-i18n-skip>
     {!hidden && <><div className="field-tip-heading"><span className="field-tip-glyph" aria-hidden="true">{'{…}'}</span><span>{t('delight.tip')}</span></div><p className="field-tip-copy" aria-live="polite" aria-atomic="true">{t(deck[order[0]])}</p></>}
     <div className="field-tip-actions">
       {!hidden && <button key="next" type="button" onClick={() => setOrder(current => current.length > 1 ? current.slice(1) : shuffledTips(deck.length, current[0]))}>{t('delight.nextTip')}<span aria-hidden="true">↻</span></button>}

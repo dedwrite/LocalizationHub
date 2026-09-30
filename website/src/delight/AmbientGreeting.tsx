@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
 
 export function greetingKey(date: Date): MessageKey {
@@ -12,6 +12,8 @@ export function greetingKey(date: Date): MessageKey {
 
 export default function AmbientGreeting({ className = '' }: { className?: string }) {
   const { t } = useI18n()
-  const key = useMemo(() => greetingKey(new Date()), [])
+  const [key, setKey] = useState<MessageKey | null>(null)
+  useEffect(() => { setKey(greetingKey(new Date())) }, [])
+  if (!key) return null
   return <p className={`ambient-greeting time-greeting ${className}`.trim()} data-i18n-skip><span aria-hidden="true">✦</span>{t(key)}</p>
 }

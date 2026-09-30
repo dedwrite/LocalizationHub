@@ -21,6 +21,9 @@ for (const locale of ['en', 'ar'] as const) test(`Local editing, profiles, workf
   await expect(page.locator('.dialogue-context-strip')).toContainText('Mark')
   await expect(page.locator('.dialogue-context-strip')).toContainText(locale === 'en' ? 'Listener:' : 'المستمع:')
   await expect(page.locator('.source-text .protected-token')).toHaveCount(2)
+  // Unstarted entries are not broken translations. QA begins with a draft.
+  await expect(page.locator('.inline-qa')).toHaveCount(0)
+  await page.locator('.translation-editor').fill('Draft without protected tokens')
   await expect(page.locator('.inline-qa')).toBeVisible()
   const translation = '[shake rate=32 level=8]مرحبا![/shake]'
   await page.locator('.translation-editor').fill(translation)
@@ -127,6 +130,7 @@ test('Local workspace responsive RTL, token errors, keyboard focus and accessibi
   test.setTimeout(60_000)
   const widths = testInfo.project.name === 'desktop' ? [1440, 1280] : [page.viewportSize()!.width]
   await openLocal(page)
+  await page.locator('.translation-editor').fill('ترجمة تحتاج إلى رموز المصدر')
   for (const width of widths) for (const locale of ['en', 'ar']) {
     await page.setViewportSize({ width, height: width < 500 ? 844 : 1000 })
     await page.locator('.lh-language-switcher select').selectOption(locale)

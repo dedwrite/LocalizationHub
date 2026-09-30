@@ -3,6 +3,7 @@
    ============================================================ */
 
 .workspace-shell {
+  color-scheme: dark;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -329,7 +330,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 .filter-tab:hover { color: #f5f7fa; }
 .filter-tab.active { background: #2b2f66; color: #fff; border-color: #4f3db5; }
 
-.filter-count { margin-left: 4px; opacity: 0.6; font-size: 10px; }
+.filter-count { margin-inline-start: 4px; color: #9ba3b4; font-size: 10px; }
 
 .search-input {
   margin: 8px;
@@ -371,7 +372,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 .entry-row:hover { background: #141a24; }
 .entry-row.selected { background: #1d2240; }
 
-.entry-checkbox { width: 15px; height: 15px; flex-shrink: 0; }
+.entry-checkbox { width: 15px; height: 15px; flex-shrink: 0; accent-color: #a68deb; }
 
 .entry-status-dot {
   width: 8px;
@@ -385,6 +386,11 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 .dot-error { background: #ef5b5b; }
 .dot-warning { background: #e6a23c; }
 .dot-draft { background: #8b93a7; }
+.dot-approved { background: #a4d5ba; }
+.dot-review { background: #d9ba7c; }
+.sample-workspace-guide { margin-block: 0 18px; border: 1px solid #4a3f62; border-radius: 8px; background: #1a1623; color: #cabddf; }
+.sample-workspace-guide summary { padding: 12px 14px; cursor: pointer; font-size: 12px; }
+.sample-workspace-guide p { padding: 0 14px 14px; margin: 0; font-size: 12px; line-height: 1.85; }
 
 .entry-row-main {
   flex: 1;

@@ -1,6 +1,12 @@
 import type { MessageCatalog } from '../types'
 
 export const quietMessages = {
+  'quiet.commandReplace': { en: 'Open search and replace', ar: 'فتح البحث والاستبدال' },
+  'quiet.commandExport': { en: 'Export localization file', ar: 'تصدير ملف التعريب' },
+  'quiet.commandLocalHome': { en: 'Back to Local Projects', ar: 'العودة إلى المشاريع المحلية' },
+  'quiet.commandCloudHome': { en: 'Back to Cloud Projects', ar: 'العودة إلى المشاريع السحابية' },
+  'quiet.openNamedProject': { en: 'Open {name}', ar: 'فتح {name}' },
+  'quiet.sampleChoice': { en: 'No file at hand?', ar: 'ليس لديك ملف الآن؟' },
   'quiet.paletteTitle': { en: 'Command palette', ar: 'لوحة الأوامر' },
   'quiet.palettePlaceholder': { en: "Search entries, projects, and commands…", ar: "ابحث عن نص أو مشروع أو أمر…" },
   'quiet.paletteEmpty': { en: 'No matching commands.', ar: 'لا توجد أوامر مطابقة.' },

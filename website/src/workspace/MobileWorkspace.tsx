@@ -11,7 +11,7 @@ import type { ProjectSnapshot } from '../appApi'
 import { TOKEN_PROFILE_LABELS, type GlossaryEntry, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import TokenProfileStatus from './TokenProfileStatus'
 import CompletionMoment from '../delight/CompletionMoment'
-import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/commandEvents'
 import { useI18n } from '@localizationhub/i18n'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
@@ -154,6 +154,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
 
         {surface === 'editor' && (
           <EditorPanel
+            sampleGuide={Boolean(props.local && props.projectId.startsWith('sample:northern-gate:'))}
             local={props.local}
             entry={props.entry}
             extractionContext={props.draft?.metadata?.extraction?.entries?.[props.entry?.id]?.context}

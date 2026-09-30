@@ -3,8 +3,9 @@ import { LanguageSwitcher, useI18n } from '@localizationhub/i18n'
 import { allowHistoryNavigation } from './navigation'
 import Landing from './pages/LandingPage'
 import { DownloadPage, DocumentPage, NotFound } from './pages/InfoPages'
-import LhRadio from './lhRadio/LhRadio'
-import CommandCenter from './delight/CommandCenter'
+import { updateRouteMetadata } from './publicMetadata'
+const LhRadio = lazy(() => import('./lhRadio/LhRadio'))
+const CommandCenter = lazy(() => import('./delight/CommandCenter'))
 
 const AppWorkspace = lazy(() => import('./AppWorkspace'))
 const LocalWorkspace = lazy(() => import('./LocalWorkspace'))
@@ -32,8 +33,11 @@ function RouteLoading() {
   )
 }
 
-export default function App() {
-  const [path, setPath] = useState(window.location.pathname)
+export default function App({ initialPath = '/' }: { initialPath?: string }) {
+  const [path, setPath] = useState(() => typeof window === 'undefined' ? initialPath : window.location.pathname)
+  const [clientReady, setClientReady] = useState(false)
+  useEffect(() => { setClientReady(true) }, [])
+  useEffect(() => { updateRouteMetadata(path) }, [path])
   useEffect(() => {
     const handle = (event: PopStateEvent) => {
       if (allowHistoryNavigation(event)) setPath(window.location.pathname)
@@ -48,8 +52,10 @@ export default function App() {
       <Suspense fallback={<RouteLoading />}>
         <RoutedPage path={path} />
       </Suspense>
-      <CommandCenter />
-      {!suppressRadio && <LhRadio />}
+      <Suspense fallback={null}>
+        {clientReady && <CommandCenter />}
+        {clientReady && !suppressRadio && <LhRadio />}
+      </Suspense>
       {isAppSurface && <LanguageSwitcher dock />}
     </>
   )

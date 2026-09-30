@@ -27,6 +27,8 @@ type EntriesPanelProps = {
 function statusDotClass(view: EntryView): string {
   if (view.hasError) return 'dot-error'
   if (view.hasWarning) return 'dot-warning'
+  if (view.status === 'approved') return 'dot-approved'
+  if (view.status === 'needs-review') return 'dot-review'
   if (view.status === 'translated') return 'dot-translated'
   if (view.status === 'untranslated') return 'dot-untranslated'
   return 'dot-draft'
@@ -35,7 +37,7 @@ function statusDotClass(view: EntryView): string {
 function statusLabel(view: EntryView): string {
   if (view.hasError) return 'Error'
   if (view.hasWarning) return 'Warning'
-  return view.status === 'translated' ? 'Translated' : view.status === 'untranslated' ? 'Untranslated' : 'Review'
+  return ({ translated: 'Translated', untranslated: 'Untranslated', approved: 'Approved', 'needs-review': 'Needs Review', draft: 'Draft' } as Record<string, string>)[view.status] ?? 'Draft'
 }
 
 export default function EntriesPanel(props: EntriesPanelProps) {

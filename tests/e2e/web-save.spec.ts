@@ -57,8 +57,8 @@ async function mockCloudApi(page: Page, role: 'owner' | 'viewer' = 'owner') {
 }
 
 async function signIn(page: Page) {
-  await page.goto('/app/login')
-  await page.evaluate(() => {
+  // Install the synthetic session before app boot, not during restoration.
+  await page.addInitScript(() => {
     localStorage.setItem('localizationhub.auth.token', 'test-token')
     localStorage.setItem('localizationhub.auth.user', JSON.stringify({ id: 'user-1', username: 'tester', email: 't@example.com', emailVerified: true, createdAt: new Date().toISOString() }))
   })

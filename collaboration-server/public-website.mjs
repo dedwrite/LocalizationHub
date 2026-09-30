@@ -104,17 +104,20 @@ export async function servePublicWebsite(request, response, distDir) {
     resource = await readResource(distDir, candidate)
     if (resource) { relativePath = candidate; break }
   }
-  const fallback = !resource && !isAsset ? await readResource(distDir, 'index.html') : null
-  const selected = resource ?? fallback
-  if (!selected) return false
-  if (!resource) relativePath = 'index.html'
+  if (!resource && !isAsset) {
+    for (const shell of ['app-shell.html', 'index.html']) {
+      resource = await readResource(distDir, shell)
+      if (resource) { relativePath = shell; break }
+    }
+  }
+  if (!resource) return false
   response.writeHead(200, {
     'Content-Type': MIME_TYPES.get(path.extname(relativePath).toLowerCase()) ?? 'application/octet-stream',
-    'Content-Length': selected.size,
+    'Content-Length': resource.size,
     'Cache-Control': cachePolicy(relativePath),
     'X-Content-Type-Options': 'nosniff',
   })
   if (request.method === 'HEAD') response.end()
-  else response.end(await readFile(selected.resolved))
+  else response.end(await readFile(resource.resolved))
   return true
 }

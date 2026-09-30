@@ -30,8 +30,10 @@ import ExportChecklistDialog from '../delight/ExportChecklistDialog'
 import SessionPulse from '../delight/SessionPulse'
 import { loadProgressPulse, recordProgressPulse, type ProgressPulseState } from '../delight/pulseState'
 import { metadata } from '../appApi'
-import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/CommandCenter'
+import { openCommandCenter, WORKSPACE_COMMAND_EVENT } from '../delight/commandEvents'
 import { useI18n } from '@localizationhub/i18n'
+import './workspace.css'
+import './workspace.mobile.css'
 
 type SaveState = 'saved' | 'unsaved' | 'saving' | 'failed'
 type LayoutState = { entriesWidth: number; inspectorWidth: number; entriesCollapsed: boolean; inspectorCollapsed: boolean }
@@ -58,6 +60,7 @@ function saveLayout(layout: LayoutState) {
 }
 
 export default function Workspace({ user, onHome, storage: suppliedStorage }: { user: { id: string; username: string }; onHome: () => void; storage?: WorkspaceStorage }) {
+  const { t } = useI18n()
   const routeProjectId = window.location.pathname.split('/').pop()!
   const storage = useMemo(() => suppliedStorage ?? cloudWorkspaceStorage(routeProjectId), [suppliedStorage, routeProjectId])
   const projectId = storage.id
@@ -361,7 +364,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     return registerQuietCommands([
       {
         id: 'workspace.save',
-        label: 'Save project',
+        label: t('delight.command.save'),
         keywords: 'save persist',
         group: 'workspace',
         hint: 'Ctrl/⌘ S',
@@ -369,7 +372,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       },
       {
         id: 'workspace.search',
-        label: 'Focus entry search',
+        label: t('delight.command.entrySearch'),
         keywords: 'find filter entries',
         group: 'workspace',
         hint: 'Ctrl/⌘ F',
@@ -377,34 +380,34 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
       },
       {
         id: 'workspace.replace',
-        label: 'Open search and replace',
+        label: t('quiet.commandReplace'),
         keywords: 'replace find',
         group: 'workspace',
         run: () => setReplaceOpen(true),
       },
       {
         id: 'workspace.overview',
-        label: 'Open project overview',
+        label: t('delight.command.overview'),
         keywords: 'overview review stats',
         group: 'workspace',
         run: () => setOverviewOpen(true),
       },
       ...(local ? [{
         id: 'workspace.export',
-        label: 'Export localization file',
+        label: t('quiet.commandExport'),
         keywords: 'export download file checklist',
         group: 'project' as const,
         run: () => requestExport(),
       }] : []),
       {
         id: 'workspace.home',
-        label: local ? 'Back to Local Projects' : 'Back to Cloud Projects',
+        label: t(local ? 'quiet.commandLocalHome' : 'quiet.commandCloudHome'),
         keywords: 'home projects leave',
         group: 'navigate',
         run: () => goHome(),
       },
     ])
-  }, [loading, snapshot, local, projectId])
+  }, [loading, snapshot, local, projectId, t])
 
   useEffect(() => {
     if (loading || !draft) return
@@ -688,6 +691,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
             onPrev={() => goto(selected - 1)}
             entry={entry}
             extractionContext={draft?.metadata?.extraction?.entries?.[entry?.id]?.context}
+            sampleGuide={local && projectId.startsWith('sample:northern-gate:')}
             status={status}
             writable={writable}
             tokenProfileId={tokenProfileId}

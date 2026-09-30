@@ -20,7 +20,7 @@ export default function RtlShowcase() {
         <button
           type="button"
           className="rtl-game-rune"
-          onClick={openGameSecret}
+          onClick={event => { event.currentTarget.focus(); openGameSecret() }}
           aria-label={t("delight.gameSecret.open")}
           title={t("delight.gameSecret.hint")}
         >

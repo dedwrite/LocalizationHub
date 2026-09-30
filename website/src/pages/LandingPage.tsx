@@ -67,6 +67,8 @@ export default function Landing() {
                 <span>↗</span>
               </InternalLink>
             </div>
+            <div className="hero-surface-note"><span>{t('landing.hero.browser')}</span><span>{t('landing.hero.desktop')}</span></div>
+            <InternalLink className="sample-entry-link" href="/app/local?sample=northern-gate"><span>{t('landing.sample.explore')} <span aria-hidden="true">↗</span></span><small>{t('landing.sample.noUpload')}</small></InternalLink>
             <div
               className="hero-signals"
               aria-label={t("website.hero.characteristics")}

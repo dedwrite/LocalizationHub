@@ -3,8 +3,9 @@ import { site } from "../config/site";
 import useScrollReveal from "../hooks/useScrollReveal";
 import MotionDebugBadge from "./MotionDebugBadge";
 import { InternalLink } from "../internalNavigation";
-import { openCommandCenter } from "../delight/CommandCenter";
+import { openCommandCenter } from "../delight/commandEvents";
 import { FooterSecret } from "../delight/LittleSecrets";
+import ShortcutKey from './ShortcutKey';
 
 function navigation(t: ReturnType<typeof useI18n>["t"]) {
   return [
@@ -35,6 +36,12 @@ export function Header() {
             </InternalLink>
           ))}
         </nav>
+        <details className="mobile-site-menu">
+          <summary aria-label={t('landing.nav.menu')}>{t('landing.nav.menu')}<span aria-hidden="true">☰</span></summary>
+          <nav aria-label={t('website.nav.label')}>
+            {navigation(t).map(([label, href]) => <InternalLink key={label} href={href} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open') }}>{label}<span aria-hidden="true">↗</span></InternalLink>)}
+          </nav>
+        </details>
         <LanguageSwitcher />
         <button
           type="button"
@@ -43,7 +50,7 @@ export function Header() {
           aria-label={t("delight.command.open")}
         >
           <span>{t("delight.command.quick")}</span>
-          <kbd>⌘K</kbd>
+          <ShortcutKey />
         </button>
         <InternalLink className="header-cta" href="/app/local">
           {t("website.hero.openLocal")}

@@ -72,6 +72,7 @@ export default function FormatGuide() {
           <div>
             <strong>{t('landing.samples.title')}</strong>
             <p>{t('landing.samples.body')}</p>
+            <InternalLink className="sample-inline-link" href="/app/local?sample=northern-gate">{t('landing.sample.explore')} <span aria-hidden="true">↗</span></InternalLink>
           </div>
           <div role="group" aria-label={t('landing.samples.choose')}>
             {landingSamples.map(({ format, href }) => (

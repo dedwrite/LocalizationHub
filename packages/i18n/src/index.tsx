@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { messages, type MessageKey } from './messages'
 import type { MessageValues, UiLocale } from './types'
 
@@ -105,8 +105,11 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null)
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, updateLocale] = useState<UiLocale>(readStoredLocale)
+export function I18nProvider({ children, initialLocale }: { children: ReactNode; initialLocale?: UiLocale }) {
+  const [locale, updateLocale] = useState<UiLocale>(() => initialLocale ?? readStoredLocale())
+  // A prerendered document hydrates in its build language before restoring the
+  // browser preference. Otherwise React receives two different initial trees.
+  useEffect(() => { if (initialLocale) updateLocale(readStoredLocale()) }, [initialLocale])
   const setLocale = useCallback((nextLocale: UiLocale) => {
     updateLocale(nextLocale)
     try { window.localStorage.setItem(UI_LOCALE_STORAGE_KEY, nextLocale) } catch { /* Preference remains live for this session. */ }

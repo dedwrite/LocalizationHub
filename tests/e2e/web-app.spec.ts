@@ -51,9 +51,9 @@ test.describe('public routing and accessibility', () => {
     await page.goto('/#context')
     await expect(page.getByRole('heading', { name: 'Keep the context. Keep the code intact.' })).toBeVisible()
     await expect(page.getByText('TOKENS VALID')).toBeVisible()
-    await expect(page.getByText('{player_name}').first()).toBeVisible()
+    await expect(page.locator('.rtl-showcase-source mark')).toHaveText('{player_name}')
     await expect(page.getByText('Captain Veyra')).toBeVisible()
-    await expect(page.getByText('Northern Gate').first()).toBeVisible()
+    await expect(page.locator('.rtl-showcase-context')).toContainText('Northern Gate')
   })
 
   test('Landing FAQ explains Windows repository access', async ({ page }) => {

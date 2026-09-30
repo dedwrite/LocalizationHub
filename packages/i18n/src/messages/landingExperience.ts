@@ -1,6 +1,12 @@
 import type { MessageCatalog } from '../types'
 
 export const landingExperienceMessages = {
+  'landing.nav.menu': { en: 'Menu', ar: 'القائمة' },
+  'landing.sample.explore': { en: 'Explore Northern Gate', ar: 'جرّب البوابة الشمالية' },
+  'landing.sample.noUpload': { en: '24 game lines. No upload. No account.', ar: '٢٤ نصًا من لعبة. دون رفع ملفات أو حساب.' },
+  'landing.hero.browser': { en: 'Browser · JSON / CSV / PO', ar: 'المتصفح · JSON / CSV / PO' },
+  'landing.hero.desktop': { en: 'Windows · game-text extraction', ar: 'ويندوز · استخراج نصوص الألعاب' },
+  'local.sample.guide': { en: 'Northern Gate is a practice project. Review the dialogue, try the glossary, or fix the missing {gold} token in the reward line. Save keeps your edits in this browser; export a backup for safekeeping.', ar: 'البوابة الشمالية مشروع للتجربة. راجع الحوار، وجرّب قاموس المصطلحات، أو أصلح الرمز الناقص {gold} في نص المكافأة. الحفظ يحتفظ بتعديلاتك في هذا المتصفح؛ صدّر نسخة احتياطية للعمل المهم.' },
   'landing.nav.editor': { en: 'Inside the editor', ar: 'داخل المحرر' },
   'landing.nav.files': { en: 'Files & engines', ar: 'الملفات والمحركات' },
   'landing.context.example': { en: 'SCENE 01 / TRANSLATION NOTES', ar: 'المشهد 01 / ملاحظات الترجمة' },

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { validateProtectedTokens } from '@localizationhub/core'
+import { validateProtectedTokens } from '@localizationhub/core/tokens'
 import { useI18n } from '@localizationhub/i18n'
 
 const samples = [

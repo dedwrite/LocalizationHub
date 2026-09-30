@@ -8,6 +8,7 @@ import { meterWidth, translationMetrics } from '../delight/translationMetrics'
 
 type EditorPanelProps = {
   local?: boolean
+  sampleGuide?: boolean
   entry: any
   extractionContext?: EntryContext
   status: string
@@ -191,6 +192,7 @@ export default function EditorPanel(props: EditorPanelProps) {
 
       <div className="editor-scroll">
         <div className="editor-content-column">
+        {props.sampleGuide && <details className="sample-workspace-guide" data-i18n-skip><summary>{t('landing.sample.explore')}</summary><p>{t('local.sample.guide')}</p></details>}
         <section className="source-section">
           <div className="section-label-row">
             <span className="section-label" data-i18n-skip><small>{t('workspace.reference')}</small> {t('workspace.source')}</span>

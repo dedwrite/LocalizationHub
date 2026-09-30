@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { I18nProvider } from '@localizationhub/i18n'
 import App from './App'
 import AppErrorBoundary from './AppErrorBoundary'
@@ -11,12 +11,16 @@ if (typeof globalThis.structuredClone !== 'function') {
   ;(globalThis as any).structuredClone = (value: unknown) => JSON.parse(JSON.stringify(value))
 }
 
-createRoot(document.getElementById('root')!).render(
+const root = document.getElementById('root')!
+const prerendered = root.dataset.prerendered === window.location.pathname
+const application = (
   <StrictMode>
-    <I18nProvider>
+    <I18nProvider initialLocale={prerendered ? 'en' : undefined}>
       <AppErrorBoundary>
         <App />
       </AppErrorBoundary>
     </I18nProvider>
-  </StrictMode>,
+  </StrictMode>
 )
+if (prerendered) hydrateRoot(root, application)
+else createRoot(root).render(application)

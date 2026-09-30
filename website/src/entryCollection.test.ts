@@ -31,6 +31,11 @@ describe('entry collection filtering', () => {
     expect(collection.counts.total).toBe(100)
     expect(collection.counts.untranslated).toBe(50)
   })
+  it('keeps auxiliary filter counts honest, independently of the active search', () => {
+    const collection = buildEntryCollection({ entries, workflow: workflowEntries, filter: 'tags', query: 'menu.2', taggedEntryIds: new Set(['entry-2', 'entry-4']), commentEntryIds: new Set(['entry-4']), currentUserId: 'me', assignments: { 'entry-2': 'me', 'entry-4': 'other' } })
+    expect(collection.counts).toMatchObject({ tags: 2, comments: 1, 'assigned-to-me': 1 })
+    expect(collection.views.map(view => view.entry.id)).toEqual(['entry-2'])
+  })
 
   it('filters untranslated entries', () => {
     const collection = buildEntryCollection({ entries, workflow: workflowEntries, filter: 'untranslated', query: '' })
