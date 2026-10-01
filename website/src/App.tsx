@@ -18,6 +18,7 @@ import './visual-refinement.css'
 import './marketing-atmosphere.css'
 import './delight/delight.css'
 import './delight/quiet-polish.css'
+import './public-site.css'
 
 function RouteLoading() {
   const { t } = useI18n()

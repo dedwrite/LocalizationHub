@@ -9,6 +9,7 @@ import GameMemeSecret from "../delight/GameMemeSecret";
 import RtlShowcase from "../components/RtlShowcase";
 import LiveEditorPreview from "../components/LiveEditorPreview";
 import FormatGuide from "../components/FormatGuide";
+import LanguageField from "../components/LanguageField";
 import "../landing-experience.css";
 
 function Feature({
@@ -28,7 +29,6 @@ function Feature({
         number === "02" ? "80ms" : number === "03" ? "160ms" : "0ms"
       }
     >
-      <span className="feature-number">{number}</span>
       <h3>{title}</h3>
       <p>{children}</p>
     </article>
@@ -38,7 +38,8 @@ function Feature({
 export default function Landing() {
   const { t } = useI18n();
   return (
-    <>
+    <div className="public-site" id="public-site">
+      <LanguageField />
       <Header />
       <main
         id="main-content"
@@ -47,48 +48,47 @@ export default function Landing() {
         data-i18n-skip
       >
         <section className="hero" id="product">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <span className="eyebrow-line" />
-              {t("website.hero.eyebrowMixed")}
-            </p>
-            <h1>
-              {t("website.hero.titleStart")}
-              <br />
-              <i>{t("website.hero.titleEnd")}</i>
-            </h1>
-            <p className="hero-description">{t("website.hero.description")}</p>
-            <div className="hero-actions">
-              <InternalLink className="button button-primary" href="/app/local">
-                {t("website.hero.openLocal")}
-              </InternalLink>
-              <InternalLink className="button button-quiet" href="/download">
-                {t("website.hero.downloadWindows")}
-                <span>↗</span>
-              </InternalLink>
+          <div className="hero-intro">
+            <div className="hero-copy">
+              <h1>
+                {t("website.hero.titleStart")}
+                <br />
+                <span className="hero-last-line">{t("website.hero.titleEnd")}</span>
+              </h1>
+              <p className="hero-category">{t("website.hero.eyebrowMixed")}</p>
             </div>
-            <div className="hero-surface-note"><span>{t('landing.hero.browser')}</span><span>{t('landing.hero.desktop')}</span></div>
-            <InternalLink className="sample-entry-link" href="/app/local?sample=northern-gate"><span>{t('landing.sample.explore')} <span aria-hidden="true">↗</span></span><small>{t('landing.sample.noUpload')}</small></InternalLink>
-            <div
-              className="hero-signals"
-              aria-label={t("website.hero.characteristics")}
-            >
-              <span>
-                <i />
-                {t("website.hero.localFirst")}
-              </span>
-              <span>{t("website.hero.protectedTokens")}</span>
-              <span>{t("website.signal.optionalCloud")}</span>
+            <div className="hero-details">
+              <p className="hero-description">{t("website.hero.description")}</p>
+              <div className="hero-actions">
+                <InternalLink className="button button-primary" href="/app/local">
+                  {t("website.hero.openLocal")}
+                </InternalLink>
+                <InternalLink className="button button-quiet" href="/download">
+                  {t("website.hero.downloadWindows")}
+                  <span>↗</span>
+                </InternalLink>
+              </div>
+              <div className="hero-surface-note"><span>{t('landing.hero.browser')}</span><span>{t('landing.hero.desktop')}</span></div>
+              <InternalLink className="sample-entry-link" href="/app/local?sample=northern-gate"><span>{t('landing.sample.explore')} <span aria-hidden="true">↗</span></span><small>{t('landing.sample.noUpload')}</small></InternalLink>
+              <div
+                className="hero-signals"
+                aria-label={t("website.hero.characteristics")}
+              >
+                <span>
+                  <i />
+                  {t("website.hero.localFirst")}
+                </span>
+                <span>{t("website.hero.protectedTokens")}</span>
+                <span>{t("website.signal.optionalCloud")}</span>
+              </div>
             </div>
           </div>
           <div className="hero-visual">
-            <div className="preview-aura" aria-hidden="true" />
             <LiveEditorPreview />
           </div>
         </section>
         <section className="section extraction-section" id="engines">
           <div className="section-intro">
-            <p className="eyebrow">{t("website.engines.kicker")}</p>
             <h2>
               {t("website.engines.titleStart")}
               <br />
@@ -161,7 +161,6 @@ export default function Landing() {
         <Reveal variant="left">
           <section className="section context-section" id="context">
             <div className="section-intro">
-              <p className="eyebrow">{t("website.context.kicker")}</p>
               <h2>
                 {t("website.context.titleStart")}
                 <br />
@@ -176,7 +175,6 @@ export default function Landing() {
         <Reveal variant="right">
           <section className="section craft-section" id="workspace">
             <div className="section-intro">
-              <p className="eyebrow">{t("website.feature.workspaceKicker")}</p>
               <h2>
                 {t("website.feature.titleStart")}
                 <br />
@@ -207,19 +205,17 @@ export default function Landing() {
         <Reveal variant="left">
           <section className="section split-section" id="cloud">
             <div className="split-label">
-              <p className="eyebrow">{t("website.surface.kicker")}</p>
+              <h2>{t("website.surface.kicker")}</h2>
             </div>
             <div className="surface surface-local">
-              <span className="surface-index">A</span>
-              <h2>{t("website.surface.localProjects")}</h2>
+              <h3>{t("website.surface.localProjects")}</h3>
               <p>{t("website.surface.localText")}</p>
               <span className="surface-tag">
                 {t("website.surface.localFirstCaps")}
               </span>
             </div>
             <div className="surface surface-cloud">
-              <span className="surface-index">B</span>
-              <h2>{t("website.surface.cloudProjects")}</h2>
+              <h3>{t("website.surface.cloudProjects")}</h3>
               <p>{t("website.surface.cloudText")}</p>
               <span className="surface-tag">
                 {t("website.surface.optionalCloud")}
@@ -253,7 +249,6 @@ export default function Landing() {
         <Reveal variant="fade">
           <section className="section faq-section" id="faq">
             <div className="section-intro">
-              <p className="eyebrow">{t("website.faq.kicker")}</p>
               <h2>
                 {t("website.faq.titleStart")}
                 <br />
@@ -300,6 +295,6 @@ export default function Landing() {
       </main>
       <GameMemeSecret />
       <Footer />
-    </>
+    </div>
   );
 }

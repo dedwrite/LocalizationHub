@@ -73,7 +73,9 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('.editor-footer').getByRole('button', { name: 'Next', exact: true }).click()
     await page.locator('.lh-language-switcher select').selectOption(locale)
     await page.getByRole('button', { name: labels.save, exact: true }).click()
-    await expect(page.getByRole('status')).toContainText(labels.saved)
+    // The late-night secret is also a live status. Select the save message
+    // without suppressing that interaction or depending on the wall clock.
+    await expect(page.getByRole('status').filter({ hasText: labels.saved })).toBeVisible()
     await page.getByRole('button', { name: labels.back, exact: true }).click()
     const card = page.locator('.resume-card')
     await expect(card).toContainText('delight-synthetic.json')

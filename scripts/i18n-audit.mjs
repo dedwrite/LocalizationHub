@@ -32,6 +32,11 @@ const contentExemptions = new Set([
   'اثبُت يا', '. لن تسقط', 'الليلة.',
   'Motion:', 'Pointer:', 'Registered:', 'Revealed:',
 ])
+// User-requested decorative letters, not Arabic UI copy. Keep the exemption
+// constrained to this component and these exact characters.
+const decorativeSourceExemptions = new Map([
+  ['website/src/components/LanguageField.tsx', new Set(['ع', 'م'])],
+])
 
 function walk(directory) {
   const files = []
@@ -96,7 +101,8 @@ function arabicSourceLiterals() {
       const visit = (node) => {
         if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /[\u0600-\u06ff]/u.test(node.text)) {
           const value = node.text.trim()
-          if (value && !contentExemptions.has(value)) findings.push({ file: path.relative(repositoryRoot, file), value })
+          const relativeFile = path.relative(repositoryRoot, file).replaceAll('\\', '/')
+          if (value && !contentExemptions.has(value) && !decorativeSourceExemptions.get(relativeFile)?.has(value)) findings.push({ file: path.relative(repositoryRoot, file), value })
         }
         ts.forEachChild(node, visit)
       }

@@ -37,14 +37,14 @@ export default function FormatGuide() {
       </div>
       <div className="format-result" aria-live="polite" aria-atomic="true">
         <div className="format-result-copy" key={selected}>
-          <p className="eyebrow">
+          <h3>{t(`landing.formats.${selected}.title`)}</h3>
+          <p className="format-platform">
             {t(
               selected === 'files'
                 ? 'landing.formats.browser'
                 : 'landing.formats.desktop',
             )}
           </p>
-          <h3>{t(`landing.formats.${selected}.title`)}</h3>
           <p>{t(`landing.formats.${selected}.body`)}</p>
           <div
             className="format-pills"

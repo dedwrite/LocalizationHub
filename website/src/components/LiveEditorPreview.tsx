@@ -88,7 +88,7 @@ export default function LiveEditorPreview() {
                     )[index],
                   )}
                 </span>
-                <strong dir="ltr">{entry.key}</strong>
+                <strong dir="ltr" translate="no">{entry.key}</strong>
                 <small lang="en" dir="ltr">
                   {entry.source}
                 </small>
@@ -98,7 +98,7 @@ export default function LiveEditorPreview() {
         </div>
         <div className="preview-main">
           <div className="preview-breadcrumb">
-            <bdi>{sample.key}</bdi>
+            <bdi translate="no">{sample.key}</bdi>
             <span dir="ltr">
               {selected + 1} / {samples.length}
             </span>
@@ -122,6 +122,8 @@ export default function LiveEditorPreview() {
             </div>
             <textarea
               id={id}
+              name="sample-translation"
+              autoComplete="off"
               value={translation}
               onChange={(event) => change(event.target.value)}
               lang="ar"
@@ -152,7 +154,7 @@ export default function LiveEditorPreview() {
                   return (
                     <li key={`${token.raw}-${index}`} data-missing={missing}>
                       <span aria-hidden="true">{missing ? '!' : '✓'}</span>
-                      <code dir="ltr">{token.raw}</code>
+                      <code dir="ltr" translate="no">{token.raw}</code>
                       <span>
                         {t(
                           missing

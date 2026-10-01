@@ -20,6 +20,7 @@ export function updateRouteMetadata(path: string) {
   }
   setMeta('name', 'description', meta.description)
   setMeta('name', 'robots', meta.robots)
+  setMeta('name', 'theme-color', path === '/' ? '#111016' : '#0b0d11')
   for (const prefix of ['og', 'twitter']) {
     const attribute = prefix === 'og' ? 'property' : 'name'
     setMeta(attribute, `${prefix}:title`, meta.title)

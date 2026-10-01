@@ -1,0 +1,399 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-01T00:00:00Z",
+  "title": "Design System: LocalizationHub public website",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Matte Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0123 292.7)",
+          "oklch(26% 0.0123 292.7)",
+          "oklch(38% 0.0123 292.7)",
+          "oklch(49% 0.0123 292.7)",
+          "oklch(61% 0.0123 292.7)",
+          "oklch(72% 0.0123 292.7)",
+          "oklch(84% 0.0123 292.7)",
+          "oklch(95% 0.0123 292.7)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Proof Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0217 297.1)",
+          "oklch(26% 0.0217 297.1)",
+          "oklch(38% 0.0217 297.1)",
+          "oklch(49% 0.0217 297.1)",
+          "oklch(61% 0.0217 297.1)",
+          "oklch(72% 0.0217 297.1)",
+          "oklch(84% 0.0217 297.1)",
+          "oklch(95% 0.0217 297.1)"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Raised Tone",
+        "tonalRamp": [
+          "oklch(15% 0.0266 297.6)",
+          "oklch(26% 0.0266 297.6)",
+          "oklch(38% 0.0266 297.6)",
+          "oklch(49% 0.0266 297.6)",
+          "oklch(61% 0.0266 297.6)",
+          "oklch(72% 0.0266 297.6)",
+          "oklch(84% 0.0266 297.6)",
+          "oklch(95% 0.0266 297.6)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Quiet Separator",
+        "tonalRamp": [
+          "oklch(15% 0.0373 299.7)",
+          "oklch(26% 0.0373 299.7)",
+          "oklch(38% 0.0373 299.7)",
+          "oklch(49% 0.0373 299.7)",
+          "oklch(61% 0.0373 299.7)",
+          "oklch(72% 0.0373 299.7)",
+          "oklch(84% 0.0373 299.7)",
+          "oklch(95% 0.0373 299.7)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Reading White",
+        "tonalRamp": [
+          "oklch(15% 0.0111 303.1)",
+          "oklch(26% 0.0111 303.1)",
+          "oklch(38% 0.0111 303.1)",
+          "oklch(49% 0.0111 303.1)",
+          "oklch(61% 0.0111 303.1)",
+          "oklch(72% 0.0111 303.1)",
+          "oklch(84% 0.0111 303.1)",
+          "oklch(95% 0.0111 303.1)"
+        ]
+      },
+      "soft": {
+        "role": "neutral",
+        "displayName": "Soft Gray",
+        "tonalRamp": [
+          "oklch(15% 0.0244 301.9)",
+          "oklch(26% 0.0244 301.9)",
+          "oklch(38% 0.0244 301.9)",
+          "oklch(49% 0.0244 301.9)",
+          "oklch(61% 0.0244 301.9)",
+          "oklch(72% 0.0244 301.9)",
+          "oklch(84% 0.0244 301.9)",
+          "oklch(95% 0.0244 301.9)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Gray",
+        "tonalRamp": [
+          "oklch(15% 0.0356 302.6)",
+          "oklch(26% 0.0356 302.6)",
+          "oklch(38% 0.0356 302.6)",
+          "oklch(49% 0.0356 302.6)",
+          "oklch(61% 0.0356 302.6)",
+          "oklch(72% 0.0356 302.6)",
+          "oklch(84% 0.0356 302.6)",
+          "oklch(95% 0.0356 302.6)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Soft Violet",
+        "tonalRamp": [
+          "oklch(15% 0.1113 298.6)",
+          "oklch(26% 0.1113 298.6)",
+          "oklch(38% 0.1113 298.6)",
+          "oklch(49% 0.1113 298.6)",
+          "oklch(61% 0.1113 298.6)",
+          "oklch(72% 0.1113 298.6)",
+          "oklch(84% 0.1113 298.6)",
+          "oklch(95% 0.1113 298.6)"
+        ]
+      },
+      "accent-strong": {
+        "role": "primary",
+        "displayName": "Pale Violet",
+        "tonalRamp": [
+          "oklch(15% 0.0743 302.4)",
+          "oklch(26% 0.0743 302.4)",
+          "oklch(38% 0.0743 302.4)",
+          "oklch(49% 0.0743 302.4)",
+          "oklch(61% 0.0743 302.4)",
+          "oklch(72% 0.0743 302.4)",
+          "oklch(84% 0.0743 302.4)",
+          "oklch(95% 0.0743 302.4)"
+        ]
+      },
+      "button-ink": {
+        "role": "primary",
+        "displayName": "Deep Violet Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0396 299.1)",
+          "oklch(26% 0.0396 299.1)",
+          "oklch(38% 0.0396 299.1)",
+          "oklch(49% 0.0396 299.1)",
+          "oklch(61% 0.0396 299.1)",
+          "oklch(72% 0.0396 299.1)",
+          "oklch(84% 0.0396 299.1)",
+          "oklch(95% 0.0396 299.1)"
+        ]
+      },
+      "button-hover": {
+        "role": "primary",
+        "displayName": "Violet Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0967 302.1)",
+          "oklch(26% 0.0967 302.1)",
+          "oklch(38% 0.0967 302.1)",
+          "oklch(49% 0.0967 302.1)",
+          "oklch(61% 0.0967 302.1)",
+          "oklch(72% 0.0967 302.1)",
+          "oklch(84% 0.0967 302.1)",
+          "oklch(95% 0.0967 302.1)"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected Violet Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0432 305.8)",
+          "oklch(26% 0.0432 305.8)",
+          "oklch(38% 0.0432 305.8)",
+          "oklch(49% 0.0432 305.8)",
+          "oklch(61% 0.0432 305.8)",
+          "oklch(72% 0.0432 305.8)",
+          "oklch(84% 0.0432 305.8)",
+          "oklch(95% 0.0432 305.8)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0209 302.7)",
+          "oklch(26% 0.0209 302.7)",
+          "oklch(38% 0.0209 302.7)",
+          "oklch(49% 0.0209 302.7)",
+          "oklch(61% 0.0209 302.7)",
+          "oklch(72% 0.0209 302.7)",
+          "oklch(84% 0.0209 302.7)",
+          "oklch(95% 0.0209 302.7)"
+        ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.0636 309.9)",
+          "oklch(26% 0.0636 309.9)",
+          "oklch(38% 0.0636 309.9)",
+          "oklch(49% 0.0636 309.9)",
+          "oklch(61% 0.0636 309.9)",
+          "oklch(72% 0.0636 309.9)",
+          "oklch(84% 0.0636 309.9)",
+          "oklch(95% 0.0636 309.9)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "English display",
+        "purpose": "Hero headline in English."
+      },
+      "display-arabic": {
+        "displayName": "Arabic display",
+        "purpose": "Hero headline in Arabic; separate tracking and leading."
+      },
+      "headline": {
+        "displayName": "Section headline",
+        "purpose": "Section introductions; Arabic runtime overrides relax leading and tracking."
+      },
+      "title": {
+        "displayName": "Guide title",
+        "purpose": "Format-guide headings."
+      },
+      "body": {
+        "displayName": "Decision copy",
+        "purpose": "Hero explanation; smaller body styles are contextual."
+      },
+      "label": {
+        "displayName": "Sample label",
+        "purpose": "Compact sample control labels."
+      },
+      "button": {
+        "displayName": "Action label",
+        "purpose": "Primary and quiet public actions."
+      },
+      "dialogue": {
+        "displayName": "Source dialogue",
+        "purpose": "Readable English demo source."
+      },
+      "translation": {
+        "displayName": "Arabic translation",
+        "purpose": "Editable Arabic demo content."
+      }
+    },
+    "shadows": [
+      {
+        "name": "public-flat",
+        "value": "none",
+        "purpose": "No public surface lift, glow or box shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "action-tone",
+        "value": "border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease",
+        "purpose": "Inherited action transitions; the public override keeps transform fixed."
+      },
+      {
+        "name": "navigation-tone",
+        "value": "color 150ms ease, border-color 150ms ease, background 150ms ease",
+        "purpose": "Inherited navigation state transitions."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "Animations and transitions removed in reduced-motion mode."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "navigation-collapse",
+        "value": "1100px"
+      },
+      {
+        "name": "phone-reflow",
+        "value": "760px"
+      },
+      {
+        "name": "narrow-phone",
+        "value": "430px"
+      },
+      {
+        "name": "compact-brand",
+        "value": "350px"
+      }
+    ],
+    "provenance": {
+      "runtimeOwner": "src/public-site.css",
+      "scope": "#public-site on the public landing route",
+      "tokenAuthority": "DESIGN.md frontmatter",
+      "snippetValues": "Resolved literals from the public cascade: its variables are scoped to #public-site, not a globally portable token host.",
+      "tonalRamps": "Generated OKLCH display metadata derived from the canonical colors; not runtime color tokens.",
+      "status": "Public composition amplified and verified locally. Human visual acceptance pending. No publication.",
+      "excludedSurfaces": [
+        "Web App",
+        "Admin",
+        "Radio",
+        "Other routes"
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary browser workspace action; tone changes on hover without movement.",
+      "html": "<button class=\"ds-primary\" type=\"button\">Open browser workspace</button>",
+      "css": ".ds-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border: 1px solid #b9a0ed; border-radius: 8px; background: #b9a0ed; color: #1b1428; font: 600 13px 'LH Public', 'LH Public Arabic', sans-serif; cursor: pointer; transition: border-color 180ms ease, background 180ms ease, color 180ms ease; } .ds-primary:hover { background: #cbb1f4; border-color: #cbb1f4; } .ds-primary:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } @media (prefers-reduced-motion: reduce) { .ds-primary { transition: none; } }"
+    },
+    {
+      "name": "Quiet action",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Outlined secondary public action.",
+      "html": "<button class=\"ds-quiet\" type=\"button\">Download Windows ↗</button>",
+      "css": ".ds-quiet { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border: 1px solid #3b3449; border-radius: 8px; background: transparent; color: #f0edf5; font: 600 13px 'LH Public', 'LH Public Arabic', sans-serif; cursor: pointer; transition: border-color 180ms ease, background 180ms ease, color 180ms ease; } .ds-quiet:hover { background: #24202e; border-color: #b9a0ed; color: #fff; } .ds-quiet:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } @media (prefers-reduced-motion: reduce) { .ds-quiet { transition: none; } }"
+    },
+    {
+      "name": "Public navigation",
+      "kind": "nav",
+      "refersTo": "navigation-link",
+      "description": "Compact text links with tonal hover and visible keyboard focus.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Public website\"><a class=\"ds-nav-link\" href=\"#product\">Product</a><a class=\"ds-nav-link\" href=\"#engines\">Formats</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 4px; color: #c4becf; font: 13px/1.65 'LH Public', 'LH Public Arabic', sans-serif; } .ds-nav-link { display: grid; place-items: center; min-height: 44px; padding: 10px; border: 0; border-radius: 6px; color: inherit; text-decoration: none; transition: color 150ms ease, background 150ms ease; } .ds-nav-link:hover { background: #24202e; color: #f0edf5; } .ds-nav-link:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } @media (prefers-reduced-motion: reduce) { .ds-nav-link { transition: none; } }"
+    },
+    {
+      "name": "Sample selector",
+      "kind": "button",
+      "refersTo": "sample-selector",
+      "description": "Selected and unselected sample controls shown together; the panel illustrates state, without recreating React behavior.",
+      "html": "<div class=\"ds-selector-group\" role=\"group\" aria-label=\"Sample text\"><button class=\"ds-selector\" type=\"button\" aria-pressed=\"true\">Dialogue</button><button class=\"ds-selector\" type=\"button\" aria-pressed=\"false\">Menu</button></div>",
+      "css": ".ds-selector-group { display: flex; gap: 8px; padding: 12px 24px; background: #1b1823; border-block-end: 1px solid #3b3449; } .ds-selector { min-height: 44px; padding: 10px 16px; border: 0; border-radius: 6px; background: none; color: #c4becf; font: 500 13px/1.5 'LH Public', 'LH Public Arabic', sans-serif; cursor: pointer; } .ds-selector[aria-pressed='true'] { background: #33283f; color: #d7c3f7; } .ds-selector:hover { background: #24202e; color: #f0edf5; } .ds-selector:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; }"
+    },
+    {
+      "name": "Arabic translation field",
+      "kind": "input",
+      "refersTo": "translation-field",
+      "description": "Editable text with direction, associated helper text and visible focus.",
+      "html": "<div class=\"ds-field-wrap\"><label class=\"ds-field-label\" for=\"ds-translation\">Arabic translation</label><textarea class=\"ds-translation\" id=\"ds-translation\" lang=\"ar\" dir=\"auto\" aria-describedby=\"ds-field-hint\" spellcheck=\"false\">اثبت يا {player_name}.</textarea><p class=\"ds-field-hint\" id=\"ds-field-hint\">Keep protected tokens unchanged.</p></div>",
+      "css": ".ds-field-wrap { background: #1b1823; padding: 24px 32px; } .ds-field-label { display: block; color: #aca3bb; font: 13px/1.65 'LH Public', 'LH Public Arabic', sans-serif; } .ds-translation { display: block; min-height: 116px; width: calc(100% - 30px); margin: 12px 0; padding: 12px 14px; resize: none; background: #15111b; color: #f0edf5; border: 1px solid #665176; border-radius: 8px; caret-color: #b9a0ed; font: 500 clamp(22px, 2vw, 28px)/1.9 'LH Public Arabic', 'LH Public', sans-serif; } .ds-translation:focus { outline: 2px solid #b9a0ed; outline-offset: 2px; border-color: transparent; } .ds-translation:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } .ds-field-hint { margin: 0; color: #aca3bb; font: 12px/1.65 'LH Public', 'LH Public Arabic', sans-serif; }"
+    },
+    {
+      "name": "Format tags",
+      "kind": "chip",
+      "refersTo": "format-tag",
+      "description": "Passive unboxed format labels; they do not claim selected, hover or focus behavior.",
+      "html": "<div class=\"ds-format-tags\" aria-label=\"Supported browser formats\"><bdi class=\"ds-format-tag\">JSON</bdi><bdi class=\"ds-format-tag\">CSV</bdi><bdi class=\"ds-format-tag\">PO / POT</bdi></div>",
+      "css": ".ds-format-tags { display: flex; flex-wrap: wrap; gap: 8px; } .ds-format-tag { margin-inline-end: 12px; padding: 0; border: 0; color: #d7c3f7; font: 13px/1.65 'LH Public', 'LH Public Arabic', sans-serif; }"
+    },
+    {
+      "name": "Bilingual proof sheet",
+      "kind": "card",
+      "refersTo": "proof-sheet",
+      "description": "Flat source/translation surface with valid and missing-token examples; controls preserve their real keyboard states.",
+      "html": "<section class=\"ds-proof\" aria-label=\"Bilingual proof\"><div class=\"ds-proof-source\"><span class=\"ds-proof-label\">Source text</span><p class=\"ds-proof-dialogue\" lang=\"en\" dir=\"ltr\">Hold the line, {player_name}.</p></div><div class=\"ds-proof-edit\"><label class=\"ds-proof-label\" for=\"ds-proof-translation\">Arabic translation</label><textarea class=\"ds-proof-field\" id=\"ds-proof-translation\" lang=\"ar\" dir=\"auto\">اثبت يا {player_name}.</textarea><button class=\"ds-proof-reset\" type=\"button\">Reset example</button></div><div class=\"ds-proof-tokens\"><span class=\"ds-proof-token\" data-missing=\"false\">✓ <code dir=\"ltr\">{player_name}</code> Kept</span><span class=\"ds-proof-token\" data-missing=\"true\">! <code dir=\"ltr\">{player_name}</code> Missing</span></div><p class=\"ds-proof-status\" role=\"status\">✓ Protected tokens preserved</p></section>",
+      "css": ".ds-proof { display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; padding: 24px; border: 1px solid #3b3449; border-radius: 12px; background: #1b1823; color: #f0edf5; font-family: 'LH Public', 'LH Public Arabic', sans-serif; } .ds-proof-label { color: #aca3bb; font-size: 13px; } .ds-proof-dialogue { margin: 18px 0 0; font: 500 clamp(22px,2vw,28px)/1.6 'LH Public',sans-serif; } .ds-proof-field { display: block; width: calc(100% - 30px); min-height: 116px; margin: 12px 0; padding: 12px 14px; border: 1px solid #665176; border-radius: 8px; resize: none; background: #15111b; color: #f0edf5; caret-color: #b9a0ed; font: 500 clamp(22px,2vw,28px)/1.9 'LH Public Arabic','LH Public',sans-serif; } .ds-proof-reset { min-height: 44px; padding: 8px; border: 0; background: transparent; color: #d7c3f7; cursor: pointer; font: 13px 'LH Public', 'LH Public Arabic', sans-serif; } .ds-proof-field:focus { outline: 2px solid #b9a0ed; outline-offset: 2px; border-color: transparent; } .ds-proof-field:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } .ds-proof-reset:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 4px; } .ds-proof-tokens { display: flex; flex-wrap: wrap; gap: 8px; } .ds-proof-token { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid #3b3449; border-radius: 6px; color: #bdcfbf; font-size: 12px; } .ds-proof-token code { color: #d7c3f7; overflow-wrap: anywhere; } .ds-proof-token[data-missing='true'] { color: #ffc6bd; background: #382027; border-color: #885160; } .ds-proof-status { color: #9cd9b4; align-self: end; font-size: 12px; line-height: 1.6; } @media (max-width:760px) { .ds-proof { grid-template-columns: 1fr; padding: 20px; gap: 16px; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Language Field",
+    "overview": "Words are both the work and the identity. The public landing page uses matte ink, restrained violet and readable bilingual typography, with composed multilingual letters as its decorative material. Its character is quiet, direct and spacious: real dialogue, context and protected syntax carry the product proof.\n\nThis document records the implemented public landing system owned by `src/public-site.css`, scoped to `#public-site`. It does not define the Web App, Admin, Radio or other routes. Preserve the LocalizationHub name and existing logo, factual copy, existing interactive demonstrations, all tips and secret interactions, and Radio behavior.\n\nThe user pinned the picture-free dark/violet direction and requested multilingual background letters. The public composition was amplified on 2026-10-01 and verified locally. Human visual acceptance is still pending, and no publication has occurred. The chosen world is established; that status does not imply approval of the final rendered layout.",
+    "keyCharacteristics": [
+      "Picture-free typographic identity.",
+      "Humanist Latin and Arabic reading quality.",
+      "Solid, flat proof surfaces and measured separators.",
+      "Stable, noninteractive multilingual decoration.",
+      "Real editable demonstrations with visible states."
+    ],
+    "rules": [
+      {
+        "name": "The Reading First Rule",
+        "body": "Decorative letters stay subdued behind readable content; violet identifies action and meaning rather than filling every surface.",
+        "section": "colors"
+      },
+      {
+        "name": "The Script Integrity Rule",
+        "body": "Do not apply English tracking or line-height to Arabic; preserve text direction and isolate protected syntax when it shares a line with Arabic.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Proof Rule",
+        "body": "Interactive demonstrations remain steady sheets; hover changes tone and border rather than lifting or tilting the surface.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the public system scoped to its canonical runtime owner.",
+      "Do preserve readable English and Arabic, visible focus and narrow-screen reflow.",
+      "Do use real editable dialogue and protected-token states as product proof.",
+      "Do keep multilingual decoration deterministic, subdued and noninteractive.",
+      "Do preserve factual copy, existing tips, secret interactions and Radio behavior."
+    ],
+    "donts": [
+      "Don't add game artwork, photos, gradients or glass to this chosen public landing world.",
+      "Don't replace distinct section compositions with repeated card shells.",
+      "Don't introduce reveal timing, looping animation or scroll-driven movement into the public reading flow.",
+      "Don't propagate these tokens into the Web App, Admin, Radio or other routes.",
+      "Don't treat local preview verification as human visual acceptance or publication."
+    ]
+  }
+}
