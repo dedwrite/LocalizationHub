@@ -65,7 +65,7 @@ for (const locale of ['en', 'ar']) {
     })
   })
 
-  test(`picture-free landing is readable and interactive in ${locale}`, async ({ page }) => {
+  test(`the landing is readable and interactive in ${locale}`, async ({ page }) => {
     const errors: string[] = []
     page.on('pageerror', error => errors.push(error.message))
     await page.addInitScript(locale => localStorage.setItem('localizationhub.ui-locale.v1', locale), locale)
@@ -78,7 +78,12 @@ for (const locale of ['en', 'ar']) {
       const style = getComputedStyle(node)
       return style.getPropertyValue('user-select') || style.getPropertyValue('-webkit-user-select')
     })).toBe('none')
-    expect(await page.locator('#public-site main img').count()).toBe(0)
+    // Exactly one picture: the capture of the real workspace, described for a
+    // reader who cannot see it. Nothing illustrated is allowed beside it.
+    const pictures = page.locator('#public-site main img')
+    await expect(pictures).toHaveCount(1)
+    await expect(pictures).toHaveAttribute('src', '/editor-workspace.png')
+    expect((await pictures.getAttribute('alt'))?.trim().length).toBeGreaterThan(20)
     await expect(page.locator('.hero h1 i')).toHaveCount(0)
     await expect(page.locator('.hero a[href="/app/local"]')).toBeVisible()
     await page.locator('.live-preview textarea').fill('نص بلا رمز')

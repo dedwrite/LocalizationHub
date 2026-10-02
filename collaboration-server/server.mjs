@@ -106,6 +106,11 @@ import {
 } from './admin.mjs'
 import { formatAdminRequestError } from './admin-http-errors.mjs'
 import {
+  AccountDeletionError,
+  deleteOwnAccount,
+  revokeDeletedAccountSessions,
+} from './account-deletion.mjs'
+import {
   EMAIL_VERIFICATION_PAGE,
 } from './email-verification-page.mjs'
 
@@ -3752,6 +3757,47 @@ const httpServer =
               true,
           },
         )
+
+        return
+      }
+
+      /*
+       * Self-service account deletion.
+       *
+       * The address on the account has to be
+       * typed back, so a borrowed session cannot
+       * erase an account by accident, and the
+       * Cloud Projects the account owns are only
+       * removed when the same request asks for
+       * them.
+       */
+      if (request.method === 'DELETE' && request.url === '/api/account') {
+        const authenticated = await getAuthenticatedRequest(request)
+
+        if (!authenticated) {
+          sendJson(response, 401, { error: 'unauthorized', message: 'Authentication is required.' })
+          return
+        }
+
+        const body = await readJsonBody(request)
+        const confirmation = typeof body?.confirmEmail === 'string' ? body.confirmEmail.trim().toLowerCase() : ''
+
+        if (!confirmation || confirmation !== authenticated.user.email.toLowerCase()) {
+          sendJson(response, 400, { error: 'account-confirmation-required', message: 'Type the account email address to confirm.' })
+          return
+        }
+
+        try {
+          const result = await deleteOwnAccount(authenticated.user.id, { deleteOwnedProjects: body?.deleteOwnedProjects === true })
+          for (const projectId of result.projectIds) revokeDeletedProjectSessions(sessions, projectId, clearClientSession, send)
+          revokeDeletedAccountSessions(sessions, authenticated.user.id, (socket) => getClientState(socket)?.userId, clearClientSession, sendError)
+          sendJson(response, 200, { deleted: true, projects: result.projects })
+        } catch (error) {
+          if (error instanceof AccountDeletionError && error.code === 'user-has-projects') { sendJson(response, 409, { error: 'user-has-projects', message: 'Delete the Cloud Projects this account owns first, or include them in this request.' }); return }
+          if (error instanceof AccountDeletionError && error.code === 'user-not-found') { sendJson(response, 404, { error: 'user-not-found' }); return }
+          console.error('Account deletion failed.')
+          sendJson(response, 500, { error: 'internal-error' })
+        }
 
         return
       }

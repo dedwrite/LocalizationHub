@@ -1,0 +1,16 @@
+.account-delete-dialog { color-scheme: dark; color: #e9e6f5; background: #151820; border: 1px solid #464052; border-radius: 16px; padding: 24px; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; box-sizing: border-box; }
+.account-delete-dialog::backdrop { background: #070910c9; }
+.account-delete-dialog h2 { font-size: 20px; overflow-wrap: anywhere; }
+.account-delete-dialog p { color: #bbb5cb; line-height: 1.6; }
+.account-delete-dialog label { display: grid; gap: 8px; }
+.account-delete-dialog input:not([type="checkbox"]) { min-width: 0; padding: 12px; border: 1px solid #575066; background: #0e1118; color: #eeeaf5; border-radius: 8px; font: inherit; }
+.account-delete-include { grid-template-columns: auto 1fr; align-items: center; gap: 10px; margin-top: 16px; color: #e2dcef; }
+.account-delete-include input { width: 20px; height: 20px; margin: 0; accent-color: #b891ff; }
+.account-delete-count { margin-block: 8px 0; }
+.account-delete-email { overflow-wrap: anywhere; margin-block-end: 0; }
+.account-delete-email bdi { color: #eeeaf5; }
+.account-delete-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.account-delete-dialog button { min-height: 40px; border: 1px solid #534a65; padding: 8px 14px; background: #252032; color: #eeeaf5; border-radius: 8px; font: inherit; cursor: pointer; }
+.account-delete-danger { color: #ffd7dd !important; border-color: #99485b !important; background: #522737 !important; }
+.account-delete-dialog button:disabled { opacity: .45; cursor: not-allowed; }
+.account-delete-dialog :focus-visible { outline: 2px solid #b891ff; outline-offset: 3px; }

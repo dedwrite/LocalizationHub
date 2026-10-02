@@ -112,6 +112,15 @@ export async function deleteProject(id: string): Promise<void> {
   const result = await api(`/api/projects/${encodeURIComponent(id)}`, { method: 'DELETE' })
   if (result?.deleted !== true || result?.projectId !== id) throw new Error('Could not confirm project deletion. Refresh before trying again.')
 }
+/* Self-service account deletion. The server removes the account, its sessions,
+ * and the Cloud Projects it owns; the local auth copy goes with it, so the next
+ * request cannot act as the deleted account. */
+export async function deleteAccount(email: string, deleteOwnedProjects: boolean) {
+  const result = await api('/api/account', { method: 'DELETE', body: JSON.stringify({ confirmEmail: email, deleteOwnedProjects }) })
+  if (result?.deleted !== true) throw new Error('Could not confirm account deletion. Refresh before trying again.')
+  clearAuth()
+  return { deleted: true as const, projects: Number(result?.projects ?? 0) }
+}
 export async function sendVerification() { return api('/api/auth/verification/send', { method: 'POST' }) }
 export function projectStats(project: any) { return calculateProjectStatistics(project.entries, project.workflow?.entries ?? {}) }
 export function tokenWarnings(source: string, translation: string) { return validateProtectedTokens(source, translation).errors }

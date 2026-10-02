@@ -67,6 +67,11 @@
     max-height: 85dvh;
     overflow-y: auto;
   }
+  .account-danger-zone { flex-direction: column; align-items: stretch; gap: 16px; margin-top: 28px; }
+  .account-danger-open { width: 100%; }
+  .account-delete-dialog { padding: 20px; }
+  .account-delete-dialog input:not([type="checkbox"]) { font-size: 16px; }
+  .account-delete-actions button { flex: 1; min-height: 48px; }
   .dialog input, .dialog select, .dialog textarea { font-size: 16px; }
   .dialog-actions button { min-height: 44px; }
 }

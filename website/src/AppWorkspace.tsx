@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import ProjectDeleteDialog from '../../frontend/src/ProjectDeleteDialog'
-import { deleteProject } from './appApi'
+import AccountDeleteDialog from '../../frontend/src/AccountDeleteDialog'
+import { deleteAccount, deleteProject } from './appApi'
 import { parseLocalizationFile } from '@localizationhub/core'
 import { createTokenProfileConfig } from '@localizationhub/core'
 import { createProject, getStoredUser, listProjects, login, logout, register, restoreSession, sendVerification, type AuthUser, type ProjectSummary } from './appApi'
@@ -40,7 +41,7 @@ export default function AppWorkspace() {
   if (view === 'local') return <LocalWorkspace />
   if (!user) return <main className="workspace-page"><ExperienceSkeleton label="delight.loading.restore" /></main>
   if (view === 'editor') return <Workspace user={user} onHome={() => navigate('/app/projects')} />
-  return <ProjectsView user={user} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} />
+  return <ProjectsView user={user} onLogout={() => { logout().finally(() => { setUser(null); navigate('/app/login') }) }} onAccountDeleted={() => { setUser(null); navigate('/') }} />
 }
 
 function AuthView({ mode, onAuth }: { mode: 'login' | 'register'; onAuth: (user: AuthUser) => void }) {
@@ -61,7 +62,7 @@ function AppHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void })
   </header>
 }
 
-function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
+function ProjectsView({ user, onLogout, onAccountDeleted }: { user: AuthUser; onLogout: () => void; onAccountDeleted: () => void }) {
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -152,10 +153,28 @@ function ProjectsView({ user, onLogout }: { user: AuthUser; onLogout: () => void
       </div>
       {loading ? <ExperienceSkeleton label="delight.loading.projects" variant="compact" /> : filtered.length === 0 ? <div className="empty-state intentional-empty"><EmptyConstellation kind={projects.length === 0 ? 'project' : 'search'} /><strong>{projects.length === 0 ? 'No Cloud Projects yet.' : 'No projects match your search.'}</strong><span>{projects.length === 0 ? 'Create a project or import an existing localization file when you are ready.' : 'Try a different project name or source file.'}</span><button className="primary-button" onClick={projects.length === 0 ? () => setNewOpen(true) : () => setSearch('')}>{projects.length === 0 ? '+ Create your first project' : 'Clear search'}</button></div> : <div className={`project-layout ${filtered.length === 1 ? 'single-project-layout' : ''}`}><div className="project-grid">{filtered.map((project) => <ProjectCard key={project.id} project={project} onOpen={() => navigate(`/app/projects/${project.id}`)} onDeleted={() => { setProjects((current) => current.filter((item) => item.id !== project.id)); setNotice('Cloud Project deleted permanently.') }} />)}</div>{filtered.length === 1 && <ProjectSupportPanel project={filtered[0]} onOpen={() => navigate(`/app/projects/${filtered[0].id}`)} onNew={() => setNewOpen(true)} />}</div>}
       <TipCard context="projects" />
+      <AccountDangerZone user={user} ownedProjects={projects.filter((project) => project.role === 'owner').length} onDeleted={onAccountDeleted} />
     </section>
     {newOpen && <NewProjectModal onClose={() => setNewOpen(false)} onCreate={handleCreate} onImport={handleImport} />}
     <MobileNav />
   </main>
+}
+
+/* The account itself has one home: a quiet band under the projects. Deleting it
+ * is permanent and irreversible, so the confirmation asks for the address and
+ * for every Cloud Project the account owns. */
+function AccountDangerZone({ user, ownedProjects, onDeleted }: { user: AuthUser; ownedProjects: number; onDeleted: () => void }) {
+  const { t } = useI18n()
+  const [deleting, setDeleting] = useState(false)
+  return <section className="account-danger-zone" aria-labelledby="account-danger-title">
+    <div className="account-danger-copy">
+      <h2 id="account-danger-title">{t('accountDelete.zoneTitle')}</h2>
+      <p>{t('accountDelete.zoneNote')}</p>
+      <p className="account-danger-identity"><bdi>{user.email}</bdi></p>
+    </div>
+    <div className="account-danger-actions"><button type="button" className="account-danger-open" onClick={() => setDeleting(true)}>{t('accountDelete.open')}</button></div>
+    {deleting && <AccountDeleteDialog email={user.email} ownedProjects={ownedProjects} onDelete={async (deleteOwnedProjects) => { await deleteAccount(user.email, deleteOwnedProjects) }} onDeleted={onDeleted} onCancel={() => setDeleting(false)} />}
+  </section>
 }
 
 function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; onOpen: () => void; onDeleted: () => void }) {

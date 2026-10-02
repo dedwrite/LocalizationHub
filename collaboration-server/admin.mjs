@@ -9,6 +9,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto'
 import { getDatabasePool } from './database.mjs'
+import { removeUserRecords } from './account-deletion.mjs'
 
 const ADMIN_SESSION_TTL_MS = 60 * 60 * 1000
 const ADMIN_IDLE_TTL_MS = 20 * 60 * 1000
@@ -125,7 +126,25 @@ export async function unverifyUserEmail(userId, adminUserId) { if (!userId) thro
 export async function revokeUserSession(sessionTokenHash, adminUserId) { await getDatabasePool().query('DELETE FROM sessions WHERE token_hash = $1', [sessionTokenHash]); await writeAdminAudit({ adminUserId, action: 'admin.session.revoke', targetType: 'session', targetId: sessionTokenHash, success: true }) }
 export async function revokeAllUserSessions(userId, adminUserId) { const result = await getDatabasePool().query('SELECT COUNT(*)::int AS count FROM sessions WHERE user_id = $1', [userId]); await getDatabasePool().query('DELETE FROM sessions WHERE user_id = $1', [userId]); await writeAdminAudit({ adminUserId, action: 'admin.user.sessions_revoke_all', targetType: 'user', targetId: userId, success: true, metadata: { sessions_revoked: result.rows[0].count } }) }
 export async function removeUserProjectMembership(projectId, userId, adminUserId) { const result = await getDatabasePool().query('SELECT user_id FROM project_memberships WHERE project_id = $1 AND user_id = $2', [projectId, userId]); if (!result.rowCount) throw new AdminSecurityError('member-not-found', 'User is not a member of this project.'); await getDatabasePool().query('DELETE FROM project_assignments WHERE project_id = $1 AND user_id = $2', [projectId, userId]); await getDatabasePool().query('DELETE FROM project_memberships WHERE project_id = $1 AND user_id = $2', [projectId, userId]); await writeAdminAudit({ adminUserId, action: 'admin.project.member_remove', targetType: 'project_member', targetId: `${projectId}:${userId}`, success: true }) }
-export async function deleteUser(userId, deleteOwnedProjects, adminUserId) { const database = getDatabasePool(); const client = await database.connect(); try { await client.query('BEGIN'); const userResult = await client.query('SELECT id, email FROM users WHERE id = $1', [userId]); if (!userResult.rowCount) throw new AdminSecurityError('user-not-found', 'User not found.'); const ownedProjects = await client.query('SELECT id FROM projects WHERE owner_user_id = $1', [userId]); if (ownedProjects.rowCount && !deleteOwnedProjects) throw new AdminSecurityError('user-has-projects', 'User owns projects. Set deleteOwnedProjects=true.'); if (deleteOwnedProjects) { for (const proj of ownedProjects.rows) await client.query('DELETE FROM project_assignments WHERE project_id = $1', [proj.id]); for (const proj of ownedProjects.rows) await client.query('DELETE FROM project_comments WHERE project_id = $1', [proj.id]); for (const proj of ownedProjects.rows) await client.query('DELETE FROM project_activity WHERE project_id = $1', [proj.id]); for (const proj of ownedProjects.rows) await client.query('DELETE FROM project_memberships WHERE project_id = $1', [proj.id]); await client.query('DELETE FROM projects WHERE owner_user_id = $1', [userId]); } else { const memberships = await client.query('SELECT project_id FROM project_memberships WHERE user_id = $1', [userId]); for (const mem of memberships.rows) await client.query('DELETE FROM project_assignments WHERE project_id = $1 AND user_id = $2', [mem.project_id, userId]); await client.query('DELETE FROM project_memberships WHERE user_id = $1', [userId]); } await client.query('DELETE FROM admin_totp_enrollments WHERE user_id = $1', [userId]); await client.query('DELETE FROM admin_email_challenges WHERE user_id = $1', [userId]); await client.query('DELETE FROM admin_sessions WHERE user_id = $1', [userId]); await client.query('DELETE FROM sessions WHERE user_id = $1', [userId]); await client.query('DELETE FROM email_verification_tokens WHERE user_id = $1', [userId]); await client.query('DELETE FROM users WHERE id = $1', [userId]); await client.query('COMMIT'); await writeAdminAudit({ adminUserId, action: 'admin.user.delete', targetType: 'user', targetId: userId, success: true, metadata: { deleted_projects: deleteOwnedProjects } }) } catch (error) { await client.query('ROLLBACK'); throw error } finally { client.release() } }
+/* Admin-initiated account deletion. The records removed for one account have a
+ * single owner in account-deletion.mjs, shared with the self-service path, so
+ * the two cannot drift apart; only the audit action differs. */
+export async function deleteUser(userId, deleteOwnedProjects, adminUserId) {
+  const database = getDatabasePool()
+  const client = await database.connect()
+  try {
+    await client.query('BEGIN')
+    const result = await removeUserRecords(client, userId, deleteOwnedProjects, (code, message) => new AdminSecurityError(code, message))
+    await client.query('COMMIT')
+    await writeAdminAudit({ adminUserId, action: 'admin.user.delete', targetType: 'user', targetId: userId, success: true, metadata: { deleted_projects: deleteOwnedProjects } })
+    return result
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
 
 // PROJECT MANAGEMENT
 export async function listProjects({ search = '', limit = 20, offset = 0 }) { const query = search ? `%${search.toLowerCase()}%` : ''; const result = await getDatabasePool().query(`SELECT p.id, p.name, u.username AS owner_username, p.created_at, p.updated_at, (SELECT COUNT(*)::int FROM project_memberships WHERE project_id = p.id) AS member_count, jsonb_array_length(COALESCE(p.project->'entries', '[]'::jsonb))::int AS entry_count, COALESCE(pg_column_size(p.project), 0)::bigint AS logical_size FROM projects p INNER JOIN users u ON u.id = p.owner_user_id WHERE $1::text = '' OR p.name ILIKE $1 OR u.username ILIKE $1 ORDER BY p.created_at DESC LIMIT $2 OFFSET $3`, [query, limit, offset]); const countResult = await getDatabasePool().query(`SELECT COUNT(*)::int AS total FROM projects p INNER JOIN users u ON u.id = p.owner_user_id WHERE $1::text = '' OR p.name ILIKE $1 OR u.username ILIKE $1`, [query]); return { projects: result.rows, total: countResult.rows[0].total } }
