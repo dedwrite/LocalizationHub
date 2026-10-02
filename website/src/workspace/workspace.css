@@ -224,6 +224,12 @@ body:has(.workspace-shell) .lh-radio[data-surface='app'] .lh-radio-capsule {
   max-width: none;
 }
 body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
+/* The workspace owns the bottom band (transport + navigation). The floating
+   language control parks just above that band, so neither control can cover the
+   other's buttons. */
+body:has(.workspace-shell) .lh-language-switcher.is-dock {
+  inset-block-end: calc(var(--workspace-dock-height) + 12px + env(safe-area-inset-bottom));
+}
 @media (min-width: 768px) and (max-width: 1100px) {
   .workspace-shell { --workspace-dock-height: 120px; }
   .workspace-page.workspace-shell .editor-footer.local-entry-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -284,7 +290,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
   border-radius: 10px;
   background: #1c2230;
   color: #aeb6c2;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
 .count-done { color: #55c987; }
@@ -406,7 +412,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
 .entry-preview {
@@ -504,7 +510,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 
 .section-label {
   color: #9686ff;
-  font: 700 11px/1.2 'DM Mono', monospace;
+  font: 700 11px/1.2 var(--font-mono), monospace;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -537,7 +543,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
   color: #c9b8ff;
   border-radius: 3px;
   padding: 0 3px;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
 .source-context { margin-top: 10px; font-size: 12px; color: #8b93a7; }
@@ -723,7 +729,7 @@ body:has(.workspace-shell) .lh-radio-capsule-main { flex: 1; overflow: hidden; }
 .chip.active { background: #2b2f66; color: #fff; border-color: #4f3db5; }
 .chip:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.memory-score { font-size: 11px; color: #55c987; font-family: 'DM Mono', monospace; }
+.memory-score { font-size: 11px; color: #55c987; font-family: var(--font-mono), monospace; }
 
 .glossary-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .glossary-term { font-size: 11px; padding: 4px 8px; background: #1c2230; border-radius: 4px; color: #aeb6c2; }

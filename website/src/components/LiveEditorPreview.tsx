@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { validateProtectedTokens } from '@localizationhub/core/tokens'
 import { useI18n } from '@localizationhub/i18n'
+import Icon from './Icon'
 
 const samples = [
   {
@@ -153,7 +154,7 @@ export default function LiveEditorPreview() {
                   )
                   return (
                     <li key={`${token.raw}-${index}`} data-missing={missing}>
-                      <span aria-hidden="true">{missing ? '!' : '✓'}</span>
+                      <Icon name={missing ? 'alert' : 'check'} size={14} />
                       <code dir="ltr" translate="no">{token.raw}</code>
                       <span>
                         {t(
@@ -175,9 +176,10 @@ export default function LiveEditorPreview() {
             aria-live="polite"
             aria-atomic="true"
           >
-            <span aria-hidden="true">
-              {state === 'valid' ? '✓' : state === 'empty' ? '○' : '!'}
-            </span>
+            <Icon
+              name={state === 'valid' ? 'check' : state === 'empty' ? 'empty' : 'alert'}
+              size={16}
+            />
             {t(statusKey[state])}
           </div>
         </div>

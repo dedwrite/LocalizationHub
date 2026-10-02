@@ -1,6 +1,7 @@
 import { useI18n } from "@localizationhub/i18n";
 import { FridayClock } from "../delight/LittleSecrets";
 import { openGameSecret } from "../delight/gameSecrets";
+import Icon from "./Icon";
 
 export default function RtlShowcase() {
   const { t } = useI18n();
@@ -24,7 +25,7 @@ export default function RtlShowcase() {
           aria-label={t("delight.gameSecret.open")}
           title={t("delight.gameSecret.hint")}
         >
-          <span aria-hidden="true">⌁</span>
+          <Icon name="sparkle" size={18} />
         </button>
       </div>
       <div className="rtl-showcase-context">

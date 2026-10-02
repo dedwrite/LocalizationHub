@@ -5,6 +5,13 @@ import { parseLocalizationFile } from '../../packages/core/src/parsers'
 import AxeBuilder from '@axe-core/playwright'
 
 const raw = readFileSync('tests/fixtures/caloy-mark.json', 'utf8')
+// The workspace fades its panels in when it opens. Colour-contrast audits must
+// read the resting state, not one frame of that 220ms settle (continuous
+// decorations such as the Radio disc are excluded: they never finish).
+const animationsSettled = (page: Page) => page.waitForFunction(() => document.getAnimations().every((animation) => {
+  const timing = animation.effect?.getComputedTiming()
+  return animation.playState !== 'running' || timing?.iterations === Infinity
+}))
 async function openLocal(page: Page, text = raw, name = 'caloy-mark.json') {
   await page.goto('/app/local')
   await page.locator('input[type="file"]').setInputFiles({ name, mimeType: 'text/plain', buffer: Buffer.from(text) })
@@ -143,6 +150,7 @@ test('Local workspace responsive RTL, token errors, keyboard focus and accessibi
     await expect(page.locator('.source-token-list code')).toHaveCount(2)
     await expect(page.locator('.source-section .section-label')).toHaveText(locale === 'ar' ? 'المرجع المصدر' : 'REFERENCE Source')
     await expect(page.locator('.translation-section .section-label')).toHaveText(locale === 'ar' ? 'نسخة العمل الترجمة' : 'WORKING COPY Translation')
+    await animationsSettled(page)
     const result = await new AxeBuilder({ page }).analyze()
     expect(result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([])
     await page.screenshot({ path: testInfo.outputPath(`local-${width}-${locale}.png`), fullPage: true })

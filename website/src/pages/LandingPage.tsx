@@ -8,9 +8,9 @@ import AmbientGreeting from "../delight/AmbientGreeting";
 import GameMemeSecret from "../delight/GameMemeSecret";
 import RtlShowcase from "../components/RtlShowcase";
 import LiveEditorPreview from "../components/LiveEditorPreview";
+import Icon from "../components/Icon";
 import FormatGuide from "../components/FormatGuide";
 import LanguageField from "../components/LanguageField";
-import "../landing-experience.css";
 
 function Feature({
   number,
@@ -62,24 +62,12 @@ export default function Landing() {
               <div className="hero-actions">
                 <InternalLink className="button button-primary" href="/app/local">
                   {t("website.hero.openLocal")}
+                  <Icon name="arrow-up-right" />
                 </InternalLink>
                 <InternalLink className="button button-quiet" href="/download">
                   {t("website.hero.downloadWindows")}
-                  <span>↗</span>
+                  <Icon name="arrow-down" />
                 </InternalLink>
-              </div>
-              <div className="hero-surface-note"><span>{t('landing.hero.browser')}</span><span>{t('landing.hero.desktop')}</span></div>
-              <InternalLink className="sample-entry-link" href="/app/local?sample=northern-gate"><span>{t('landing.sample.explore')} <span aria-hidden="true">↗</span></span><small>{t('landing.sample.noUpload')}</small></InternalLink>
-              <div
-                className="hero-signals"
-                aria-label={t("website.hero.characteristics")}
-              >
-                <span>
-                  <i />
-                  {t("website.hero.localFirst")}
-                </span>
-                <span>{t("website.hero.protectedTokens")}</span>
-                <span>{t("website.signal.optionalCloud")}</span>
               </div>
             </div>
           </div>
@@ -87,6 +75,16 @@ export default function Landing() {
             <LiveEditorPreview />
           </div>
         </section>
+        {/* Scope facts and the sample entry used to crowd the headline. They are
+            one measured rail under it, where they read as a spec rather than a
+            second claim. */}
+        <div className="signal-strip" aria-label={t("website.hero.characteristics")}>
+          <span>{t("landing.hero.browser")}</span>
+          <span>{t("landing.hero.desktop")}</span>
+          <span>{t("website.hero.localFirst")}</span>
+          <span>{t("website.hero.protectedTokens")}</span>
+          <span>{t("website.signal.optionalCloud")}</span>
+        </div>
         <section className="section extraction-section" id="engines">
           <div className="section-intro">
             <h2>
@@ -109,7 +107,7 @@ export default function Landing() {
             <details className="extraction-details">
               <summary>
                 {t("landing.extraction.details")}
-                <span aria-hidden="true">+</span>
+                <Icon name="plus" size={18} />
               </summary>
               <div
                 className="workflow-line extraction-flow"
@@ -230,7 +228,7 @@ export default function Landing() {
                 <p>{t("website.privacy.body")}</p>
               </div>
               <InternalLink href="/privacy">
-                {t("landing.privacy.details")} <span aria-hidden="true">↗</span>
+                {t("landing.privacy.details")} <Icon name="arrow-up-right" size={14} />
               </InternalLink>
             </aside>
           </section>
@@ -275,7 +273,7 @@ export default function Landing() {
                 <details key={q}>
                   <summary>
                     {q}
-                    <span>+</span>
+                    <Icon name="plus" />
                   </summary>
                   <p>{a}</p>
                 </details>
@@ -289,7 +287,7 @@ export default function Landing() {
             <p>{t("landing.closing.body")}</p>
           </div>
           <InternalLink className="button button-primary" href="/app/local">
-            {t("website.hero.openLocal")} <span aria-hidden="true">↗</span>
+            {t("website.hero.openLocal")} <Icon name="arrow-up-right" />
           </InternalLink>
         </section>
       </main>

@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react'
 
 // A composed scatter, not runtime randomness: SSR and hydration share the same
 // geometry. The decoration has no pointer, selection or accessibility surface.
+// `size` is a multiple of the landing's fs-5 step, so the field never declares a
+// font size outside the public type scale.
 export const languageGlyphs = [
   { character: 'ع', x: 3, y: 12, size: 82, tilt: -12, tone: 'violet' },
   { character: 'あ', x: 92, y: 5, size: 58, tilt: 10, tone: 'gray' },
@@ -27,7 +29,7 @@ export default function LanguageField() {
               style={{
                 '--glyph-x': `${cluster % 2 ? 100 - glyph.x : glyph.x}%`,
                 '--glyph-y': `${glyph.y}%`,
-                '--glyph-size': `${glyph.size}px`,
+                '--glyph-scale': `${Number((glyph.size / 24).toFixed(4))}`,
                 '--glyph-tilt': `${glyph.tilt}deg`,
               } as CSSProperties}
             >

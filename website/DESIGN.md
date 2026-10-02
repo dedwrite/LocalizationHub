@@ -11,55 +11,67 @@ colors:
   muted: "#aca3bb"
   accent: "#b9a0ed"
   accent-strong: "#d7c3f7"
-  button-ink: "#1b1428"
-  button-hover: "#cbb1f4"
+  accent-ink: "#1b1428"
   selected: "#33283f"
-  field: "#15111b"
-  field-border: "#665176"
+  glyph: "#4a3b64"
+  success: "#87c5a0"
+  danger: "#e8897f"
+# One family and one mono family, both self-hosted under /fonts. No public
+# surface may request a third-party font host or fall back to a different
+# typeface. The eight steps below are the only font sizes the landing uses.
 typography:
+  scale:
+    fs-1: "12px"
+    fs-2: "13px"
+    fs-3: "16px"
+    fs-4: "20px"
+    fs-5: "24px"
+    fs-6: "32px"
+    fs-7: "clamp(32px, 3.6vw, 52px)"
+    fs-8: "clamp(48px, 5.3vw, 76px)"
   display:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "clamp(48px, 5.3vw, 76px)"
+    fontSize: "{typography.scale.fs-8}"
     fontWeight: 700
     lineHeight: 1.08
     letterSpacing: "-0.04em"
   display-arabic:
     fontFamily: "'LH Public Arabic', 'LH Public', sans-serif"
-    fontSize: "clamp(36px, 3.6vw, 52px)"
+    fontSize: "{typography.scale.fs-7}"
     fontWeight: 700
     lineHeight: 1.55
     letterSpacing: "0"
   headline:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "clamp(32px, 3.6vw, 52px)"
+    fontSize: "{typography.scale.fs-7}"
     lineHeight: 1.14
     letterSpacing: "-0.035em"
   title:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "24px"
+    fontSize: "{typography.scale.fs-5}"
     lineHeight: 1.14
     letterSpacing: "-0.035em"
   body:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "17px"
-    lineHeight: 1.85
+    fontSize: "{typography.scale.fs-3}"
+    lineHeight: 1.8
   label:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "13px"
+    fontSize: "{typography.scale.fs-1}"
     fontWeight: 500
     lineHeight: 1.5
   button:
     fontFamily: "'LH Public', 'LH Public Arabic', sans-serif"
-    fontSize: "13px"
+    fontSize: "{typography.scale.fs-2}"
     fontWeight: 600
   dialogue:
     fontFamily: "'LH Public', sans-serif"
-    fontSize: "clamp(22px, 2vw, 28px)"
+    fontSize: "{typography.scale.fs-5}"
     fontWeight: 500
     lineHeight: 1.6
   translation:
     fontFamily: "'LH Public Arabic', 'LH Public', sans-serif"
-    fontSize: "clamp(22px, 2vw, 28px)"
+    fontSize: "{typography.scale.fs-5}"
     fontWeight: 500
     lineHeight: 1.9
 rounded:
@@ -80,12 +92,12 @@ spacing:
 components:
   button-primary:
     backgroundColor: "{colors.accent}"
-    textColor: "{colors.button-ink}"
+    textColor: "{colors.accent-ink}"
     typography: "{typography.button}"
     rounded: "{rounded.8}"
     padding: "12px 18px"
   button-primary-hover:
-    backgroundColor: "{colors.button-hover}"
+    backgroundColor: "{colors.accent-strong}"
   button-quiet:
     textColor: "{colors.text}"
     typography: "{typography.button}"
@@ -109,14 +121,15 @@ components:
     backgroundColor: "{colors.selected}"
     textColor: "{colors.accent-strong}"
   translation-field:
-    backgroundColor: "{colors.field}"
+    backgroundColor: "{colors.bg}"
+    borderColor: "{colors.line}"
     textColor: "{colors.text}"
     typography: "{typography.translation}"
     rounded: "{rounded.8}"
     padding: "12px 14px"
   format-tag:
     textColor: "{colors.accent-strong}"
-    size: "13px"
+    size: "{typography.scale.fs-2}"
   proof-sheet:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.12}"
@@ -149,34 +162,46 @@ Violet accents sit within an ink and gray family; descriptive roles below refer 
 
 ### Primary
 
-- **Soft Violet (`accent`):** primary actions, the headline's final line and the live proof marker.
+- **Soft Violet (`accent`):** primary actions, the headline's final line, the live proof marker and every decorative letter in the language field.
 - **Pale Violet (`accent-strong`):** links, selected labels, syntax emphasis and keyboard focus.
-- **Violet Hover (`button-hover`):** the primary action's hover fill.
-- **Deep Violet Ink (`button-ink`):** readable text on the primary action.
+- **Deep Violet Ink (`accent-ink`):** readable text on the accent fill, and the text selection colour.
 
 ### Neutral
 
-- **Matte Ink (`bg`):** page and opaque sticky navigation background.
-- **Proof Surface (`surface`):** the editor sheet, format guide and contextual example.
+- **Matte Ink (`bg`):** page, the editable translation field and the opaque navigation background.
+- **Proof Surface (`surface`):** the editor sheet, format guide, surface cards, tip card and contextual example.
 - **Raised Tone (`surface-2`):** hover feedback without spatial elevation.
-- **Quiet Separator (`line`):** borders, dividers and action outlines.
+- **Quiet Separator (`line`):** borders, dividers, the editable field's stroke and the scrollbar thumb.
 - **Reading White (`text`):** headings, dialogue and primary copy.
 - **Soft Gray (`soft`):** supporting copy and default navigation labels.
 - **Muted Gray (`muted`):** helper text, source labels and annotations.
-- **Selected Violet Ink (`selected`):** selected sample and format controls.
-- **Field Ink (`field`) / Field Stroke (`field-border`):** the editable Arabic translation surface.
+- **Selected Violet Ink (`selected`):** selected sample, format and entry controls, and the inline mark behind protected tokens.
+- **Language Field Ink (`glyph`):** the decorative multilingual background, separated from reading content by opacity alone.
 
-Validation success, warning and error colors remain functional feedback in the existing demonstration; they are not additional brand accents. Their exact state styles are captured in the sidecar examples.
+### Feedback
+
+- **Verified Green (`success`):** a passing protected-token check and the live status dot. It is never decoration.
+- **Attention Red (`danger`):** a missing protected token. It always appears with text and an icon, not colour alone.
+
+**The Colour Lock.** These fourteen roles are declared once, at the top of `src/public-site.css`, and nothing below that block uses a raw colour value. A new colour is not a style decision to make in passing; it is a new role that has to earn a name, be added to this list and be justified here first. The public landing currently paints fourteen distinct text colours, which is the count of the list and not a coincidence.
+
+**The Type, Shape and Family Locks.** `tests/e2e/public-tokens.spec.ts` reads every rule that addresses `#public-site` and then every node the landing renders. No rule may declare a raw colour, a px font size, a px corner, a family outside `--font-ui` / `--font-arabic` / `--font-mono` (the decorative field's fallback stack is named once as `--font-glyph`) or a box shadow; no visible text may render below 12px; and every painted text colour, background and corner must be a declared role or step.
+
+**The One Owner Lock.** The same suite reads every stylesheet under `website/src` and fails when a file other than `src/public-site.css` mentions a landing selector — its scope `#public-site`, its root or one of its section classes — or when a file other than `src/styles.css` mentions an inner-page selector of the download and legal routes (`download-*`, `panel-kicker`, `document-page`, `not-found`). Two files writing the same rule is how a contradicting second set of styles grew here once already, so a shared layer that needs a rule moves it into the owner instead of overriding it — the fluid spacing and corner tokens those routes use are declared in `styles.css` for the same reason.
 
 **The Reading First Rule.** Decorative letters stay subdued behind readable content; violet identifies action and meaning rather than filling every surface.
 
 ## Typography
 
-Schibsted Grotesk is self-hosted under the Latin alias `LH Public`; Noto Sans Arabic is self-hosted under `LH Public Arabic`. The active language determines stack order. Both use a sans-serif fallback, with additional script fallbacks only for decorative characters.
+Schibsted Grotesk is self-hosted under the Latin alias `LH Public`; Noto Sans Arabic is self-hosted under `LH Public Arabic`. The active language determines stack order. Both use a sans-serif fallback. The decorative language field is the only rule allowed a longer fallback stack, kept beside the palette as `--font-glyph`, and its glyph sizes are multiples of the `fs-5` step rather than a new size per character.
 
 Display is confident and tightly set in English. Arabic uses its own display role, generous leading and neutral tracking; headings elsewhere also relax tracking and leading when Arabic is active. Dialogue and translation roles remain large enough to read as actual text rather than miniature software.
 
-Use display for the hero, headline for section introductions, title for guide headings, body for the hero explanation, label for sample controls, and the dialogue/translation roles for editable proof. Other observed small annotation sizes are contextual component styles, not a new universal type scale. Phone-specific clamps and reading sizes remain in the runtime stylesheet.
+Use display for the hero, headline for section introductions, title for guide headings, body for the hero explanation, label for sample controls, and the dialogue/translation roles for editable proof.
+
+The eight steps in `{typography.scale}` are the only font sizes the landing declares, and every one of them is reachable through a `--fs-*` custom property. Nothing on the public landing renders below 12px: small type is a hierarchy decision made with colour, spacing and weight, not with a smaller number. Phone clamps reuse the same steps rather than introducing new ones, and the mono family is reserved for machine-readable values such as keys, formats, file names and step markers.
+
+One family and one mono family are shipped, both self-hosted under `/fonts`. No public page requests Google Fonts or any other font host, so the claim that a file never leaves the machine is not contradicted by the page that makes it.
 
 **The Script Integrity Rule.** Do not apply English tracking or line-height to Arabic; preserve text direction and isolate protected syntax when it shares a line with Arabic.
 
@@ -218,7 +243,7 @@ Sample and format controls are buttons with real pressed state. Selected Violet 
 
 ### Proof sheet and translation field
 
-A single solid bordered sheet holds sample controls, source dialogue, an editable Arabic field, protected-token guidance and live status. The frontmatter captures its shape and field roles; the sidecar captures borders, focus and responsive composition. The field retains automatic text direction, an explicit label, helper/status association and the existing reset action. Reset, sample selectors, language select, mobile menu and game-rune controls have a minimum 44px touch height. Primary explanatory prose is at least 16px on phones; compact metadata and helper labels remain smaller. The native language select shares the visible focus ring. Both above-the-fold font scripts are preloaded on the public landing only.
+A single solid bordered sheet holds sample controls, source dialogue, an editable Arabic field, protected-token guidance and live status. The frontmatter captures its shape and field roles; the sidecar captures borders, focus and responsive composition. The field retains automatic text direction, an explicit label, helper/status association and the existing reset action. Reset, sample selectors, language select, mobile menu and game-rune controls have a minimum 44px touch height. Primary explanatory prose is at least 16px on phones, and no public text renders below 12px. The native language select shares the visible focus ring. Both above-the-fold font scripts are preloaded on the public landing only.
 
 Validation distinguishes empty, valid, warning and error. Missing protected tokens receive their own conspicuous guide state, with text and symbol feedback as well as color. Preserve the actual validation behavior and source/translation content.
 
@@ -234,7 +259,9 @@ Static, composed multilingual characters decorate the background. The implementa
 
 ### Do:
 
-- Do keep the public system scoped to its canonical runtime owner.
+- Do keep the public system scoped to its canonical runtime owner, and keep shared layers free of landing selectors so that ownership stays checkable.
+- Do use the eight type steps, the fourteen colour roles and the three corner steps, and nothing else.
+- Do check a new rule at 360px and with `prefers-reduced-motion: reduce` before calling it done.
 - Do preserve readable English and Arabic, visible focus and narrow-screen reflow.
 - Do use real editable dialogue and protected-token states as product proof.
 - Do keep multilingual decoration deterministic, subdued and noninteractive.
@@ -242,6 +269,10 @@ Static, composed multilingual characters decorate the background. The implementa
 
 ### Don't:
 
+- Don't add a colour, a font size, a corner radius or a font family outside the declared lists; the token guard in `tests/e2e/public-tokens.spec.ts` fails the suite instead of the reader noticing later.
+- Don't add a second public skin. `#public-site` is the only owner of the landing's appearance, and `styles.css` holds only the shared shell, the fluid rhythm tokens, the download and legal routes and the reveal system.
+- Don't style a public surface from a shared layer that the application also uses, and don't reach for a new `!important` to settle a conflict between layers. The one-owner check fails on any landing selector outside `public-site.css` and on any download or legal selector outside `styles.css`.
+- Don't rely on a glyph from a font we do not ship. Icons come from `src/components/Icon.tsx`.
 - Don't add game artwork, photos, gradients or glass to this chosen public landing world.
 - Don't replace distinct section compositions with repeated card shells.
 - Don't introduce reveal timing, looping animation or scroll-driven movement into the public reading flow.

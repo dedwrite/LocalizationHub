@@ -21,12 +21,12 @@
   background: linear-gradient(155deg, rgba(29, 28, 45, .8), rgba(14, 17, 24, .92));
   box-shadow: 14px 16px 0 rgba(13, 15, 22, .65);
 }
-.support-kicker { color: #897ccc; font: 700 .56rem 'DM Mono', monospace; letter-spacing: .1em; }
+.support-kicker { color: #897ccc; font: 700 .56rem var(--font-mono), monospace; letter-spacing: .1em; }
 .project-support h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.03em; }
 .project-support > p { margin: 0; color: #9ea6b3; font-size: .8rem; line-height: 1.7; }
 .support-facts { display: grid; gap: 9px; padding-top: 4px; }
 .support-facts div { display: grid; gap: 3px; }
-.support-facts span { color: #727a87; font: .54rem 'DM Mono', monospace; letter-spacing: .07em; text-transform: uppercase; }
+.support-facts span { color: #727a87; font: .54rem var(--font-mono), monospace; letter-spacing: .07em; text-transform: uppercase; }
 .support-facts strong { color: #d4d1df; font-size: .74rem; font-weight: 600; }
 .support-actions { display: grid; gap: 7px; margin-top: auto; }
 .support-actions button { border: 1px solid #3b4350; background: #171c24; color: #dfe2ea; padding: 9px 11px; border-radius: 3px; cursor: pointer; text-align: left; font: inherit; font-size: .72rem; }
@@ -48,7 +48,7 @@
 .workspace-shell .source-section,
 .workspace-shell .translation-section { position: relative; }
 .workspace-shell .section-label { display: inline-flex; align-items: baseline; gap: 8px; color: #b3aaff; }
-.workspace-shell .section-label small { color: #b4bac8; font: 700 .5rem 'DM Mono', monospace; letter-spacing: .12em; }
+.workspace-shell .section-label small { color: #b4bac8; font: 700 .5rem var(--font-mono), monospace; letter-spacing: .12em; }
 .workspace-shell .source-text { border-color: #343a49; background: linear-gradient(145deg, #121720, #0c1016); color: #d0d5df; }
 .workspace-shell .translation-section { padding: 18px 20px 20px; border: 1px solid #3d3761; background: linear-gradient(145deg, rgba(31, 27, 52, .54), rgba(14, 16, 24, .72)); box-shadow: 0 12px 30px rgba(0, 0, 0, .14); }
 .workspace-shell .translation-section .section-label { color: #e0dcff; }

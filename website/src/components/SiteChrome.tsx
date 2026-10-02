@@ -6,6 +6,7 @@ import { InternalLink } from "../internalNavigation";
 import { openCommandCenter } from "../delight/commandEvents";
 import { FooterSecret } from "../delight/LittleSecrets";
 import ShortcutKey from './ShortcutKey';
+import Icon from './Icon';
 
 function navigation(t: ReturnType<typeof useI18n>["t"]) {
   return [
@@ -37,9 +38,9 @@ export function Header() {
           ))}
         </nav>
         <details className="mobile-site-menu">
-          <summary aria-label={t('landing.nav.menu')}>{t('landing.nav.menu')}<span aria-hidden="true">☰</span></summary>
+          <summary aria-label={t('landing.nav.menu')}>{t('landing.nav.menu')}<Icon name="menu" size={18} /></summary>
           <nav aria-label={t('website.nav.label')}>
-            {navigation(t).map(([label, href]) => <InternalLink key={label} href={href} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open') }}>{label}<span aria-hidden="true">↗</span></InternalLink>)}
+            {navigation(t).map(([label, href]) => <InternalLink key={label} href={href} onClick={(event) => { event.currentTarget.closest('details')?.removeAttribute('open') }}>{label}<Icon name="arrow-up-right" size={14} /></InternalLink>)}
           </nav>
         </details>
         <LanguageSwitcher />
@@ -69,9 +70,7 @@ export function Footer() {
         <img className="brand-icon" src="/localizationhub-logo.jpg" alt="" />
         <span>{site.name}</span>
       </InternalLink>
-      <span>
-        <bdi>v{site.version}</bdi> · {t("website.footer.release")}
-      </span>
+      <span>{t("website.footer.release")}</span>
       <div>
         <a href={site.repositoryUrl}>GitHub</a>
         <a href={site.releaseUrl}>{t("website.footer.releases")}</a>

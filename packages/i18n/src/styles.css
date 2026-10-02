@@ -1,25 +1,27 @@
+/* One control shape shared with the rest of the interface: no pill here, since
+   nothing else in the product is a pill. */
 .lh-language-switcher {
   position: static;
   display: inline-flex;
   align-items: center;
-  color: #c8c4d8;
-  font: 600 12px/1.2 Manrope, system-ui, sans-serif;
+  color: #c4becf;
+  font: 600 13px/1.2 var(--font-ui), system-ui, sans-serif;
 }
 
 .lh-language-switcher select {
-  min-block-size: 32px;
+  min-block-size: 44px;
   padding-block: 5px;
   padding-inline: 10px 28px;
-  border: 1px solid rgb(143 124 219 / 36%);
-  border-radius: 999px;
+  border: 1px solid #3b3449;
+  border-radius: 8px;
   color: inherit;
   background: #17151f;
   color-scheme: dark;
   cursor: pointer;
 }
 
-.lh-language-switcher select:hover { border-color: rgb(169 145 255 / 60%); }
-.lh-language-switcher select:focus-visible { outline: 2px solid #aa8cff; outline-offset: 2px; }
+.lh-language-switcher select:hover { border-color: #b9a0ed; }
+.lh-language-switcher select:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 2px; }
 .lh-visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Quiet bottom dock for app/desktop shells that lack a marketing footer. */

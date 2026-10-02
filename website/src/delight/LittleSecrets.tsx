@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
+import Icon from '../components/Icon'
 
 /** Deliberate, local-only discoveries. No global shortcut, sound or timer. */
 export function FooterSecret() {
@@ -47,7 +48,7 @@ export function FaqLocaleSecret() {
       onClick={event => { setOpen(value => !value); event.currentTarget.focus() }}
       onKeyDown={event => { if (event.key === 'Escape') setOpen(false) }}
     >
-      <span aria-hidden="true">※</span>
+      <Icon name="asterisk" size={14} />
     </button>
     <span id={id} className="faq-locale-secret-note" hidden={!open} role="status">
       <b>{t('delight.localeSecretTitle')}</b> {t('delight.localeSecretBody')}

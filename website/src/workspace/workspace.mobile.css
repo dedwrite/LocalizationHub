@@ -15,7 +15,7 @@
   overflow: hidden;
   background: #0b0d10;
   color: #f5f7fa;
-  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui), system-ui, -apple-system, sans-serif;
 }
 
 /* Same quiet, usable scrollbar treatment as the desktop workspace. */
@@ -171,7 +171,7 @@
 }
 
 .mob-entry-key {
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 14px;
   color: #c8ced8;
   white-space: nowrap;

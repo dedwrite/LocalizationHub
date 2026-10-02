@@ -11,7 +11,7 @@
   --lh-muted: #8e929e;
   --lh-accent: var(--accent, #a79cff);
   --lh-accent-strong: var(--accent-strong, #c8c1ff);
-  font-family: 'Manrope', sans-serif;
+  font-family: var(--font-ui), sans-serif;
   color: #e9e8ed;
 }
 
@@ -159,7 +159,7 @@
 
 .lh-radio-capsule-artist {
   color: var(--lh-muted);
-  font: 0.55rem 'DM Mono', monospace;
+  font: 0.55rem var(--font-mono), monospace;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -226,7 +226,7 @@
 
 .lh-radio-sub {
   color: var(--lh-accent);
-  font: 0.5rem 'DM Mono', monospace;
+  font: 0.5rem var(--font-mono), monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   min-height: 0.7rem;
@@ -287,7 +287,7 @@
 
 .lh-radio-now-album {
   color: var(--lh-muted);
-  font: 0.58rem 'DM Mono', monospace;
+  font: 0.58rem var(--font-mono), monospace;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -302,7 +302,7 @@
 
 .lh-radio-time {
   color: var(--lh-muted);
-  font: 0.56rem 'DM Mono', monospace;
+  font: 0.56rem var(--font-mono), monospace;
   min-width: 32px;
 }
 
@@ -469,7 +469,7 @@
   display: block;
   margin: 0 4px 8px;
   color: var(--lh-muted);
-  font: 0.5rem 'DM Mono', monospace;
+  font: 0.5rem var(--font-mono), monospace;
   letter-spacing: 0.14em;
 }
 
@@ -508,7 +508,7 @@
 
 .lh-radio-playlist-num {
   color: var(--lh-muted);
-  font: 0.56rem 'DM Mono', monospace;
+  font: 0.56rem var(--font-mono), monospace;
   width: 16px;
   text-align: right;
 }

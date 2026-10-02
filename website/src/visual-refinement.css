@@ -1,11 +1,6 @@
 /* v0.9.2 — shared visual rhythm. Scoped to product surfaces; Admin and Radio
    transport behavior are deliberately unchanged. Fluid gaps replace oversized
    fixed spacers without changing virtual-list row measurements. */
-:root {
-  --web-section-space: clamp(56px, 7vw, 104px);
-  --web-content-gap: clamp(24px, 4vw, 56px);
-  --web-panel-radius: 12px;
-}
 
 /* Reference -> context -> working copy: one readable editing column. */
 :is(.workspace-shell, .mob-workspace) .editor-content-column { max-width: 880px; }
@@ -88,47 +83,7 @@
   .workspace-shell .entry-row { transition: none; }
 }
 
-/* Landing: deliberate rhythm instead of accumulating 150px section paddings,
-   fixed card heights and huge illustration margins. Keep room for the words. */
-.landing-main .section { padding-block: var(--web-section-space); }
 html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
-.landing-main .hero { min-height: 0; padding-block: clamp(64px, 6vw, 88px); gap: var(--web-content-gap); grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr); }
-.landing-main .hero h1 { font-size: clamp(3.1rem, 5.3vw, 5.6rem); line-height: 1.06; margin-block: 24px; }
-.landing-main .hero-description { font-size: 1rem; line-height: 1.8; }
-.landing-main .hero-visual { min-width: 0; }
-.landing-main .section-intro h2 { margin-block: 18px; font-size: clamp(2.3rem, 3.8vw, 4rem); line-height: 1.12; }
-.landing-main :is(.features, .context-section, .formats-section, .faq-section) { gap: var(--web-content-gap); }
-.landing-main .section-intro > p:last-child { max-width: 52ch; }
-.landing-main .workflow-line { margin-top: 44px; }
-.landing-main .extraction-flow .workflow-step { min-height: 144px; }
-.landing-main .engine-grid { gap: 16px; margin-top: 28px; }
-.landing-main .engine-card { min-height: 226px; padding: 22px; border-radius: var(--web-panel-radius); }
-.landing-main .engine-card h3 { margin-bottom: 16px; }
-.landing-main .engine-boundary { bottom: 18px; }
-.landing-main .feature-grid { gap: 12px; border-top: 0; }
-.landing-main .feature { min-height: 196px; padding: 22px; border: 1px solid #2b2e38; border-radius: var(--web-panel-radius); background: #11131a; }
-.landing-main .feature h3 { margin-top: 20px; }
-.landing-main .surface { min-height: 260px; border-radius: var(--web-panel-radius); }
-.landing-main .surface h2 { margin-top: 40px; }
-.landing-main .split-section { padding-top: 16px; }
-.landing-main .context-demo { border-radius: var(--web-panel-radius); overflow: hidden; box-shadow: 0 14px 40px #0003; }
-.landing-main .context-people strong { line-height: 1.6; }
-.landing-main .release-section { max-width: 960px; }
-.landing-main .release-section h2 { font-size: clamp(2.8rem, 5vw, 5rem); }
-.landing-main .format-row { padding-inline: 10px; transition: background 160ms ease; }
-.landing-main .faq-list details { padding-inline: 12px; }
-.landing-main .faq-list summary { gap: 20px; line-height: 1.65; }
-.landing-main .faq-list summary span { flex-shrink: 0; }
-.editor-preview { border-radius: var(--web-panel-radius); overflow: hidden; }
-.preview-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: #aca9bd; font-size: 11px; }
-.preview-controls > div { display: flex; padding: 3px; border: 1px solid #3b354d; border-radius: 999px; background: #13131d; }
-.preview-controls button { border: 0; padding: 7px 12px; min-height: 32px; background: transparent; color: #beb8cf; border-radius: 999px; cursor: pointer; font: inherit; }
-.preview-controls button[aria-pressed='true'] { color: #efebff; background: #342b54; }
-.preview-translation > p { direction: rtl; text-align: start; unicode-bidi: isolate; line-height: 1.8; }
-.inner-page { padding-block: clamp(56px, 6vw, 88px) 112px; }
-.download-layout { gap: var(--web-content-gap); }
-.download-panel { border-radius: var(--web-panel-radius); box-shadow: 0 16px 40px #0003; }
-.download-panel .panel-kicker { margin-top: 28px; }
 
 /* Dashboard: use the canvas without marooning one card in an oversized grid. */
 .projects-page .dashboard { max-width: 1320px; padding-block: clamp(28px, 4vw, 52px) 128px; }
@@ -156,7 +111,6 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 .local-file-graphic { margin-block: 24px 20px; height: 86px; }
 .local-open-panel > small { color: #9ba4b3; font-size: 11px; line-height: 1.6; }
 .local-open-panel .file-button { border-radius: 8px; min-height: 44px; }
-.local-tip { border-radius: 10px; }
 .recent-local { margin-top: 0; }
 .recent-local-row { align-items: center; border-radius: 8px; padding: 4px 8px; }
 .recent-local-row:hover { background: #151925; }
@@ -177,29 +131,12 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
   .projects-page .account { max-width: calc(100% - 112px); min-width: 0; flex-wrap: wrap; }
   .projects-page .account > span { min-width: 0; overflow-wrap: anywhere; }
 }
-.app-loading { gap: 16px; align-content: center; }
-.app-loading::before { content: ''; width: 28px; height: 28px; border: 2px solid #302c40; border-top-color: #a79cff; border-radius: 50%; animation: web-loading-spin 800ms linear infinite; }
-@keyframes web-loading-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 1050px) {
   .single-project-layout { grid-template-columns: 1fr; }
   .project-support { min-height: 0; }
 }
-@media (max-width: 1000px) {
-  .landing-main .hero { grid-template-columns: 1fr; }
-  .landing-main .hero-visual { margin-top: 0; }
-}
 @media (max-width: 767px) {
-  .landing-main .hero { padding-block: 56px; gap: 32px; }
-  .landing-main .hero h1 { font-size: clamp(2.8rem, 12vw, 4rem); }
-  .landing-main .section-intro h2 { font-size: clamp(2.1rem, 8vw, 3rem); }
-  .landing-main .engine-card { min-height: 210px; }
-  .landing-main .extraction-flow .workflow-step { min-height: 0; }
-  .landing-main .context-people { grid-template-columns: 1fr 1fr; }
-  .landing-main .context-people > div { padding: 14px; }
-  .landing-main .context-people > div:last-child { grid-column: 1 / -1; }
-  .preview-controls { align-items: flex-start; font-size: 10px; }
-  .preview-controls button { min-height: 36px; padding-inline: 10px; }
   .project-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .project-summary > div, .project-summary > div:nth-child(3) { min-height: 88px; padding: 12px; grid-column: auto; border-top: 0; border-inline-end: 1px solid #2d3440; }
   .project-summary > div:nth-child(3) { border-inline-end: 0; }
@@ -211,7 +148,4 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
   .local-open-panel { padding: 22px; }
   .local-file-graphic { margin-top: 18px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .app-loading::before { animation: none; }
-  .landing-main .format-row { transition: none; }
-}
+

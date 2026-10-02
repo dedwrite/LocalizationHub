@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { landingSamples } from '../landingSamples'
 import { InternalLink } from '../internalNavigation'
+import Icon from './Icon'
 
 const options = ['files', 'godot', 'unreal', 'unity'] as const
 const formats = {
@@ -64,7 +65,7 @@ export default function FormatGuide() {
               ? 'website.hero.openLocal'
               : 'landing.formats.getDesktop',
           )}
-          <span aria-hidden="true">↗</span>
+          <Icon name="arrow-up-right" />
         </InternalLink>
       </div>
       {selected === 'files' && (
@@ -72,7 +73,7 @@ export default function FormatGuide() {
           <div>
             <strong>{t('landing.samples.title')}</strong>
             <p>{t('landing.samples.body')}</p>
-            <InternalLink className="sample-inline-link" href="/app/local?sample=northern-gate">{t('landing.sample.explore')} <span aria-hidden="true">↗</span></InternalLink>
+            <InternalLink className="sample-inline-link" href="/app/local?sample=northern-gate">{t('landing.sample.explore')} <Icon name="arrow-up-right" size={14} /></InternalLink>
           </div>
           <div role="group" aria-label={t('landing.samples.choose')}>
             {landingSamples.map(({ format, href }) => (
@@ -82,7 +83,7 @@ export default function FormatGuide() {
                 download
                 aria-label={t('landing.samples.download', { format })}
               >
-                <span aria-hidden="true">↓</span> <bdi>{format}</bdi>
+                <Icon name="arrow-down" size={14} /> <bdi>{format}</bdi>
               </a>
             ))}
           </div>

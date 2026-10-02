@@ -21,7 +21,7 @@
   color: var(--admin-text);
   box-sizing: border-box;
   overflow-x: hidden;
-  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui), system-ui, -apple-system, sans-serif;
   line-height: 1.5;
 }
 
@@ -590,7 +590,7 @@
 }
 
 .radio-modal-head h3 { margin: 4px 0 0; }
-.radio-step-label { color: var(--admin-muted); font: 11px 'DM Mono', monospace; text-transform: uppercase; }
+.radio-step-label { color: var(--admin-muted); font: 11px var(--font-mono), monospace; text-transform: uppercase; }
 .radio-source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .radio-source-tabs button { border: 1px solid var(--admin-border); background: var(--admin-panel-2); color: var(--admin-muted); padding: 11px 12px; text-align: left; cursor: pointer; border-radius: 5px; font: inherit; }
 .radio-source-tabs button.active { border-color: #7767e7; background: #242044; color: #f5f7fa; }
@@ -604,12 +604,12 @@
 .radio-suggestion { color: #b7abff; font-size: 10px; font-weight: 400; }
 .radio-analysis { margin: 14px 0; padding: 12px; border: 1px solid #49406f; background: #151326; border-radius: 6px; }
 .radio-analysis-head { display: flex; justify-content: space-between; gap: 12px; color: #e8e4ff; }
-.radio-analysis-head span { color: var(--admin-muted); font: 10px 'DM Mono', monospace; text-transform: uppercase; }
+.radio-analysis-head span { color: var(--admin-muted); font: 10px var(--font-mono), monospace; text-transform: uppercase; }
 .radio-analysis dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0 0; }
 .radio-analysis dl div { display: grid; gap: 3px; }
 .radio-analysis dt { color: var(--admin-muted); font-size: 10px; text-transform: uppercase; }
 .radio-analysis dd { margin: 0; color: #f5f7fa; font-size: 13px; }
-.radio-operation-status { margin: 12px 0; color: #c8c0ff; font: 12px 'DM Mono', monospace; }
+.radio-operation-status { margin: 12px 0; color: #c8c0ff; font: 12px var(--font-mono), monospace; }
 .radio-analysis-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .radio-analysis-error .admin-error { margin: 0; }
 .radio-smart-match { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #3b3559; color: #ded9ff; font-size: 12px; }

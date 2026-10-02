@@ -4,9 +4,11 @@
 .project-mark {
   --project-accent: #a993de;
   --project-accent-soft: #66509933;
+  position: relative;
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--project-accent) 45%, #2a2438);
   border-radius: 9px;
   background:
@@ -15,8 +17,11 @@
   color: var(--project-accent);
   box-shadow: inset 0 0 0 1px #ffffff08;
 }
+/* The mark carries its own two details: a corner sheen and an accent bar. */
+.project-mark::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--project-accent) 32%, transparent), transparent 62%); }
+.project-mark::after { content: ''; position: absolute; inset-inline: 8px; inset-block-end: 6px; height: 2px; border-radius: 4px; background: var(--project-accent); opacity: .75; }
 .project-mark-glyph {
-  font: 700 14px/1 'DM Mono', monospace;
+  font: 700 14px/1 var(--font-mono), monospace;
   letter-spacing: 0;
 }
 .project-mark-sm { width: 34px; height: 34px; border-radius: 8px; }
@@ -33,8 +38,6 @@
 .recent-local-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
 .recent-local-row > .project-mark { grid-row: 1; }
 .recent-local-row > button:first-of-type { min-width: 0; }
-.resume-card .resume-emblem.project-mark,
-.resume-emblem.project-mark { transform: rotate(-5deg); }
 
 .quiet-empty[data-empty='review-done'] .quiet-empty-art,
 .quiet-empty[data-empty='quality-clean'] .quiet-empty-art { color: #8fceb0; }
@@ -89,7 +92,7 @@
   padding: 10px 12px; border-radius: 8px; background: #171925; border: 1px solid #2c3040;
   color: #c8ced8; font-size: 13px;
 }
-.export-checklist li strong { font: 14px/1 'DM Mono', monospace; color: #d5c2ff; direction: ltr; }
+.export-checklist li strong { font: 14px/1 var(--font-mono), monospace; color: #d5c2ff; direction: ltr; }
 .export-checklist li[data-severity='ok'] strong { color: #8fceb0; }
 .export-checklist li[data-severity='warning'] strong { color: #d5a08f; }
 .export-checklist li[data-severity='info'] strong { color: #c9b58a; }
@@ -180,7 +183,7 @@ html[dir='rtl'] .progress-pulse-kicker { letter-spacing: 0; }
   display: flex; align-items: center; gap: 12px; padding: 14px 16px;
   border-bottom: 1px solid #2c3040;
 }
-.command-palette-search > span { color: #8f84c4; font: 12px/1 'DM Mono', monospace; }
+.command-palette-search > span { color: #8f84c4; font: 12px/1 var(--font-mono), monospace; }
 .command-palette-search input {
   flex: 1; min-width: 0; border: 0; background: transparent; color: inherit;
   font: inherit; font-size: 15px; outline: none;
@@ -193,7 +196,7 @@ html[dir='rtl'] .progress-pulse-kicker { letter-spacing: 0; }
 }
 .command-palette-list button.active, .command-palette-list button:hover { background: #241f35; color: #f0eaff; }
 .command-palette-list kbd, .shortcuts-center kbd {
-  font: 11px/1 'DM Mono', monospace; color: #b7a5ed; border: 1px solid #4a4060;
+  font: 11px/1 var(--font-mono), monospace; color: #b7a5ed; border: 1px solid #4a4060;
   border-radius: 6px; padding: 5px 7px; background: #1b1828;
 }
 .command-palette-empty, .command-palette-foot, .shortcuts-center > p {
@@ -214,37 +217,16 @@ html[dir='rtl'] .progress-pulse-kicker { letter-spacing: 0; }
 }
 
 .workspace-shell.is-settling .editor-panel,
-.workspace-shell.is-settling .entries-panel,
-.workspace-shell.is-settling .inspector-panel {
+.workspace-shell.is-settling .entries-panel {
   animation: quiet-panel-in 220ms ease-out;
 }
-.entry-row.is-entering { animation: quiet-entry-in 160ms ease-out; }
-.inspector-panel.is-open-soft { animation: quiet-inspector-in 200ms ease-out; }
-.save-saved.quiet-save-pulse { animation: quiet-save-pulse 420ms ease-out; }
 
 @keyframes quiet-panel-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes quiet-entry-in {
-  from { background-color: #2a2440; }
-  to { background-color: transparent; }
-}
-@keyframes quiet-inspector-in {
-  from { opacity: .72; transform: translateX(6px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes quiet-save-pulse {
-  from { color: #deffe9; }
-  to { color: #71bf98; }
-}
 
 html[dir='rtl'] .project-mark-lg { transform: rotate(5deg); }
-html[dir='rtl'] .inspector-panel.is-open-soft { animation-name: quiet-inspector-in-rtl; }
-@keyframes quiet-inspector-in-rtl {
-  from { opacity: .72; transform: translateX(-6px); }
-  to { opacity: 1; transform: none; }
-}
 
 @media (max-width: 1000px) {
   .skel-grid { grid-template-columns: 1fr 1fr; }
@@ -263,10 +245,6 @@ html[dir='rtl'] .inspector-panel.is-open-soft { animation-name: quiet-inspector-
   .skel-line, .skel-card, .skel-resume, .skel-pane, .skel-workspace-bar, .skel-admin-row,
   .workspace-shell.is-settling .editor-panel,
   .workspace-shell.is-settling .entries-panel,
-  .workspace-shell.is-settling .inspector-panel,
-  .entry-row.is-entering,
-  .inspector-panel.is-open-soft,
-  .save-saved.quiet-save-pulse,
   .length-cue-fill {
     animation: none !important;
     transition: none !important;
