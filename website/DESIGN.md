@@ -189,6 +189,8 @@ Violet accents sit within an ink and gray family; descriptive roles below refer 
 
 **The One Owner Lock.** The same suite reads every stylesheet under `website/src` and fails when a file other than `src/public-site.css` mentions a landing selector — its scope `#public-site`, its root or one of its section classes — or when a file other than `src/styles.css` mentions an inner-page selector of the download and legal routes (`download-*`, `panel-kicker`, `document-page`, `not-found`). Two files writing the same rule is how a contradicting second set of styles grew here once already, so a shared layer that needs a rule moves it into the owner instead of overriding it — the fluid spacing and corner tokens those routes use are declared in `styles.css` for the same reason.
 
+**The Live Class Rule.** Every class a product stylesheet declares must be named by the code that ships it — literally, or through one of the runtime families the workspace completes from state (a save state, a QA severity, a project size). `website/tests/deadClasses.test.ts` fails on a class no call site names, and on a runtime family whose template-literal builder or last declared class has disappeared, so the allowlist cannot outlive the code it excuses. A layer cleanup is finished only when this guard is quiet; that is what keeps a deleted family from returning as silent weight.
+
 **The Reading First Rule.** Decorative letters stay subdued behind readable content; violet identifies action and meaning rather than filling every surface.
 
 ## Typography
@@ -272,6 +274,7 @@ Static, composed multilingual characters decorate the background. The implementa
 - Don't add a colour, a font size, a corner radius or a font family outside the declared lists; the token guard in `tests/e2e/public-tokens.spec.ts` fails the suite instead of the reader noticing later.
 - Don't add a second public skin. `#public-site` is the only owner of the landing's appearance, and `styles.css` holds only the shared shell, the fluid rhythm tokens, the download and legal routes and the reveal system.
 - Don't style a public surface from a shared layer that the application also uses, and don't reach for a new `!important` to settle a conflict between layers. The one-owner check fails on any landing selector outside `public-site.css` and on any download or legal selector outside `styles.css`.
+- Don't leave a class in a product stylesheet that no code names, and don't grow a runtime class family without telling the guard. The class guard in `website/tests/deadClasses.test.ts` fails on orphans and on exemptions that lost their builder.
 - Don't rely on a glyph from a font we do not ship. Icons come from `src/components/Icon.tsx`.
 - Don't add game artwork, photos, gradients or glass to this chosen public landing world.
 - Don't replace distinct section compositions with repeated card shells.
