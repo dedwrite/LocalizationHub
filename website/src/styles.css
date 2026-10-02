@@ -127,6 +127,20 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .download-fact span { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); text-transform: uppercase; }
 .download-fact strong { color: var(--text, #f0edf5); font-size: var(--fs-2); }
 .download-access-note { max-width: 55ch; padding-inline-start: 16px; border-inline-start: 2px solid var(--accent); color: var(--soft); font-size: var(--fs-3); line-height: 1.8; }
+/* The private build has no public download, so the request control opens onto
+   the one address a visitor can write to: printed, copyable, and a mail link. */
+.download-request > svg { color: var(--accent); transition: transform 160ms ease; }
+.download-request[aria-expanded='true'] > svg { transform: rotate(45deg); }
+.download-request-address { display: grid; gap: 12px; max-width: 55ch; margin-top: 18px; padding: 18px 20px; border: 1px solid var(--line); border-inline-start: 2px solid var(--accent); border-radius: var(--r-2); background: var(--surface-2); }
+.download-request-address[hidden] { display: none; }
+.download-request-address p { margin: 0; color: var(--soft); font-size: var(--fs-2); line-height: 1.7; }
+.download-request-address .download-request-note { color: var(--muted); }
+.download-request-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.download-address { color: var(--accent-strong); font-family: var(--font-mono); font-size: var(--fs-3); overflow-wrap: anywhere; }
+.download-address:hover { color: var(--text, #f0edf5); text-decoration: underline; text-underline-offset: 3px; }
+.download-copy { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-1); background: transparent; color: var(--text, #f0edf5); font-size: var(--fs-2); font-weight: 600; cursor: pointer; }
+.download-copy:hover { border-color: var(--accent); background: var(--surface); }
+.download-copy-status { color: var(--green); font-family: var(--font-mono); font-size: var(--fs-1); }
 .document-page article { width: min(720px, 100%); margin-top: 48px; }
 .document-page article section { padding: 25px 0; border-top: 1px solid var(--line); }
 .document-page article h2 { margin-bottom: 10px; font-size: var(--fs-4); }
@@ -197,4 +211,5 @@ html.lh-motion [data-reveal='fade'].is-revealed { animation-name: reveal-fade; }
 @media (prefers-reduced-motion: reduce) {
   html.lh-motion [data-reveal],
   html.lh-motion [data-reveal].is-revealed { opacity: 1; transform: none; animation: none; transition: none; }
+  .download-request > svg { transition: none; }
 }

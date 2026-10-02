@@ -1,7 +1,72 @@
+import { useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { site } from '../config/site'
 import { Header, Footer } from '../components/SiteChrome'
+import Icon from '../components/Icon'
 import { InternalLink } from '../internalNavigation'
+
+/* The approval address is the whole handoff for the private Windows build, so
+ * the request control opens onto it instead of leaving for a mail client: the
+ * address is printed, copyable, and still a prefilled mail link. */
+function RequestTesterAccess() {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const address = site.contactEmail
+
+  return (
+    <>
+      <button
+        type="button"
+        className="button button-quiet download-request"
+        aria-expanded={open}
+        aria-controls="download-request-address"
+        onClick={() => {
+          setOpen((value) => !value)
+          setCopied(false)
+        }}
+      >
+        {t('website.download.requestAccess')}
+        <Icon name="plus" />
+      </button>
+      <div
+        className="download-request-address"
+        id="download-request-address"
+        hidden={!open}
+      >
+        <p>{t('website.download.requestIntro')}</p>
+        <div className="download-request-line">
+          <a
+            className="download-address"
+            href={`mailto:${address}?subject=LocalizationHub%20Windows%20app%20access`}
+          >
+            {address}
+          </a>
+          <button
+            type="button"
+            className="download-copy"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(address)
+                setCopied(true)
+              } catch {
+                setCopied(false)
+              }
+            }}
+          >
+            {t('website.download.copyAddress')}
+          </button>
+          <span className="download-copy-status" role="status">
+            {copied ? t('website.download.addressCopied') : null}
+          </span>
+        </div>
+        <p className="download-request-note">
+          {t('website.download.requestNote')}
+        </p>
+      </div>
+    </>
+  )
+}
 
 /* The Windows build is private. A public page may describe it and point at the
  * browser editor, but it must not promise a download that most visitors cannot
@@ -32,13 +97,7 @@ export function DownloadPage() {
             <InternalLink className="button button-primary" href="/app/local">
               {t('website.download.openEditor')}
             </InternalLink>
-            <a
-              className="button button-quiet"
-              href={`mailto:${site.contactEmail}?subject=LocalizationHub%20Windows%20app%20access`}
-            >
-              {t('website.download.requestAccess')}
-              <span>↗</span>
-            </a>
+            <RequestTesterAccess />
           </div>
           <div className="download-panel">
             <div className="panel-mark">

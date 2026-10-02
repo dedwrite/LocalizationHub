@@ -72,6 +72,20 @@ test.describe('public routing and accessibility', () => {
     }
   })
 
+  test('the tester request prints the one support address instead of only mailing it', async ({ page, context, browserName }) => {
+    test.skip(browserName === 'webkit', 'headless WebKit does not grant the async clipboard this control relies on')
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/download')
+    const panel = page.locator('#download-request-address')
+    await expect(panel).toBeHidden()
+    await page.getByRole('button', { name: 'Request tester access' }).click()
+    await expect(panel).toBeVisible()
+    await expect(page.getByRole('link', { name: 'support@localizationhub.app' })).toHaveAttribute('href', 'mailto:support@localizationhub.app?subject=LocalizationHub%20Windows%20app%20access')
+    await page.getByRole('button', { name: 'Copy address' }).click()
+    await expect(panel.getByRole('status')).toHaveText('Address copied')
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('support@localizationhub.app')
+  })
+
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/')

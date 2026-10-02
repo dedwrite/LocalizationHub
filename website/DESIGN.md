@@ -258,6 +258,8 @@ One capture of the running editor is the only picture the public landing allows,
 
 The context example uses a tonal surface with open internal rows. Tips retain their existing controls and content; FAQ and extraction disclosures retain keyboard-operable summaries. Their behaviors are incumbent product features, not a new component API.
 
+The Windows request control is a disclosure for the same reason: the desktop build is private, so pressing it prints the one public support address with a copy action beside it, next to a prefilled mail link. The address must be readable on the page, not only reachable through a mail client.
+
 ### Language field
 
 Static, composed multilingual characters decorate the background. The implementation repeats a deterministic character arrangement across document bands, mirrors placement between bands and reduces the visible set on phones. It is aria-hidden, unselectable and pointer-transparent, stays stable during hydration and disappears in forced colors. Do not turn this into a moving canvas or a foreground reading task.
