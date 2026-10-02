@@ -1,6 +1,6 @@
 ---
 name: "LocalizationHub public website"
-description: "A picture-free bilingual language field in matte ink and violet."
+description: "A bilingual language field in matte ink and violet, with one real editor capture."
 colors:
   bg: "#111016"
   surface: "#1b1823"
@@ -146,11 +146,12 @@ Words are both the work and the identity. The public landing page uses matte ink
 
 This document records the implemented public landing system owned by `src/public-site.css`, scoped to `#public-site`. It does not define the Web App, Admin, Radio or other routes. Preserve the LocalizationHub name and existing logo, factual copy, existing interactive demonstrations, all tips and secret interactions, and Radio behavior.
 
-The user pinned the picture-free dark/violet direction and requested multilingual background letters. On 2026-10-01 they requested a stronger composition, allowing a rebuild of the public website. The existing palette and font identity remain; composition was amplified and validated locally. Human visual acceptance is pending, and no publication has occurred.
+The user pinned the dark/violet direction without stock imagery and requested multilingual background letters. On 2026-10-01 they requested a stronger composition, allowing a rebuild of the public website. The existing palette and font identity remain; composition was amplified and validated locally. Human visual acceptance is pending, and no publication has occurred.
 
 **Key Characteristics:**
 
-- Picture-free typographic identity.
+- Typographic identity: no stock photography, no illustration, no mockup.
+- One real capture of the shipped editor as the product proof.
 - Humanist Latin and Arabic reading quality.
 - Solid, flat proof surfaces and measured separators.
 - Stable, noninteractive multilingual decoration.
@@ -249,6 +250,10 @@ A single solid bordered sheet holds sample controls, source dialogue, an editabl
 
 Validation distinguishes empty, valid, warning and error. Missing protected tokens receive their own conspicuous guide state, with text and symbol feedback as well as color. Preserve the actual validation behavior and source/translation content.
 
+### Workspace proof image
+
+One capture of the running editor is the only picture the public landing allows, and it sits in the review section where the page claims a real workspace. It is taken from the shipped application (`/app/local` with the Northern Gate sample), not composed for the page: the entry list, the selected line, the speaker/listener/scene strip, the protected-token row, the Arabic translation field and the inspector tabs are all in the frame because that is what the app draws. Its three notes — context, protected tokens, memory and glossary — name what the picture shows, and nothing about it is drawn twice as a separate mockup. The image is displayed at its intrinsic aspect ratio, lazy-loaded, and its `alt` text describes the capture for a reader who cannot see it. A second picture, an illustration, a stock photo or a re-rendered "cleaner" mockup is a regression.
+
 ### Context, notes and disclosure rows
 
 The context example uses a tonal surface with open internal rows. Tips retain their existing controls and content; FAQ and extraction disclosures retain keyboard-operable summaries. Their behaviors are incumbent product features, not a new component API.
@@ -276,7 +281,8 @@ Static, composed multilingual characters decorate the background. The implementa
 - Don't style a public surface from a shared layer that the application also uses, and don't reach for a new `!important` to settle a conflict between layers. The one-owner check fails on any landing selector outside `public-site.css` and on any download or legal selector outside `styles.css`.
 - Don't leave a class in a product stylesheet that no code names, and don't grow a runtime class family without telling the guard. The class guard in `website/tests/deadClasses.test.ts` fails on orphans, on exemptions that lost their builder or their source, and on a new family that starts excusing declared classes while unlisted.
 - Don't rely on a glyph from a font we do not ship. Icons come from `src/components/Icon.tsx`.
-- Don't add game artwork, photos, gradients or glass to this chosen public landing world.
+- Don't add game artwork, stock photos, illustrations, gradients or glass to this chosen public landing world. Exactly one capture of the real workspace is allowed, in the review section, and it stays a capture.
+- Don't capture a state the product does not have. The proof image is taken from the running app, and its notes may only name what is inside the frame.
 - Don't replace distinct section compositions with repeated card shells.
 - Don't introduce reveal timing, looping animation or scroll-driven movement into the public reading flow.
 - Don't propagate these tokens into the Web App, Admin, Radio or other routes.

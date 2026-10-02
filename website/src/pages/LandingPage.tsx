@@ -12,6 +12,50 @@ import Icon from "../components/Icon";
 import FormatGuide from "../components/FormatGuide";
 import LanguageField from "../components/LanguageField";
 
+/* The engine boundary is a table, not a sentence: a translator wants to know
+ * what is read, what needs a helper tool, and where the limits are. */
+const engineSupport = [
+  { engine: 'godot', status: 'supported' },
+  { engine: 'unreal', status: 'supported' },
+  { engine: 'unity', status: 'partial' },
+] as const
+
+function EngineMatrix() {
+  const { t } = useI18n();
+  return (
+    <div className="compat">
+      <p className="compat-title" id="compat-title">
+        {t("landing.compat.title")}
+      </p>
+      <table className="compat-matrix" aria-labelledby="compat-title">
+        <thead>
+          <tr>
+            <th scope="col">{t("landing.compat.engine")}</th>
+            <th scope="col">{t("landing.compat.extraction")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {engineSupport.map(({ engine, status }) => (
+            <tr key={engine}>
+              <th scope="row" data-label={t("landing.compat.engine")}>
+                {t(`landing.formats.${engine}.label`)}
+                <span className="compat-status" data-state={status}>
+                  {t(`landing.compat.${status}`)}
+                </span>
+              </th>
+              <td data-label={t("landing.compat.extraction")}>
+                {t(`landing.compat.${engine}`)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="compat-note">{t("landing.compat.legend")}</p>
+      <p className="compat-note">{t("landing.compat.writeNote")}</p>
+    </div>
+  );
+}
+
 function Feature({
   number,
   title,
@@ -95,6 +139,7 @@ export default function Landing() {
             <p>{t("website.engines.body")}</p>
           </div>
           <FormatGuide />
+          <EngineMatrix />
           <p className="section-note">
             <span className="engine-boundary">
               {t("website.extraction.readOnlyCaps")}
@@ -180,6 +225,37 @@ export default function Landing() {
               </h2>
               <p>{t("website.feature.workspaceDescription")}</p>
             </div>
+            {/* One real capture of the workspace, annotated. Mock artwork is
+                what makes a product page read as a prototype. */}
+            <figure className="editor-proof">
+              <img
+                src="/editor-workspace.png"
+                alt={t("landing.proof.alt")}
+                width={2400}
+                height={1500}
+                loading="lazy"
+                decoding="async"
+              />
+              <figcaption>
+                <span className="editor-proof-kicker">
+                  {t("website.hero.workspace")}
+                </span>
+                <ul className="editor-proof-notes">
+                  <li>
+                    <strong>{t("landing.proof.context")}</strong>
+                    {t("landing.proof.contextText")}
+                  </li>
+                  <li>
+                    <strong>{t("landing.proof.tokens")}</strong>
+                    {t("landing.proof.tokensText")}
+                  </li>
+                  <li>
+                    <strong>{t("landing.proof.memory")}</strong>
+                    {t("landing.proof.memoryText")}
+                  </li>
+                </ul>
+              </figcaption>
+            </figure>
             <div className="feature-grid" id="workflow">
               <Feature
                 number="01"

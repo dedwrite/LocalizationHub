@@ -15,8 +15,9 @@ describe('route-specific public metadata', () => {
     expect(titles.size).toBe(Object.keys(publicMetadata).length)
   })
   it('does not present private workspace routes as indexable product pages', () => {
-    for (const path of ['/app', '/app/local', '/app/projects/project-1', '/app/admin/radio', '/missing']) {
-      expect(metadataFor(path)).toMatchObject({ title: 'Workspace — LocalizationHub', robots: 'noindex, follow' })
+    for (const path of ['/app', '/app/local', '/app/projects/project-1', '/app/admin/radio']) {
+      expect(metadataFor(path)).toMatchObject({ title: 'Workspace — LocalizationHub', robots: 'noindex, nofollow' })
     }
+    expect(metadataFor('/missing')).toMatchObject({ title: 'Workspace — LocalizationHub', robots: 'noindex, follow' })
   })
 })

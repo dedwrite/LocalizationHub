@@ -12,7 +12,7 @@ export const landingExperienceMessages = {
   'landing.context.example': { en: 'SCENE 01 / TRANSLATION NOTES', ar: 'المشهد 01 / ملاحظات الترجمة' },
   'landing.context.review': { en: 'Ready for review', ar: 'جاهزة للمراجعة' },
   'landing.context.directions': { en: 'Independent text direction', ar: 'اتجاه مستقل لكل نص' },
-  'landing.faq.windowsQuestion': { en: 'Where is the Windows download?', ar: 'وين ألقى نسخة ويندوز؟' },
+  'landing.faq.windowsQuestion': { en: 'Where is the Windows app?', ar: 'وين ألقى تطبيق ويندوز؟' },
   'landing.try.title': { en: 'Try a line.', ar: 'جرّب ترجمة سطر.' },
   'landing.try.badge': { en: 'Interactive demo', ar: 'تجربة مباشرة' },
   'landing.try.entries': { en: 'Sample entries', ar: 'نصوص التجربة' },
@@ -49,7 +49,7 @@ export const landingExperienceMessages = {
   'landing.privacy.details': { en: 'Read the privacy details', ar: 'تفاصيل الخصوصية' },
   "landing.closing.title": { en: "Start with a file.", ar: "ابدأ بملف." },
   "landing.closing.body": { en: "Open your file in the editor, or try the Northern Gate sample. No account needed.", ar: "افتح ملفك في المحرر، أو جرّب عينة البوابة الشمالية. ما تحتاج حساب." },
-  "landing.download.access": { en: "The Windows installer is hosted in a private GitHub repository. You need repository access to download it. The web editor is available to everyone.", ar: "ملف تثبيت ويندوز موجود في مستودع GitHub خاص، ويحتاج صلاحية وصول لتنزيله. محرر الويب متاح للجميع." },
+  "landing.download.access": { en: "The Windows app is currently available to approved testers. The browser editor remains publicly available.", ar: "تطبيق ويندوز متاح حاليًا لمختبرين معتمدين، ويبقى محرر المتصفح متاحًا للجميع." },
 "landing.try.keepTokens": { en: "Keep these in your translation", ar: "رموز يجب إبقاؤها في الترجمة" },
 "landing.try.tokenMissing": { en: "Token missing", ar: "ناقص" },
 "landing.try.tokenKept": { en: "Present", ar: "موجود" },
@@ -57,4 +57,25 @@ export const landingExperienceMessages = {
 "landing.samples.body": { en: "Three game lines, in three formats. Download one, then open it in the editor.", ar: "ثلاثة نصوص من لعبة بثلاث صيغ. نزّل ملفًا وافتحه في المحرر." },
 "landing.samples.choose": { en: "Download a sample file", ar: "تنزيل ملف تجريبي" },
 "landing.samples.download": { en: "Download {format} sample", ar: "تنزيل عينة {format}" },
+  /* One real screenshot of the workspace is the only product visual on the
+   * landing. These notes name what the picture actually shows. */
+  'landing.proof.alt': { en: 'The LocalizationHub editor with the Northern Gate sample open: the entry list on the left, the selected line with its speaker, listener and scene in the middle, and the quality, memory and glossary tabs on the right.', ar: 'محرر LocalizationHub وعليه عينة البوابة الشمالية: قائمة النصوص على اليسار، والنص المحدد مع المتحدث والمستمع والمشهد في الوسط، وتبويبات الجودة والذاكرة والمصطلحات على اليمين.' },
+  'landing.proof.context': { en: 'Context', ar: 'السياق' },
+  'landing.proof.contextText': { en: 'Speaker, listener and scene sit beside the line.', ar: 'المتحدث والمستمع والمشهد بجانب النص.' },
+  'landing.proof.tokens': { en: 'Protected tokens', ar: 'رموز محمية' },
+  'landing.proof.tokensText': { en: 'Highlighted in the source, listed under it, and checked before export.', ar: 'مظللة في المصدر، ومدرجة تحته، ويُفحص وجودها قبل التصدير.' },
+  'landing.proof.memory': { en: 'Memory and glossary', ar: 'الذاكرة والمصطلحات' },
+  'landing.proof.memoryText': { en: 'Quality, translation memory and terms stay beside the line.', ar: 'الجودة وذاكرة الترجمة والمصطلحات بجانب النص نفسه.' },
+  /* Engine support is a matrix with its boundaries spelled out: "support
+   * varies" tells a translator nothing. */
+  'landing.compat.title': { en: 'Engine support, stated plainly', ar: 'دعم المحركات كما هو' },
+  'landing.compat.engine': { en: 'Engine', ar: 'المحرك' },
+  'landing.compat.extraction': { en: 'Reads and extracts', ar: 'ما يُقرأ ويُستخرج' },
+  'landing.compat.supported': { en: 'Supported', ar: 'مدعوم' },
+  'landing.compat.partial': { en: 'Partial', ar: 'جزئي' },
+  'landing.compat.godot': { en: 'Scenes, CSV, PO, JSON databases and INKB dialogue, read natively. Unpacking a PCK uses GDRE, which you install and configure.', ar: 'يقرأ المشاهد وCSV وPO وقواعد JSON وحوارات INKB مباشرة، أما تفكيك PCK فيعتمد على أداة GDRE التي تنصّبها وتهيّئها بنفسك.' },
+  'landing.compat.unreal': { en: 'LOCRES, LOCMETA and String Table CSV, read natively. PAK and IoStore need repak or retoc; some UE5 asset versions stay partial.', ar: 'يقرأ LOCRES وLOCMETA وجداول CSV مباشرة. وتحتاج ملفات PAK وIoStore أداة repak أو retoc، وتبقى بعض إصدارات أصول UE5 جزئية.' },
+  'landing.compat.unity': { en: 'Localization tables, TextAsset JSON and CSV, and Ink, read natively. AssetBundles need UnityPy, and assets with a stripped type tree stay unreadable.', ar: 'يقرأ جداول Localization وTextAsset بصيغي JSON وCSV وInk مباشرة. وتحتاج AssetBundles أداة UnityPy، وتبقى الأصول التي فقدت شجرة أنواعها غير مقروءة.' },
+  'landing.compat.legend': { en: 'Supported means validated end to end on real game files. Partial means some variants work, with the limits written down. Helper tools run on your machine and are configured by you.', ar: '«مدعوم» تعني تجربة كاملة على ملفات ألعاب حقيقية، و«جزئي» تعني أن بعض الحالات تعمل مع حدود موثّقة. الأدوات المساعدة تعمل على جهازك وأنت من يهيّئها.' },
+  'landing.compat.writeNote': { en: 'Write-back is always localization files — JSON, CSV, PO or an .lhproj project. The game’s own resources are never rewritten.', ar: 'الكتابة تكون دائمًا في ملفات الترجمة: JSON أو CSV أو PO أو مشروع .lhproj. ولا تُعاد كتابة موارد اللعبة الأصلية أبدًا.' },
 } satisfies MessageCatalog

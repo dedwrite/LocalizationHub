@@ -3,12 +3,16 @@ export const publicMetadata = {
   '/': { title: 'LocalizationHub — Game localization, local-first', description: 'Translate and review game text in a local-first workspace. Open JSON, CSV, and PO in your browser, or extract supported Godot, Unreal, and Unity text on Windows.' },
   '/privacy': { title: 'Privacy — LocalizationHub', description: 'How LocalizationHub handles browser-local projects, Cloud data, backups, retention, deletion, and third-party translation services.' },
   '/terms': { title: 'Terms — LocalizationHub', description: 'Terms for using LocalizationHub, keeping local backups, and collaborating on Cloud localization projects.' },
-  '/download': { title: 'Windows app — LocalizationHub', description: 'Explore the LocalizationHub Windows workspace and supported game-text extraction. Browser file editing is available without an account.' },
+  '/download': { title: 'Windows app — LocalizationHub', description: 'The LocalizationHub Windows app extracts supported Godot, Unreal and Unity game text locally. The desktop build is a private tester preview; the browser editor is public.' },
 } as const
 export type PublicRoute = keyof typeof publicMetadata
+/* Workspace routes are application shells, not pages: a crawler that follows
+ * one gains nothing, so they are noindex, nofollow. Everything else that is not
+ * a real public page keeps noindex but stays followable. */
+const workspaceRoute = /^\/app(?:\/|$)/
 export function metadataFor(path: string) {
   const page = publicMetadata[path as PublicRoute]
-  return { title: page?.title ?? 'Workspace — LocalizationHub', description: page?.description ?? 'Your LocalizationHub translation workspace.', canonical: `${origin}${path}`, image: `${origin}/og-card.png`, robots: page ? 'index, follow' : 'noindex, follow' }
+  return { title: page?.title ?? 'Workspace — LocalizationHub', description: page?.description ?? 'Your LocalizationHub translation workspace.', canonical: `${origin}${path}`, image: `${origin}/og-card.png`, robots: page ? 'index, follow' : workspaceRoute.test(path) ? 'noindex, nofollow' : 'noindex, follow' }
 }
 export function updateRouteMetadata(path: string) {
   const meta = metadataFor(path)

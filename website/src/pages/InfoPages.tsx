@@ -3,6 +3,9 @@ import { site } from '../config/site'
 import { Header, Footer } from '../components/SiteChrome'
 import { InternalLink } from '../internalNavigation'
 
+/* The Windows build is private. A public page may describe it and point at the
+ * browser editor, but it must not promise a download that most visitors cannot
+ * reach: no version number, no installer filename, no repository link. */
 export function DownloadPage() {
   const { t } = useI18n()
   return (
@@ -14,26 +17,26 @@ export function DownloadPage() {
         data-i18n-skip
         className="inner-page download-page"
       >
-        <p className="eyebrow">
-          {t('website.download.releasePrefix')}
-          {site.version}
-        </p>
+        <p className="eyebrow">{t('website.download.kicker')}</p>
         <div className="download-layout">
           <div>
             <h1>
-              LocalizationHub
+              {site.name}
               <br />
-              <i>{site.releaseTitle}</i>
+              <i>{t('website.download.titleAccent')}</i>
             </h1>
             <p className="page-lede">{t('website.download.description')}</p>
             <p className="download-access-note">
               {t('landing.download.access')}
             </p>
             <InternalLink className="button button-primary" href="/app/local">
-              {t('website.hero.openLocal')}
+              {t('website.download.openEditor')}
             </InternalLink>
-            <a className="button button-quiet" href={site.releaseUrl}>
-              {t('website.download.github')}
+            <a
+              className="button button-quiet"
+              href={`mailto:${site.contactEmail}?subject=LocalizationHub%20Windows%20app%20access`}
+            >
+              {t('website.download.requestAccess')}
               <span>↗</span>
             </a>
           </div>
@@ -41,24 +44,23 @@ export function DownloadPage() {
             <div className="panel-mark">
               <img src="/localizationhub-logo.jpg" alt="" />
             </div>
-            <span className="panel-kicker">{t('website.download.stable')}</span>
-            <h2>
-              {t('website.hero.versionPrefix')}
-              {site.version}
-            </h2>
+            <span className="panel-kicker">
+              {t('website.download.privateKicker')}
+            </span>
+            <h2>{t('website.download.accessTitle')}</h2>
             <div className="download-fact">
-              <span>{t('website.download.installer')}</span>
-              <strong data-i18n-skip>
-                {['LocalizationHub_', site.version, '_x64-setup.exe'].join('')}
+              <span>{t('website.download.platform')}</span>
+              <strong>{site.supportedPlatforms.join(' · ')}</strong>
+            </div>
+            <div className="download-fact">
+              <span>{t('website.download.reads')}</span>
+              <strong>
+                {site.supportedEngines.map(({ name }) => name).join(' · ')}
               </strong>
             </div>
             <div className="download-fact">
-              <span>{t('website.download.platform')}</span>
-              <strong>Windows x64</strong>
-            </div>
-            <div className="download-fact">
-              <span>{t('website.download.worksWith')}</span>
-              <strong>{t('website.download.compatibility')}</strong>
+              <span>{t('website.download.writes')}</span>
+              <strong>{site.supportedFormats.join(' · ')}</strong>
             </div>
           </div>
         </div>

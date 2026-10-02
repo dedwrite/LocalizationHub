@@ -56,11 +56,20 @@ test.describe('public routing and accessibility', () => {
     await expect(page.locator('.rtl-showcase-context')).toContainText('Northern Gate')
   })
 
-  test('Landing FAQ explains Windows repository access', async ({ page }) => {
+  test('Landing FAQ states the Windows build is private and the browser editor is public', async ({ page }) => {
     await page.goto('/#faq')
     const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('private GitHub repository')
-    await expect(answer).toContainText('web editor is available to everyone')
+    await expect(answer).toContainText('approved testers')
+    await expect(answer).toContainText('browser editor remains publicly available')
+  })
+
+  test('the public pages offer no private-repository or release links', async ({ page }) => {
+    for (const path of ['/', '/download']) {
+      await page.goto(path)
+      const links = await page.locator('a[href]').evaluateAll(anchors => anchors.map(anchor => anchor.getAttribute('href') || ''))
+      expect(links.filter(href => /github\.com|\/releases|\.exe$/i.test(href))).toEqual([])
+      await expect(page.locator('.download-panel strong', { hasText: '.exe' })).toHaveCount(0)
+    }
   })
 
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {

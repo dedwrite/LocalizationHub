@@ -71,11 +71,13 @@ export function Footer() {
         <span>{site.name}</span>
       </InternalLink>
       <span>{t("website.footer.release")}</span>
+      {/* No repository or release links: the desktop build is private, so a
+          public link would send visitors to a 404. */}
       <div>
-        <a href={site.repositoryUrl}>GitHub</a>
-        <a href={site.releaseUrl}>{t("website.footer.releases")}</a>
+        <InternalLink href="/download">{t("website.nav.download")}</InternalLink>
         <InternalLink href="/privacy">{t("legal.privacy.kicker")}</InternalLink>
         <InternalLink href="/terms">{t("legal.terms.kicker")}</InternalLink>
+        <a href={`mailto:${site.contactEmail}`}>{t("website.footer.contact")}</a>
         <a
           className="creator-signature"
           href="https://dedwrite.xyz/"

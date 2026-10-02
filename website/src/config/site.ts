@@ -1,10 +1,13 @@
 export const site = {
   name: 'LocalizationHub',
   version: '0.9.8',
-  releaseTitle: 'Game-First Experience',
-  releaseBlurb: 'A sharper game-localization story, an activation-ready Local sample project, richer workspace flow, and crawlable public pages — with all 74 translator tips and quiet discoveries intact.',
-  repositoryUrl: 'https://github.com/dedwrite/LocalizationHub',
-  releaseUrl: 'https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.8',
+  /*
+   * The one public address the site is allowed to print. The Windows app is
+   * distributed to approved testers, so no repository or release URL belongs on
+   * a public page: every public path to the desktop build goes through this
+   * mail address instead.
+   */
+  contactEmail: 'support@localizationhub.app',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
   /*

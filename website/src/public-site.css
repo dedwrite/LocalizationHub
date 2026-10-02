@@ -1,5 +1,6 @@
-/* Canonical owner for the picture-free public landing. ID scoping isolates
-   this replacement system from legacy marketing and all application surfaces. */
+/* Canonical owner for the public landing: no stock imagery, no illustration,
+   and exactly one real capture of the shipped editor. ID scoping isolates this
+   replacement system from legacy marketing and all application surfaces. */
 @font-face {
   font-family: 'LH Public';
   src: url('/fonts/schibsted-grotesk-latin.woff2') format('woff2');
@@ -274,6 +275,21 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .format-result-copy h3 { font-size: var(--fs-5); margin-block: 0 12px; }
 #public-site .format-result-copy > p:not(.format-platform) { font-size: var(--fs-3); color: var(--soft); line-height: 1.8; }
 #public-site .format-pills bdi { padding: 0; margin-inline-end: 12px; border: 0; color: var(--accent-strong); font-family: var(--font-mono); font-size: var(--fs-2); }
+/* The engine boundary is a small table with its limits written down. "Support
+   varies" is replaced by what is read, what needs a helper tool, and the
+   matching status word. */
+#public-site .compat { grid-column: 2; padding-block-start: 32px; }
+#public-site .compat-title { margin: 0 0 14px; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.06em; text-transform: uppercase; }
+#public-site .compat-matrix { width: 100%; border-collapse: collapse; }
+#public-site .compat-matrix th:first-child { inline-size: 32%; }
+#public-site .compat-matrix :is(th, td) { padding: 16px 24px 16px 0; border-block-start: 1px solid var(--line); text-align: start; vertical-align: top; font-weight: 400; }
+#public-site .compat-matrix thead th { padding-block: 12px; color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.04em; text-transform: uppercase; }
+#public-site .compat-matrix tbody :is(th, td) { color: var(--soft); font-size: var(--fs-2); line-height: 1.75; }
+#public-site .compat-matrix tbody th { color: var(--text); font-size: var(--fs-3); }
+#public-site .compat-status { display: block; margin-block-start: 6px; color: var(--success); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.04em; }
+#public-site .compat-status[data-state='partial'] { color: var(--accent); }
+#public-site .compat-note { margin: 16px 0 0; max-width: 78ch; color: var(--muted); font-size: var(--fs-2); line-height: 1.85; }
+#public-site .compat-note + .compat-note { margin-block-start: 10px; }
 #public-site .sample-downloads { grid-column: 1 / -1; display: flex; align-items: start; background: none; border: 0; padding: 24px 0 0; gap: 24px; }
 #public-site .sample-downloads > div { flex: 1; min-inline-size: 0; }
 #public-site .sample-downloads strong { display: block; color: var(--text); font-size: var(--fs-2); }
@@ -350,6 +366,15 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 
 #public-site .craft-section { display: block; border-block-start: 1px solid var(--line); }
 #public-site .craft-section > .section-intro { max-width: 660px; margin-block-end: 36px; }
+/* One real capture of the workspace carries the section; the notes under it
+   name what the picture shows instead of promising a feature list. */
+#public-site .editor-proof { margin: 0 0 48px; }
+#public-site .editor-proof img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); }
+#public-site .editor-proof figcaption { display: grid; gap: 16px; margin-block-start: 20px; }
+#public-site .editor-proof-kicker { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.06em; text-transform: uppercase; }
+#public-site .editor-proof-notes { display: flex; flex-wrap: wrap; gap: 16px 48px; margin: 0; padding: 0; list-style: none; }
+#public-site .editor-proof-notes li { flex: 1 1 220px; min-inline-size: 0; color: var(--muted); font-size: var(--fs-2); line-height: 1.8; }
+#public-site .editor-proof-notes strong { display: block; color: var(--text); font-size: var(--fs-3); font-weight: 600; }
 #public-site .feature-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px 64px; border: 0; }
 #public-site .feature-grid .feature { display: block; min-height: 0; padding: 24px 0 0; border: 0; border-block-start: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
 #public-site .feature h3 { font-size: var(--fs-5); margin: 0 0 14px; }
@@ -455,7 +480,7 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 
 /* Arabic interface labels take the Arabic face and drop Latin tracking; the
    mono face only ever belongs to Latin interface chrome. */
-html[lang='ar'] #public-site :is(.signal-strip, .hero-category, .surface-tag, .section-note, .field-notes-kicker, .format-platform, .sample-inline-link, .engine-boundary, .ambient-greeting, .game-secret-copy > span) { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.8; }
+html[lang='ar'] #public-site :is(.signal-strip, .hero-category, .surface-tag, .section-note, .field-notes-kicker, .format-platform, .sample-inline-link, .engine-boundary, .ambient-greeting, .game-secret-copy > span, .editor-proof-kicker, .compat-title, .compat-status) { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.8; }
 html[lang='ar'] #public-site :is(.workflow-step small, .rtl-showcase small, .rtl-showcase-head, .rtl-showcase-foot code) { font-family: var(--font-arabic); letter-spacing: 0; }
 
 /* Do not require reveal timing to read or capture the public site. */
@@ -490,6 +515,15 @@ html.lh-motion #public-site [data-reveal] { opacity: 1; transform: none; animati
   #public-site .live-preview textarea { font-size: var(--fs-5); }
   #public-site .context-section, #public-site .craft-section, #public-site .field-notes, #public-site .faq-section, #public-site .section#engines { grid-template-columns: minmax(0,1fr); gap: 28px; }
   #public-site #engines .section-note { grid-column: 1; }
+  /* The matrix stacks into labelled rows instead of scrolling sideways. */
+  #public-site .compat { grid-column: 1; padding-block-start: 24px; }
+  /* The header row leaves the visual grid but stays in the accessibility tree,
+     so each stacked cell keeps its column heading. */
+  #public-site .compat-matrix thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #public-site .compat-matrix tr { display: grid; gap: 10px; padding-block: 18px; border-block-start: 1px solid var(--line); }
+  #public-site .compat-matrix :is(th, td) { padding: 0; border: 0; }
+  #public-site .compat-matrix :is(th, td)::before { content: attr(data-label); display: block; color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.04em; text-transform: uppercase; }
+  #public-site .compat-matrix th[scope='row']::before { content: none; }
   #public-site .feature-grid { grid-template-columns: 1fr; gap: 24px; }
   /* Below the phone breakpoint the four-step rail becomes a single vertical
      timeline rather than four squeezed columns. */
