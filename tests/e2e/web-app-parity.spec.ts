@@ -21,9 +21,10 @@ test('dialogue chips distinguish speaker from listener and DeepL is selectable',
   await expect(page.locator('.mt-warning')).toContainText(/LocalizationHub forwards|يمرّ/i)
 })
 
-test('public footer hosts the language switcher quietly', async ({ page }) => {
+test('public header hosts the language switcher quietly', async ({ page }) => {
   await page.goto('/')
-  const footer = page.locator('footer')
-  await expect(footer.locator('.lh-language-switcher')).toBeVisible()
+  const header = page.locator('.site-header')
+  await expect(header.locator('.lh-language-switcher')).toBeVisible()
+  // The docked variant belongs to the app surfaces, not the public landing.
   await expect(page.locator('.lh-language-switcher.is-dock')).toHaveCount(0)
 })

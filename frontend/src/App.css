@@ -1386,38 +1386,6 @@ textarea:disabled {
   opacity: 0.55;
 }
 
-.status-dot {
-  width:
-    8px;
-
-  height:
-    8px;
-
-  flex-shrink:
-    0;
-
-  border-radius:
-    50%;
-
-  background:
-    #4b5160;
-}
-
-.status-dot.translated {
-  background:
-    #6d5dfc;
-}
-
-.status-dot.token-warning {
-  background:
-    #e0a84b;
-}
-
-.status-dot.protected {
-  background:
-    #687080;
-}
-
 .empty-search {
   padding:
     24px
@@ -1462,19 +1430,6 @@ textarea:disabled {
 
   background:
     #0f1118;
-}
-
-.contextual-secondary-tools {
-  position: absolute;
-  top: 31rem;
-  right: 0.75rem;
-  width: min(360px, 34%);
-  display: grid;
-  gap: 0.75rem;
-}
-
-.contextual-secondary-tools .token-panel {
-  margin: 0;
 }
 
 .editor-header {
@@ -2320,12 +2275,6 @@ body::-webkit-scrollbar-thumb:hover {
 
     padding-right:
       22px;
-  }
-
-  .contextual-secondary-tools {
-    position: relative;
-    inset: auto;
-    width: 100%;
   }
 
   .filter-button {

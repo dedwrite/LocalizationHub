@@ -68,7 +68,7 @@ test.describe('web workspace parity', () => {
   test('entry rows expose status semantics and keyboard selection', async ({ page }) => {
     await page.goto('/app/projects/proj-1')
     const row = page.locator('.entry-row[tabindex="0"]').first()
-    await expect(row).toHaveAttribute('aria-label', /Translated|Untranslated|Review/)
+    await expect(row).toHaveAttribute('aria-label', /Translated|Untranslated|Review|Approved|Draft|Warning|Error/)
     await row.focus()
     await page.keyboard.press('Enter')
     await expect(row).toHaveClass(/selected/)

@@ -611,16 +611,6 @@ span:not(.machine-translation-toggle-icon) {
     600;
 }
 
-.machine-translation-arrow {
-  color:
-    rgba(
-      155,
-      143,
-      255,
-      0.6
-    );
-}
-
 .machine-translation-actions {
   display:
     flex;
@@ -938,16 +928,6 @@ span:not(.machine-translation-toggle-icon) {
   opacity: 0.55;
 }
 
-.machine-translation-arrow {
-  padding-bottom: 9px;
-
-  color: #806cff;
-  font-size: 1rem;
-  font-weight: 800;
-
-  text-shadow:
-    0 0 10px rgba(124, 92, 255, 0.45);
-}
 
 /* =========================================================
    Machine Translation - Swap Languages

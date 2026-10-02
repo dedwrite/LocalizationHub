@@ -39,6 +39,9 @@ for (const role of ['owner', 'editor', 'viewer'] as const) test(`Desktop ${role}
         if (request.method() === 'DELETE') { deletes++; if (fail) return route.fulfill({ status: 500, json: { error: 'internal-error' } }); deleted = true; return route.fulfill({ json: { deleted: true, projectId: id } }) }
         return route.fulfill({ json: { project: snapshot } })
       }
+      // LH Radio ships in the desktop chrome and loads its public catalog on
+      // mount; the catalog is empty in this fixture.
+      if (url.pathname === '/api/radio/tracks') return route.fulfill({ json: { tracks: [] } })
       if (url.pathname.endsWith('/members')) return route.fulfill({ json: { members: [] } })
       if (url.pathname.endsWith('/assignments')) return route.fulfill({ json: { assignments: [] } })
       if (url.pathname.includes('/comments')) return route.fulfill({ json: { comments: [] } })
