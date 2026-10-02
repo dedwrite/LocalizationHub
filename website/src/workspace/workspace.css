@@ -20,8 +20,7 @@
 .workspace-shell .inspector-content,
 .workspace-shell .overview-panel,
 .workspace-shell .workspace-body,
-.workspace-shell .mob-entries,
-.local-editor-page .entries-panel {
+.workspace-shell .mob-entries {
   scrollbar-width: auto;
   scrollbar-color: #514b73 #0d1117;
   scrollbar-gutter: stable;
@@ -32,8 +31,7 @@
 .workspace-shell .inspector-content::-webkit-scrollbar,
 .workspace-shell .overview-panel::-webkit-scrollbar,
 .workspace-shell .workspace-body::-webkit-scrollbar,
-.workspace-shell .mob-entries::-webkit-scrollbar,
-.local-editor-page .entries-panel::-webkit-scrollbar {
+.workspace-shell .mob-entries::-webkit-scrollbar {
   width: 12px;
   height: 12px;
 }
@@ -43,8 +41,7 @@
 .workspace-shell .inspector-content::-webkit-scrollbar-track,
 .workspace-shell .overview-panel::-webkit-scrollbar-track,
 .workspace-shell .workspace-body::-webkit-scrollbar-track,
-.workspace-shell .mob-entries::-webkit-scrollbar-track,
-.local-editor-page .entries-panel::-webkit-scrollbar-track {
+.workspace-shell .mob-entries::-webkit-scrollbar-track {
   background: #0d1117;
 }
 
@@ -53,8 +50,7 @@
 .workspace-shell .inspector-content::-webkit-scrollbar-thumb,
 .workspace-shell .overview-panel::-webkit-scrollbar-thumb,
 .workspace-shell .workspace-body::-webkit-scrollbar-thumb,
-.workspace-shell .mob-entries::-webkit-scrollbar-thumb,
-.local-editor-page .entries-panel::-webkit-scrollbar-thumb {
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb {
   min-height: 42px;
   background: #514b73;
   border: 3px solid #0d1117;
@@ -66,8 +62,7 @@
 .workspace-shell .inspector-content::-webkit-scrollbar-thumb:hover,
 .workspace-shell .overview-panel::-webkit-scrollbar-thumb:hover,
 .workspace-shell .workspace-body::-webkit-scrollbar-thumb:hover,
-.workspace-shell .mob-entries::-webkit-scrollbar-thumb:hover,
-.local-editor-page .entries-panel::-webkit-scrollbar-thumb:hover {
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb:hover {
   background: #6a6094;
 }
 
@@ -76,8 +71,7 @@
 .workspace-shell .inspector-content::-webkit-scrollbar-thumb:active,
 .workspace-shell .overview-panel::-webkit-scrollbar-thumb:active,
 .workspace-shell .workspace-body::-webkit-scrollbar-thumb:active,
-.workspace-shell .mob-entries::-webkit-scrollbar-thumb:active,
-.local-editor-page .entries-panel::-webkit-scrollbar-thumb:active {
+.workspace-shell .mob-entries::-webkit-scrollbar-thumb:active {
   background: #7b70ad;
 }
 
