@@ -280,8 +280,8 @@ test.describe('admin console routing and views', () => {
   test('opens the smart upload flow and shows ID3 audio analysis', async ({ page }) => {
     await page.goto('/app/admin/radio')
     await page.getByRole('button', { name: '+ Add track' }).click()
-    await expect(page.getByRole('tab', { name: /Upload MP3/ })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /Import Link/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Upload MP3/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Import Link/ })).toBeVisible()
     await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })
     await expect(page.getByText('Audio analysis')).toBeVisible()
     await expect(page.getByText('ID3 + frame data')).toBeVisible()
@@ -425,7 +425,7 @@ test.describe('admin console routing and views', () => {
   test('resolves provider links as metadata-only suggestions', async ({ page }) => {
     await page.goto('/app/admin/radio')
     await page.getByRole('button', { name: '+ Add track' }).click()
-    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByRole('button', { name: /Import Link/ }).click()
     await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
     await page.getByRole('button', { name: 'Resolve metadata' }).click()
     await expect(page.getByText('Metadata retrieved')).toBeVisible()
@@ -436,7 +436,7 @@ test.describe('admin console routing and views', () => {
   test('shows Smart Match evidence after a link and attached MP3', async ({ page }) => {
     await page.goto('/app/admin/radio')
     await page.getByRole('button', { name: '+ Add track' }).click()
-    await page.getByRole('tab', { name: /Import Link/ }).click()
+    await page.getByRole('button', { name: /Import Link/ }).click()
     await page.getByPlaceholder('https://open.spotify.com/track/...').fill('https://open.spotify.com/track/test')
     await page.getByRole('button', { name: 'Resolve metadata' }).click()
     await page.locator('input[type=file]').first().setInputFiles({ name: 'Sodus - Cemeteries.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from('ID3 synthetic fixture') })

@@ -6,6 +6,7 @@ import ConfirmDialog from './ConfirmDialog'
 import { useI18n } from '@localizationhub/i18n'
 import TipCard from '../delight/TipCard'
 import EmptyState from '../delight/EmptyState'
+import { handleTabListKeys, tabStopIndex } from '../../../frontend/src/a11y/tabList'
 
 type InspectorTab = 'workflow' | 'quality' | 'comments' | 'assignments' | 'history' | 'tags' | 'memory' | 'glossary'
 
@@ -101,12 +102,23 @@ export default function Inspector(props: InspectorProps) {
     <div className="inspector">
       <div className="inspector-tabs" role="tablist" aria-label="Inspector">
         {TABS.filter((item) => !props.local || !['comments', 'assignments', 'history'].includes(item.id)).map((item) => (
-          <button key={item.id} role="tab" aria-selected={tab === item.id} className={`inspector-tab ${tab === item.id ? 'active' : ''}`} onClick={() => setTab(item.id)}>
+          <button
+            key={item.id}
+            role="tab"
+            id={`inspector-tab-${item.id}`}
+            data-tab-key={item.id}
+            aria-selected={tab === item.id}
+            aria-controls="inspector-tabpanel"
+            tabIndex={tabStopIndex(tab === item.id)}
+            className={`inspector-tab ${tab === item.id ? 'active' : ''}`}
+            onClick={() => setTab(item.id)}
+            onKeyDown={(event) => handleTabListKeys<InspectorTab>(event, setTab)}
+          >
             {item.label}
           </button>
         ))}
       </div>
-      <div className="inspector-content">
+      <div className="inspector-content" role="tabpanel" id="inspector-tabpanel" aria-labelledby={`inspector-tab-${tab}`}>
         {tab === 'workflow' && (
           <WorkflowTab entry={entry} writable={writable} status={draft.workflow?.entries?.[entry?.id]?.status} />
         )}
@@ -122,7 +134,7 @@ export default function Inspector(props: InspectorProps) {
             {comments.map((item) => (
               <div key={item.id} className="comment-item">
                 <span className="comment-meta">{item.authorName || 'Collaborator'} · {new Date(item.createdAt).toLocaleString()}</span>
-                <p data-i18n-content>{item.body}</p>
+                <p dir="auto" data-i18n-content>{item.body}</p>
                 {writable && <button className="link-button" onClick={() => run(async () => { await resolveComment(projectId, item.id, !item.resolved); setComments(await listComments(projectId, entryId)) })}>{item.resolved ? 'Reopen' : 'Resolve'}</button>}
               </div>
             ))}
@@ -139,7 +151,7 @@ export default function Inspector(props: InspectorProps) {
           <div className="inspector-section">
             <h3>Assignment</h3>
             {assignment ? (
-              <p>Currently assigned to <strong data-i18n-content>{members.find((m) => m.id === assignment.assigneeUserId)?.username || 'a member'}</strong></p>
+              <p>Currently assigned to <strong data-i18n-content><bdi>{members.find((m) => m.id === assignment.assigneeUserId)?.username || 'a member'}</bdi></strong></p>
             ) : (
               <p className="muted">Unassigned.</p>
             )}
@@ -147,7 +159,7 @@ export default function Inspector(props: InspectorProps) {
               <div className="assign-options">
                 <button onClick={() => assignTo(null)}>Unassign</button>
                 {members.filter((m) => m.id !== currentUserId).map((member) => (
-                  <button key={member.id} onClick={() => assignTo(member.id)}>Assign to <span data-i18n-content>{member.username}</span></button>
+                  <button key={member.id} onClick={() => assignTo(member.id)}>Assign to <span data-i18n-content><bdi>{member.username}</bdi></span></button>
                 ))}
                 {members.length === 0 && <p className="muted">No other members to assign.</p>}
               </div>
@@ -177,7 +189,7 @@ export default function Inspector(props: InspectorProps) {
                 const active = data.entryTags[entryId]?.includes(tag.id)
                 return (
                   <button key={tag.id} className={`chip ${active ? 'active' : ''}`} disabled={!writable} onClick={() => toggleTag(tag.id)}>
-                    <span data-i18n-content>{tag.label}</span>
+                    <span data-i18n-content><bdi>{tag.label}</bdi></span>
                   </button>
                 )
               })}
@@ -199,8 +211,8 @@ export default function Inspector(props: InspectorProps) {
             {suggestions.map((suggestion, index) => (
               <div key={index} className="memory-item">
                 <span className="memory-score">{Math.round(suggestion.score * 100)}%</span>
-                <p data-i18n-content><strong>{suggestion.source}</strong></p>
-                <p className="muted" data-i18n-content>{suggestion.translation}</p>
+                <p dir="auto" data-i18n-content><strong>{suggestion.source}</strong></p>
+                <p className="muted" dir="auto" data-i18n-content>{suggestion.translation}</p>
                 {writable && <button className="link-button" onClick={() => setDraft((current: any) => { const next = structuredClone(current); const idx = next.entries.findIndex((e: any) => e.id === entryId); if (idx >= 0) next.entries[idx].translation = suggestion.translation; return next })}>Apply</button>}
               </div>
             ))}
@@ -248,7 +260,7 @@ function WorkflowTab({ entry, writable, status: workflowStatus }: { entry: any; 
       <h3>Workflow</h3>
       <dl className="detail-list">
         <dt>Status</dt><dd>{status.replace('-', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</dd>
-        <dt>Entry key</dt><dd>{entry?.key || entry?.id}</dd>
+        <dt>Entry key</dt><dd><bdi>{entry?.key || entry?.id}</bdi></dd>
       </dl>
       {!writable && <p className="muted">You have read-only access.</p>}
     </div>

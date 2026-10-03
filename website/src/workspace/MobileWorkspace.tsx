@@ -120,7 +120,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
       <header className="mob-header">
         <button className="mob-back" onClick={props.goHome} aria-label={props.local ? 'Back to local files' : 'Back to projects'}>‹</button>
         <div className="mob-title">
-          <strong className="mob-project-name" data-i18n-content>{props.projectName}</strong>
+          <strong className="mob-project-name" data-i18n-content><bdi>{props.projectName}</bdi></strong>
           <span className={`save-state save-${saveState}`}>{saveLabel}</span>
         </div>
         <button type="button" className="mob-command" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}>⌘</button>

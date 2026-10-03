@@ -95,6 +95,17 @@ export default function EditorPanel(props: EditorPanelProps) {
   const quietLengthKind = footprint.tone === 'expanded' ? 'very-long' : footprint.tone === 'compact' ? 'short' : footprint.tone
   const protectedTokens = extractProtectedTokens(source, tokenProfileId)
   const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
+  /*
+   * The same sentence the eye reads, as plain text. Screen readers get the
+   * symbol check through one status line instead of a list that only paints:
+   * an empty draft stays silent, a draft with no problems announces the clear
+   * state (which has no visible row of its own), and problems name their token.
+   */
+  function issueText(issue: EntryIssue) {
+    if (locale === 'ar' && issue.kind && issueKeys[issue.kind]) return issue.token ? `${t(issueKeys[issue.kind])} ${issue.token.raw}` : t(issueKeys[issue.kind])
+    return issue.message
+  }
+  const issueAnnouncement = translation.trim() === '' ? '' : issues.length === 0 ? t('qa.clear') : issues.map(issueText).join(' ')
   // Extraction context stays in its canonical metadata location. Both display
   // and MT use the same fallback; explicit parsed context remains authoritative.
   const dialogueContext = entry?.dialogueContext ?? props.extractionContext
@@ -154,7 +165,7 @@ export default function EditorPanel(props: EditorPanelProps) {
     <div className={`editor-panel ${mobile ? 'mob-editor' : ''}`}>
       {mobile && (
         <div className="mob-entry-head">
-          <span className="mob-entry-key">{entry?.key || entry?.id}</span>
+          <span className="mob-entry-key"><bdi>{entry?.key || entry?.id}</bdi></span>
           <span className={`mob-status-pill mob-status-${status}`}>{friendlyStatus(status)}</span>
         </div>
       )}
@@ -225,6 +236,7 @@ export default function EditorPanel(props: EditorPanelProps) {
             readOnly={!writable}
             placeholder="Write a translation…"
             aria-label="Translation"
+            aria-describedby="translation-check"
           />
           <div className={`translation-footprint length-cue footprint-${footprint.tone}`} data-kind={quietLengthKind} data-i18n-skip>
             <div className="footprint-heading"><span>{t('delight.length.title')}</span><strong>{t('delight.length.percent', { percent: footprint.percentage })}</strong></div>
@@ -233,6 +245,7 @@ export default function EditorPanel(props: EditorPanelProps) {
             <p>{t(footprintMessage[footprint.tone])}</p>
           </div>
           <GlossaryHint source={source} translation={translation} glossary={props.glossary ?? []} />
+          <p className="visually-hidden" id="translation-check" role="status" data-i18n-skip>{issueAnnouncement}</p>
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (

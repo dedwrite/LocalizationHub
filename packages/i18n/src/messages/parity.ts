@@ -21,6 +21,9 @@ export const parityMessages = {
   'profile.manual': { en: "Manual profile selected", ar: "اختيرت قواعد الحماية يدويًا" },
   'profile.mismatch': { en: "{engine} detected · selected profile differs", ar: "تم اكتشاف {engine} · قواعد حماية الرموز المحدد مختلف" },
   'qa.detected': { en: 'Detected protected tokens', ar: 'الرموز المحمية المكتشفة' },
+  // Announced by the editor's status line once a draft no longer breaks any
+  // protected token or tag: the clear state has no visible row of its own.
+  'qa.clear': { en: 'Protected-token check is clear.', ar: 'فحص الرموز المحمية سليم.' },
   'qa.missing': { en: 'Restore the missing protected token:', ar: 'أعد الرمز المحمي المفقود:' },
   'qa.extra': { en: 'Remove or correct the unexpected protected token:', ar: 'أزل الرمز المحمي غير المتوقع أو صححه:' },
   'qa.placement': { en: 'Check the changed protected-token position.', ar: 'تحقق من موضع الرمز المحمي الذي تغير.' },

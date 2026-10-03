@@ -11,6 +11,7 @@ import {
 } from '@localizationhub/core'
 import VirtualList from './VirtualList'
 import ReviewDialog from './ReviewDialog'
+import { handleTabListKeys, tabStopIndex } from '../a11y/tabList'
 import {
   filterEntries,
   computeFilterCounts,
@@ -266,9 +267,14 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
               <button
                 key={item.id}
                 role="tab"
+                id={`review-filter-${item.id}`}
+                data-tab-key={item.id}
                 aria-selected={active}
+                aria-controls="review-filter-panel"
+                tabIndex={tabStopIndex(active)}
                 className={`er-filter-chip ${active ? 'active' : ''}`}
                 onClick={() => setFilter(item.id)}
+                onKeyDown={(event) => handleTabListKeys<ReviewFilterId>(event, setFilter)}
               >
                 <span className="er-filter-label">{item.label}</span>
                 <span className="er-filter-count">{filterCounts[item.id].toLocaleString()}</span>
@@ -300,7 +306,7 @@ export default function ExtractionReview({ result, onCreateProject, onApplyMappi
 
       {toast && <div className="er-toast" role="status">{toast}</div>}
 
-      <div className="er-list-wrap">
+      <div className="er-list-wrap" role="tabpanel" id="review-filter-panel" aria-labelledby={`review-filter-${filter}`}>
         <VirtualList
           count={filteredEntries.length}
           rowHeight={ROW_HEIGHT}

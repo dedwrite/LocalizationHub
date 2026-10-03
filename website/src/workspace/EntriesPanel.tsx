@@ -3,6 +3,7 @@ import { ENTRY_FILTERS, type BulkSelection, type EntryFilterId, type EntryView }
 import VirtualList from './VirtualList'
 import { useI18n } from '@localizationhub/i18n'
 import EmptyState from '../delight/EmptyState'
+import { handleTabListKeys, tabStopIndex } from '../../../frontend/src/a11y/tabList'
 
 type EntriesPanelProps = {
   local?: boolean
@@ -90,9 +91,9 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           )}
           <span className={`entry-status-dot ${statusDotClass(view)}`} aria-hidden="true" />
           <div className="entry-row-main">
-            <span className="entry-key" data-i18n-content>{key}</span>
+            <span className="entry-key" data-i18n-content><bdi>{key}</bdi></span>
             {view.entry.translation || view.entry.source
-              ? <span className="entry-preview" data-i18n-content>{view.entry.translation || view.entry.source}</span>
+              ? <span className="entry-preview" dir="auto" data-i18n-content>{view.entry.translation || view.entry.source}</span>
               : <span className="entry-preview">Untranslated</span>}
           </div>
           <div className="entry-row-meta">
@@ -123,9 +124,9 @@ export default function EntriesPanel(props: EntriesPanelProps) {
         />
         <span className={`entry-status-dot ${statusDotClass(view)}`} title={statusLabel(view)} aria-hidden="true" />
         <div className="entry-row-main">
-          <span className="entry-key" data-i18n-content>{view.entry.key || view.entry.id}</span>
+          <span className="entry-key" data-i18n-content><bdi>{view.entry.key || view.entry.id}</bdi></span>
           {view.entry.translation
-            ? <span className="entry-preview" data-i18n-content>{view.entry.translation}</span>
+            ? <span className="entry-preview" dir="auto" data-i18n-content>{view.entry.translation}</span>
             : <span className="entry-preview">Untranslated</span>}
         </div>
         <div className="entry-row-meta">
@@ -182,9 +183,14 @@ export default function EntriesPanel(props: EntriesPanelProps) {
               <button
                 key={item.id}
                 role="tab"
+                id={`mob-entry-filter-${item.id}`}
+                data-tab-key={item.id}
                 aria-selected={filter === item.id}
+                aria-controls="entries-tabpanel"
+                tabIndex={tabStopIndex(filter === item.id)}
                 className={`mob-filter-chip ${filter === item.id ? 'active' : ''}`}
                 onClick={() => onFilter(item.id)}
+                onKeyDown={(event) => handleTabListKeys<EntryFilterId>(event, onFilter)}
               >
                 {item.label}
                 {item.id !== 'all' && <span className="mob-filter-count">{count}</span>}
@@ -221,7 +227,7 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           </div>
         )}
 
-        <div className="entries-list">
+        <div className="entries-list" role="tabpanel" id="entries-tabpanel" aria-labelledby={`mob-entry-filter-${filter}`}>
           {views.length === 0
             ? <EmptyState kind={filter === 'needs-review' ? 'review-done' : query || filter !== 'all' ? 'entries' : 'entries'} />
             : <VirtualList items={views} rowHeight={68} renderRow={renderRow} />}
@@ -253,9 +259,14 @@ export default function EntriesPanel(props: EntriesPanelProps) {
             <button
               key={item.id}
               role="tab"
+              id={`entry-filter-${item.id}`}
+              data-tab-key={item.id}
               aria-selected={filter === item.id}
+              aria-controls="entries-tabpanel"
+              tabIndex={tabStopIndex(filter === item.id)}
               className={`filter-tab ${filter === item.id ? 'active' : ''}`}
               onClick={() => onFilter(item.id)}
+              onKeyDown={(event) => handleTabListKeys<EntryFilterId>(event, onFilter)}
             >
               {item.label}
               {item.id !== 'all' && <span className="filter-count">{count}</span>}
@@ -284,7 +295,7 @@ export default function EntriesPanel(props: EntriesPanelProps) {
           <button onClick={onClearSelection}>Clear</button>
         </div>
       )}
-      <div className="entries-list">
+      <div className="entries-list" role="tabpanel" id="entries-tabpanel" aria-labelledby={`entry-filter-${filter}`}>
         {views.length === 0
           ? <EmptyState kind={filter === 'needs-review' ? 'review-done' : 'entries'} />
           : <VirtualList items={views} rowHeight={52} renderRow={renderRow} />}

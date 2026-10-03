@@ -309,7 +309,8 @@ test('command center, text footprint, completion moment and project identity wor
   await expect(center.locator('input')).toBeFocused()
   await center.locator('input').fill('Save current project')
   await page.keyboard.press('Enter')
-  await expect(page.getByRole('status')).toContainText('Saved to this browser.')
+  // The editor also publishes a live status region, so address the toast itself.
+  await expect(page.locator('.toast')).toContainText('Saved to this browser.')
 
   await page.locator('.editor-footer').getByRole('button', { name: 'Next', exact: true }).click()
   await page.locator('.translation-editor').fill('Second translation {name}')

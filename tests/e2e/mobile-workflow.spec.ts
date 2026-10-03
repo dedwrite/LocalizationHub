@@ -116,7 +116,8 @@ test.describe('mobile workflow', () => {
     await page.route('**/api/projects/proj-1', async (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ project: { id: 'proj-1', name: 'Game Project', role: 'owner', revision: 3, updatedAt: new Date().toISOString(), project: { ...project, version: 2 } } }) }))
     await page.goto('/app/projects/proj-1')
     await expect(page.getByText(/Legacy Project V2 loaded/)).toBeVisible()
-    const toast = await page.getByRole('status').boundingBox()
+    // The editor also publishes a live status region, so address the toast itself.
+    const toast = await page.locator('.toast').boundingBox()
     const nav = await page.locator('.mob-nav').boundingBox()
     expect(toast).not.toBeNull()
     expect(nav).not.toBeNull()

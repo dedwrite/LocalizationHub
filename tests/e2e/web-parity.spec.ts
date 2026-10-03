@@ -116,7 +116,9 @@ test.describe('web workspace parity', () => {
     // Select the entry with a dropped token (menu.settings → 'Paramètres').
     await page.locator('.entry-key').filter({ hasText: 'menu.settings' }).click()
     await expect(page.locator('.inline-qa')).toBeVisible()
-    await expect(page.getByText(/Missing protected token/)).toBeVisible()
+    await expect(page.locator('.inline-qa-item').filter({ hasText: 'Missing protected token' })).toBeVisible()
+    // The same sentence reaches screen readers through the live status line.
+    await expect(page.locator('#translation-check')).toHaveText(/Missing protected token/)
   })
 
   test('bulk selection enables bulk actions', async ({ page }) => {

@@ -826,7 +826,7 @@ function Toolbar(props: {
     <header className="workspace-toolbar">
       <button className="toolbar-brand" onClick={props.onHome} title={props.local ? 'Back to local files' : 'Back to projects'} aria-label={props.local ? 'Back to local files' : 'LocalizationHub — back to projects'}><img src="/localizationhub-logo.jpg" alt="LocalizationHub" /></button>
       <div className="toolbar-title">
-        <strong data-i18n-content>{props.projectName}</strong>
+        <strong data-i18n-content><bdi>{props.projectName}</bdi></strong>
         <span className={`save-state save-${props.saveState}`}>{saveLabel}</span>
       </div>
       <div className="toolbar-group">

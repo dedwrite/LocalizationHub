@@ -194,7 +194,7 @@ function ProjectCard({ project, onOpen, onDeleted }: { project: ProjectSummary; 
     <div className="project-card-shell">
     <button className="project-card" onClick={onOpen} aria-label={`Open ${project.name}`}>
       <div className="project-card-top"><ProjectMark name={project.name} size="md" className="project-glyph" /><span className="project-role">{friendlyStatus(project.role)}</span></div>
-      <div className="project-title"><strong>{project.name}</strong><span aria-hidden="true">↗</span></div>
+      <div className="project-title"><strong><bdi>{project.name}</bdi></strong><span aria-hidden="true">↗</span></div>
       <span className="project-file">{sourceLabel}</span>
       <div className="project-progress-label"><span>Translation progress</span><strong>{percent}%</strong></div>
       <div className="project-progress" aria-hidden="true"><div className="project-progress-fill" style={{ width: `${percent}%` }} /></div>

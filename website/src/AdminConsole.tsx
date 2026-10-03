@@ -1452,9 +1452,9 @@ function RadioTrackModal({ state, onClose, onSaved, run }: { state: RadioModalSt
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label={editing ? 'Edit track' : 'Add track'}>
       <form className="modal-card radio-modal" onSubmit={submit}>
         <div className="radio-modal-head"><div><span className="admin-kicker">LH RADIO / INGESTION</span><h3>{editing ? 'Edit track' : 'Add track'}</h3></div><span className="radio-step-label">{analysis ? 'Review' : mode === 'link' ? 'Import metadata' : 'Choose source'}</span></div>
-        {!editing && <div className="radio-source-tabs" role="tablist" aria-label="Add track source">
-          <button type="button" role="tab" aria-selected={mode === 'upload'} className={mode === 'upload' ? 'active' : ''} onClick={() => setMode('upload')}>Upload MP3 <small>Primary</small></button>
-          <button type="button" role="tab" aria-selected={mode === 'link'} className={mode === 'link' ? 'active' : ''} onClick={() => setMode('link')}>Import Link <small>Metadata only</small></button>
+        {!editing && <div className="radio-source-tabs" role="group" aria-label="Add track source">
+          <button type="button" aria-pressed={mode === 'upload'} className={mode === 'upload' ? 'active' : ''} onClick={() => setMode('upload')}>Upload MP3 <small>Primary</small></button>
+          <button type="button" aria-pressed={mode === 'link'} className={mode === 'link' ? 'active' : ''} onClick={() => setMode('link')}>Import Link <small>Metadata only</small></button>
         </div>}
         {mode === 'link' && !editing && <div className="radio-link-import">
           <label className="admin-field">Spotify or YouTube link<input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://open.spotify.com/track/..." inputMode="url" /></label>
