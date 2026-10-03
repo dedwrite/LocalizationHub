@@ -3,6 +3,7 @@ import { LanguageSwitcher, useI18n } from '@localizationhub/i18n'
 import { allowHistoryNavigation } from './navigation'
 import Landing from './pages/LandingPage'
 import { DownloadPage, DocumentPage, NotFound } from './pages/InfoPages'
+import { CapabilityPage, ReferenceIndex } from './pages/CapabilityPages'
 import { updateRouteMetadata } from './publicMetadata'
 import CommandCenter from './delight/CommandCenter'
 const LhRadio = lazy(() => import('./lhRadio/LhRadio'))
@@ -69,6 +70,15 @@ function RoutedPage({ path }: { path: string }) {
   if (path === '/download') return <DownloadPage />
   if (path === '/privacy') return <DocumentPage kind="privacy" />
   if (path === '/terms') return <DocumentPage kind="terms" />
+  if (path === '/reference') return <ReferenceIndex />
+  // The reference pages keep their own addresses: an engine or a format can be
+  // linked from outside the site without an anchor into a shared page.
+  if (path === '/godot') return <CapabilityPage page="godot" />
+  if (path === '/unreal') return <CapabilityPage page="unreal" />
+  if (path === '/unity') return <CapabilityPage page="unity" />
+  if (path === '/formats/json') return <CapabilityPage page="json" />
+  if (path === '/formats/po') return <CapabilityPage page="po" />
+  if (path === '/features/translation-memory') return <CapabilityPage page="memory" />
   if (path !== '/') return <NotFound />
   return <Landing />
 }

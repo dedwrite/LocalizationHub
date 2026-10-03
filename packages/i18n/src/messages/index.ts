@@ -1,3 +1,4 @@
+import { capabilityMessages } from './capability'
 import { commonMessages } from './common'
 import { adminMessages } from './admin'
 import { desktopMessages } from './desktop'
@@ -15,6 +16,7 @@ import { quietMessages } from './quiet'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
+  ...capabilityMessages,
   ...commonMessages,
   ...adminMessages,
   ...desktopMessages,

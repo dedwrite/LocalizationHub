@@ -75,6 +75,7 @@ export function Footer() {
           public link would send visitors to a 404. */}
       <div>
         <InternalLink href="/download">{t("website.nav.download")}</InternalLink>
+        <InternalLink href="/reference">{t("capability.index.nav")}</InternalLink>
         <InternalLink href="/privacy">{t("legal.privacy.kicker")}</InternalLink>
         <InternalLink href="/terms">{t("legal.terms.kicker")}</InternalLink>
         <a href={`mailto:${site.contactEmail}`}>{t("website.footer.contact")}</a>

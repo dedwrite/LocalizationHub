@@ -145,6 +145,31 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .document-page article section { padding: 25px 0; border-top: 1px solid var(--line); }
 .document-page article h2 { margin-bottom: 10px; font-size: var(--fs-4); }
 .document-page article p { color: var(--muted); font-size: var(--fs-3); line-height: 1.85; }
+
+/* Reference pages (engines, formats, translation memory). One reading column,
+   one rule per status group, mono for machine values — the same vocabulary the
+   compatibility record uses, without turning a claim into a card. */
+.capability-page article { width: min(780px, 100%); margin-top: 48px; }
+.capability-group { margin-block-start: 40px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
+.capability-group h2 { margin: 0 0 16px; font-size: var(--fs-4); }
+.capability-group ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.capability-group li { position: relative; padding-inline-start: 22px; color: var(--soft); font-size: var(--fs-3); line-height: 1.85; }
+.capability-group li::before { content: '—'; position: absolute; inset-inline-start: 0; color: var(--accent); font-family: var(--font-mono); }
+/* Machine values keep their own direction inside an Arabic line (Script
+   Integrity): a file extension or a keyword is never re-ordered by the sentence. */
+.capability-group code, .capability-index code { color: var(--accent-strong); font-family: var(--font-mono); font-size: var(--fs-2); direction: ltr; unicode-bidi: isolate; }
+.capability-note { margin-block-start: 40px; padding-block-start: 20px; border-block-start: 1px solid var(--line); max-width: 68ch; color: var(--muted); font-size: var(--fs-2); line-height: 1.85; }
+.capability-index { display: grid; margin: 36px 0 0; padding: 0; list-style: none; }
+.capability-index li { border-block-start: 1px solid var(--line); }
+.capability-index li:last-child { border-block-end: 1px solid var(--line); }
+.capability-index a { display: grid; gap: 6px; padding-block: 20px; }
+.capability-index a:hover strong { color: var(--accent-strong); }
+.capability-index strong { font-size: var(--fs-4); font-weight: 600; }
+.capability-index span { max-width: 72ch; color: var(--soft); font-size: var(--fs-3); line-height: 1.8; }
+.capability-next { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin-block-start: 40px; }
+.capability-next span { max-width: 46ch; color: var(--muted); font-size: var(--fs-2); line-height: 1.8; }
+.capability-related { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-block-start: 32px; padding-block-start: 20px; border-block-start: 1px solid var(--line); font-size: var(--fs-2); color: var(--muted); }
+.capability-related a:hover { color: var(--accent-strong); }
 .not-found { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .not-found h1 { margin-bottom: 20px; }
 .not-found > p:not(.eyebrow) { color: var(--muted); font-size: var(--fs-3); }

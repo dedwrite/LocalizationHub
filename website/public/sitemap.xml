@@ -12,4 +12,25 @@
   <url>
     <loc>https://localizationhub.app/download</loc>
   </url>
+  <url>
+    <loc>https://localizationhub.app/reference</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/godot</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/unreal</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/unity</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/formats/json</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/formats/po</loc>
+  </url>
+  <url>
+    <loc>https://localizationhub.app/features/translation-memory</loc>
+  </url>
 </urlset>
