@@ -147,11 +147,20 @@ export function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) {
     [t('legal.heading.contact'), t('legal.privacy.contact')],
     [t('legal.heading.future'), t('legal.privacy.future')],
   ]
+  /* The second layer answers the questions the first layer raises: who owns
+   * the work, what happens when a third-party service is connected, what a
+   * visitor can expect from availability, and how either side ends the use. */
   const termsSections: Array<[string, string]> = [
     [t('legal.terms.using'), t('legal.terms.usingText')],
+    [t('legal.terms.ownership'), t('legal.terms.ownershipText')],
     [t('legal.terms.localBackups'), t('legal.terms.localBackupsText')],
     [t('website.surface.cloudProjects'), t('legal.terms.cloudText')],
     [t('legal.heading.accounts'), t('legal.terms.accountsText')],
+    [t('legal.terms.thirdParty'), t('legal.terms.thirdPartyText')],
+    [t('legal.terms.uptime'), t('legal.terms.uptimeText')],
+    [t('legal.terms.suspension'), t('legal.terms.suspensionText')],
+    [t('legal.terms.termination'), t('legal.terms.terminationText')],
+    [t('legal.terms.liability'), t('legal.terms.liabilityText')],
     [t('legal.terms.availability'), t('legal.terms.availabilityText')],
     [t('legal.terms.releases'), t('legal.terms.releasesText')],
     [t('legal.terms.changes'), t('legal.terms.changesText')],
