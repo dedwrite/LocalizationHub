@@ -382,11 +382,16 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .split-section { display: grid; grid-template-columns: 1fr 1fr; gap: 32px 48px; padding-block-start: 32px; border: 0; }
 #public-site .split-label { grid-column: 1 / -1; padding: 0; }
 #public-site .split-label h2 { color: var(--text); font-size: var(--fs-6); font-weight: 600; line-height: 1.2; margin: 0; letter-spacing: -0.02em; }
-#public-site .surface { padding: 32px; min-height: 0; border: 0; border-radius: var(--r-3); background: var(--surface); box-shadow: none; }
-#public-site .surface-cloud { background: none; border: 1px solid var(--line); }
+/* One filled sheet against one open ruled column: the pair keeps its contrast of
+   weight without becoming two floating shells. Rounded stays reserved for the
+   interactive proof and tip surfaces (see DESIGN.md, The Surface Rule). */
+#public-site .surface { padding: 0; min-height: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+#public-site .surface-local { padding: 28px; background: var(--surface); }
+#public-site .surface-cloud { padding-block-start: 28px; border-block-start: 1px solid var(--line); }
 #public-site .surface h3 { margin: 0 0 18px; font-size: var(--fs-5); }
 #public-site .surface p { color: var(--soft); font-size: var(--fs-3); line-height: 1.8; max-width: 48ch; }
-#public-site .surface-tag { display: inline-block; margin-top: 16px; font-family: var(--font-mono); font-size: var(--fs-1); color: var(--accent-strong); letter-spacing: 0; }
+#public-site .surface-tag { display: inline-block; margin-top: 16px; font-family: var(--font-mono); font-size: var(--fs-1); color: var(--muted); letter-spacing: 0; }
+#public-site .surface-local .surface-tag { color: var(--accent-strong); }
 #public-site .split-section .privacy-brief { width: 100%; padding: 0; border: 0; }
 #public-site .split-section .privacy-brief { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-block-start: 24px; }
 #public-site .privacy-brief h2 { font-size: var(--fs-5); margin: 0 0 10px; }
@@ -399,7 +404,7 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .field-notes-kicker { display: none; }
 #public-site .field-notes h2 { font-size: var(--fs-6); margin: 0 0 18px; }
 #public-site .field-notes > div > p { margin: 0; color: var(--muted); font-size: var(--fs-3); line-height: 1.8; }
-#public-site .field-tip { padding: 28px; border: 0; border-radius: var(--r-3); background: var(--surface); box-shadow: none; color: var(--soft); }
+#public-site .field-tip { padding: 0; border: 0; border-block-start: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; color: var(--soft); }
 #public-site .field-tip p { color: var(--text); font-size: var(--fs-5); line-height: 1.8; }
 #public-site .field-tip button { min-height: 44px; color: var(--accent-strong); border-color: var(--line); }
 #public-site .faq-section { display: grid; grid-template-columns: .7fr 1.3fr; gap: 56px; padding-block-start: 32px; border-block-start: 1px solid var(--line); }
@@ -427,7 +432,7 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .field-tip .field-tip-actions button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding-inline: 10px; border-radius: var(--r-1); color: var(--accent-strong); font-size: var(--fs-2); }
 #public-site .field-tip .field-tip-actions button:last-child { margin-inline-start: auto; color: var(--muted); }
 #public-site .field-tip .field-tip-actions button:hover { background: var(--surface-2); color: var(--text); }
-#public-site .field-tip.is-hidden { padding: 20px 28px; border-style: dashed; border-color: var(--line); background: none; }
+#public-site .field-tip.is-hidden { padding-block: 20px; border-block-start-style: dashed; border-color: var(--line); background: none; }
 #public-site .ambient-greeting { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); line-height: 1.7; }
 #public-site .little-secret .secret-trigger { display: grid; place-items: center; width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: var(--r-1); color: var(--soft); font-family: var(--font-mono); font-size: var(--fs-2); }
 #public-site .little-secret .secret-trigger:hover,
@@ -544,7 +549,8 @@ html.lh-motion #public-site [data-reveal] { opacity: 1; transform: none; animati
   #public-site .rtl-showcase-context > span { flex: 1 1 40%; }
   #public-site .rtl-showcase-foot b { flex-basis: 100%; margin: 0; }
   #public-site .split-section { grid-template-columns: 1fr; gap: 24px; }
-  #public-site .surface { padding: 24px; }
+  #public-site .surface-local { padding: 20px; }
+  #public-site .surface-cloud { padding-block-start: 20px; }
   #public-site .privacy-brief { flex-direction: column; align-items: start; gap: 16px; }
   #public-site .closing-invite { flex-direction: column; align-items: stretch; gap: 24px; padding-block: 32px 56px; }
   #public-site footer > div { margin-inline-start: 0; }

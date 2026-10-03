@@ -170,7 +170,7 @@ Violet accents sit within an ink and gray family; descriptive roles below refer 
 ### Neutral
 
 - **Matte Ink (`bg`):** page, the editable translation field and the opaque navigation background.
-- **Proof Surface (`surface`):** the editor sheet, format guide, surface cards, tip card and contextual example.
+- **Proof Surface (`surface`):** the editor sheet, the local-project sheet, the format guide and the context example. Advisory notes use the same tone but no shell (see The Advisory Rule).
 - **Raised Tone (`surface-2`):** hover feedback without spatial elevation.
 - **Quiet Separator (`line`):** borders, dividers, the editable field's stroke and the scrollbar thumb.
 - **Reading White (`text`):** headings, dialogue and primary copy.
@@ -212,7 +212,7 @@ One family and one mono family are shipped, both self-hosted under `/fonts`. No 
 
 A centered reading container uses the runtime `--public-width` cap (1200px), the frontmatter's public gutter and public section rhythm. The solid bordered header has a wider cap (1280px), 72px desktop height and a 12px sticky offset. These are public landing measurements, not application layout defaults.
 
-The hero connects headline, explanation and actions in one column beside an editable proof sheet; both are visible in the first desktop viewport. The proof stacks source and translation within its own column. The format guide combines a side selector with a selected result, the context section compares English and Arabic side by side, review features use open two-column groupings, local/cloud uses contrasting solid/outlined surfaces, and notes and FAQ retain their own compositions. Preserve these distinct arrangements rather than repeating one section template.
+The hero connects headline, explanation and actions in one column beside an editable proof sheet; both are visible in the first desktop viewport. The proof stacks source and translation within its own column. The format guide combines a side selector with a selected result, the context section compares English and Arabic side by side, review features use open two-column groupings, local/cloud contrasts one filled sheet against one open ruled column, and notes and FAQ retain their own compositions. Preserve these distinct arrangements rather than repeating one section template.
 
 At the navigation breakpoint, the full navigation gives way to the existing mobile disclosure. At the phone breakpoint, the hero and context become single-column layouts, format controls wrap, gutters narrow and spacing relaxes. The language select keeps 16px type. Below 350px only the existing logo is visible in the header; the full brand name remains in the accessibility tree so the language control and menu fit without overflow. Use logical properties for reading layouts; the decorative field deliberately keeps the same physical geometry in LTR and RTL.
 
@@ -222,11 +222,13 @@ The scoped public system uses no box shadows. Solid tonal surfaces, boundaries a
 
 **The Flat Proof Rule.** Interactive demonstrations remain steady sheets; hover changes tone and border rather than lifting or tilting the surface.
 
+**The Advisory Rule.** Advice is annotated, not boxed. Tips, notes and helper copy carry a separator and an inline mono marker instead of a shell, so the filled and rounded containers stay the ones that hold real work or real interaction: the editor sheet, the proof sheet, the format result and the panels of the console. The landing's tip and the workspace's tip note are the same component under two owners, and neither draws a second border around itself.
+
 Public content does not depend on reveal timing. Decorative characters do not animate, reduced-motion mode removes transitions, and forced-colors mode omits the decorative field.
 
 ## Shapes
 
-Controls use the compact rounded step; primary and quiet actions and translation fields use the middle step; proof, format and tip surfaces use the larger step. Section rows and separators stay square and flat. The existing logo keeps its original asset within a compact rounded frame.
+Controls use the compact rounded step; primary and quiet actions and translation fields use the middle step; the proof sheet and the format result use the larger step. Section rows, separators, advisory notes and the local-project sheet stay square and flat. The existing logo keeps its original asset within a compact rounded frame.
 
 Use rounded containers where they hold a real interactive or contextual surface. Repeated features, FAQ rows and public choices use open layouts and separators, avoiding competing shells.
 
