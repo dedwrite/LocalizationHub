@@ -26,7 +26,7 @@ for (const locale of ['en', 'ar']) {
     await page.addInitScript(locale => localStorage.setItem('localizationhub.ui-locale.v1', locale), locale)
     await page.goto('/')
     await expect(page.locator('html')).toHaveAttribute('lang', locale)
-    for (const selector of ['.preview-reset', '.preview-entry', '.lh-language-switcher select', '.mobile-site-menu summary', '.site-command-launcher', '.rtl-game-rune']) {
+    for (const selector of ['.preview-reset', '.preview-entry', '.lh-language-switcher select', '.mobile-site-menu summary', '.site-command-launcher']) {
       for (const control of await page.locator(`#public-site ${selector}`).all()) {
         if (await control.isVisible()) {
           expect((await control.boundingBox())!.height, selector).toBeGreaterThanOrEqual(44)

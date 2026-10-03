@@ -5,7 +5,6 @@ import { InternalLink } from "../internalNavigation";
 import TipCard from "../delight/TipCard";
 import { FaqLocaleSecret } from "../delight/LittleSecrets";
 import AmbientGreeting from "../delight/AmbientGreeting";
-import GameMemeSecret from "../delight/GameMemeSecret";
 import RtlShowcase from "../components/RtlShowcase";
 import LiveEditorPreview from "../components/LiveEditorPreview";
 import Icon from "../components/Icon";
@@ -367,7 +366,6 @@ export default function Landing() {
           </InternalLink>
         </section>
       </main>
-      <GameMemeSecret />
       <Footer />
     </div>
   );

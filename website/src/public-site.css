@@ -346,8 +346,6 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .rtl-showcase-head, #public-site .rtl-showcase-context, #public-site .rtl-showcase-foot { grid-column: 1 / -1; }
 #public-site .rtl-showcase-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 0 16px; font-family: inherit; font-size: var(--fs-1); letter-spacing: 0; border-color: var(--line); color: var(--muted); }
 #public-site .rtl-showcase :is(.rtl-showcase-head i, .rtl-showcase-foot i) { box-shadow: none; }
-#public-site .rtl-game-rune { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: var(--r-2); background: none; color: var(--accent-strong); font-size: var(--fs-4); transition: color 180ms ease, border-color 180ms ease, background 180ms ease; }
-#public-site .rtl-game-rune:hover { border-color: var(--accent); color: var(--text); background: var(--surface-2); }
 #public-site .rtl-showcase-context { display: flex; flex-wrap: wrap; align-items: center; gap: 40px; padding: 0; }
 #public-site .rtl-showcase-context > span { display: grid; gap: 3px; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; }
 #public-site .rtl-showcase-translation > div > span { color: var(--muted); font-size: var(--fs-1); }
@@ -466,26 +464,9 @@ html[dir='rtl'] #public-site .format-options { padding-inline: 0 20px; }
 #public-site .friday-note b { color: var(--accent-strong); font-weight: 500; }
 #public-site .friday-discovery-hidden .friday-note { position: absolute; inset-block-start: calc(100% + 10px); inset-inline-end: 0; z-index: 5; inline-size: min(290px, 72vw); margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-inline-start-width: 1px; border-radius: var(--r-3); background: var(--surface-2); box-shadow: none; text-align: start; }
 
-/* The hidden gaming-culture layer stays on this page's palette. */
-#public-site .game-secret-toast { position: fixed; z-index: 1700; inset-block-start: 82px; inset-inline-start: 50%; width: min(620px, calc(100% - 32px)); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--accent); border-radius: var(--r-3); color: var(--text); background: var(--surface-2); box-shadow: none; backdrop-filter: none; transform: translateX(-50%); animation: game-secret-arrive 220ms ease-out both; }
-#public-site .game-secret-pixel { display: grid; grid-template-columns: repeat(3, 7px); gap: 3px; transform: rotate(45deg); }
-#public-site .game-secret-pixel i { width: 7px; height: 7px; background: var(--accent); }
-#public-site .game-secret-pixel i:nth-child(2) { background: var(--success); }
-#public-site .game-secret-copy > span { display: block; color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); letter-spacing: 0.11em; }
-#public-site .game-secret-copy > strong { display: block; margin-block-start: 3px; color: var(--text); font-size: var(--fs-3); }
-#public-site .game-secret-copy p { margin: 5px 0; color: var(--soft); font-size: var(--fs-2); }
-#public-site .game-secret-copy small { color: var(--muted); font-size: var(--fs-1); }
-#public-site .game-secret-copy kbd { padding: 3px 5px; border: 1px solid var(--line); border-radius: var(--r-1); color: var(--accent-strong); background: var(--bg); font-family: var(--font-mono); font-size: var(--fs-1); direction: ltr; }
-#public-site .game-secret-actions { display: flex; align-items: center; gap: 6px; }
-#public-site .game-secret-actions button { min-height: 44px; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--r-2); color: var(--soft); background: none; cursor: pointer; font-size: var(--fs-2); }
-#public-site .game-secret-actions button:hover { border-color: var(--accent); color: var(--text); background: var(--surface); }
-#public-site .game-secret-actions .game-secret-close { width: 44px; padding: 0; font-size: var(--fs-4); }
-#public-site .game-secret-actions button:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
-@keyframes game-secret-arrive { from { transform: translate(-50%, -10px) scale(.98); } }
-
 /* Arabic interface labels take the Arabic face and drop Latin tracking; the
    mono face only ever belongs to Latin interface chrome. */
-html[lang='ar'] #public-site :is(.signal-strip, .hero-category, .surface-tag, .section-note, .field-notes-kicker, .format-platform, .sample-inline-link, .engine-boundary, .ambient-greeting, .game-secret-copy > span, .editor-proof-kicker, .compat-title, .compat-status) { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.8; }
+html[lang='ar'] #public-site :is(.signal-strip, .hero-category, .surface-tag, .section-note, .field-notes-kicker, .format-platform, .sample-inline-link, .engine-boundary, .ambient-greeting, .editor-proof-kicker, .compat-title, .compat-status) { font-family: var(--font-arabic); letter-spacing: 0; line-height: 1.8; }
 html[lang='ar'] #public-site :is(.workflow-step small, .rtl-showcase small, .rtl-showcase-head, .rtl-showcase-foot code) { font-family: var(--font-arabic); letter-spacing: 0; }
 
 /* Do not require reveal timing to read or capture the public site. */
@@ -559,11 +540,6 @@ html.lh-motion #public-site [data-reveal] { opacity: 1; transform: none; animati
   /* The secret popover becomes a centred sheet instead of an anchored one. */
   #public-site .little-secret { position: static; }
   #public-site .secret-note { inset-inline: 0; margin-inline: auto; bottom: calc(100% + 10px); }
-}
-@media (max-width: 600px) {
-  #public-site .game-secret-toast { inset-block-start: 68px; grid-template-columns: auto 1fr; gap: 12px; }
-  #public-site .game-secret-actions { grid-column: 1 / -1; justify-content: flex-end; }
-  #public-site .game-secret-copy small { display: none; }
 }
 @media (max-width: 430px) {
   #public-site { --public-gutter: 16px; }
