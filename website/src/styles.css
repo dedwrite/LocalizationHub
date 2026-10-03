@@ -32,8 +32,8 @@
 
   color-scheme: dark;
   font-family: var(--font-ui);
-  color: #e9e8ed;
-  background: #090a0d;
+  color: var(--text);
+  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --bg: #090a0d;
@@ -46,6 +46,14 @@
   --accent-strong: #d7c3f7;
   --accent-ink: #1b1428;
   --green: #87c5a0;
+  /* Reading White. The landing re-declares it inside `#public-site`; the shell
+     declares it here so a shared rule never depends on a fallback value that
+     only the landing happened to define. */
+  --text: #f0edf5;
+  /* The one panel shadow the shared shell draws. The landing declares no box
+     shadow at all (DESIGN.md), so this role belongs to the shell alone. */
+  --shadow-panel: rgb(0 0 0 / 20%);
+  --shadow-menu: rgb(0 0 0 / 55%);
 }
 * { box-sizing: border-box; }
 /* Only intentional section navigation animates. Focus, history restoration,
@@ -67,27 +75,27 @@ button, input, select, textarea { font-family: inherit; }
 .skip-content:focus { transform: translateY(0); }
 .site-header { position: sticky; inset-block-start: 0; z-index: 30; width: min(1280px, calc(100% - 48px)); min-height: 72px; margin: auto; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
 .site-header .command-launcher { margin-inline-start: 8px; min-height: 44px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-2); color: var(--soft); background: var(--surface); }
-.site-header .command-launcher:hover { border-color: var(--accent); color: var(--text, #f0edf5); }
+.site-header .command-launcher:hover { border-color: var(--accent); color: var(--text); }
 .site-header .command-launcher kbd { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); }
 /* The disclosure replaces the full navigation below 1000px on every route. */
 .mobile-site-menu { display: none; margin-inline-start: auto; }
-.mobile-site-menu summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; cursor: pointer; list-style: none; font-size: var(--fs-2); color: var(--text, #f0edf5); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); }
+.mobile-site-menu summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; cursor: pointer; list-style: none; font-size: var(--fs-2); color: var(--text); border: 1px solid var(--line); border-radius: var(--r-2); background: var(--surface); }
 .mobile-site-menu summary::-webkit-details-marker { display: none; }
-.mobile-site-menu nav { position: absolute; inset-block-start: calc(100% + 8px); inset-inline-end: 0; z-index: 30; inline-size: min(300px, 100%); padding: 8px; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); box-shadow: 0 16px 40px rgb(0 0 0 / 0.55); }
+.mobile-site-menu nav { position: absolute; inset-block-start: calc(100% + 8px); inset-inline-end: 0; z-index: 30; inline-size: min(300px, 100%); padding: 8px; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); box-shadow: 0 16px 40px var(--shadow-menu); }
 .mobile-site-menu nav a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 12px; border-radius: var(--r-1); color: var(--soft); font-size: var(--fs-2); }
-.mobile-site-menu nav a:hover { background: var(--surface-2); color: var(--text, #f0edf5); }
+.mobile-site-menu nav a:hover { background: var(--surface-2); color: var(--text); }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: -0.025em; white-space: nowrap; }
 .brand-icon { width: 30px; height: 30px; border-radius: var(--r-1); object-fit: contain; }
 .main-nav { display: flex; align-items: center; gap: 4px; margin-inline-start: auto; color: var(--soft); font-size: var(--fs-2); }
 .main-nav a { display: grid; place-items: center; min-height: 44px; padding: 10px; border-radius: var(--r-1); transition: color 150ms ease, background 150ms ease; }
-.main-nav a:hover { color: var(--text, #f0edf5); background: var(--surface-2); }
+.main-nav a:hover { color: var(--text); background: var(--surface-2); }
 .main-nav a:hover, footer a:hover { color: var(--accent-strong); }
 .header-cta, .button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 12px 18px; border: 1px solid var(--line); border-radius: var(--r-2); font-size: var(--fs-2); font-weight: 600; transition: border-color 180ms ease, background 180ms ease, color 180ms ease; }
 .header-cta { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .header-cta:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
 .button-primary { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .button-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
-.button-quiet { color: var(--text, #f0edf5); background: transparent; }
+.button-quiet { color: var(--text); background: transparent; }
 .button-quiet:hover { border-color: var(--accent); background: var(--surface-2); }
 
 /* ---------- Footer ---------- */
@@ -96,7 +104,7 @@ footer > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; ma
 footer a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; border-radius: var(--r-1); }
 .muted { color: var(--muted); }
 .creator-signature { color: var(--accent-strong); font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.1em; }
-.creator-signature:hover { color: var(--text, #f0edf5); }
+.creator-signature:hover { color: var(--text); }
 .eyebrow { margin: 0; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* The lazy-route placeholder belongs to the shell, not to one page: it shows
@@ -119,13 +127,13 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .page-lede { max-width: 570px; color: var(--muted); font-size: var(--fs-3); line-height: 1.9; }
 .download-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.7fr); gap: var(--web-content-gap); align-items: center; margin-top: 40px; }
 .download-layout .button { margin: 22px 10px 0 0; }
-.download-panel { padding: 32px; border: 1px solid var(--line); border-radius: var(--web-panel-radius); background: var(--surface); box-shadow: 0 16px 40px #0003; }
+.download-panel { padding: 32px; border: 1px solid var(--line); border-radius: var(--web-panel-radius); background: var(--surface); box-shadow: 0 16px 40px var(--shadow-panel); }
 .panel-mark img { width: 42px; height: 42px; border-radius: var(--r-1); }
 .panel-kicker { display: block; margin-top: 28px; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-2); }
 .download-panel h2 { margin: 15px 0 28px; font-size: var(--fs-6); }
 .download-fact { display: grid; gap: 7px; padding: 16px 0; border-top: 1px solid var(--line); }
 .download-fact span { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); text-transform: uppercase; }
-.download-fact strong { color: var(--text, #f0edf5); font-size: var(--fs-2); }
+.download-fact strong { color: var(--text); font-size: var(--fs-2); }
 .download-access-note { max-width: 55ch; padding-inline-start: 16px; border-inline-start: 2px solid var(--accent); color: var(--soft); font-size: var(--fs-3); line-height: 1.8; }
 /* The private build has no public download, so the request control opens onto
    the one address a visitor can write to: printed, copyable, and a mail link. */
@@ -137,8 +145,8 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .download-request-address .download-request-note { color: var(--muted); }
 .download-request-line { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .download-address { color: var(--accent-strong); font-family: var(--font-mono); font-size: var(--fs-3); overflow-wrap: anywhere; }
-.download-address:hover { color: var(--text, #f0edf5); text-decoration: underline; text-underline-offset: 3px; }
-.download-copy { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-1); background: transparent; color: var(--text, #f0edf5); font-size: var(--fs-2); font-weight: 600; cursor: pointer; }
+.download-address:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.download-copy { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-1); background: transparent; color: var(--text); font-size: var(--fs-2); font-weight: 600; cursor: pointer; }
 .download-copy:hover { border-color: var(--accent); background: var(--surface); }
 .download-copy-status { color: var(--green); font-family: var(--font-mono); font-size: var(--fs-1); }
 .document-page article { width: min(720px, 100%); margin-top: 48px; }

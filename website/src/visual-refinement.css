@@ -15,46 +15,46 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 12px 0 0;
-  color: #c2c6d2;
+  color: var(--app-text-3);
   font-size: 12px;
   line-height: 1.7;
   text-align: start;
 }
 .context-person {
-  padding: 9px 12px; background: #171b25; border: 1px solid #2c3241; border-radius: 8px;
+  padding: 9px 12px; background: var(--app-panel); border: 1px solid var(--app-line); border-radius: 8px;
   border-inline-start-width: 3px;
 }
-.context-person[data-role='speaker'] { border-inline-start-color: #8f7ae0; background: #181627; }
-.context-person[data-role='listener'] { border-inline-start-color: #5f9aa0; background: #151c22; }
-.context-person bdi { color: #e2deef; font-weight: 600; }
-.context-field-label { color: #afa5cf; }
-.context-person[data-role='speaker'] .context-field-label { color: #b7a5ed; }
-.context-person[data-role='listener'] .context-field-label { color: #8eb8bc; }
-.context-detail { grid-column: 1 / -1; padding: 3px 2px; font-size: 11px; color: #a8adbd; }
+.context-person[data-role='speaker'] { border-inline-start-color: var(--app-speaker); background: var(--app-panel); }
+.context-person[data-role='listener'] { border-inline-start-color: var(--app-listener); background: var(--app-panel); }
+.context-person bdi { color: var(--app-text-2); font-weight: 600; }
+.context-field-label { color: var(--app-text-4); }
+.context-person[data-role='speaker'] .context-field-label { color: var(--app-accent-label); }
+.context-person[data-role='listener'] .context-field-label { color: var(--app-warning-ink); }
+.context-detail { grid-column: 1 / -1; padding: 3px 2px; font-size: 11px; color: var(--app-text-4); }
 .dialogue-context-strip bdi { overflow-wrap: anywhere; }
 .workspace-shell .translation-section { margin-top: 22px; padding: 16px; border-radius: var(--web-panel-radius); box-shadow: none; }
 .workspace-shell .translation-editor { min-height: clamp(168px, 24vh, 240px); padding: 16px; border-radius: 8px; }
 :is(.workspace-shell, .mob-workspace) .source-token-list { gap: 6px; line-height: 1.6; }
-:is(.workspace-shell, .mob-workspace) .source-token-list code { border-color: #443954; color: #c9b9e8; background: #211d2d; }
+:is(.workspace-shell, .mob-workspace) .source-token-list code { border-color: var(--app-line-strong); color: var(--app-warning-deep); background: var(--app-danger-wash); }
 :is(.workspace-shell, .mob-workspace) .inline-qa-item { border-radius: 6px; line-height: 1.65; }
-:is(.workspace-shell, .mob-workspace) .local-mt-privacy { font-size: 12px; line-height: 1.75; color: #aeb6c7; }
-.workspace-shell .muted { color: #a6adbb; }
+:is(.workspace-shell, .mob-workspace) .local-mt-privacy { font-size: 12px; line-height: 1.75; color: var(--app-text-4); }
+.workspace-shell .muted { color: var(--app-text-5); }
 
 /* Profile metadata gets a second line; primary Save stays visually distinct. */
 .workspace-shell .workspace-toolbar { gap: 10px; padding-block: 10px; }
 .workspace-shell .toolbar-title { min-width: 110px; gap: 4px; }
 .workspace-shell .toolbar-title strong { max-width: 200px; }
-.workspace-shell .toolbar-group { gap: 6px; padding-inline-start: 10px; border-inline-start: 1px solid #2b3040; border-left: 0; }
+.workspace-shell .toolbar-group { gap: 6px; padding-inline-start: 10px; border-inline-start: 1px solid var(--app-line); border-left: 0; }
 .workspace-shell .toolbar-group:last-child { margin-inline-start: auto; }
 .workspace-shell .toolbar-select { display: grid; grid-template-columns: auto minmax(100px, 1fr); gap: 3px 8px; max-width: 280px; }
-.workspace-shell .token-profile-toolbar-status { grid-column: 1 / -1; white-space: normal; margin: 0; color: #a4abba; }
+.workspace-shell .token-profile-toolbar-status { grid-column: 1 / -1; white-space: normal; margin: 0; color: var(--app-text-5); }
 .workspace-shell :is(.toolbar-button, .toolbar-select select) { min-height: 34px; border-radius: 7px; }
-.workspace-shell .toolbar-button:not(.toolbar-save) { background: #141922; border-color: #303847; }
+.workspace-shell .toolbar-button:not(.toolbar-save) { background: var(--app-panel); border-color: var(--app-line); }
 .workspace-shell .toolbar-save { box-shadow: none; }
 .workspace-shell .entries-head { padding: 12px; }
 .workspace-shell .entry-row { border-inline-start: 3px solid transparent; transition: background 140ms ease, border-color 140ms ease; }
-.workspace-shell .entry-row.selected { border-inline-start-color: #a79cff; background: #23223b; }
-.workspace-shell .entry-row:focus-visible { outline: 2px solid #b2a5ff; outline-offset: -3px; }
+.workspace-shell .entry-row.selected { border-inline-start-color: var(--app-focus); background: var(--app-violet-wash); }
+.workspace-shell .entry-row:focus-visible { outline: 2px solid var(--app-focus); outline-offset: -3px; }
 .workspace-shell .inspector-tabs { justify-content: flex-start; gap: 5px; margin: 0; padding: 10px; }
 .workspace-shell .inspector-tab { border-radius: 6px; }
 .workspace-shell .detail-list { border-radius: 8px; }
@@ -62,9 +62,9 @@
 
 /* Small shared surfaces should feel related, with stable hover/focus geometry. */
 :is(.workspace-page, .local-page, .mob-workspace) :is(.dialog, .overview-panel, .auth-card, .notice) { border-radius: var(--web-panel-radius); }
-:is(.workspace-page, .local-page, .mob-workspace) .toast { border-radius: 10px; box-shadow: 0 10px 32px #0005; }
-:is(.workspace-page, .local-page) .notice { border-inline-start: 3px solid #7868ee; border-left: 0; }
-:is(.workspace-page, .local-page, .mob-workspace) button:focus-visible { outline: 2px solid #b2a5ff; outline-offset: 3px; }
+:is(.workspace-page, .local-page, .mob-workspace) .toast { border-radius: 10px; box-shadow: 0 10px 32px var(--app-shadow); }
+:is(.workspace-page, .local-page) .notice { border-inline-start: 3px solid var(--app-primary-bright); border-left: 0; }
+:is(.workspace-page, .local-page, .mob-workspace) button:focus-visible { outline: 2px solid var(--app-focus); outline-offset: 3px; }
 
 @media (max-width: 767px) {
   .dialogue-context-strip { grid-template-columns: 1fr; gap: 6px; font-size: 13px; }
@@ -91,34 +91,34 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 .projects-page .dashboard h1 { font-size: clamp(32px, 3.6vw, 46px); line-height: 1.15; }
 .project-summary { margin-bottom: 24px; border-radius: var(--web-panel-radius); overflow: hidden; }
 .project-summary > div, .project-summary > aside { min-height: 88px; padding: 16px 20px; }
-.project-summary small, .result-count { color: #a0a7b5; }
+.project-summary small, .result-count { color: var(--app-text-5); }
 .single-project-layout { max-width: 1120px; grid-template-columns: minmax(0, 1fr) minmax(280px, .8fr); gap: 20px; }
 .single-project-layout .project-grid { grid-template-columns: minmax(0, 1fr); }
 .projects-page .project-card { min-height: 260px; border-radius: var(--web-panel-radius); gap: 12px; }
 .project-support { min-height: 260px; border-radius: var(--web-panel-radius); padding: 22px; box-shadow: none; }
 .project-support .support-facts { gap: 10px; }
-.project-support .support-facts span { color: #969dac; }
+.project-support .support-facts span { color: var(--app-text-5); }
 .project-support .support-actions button { border-radius: 7px; text-align: start; }
 .projects-page .project-search input { border-radius: 8px; }
 .projects-page .empty-state { min-height: 300px; padding: 32px 24px; border-radius: var(--web-panel-radius); }
-.project-card-actions summary { min-height: 32px; min-width: 32px; display: grid; place-items: center; background: #1d202c; border: 1px solid #343a4a; }
+.project-card-actions summary { min-height: 32px; min-width: 32px; display: grid; place-items: center; background: var(--app-panel-2); border: 1px solid var(--app-line); }
 
 /* Local files: place the open action and recent work in the first useful view. */
 .local-home .local-drop { padding-block: clamp(44px, 5vw, 72px) 24px; gap: 28px var(--web-content-gap); }
 .local-intro h1 { font-size: clamp(2.6rem, 4.4vw, 4.6rem); margin-block: 20px; line-height: 1.1; }
 .local-trust-row { margin-top: 20px; }
-.local-open-panel { min-height: 0; padding: 28px; border-radius: var(--web-panel-radius); box-shadow: 0 16px 40px #0003; }
+.local-open-panel { min-height: 0; padding: 28px; border-radius: var(--web-panel-radius); box-shadow: 0 16px 40px var(--app-shadow-soft); }
 .local-file-graphic { margin-block: 24px 20px; height: 86px; }
-.local-open-panel > small { color: #9ba4b3; font-size: 11px; line-height: 1.6; }
+.local-open-panel > small { color: var(--app-text-5); font-size: 11px; line-height: 1.6; }
 .local-open-panel .file-button { border-radius: 8px; min-height: 44px; }
 .recent-local { margin-top: 0; }
 .recent-local-row { align-items: center; border-radius: 8px; padding: 4px 8px; }
-.recent-local-row:hover { background: #151925; }
+.recent-local-row:hover { background: var(--app-panel); }
 .recent-local-row > button:first-of-type { text-align: start; }
 .recent-local-row > button:last-of-type { border-radius: 7px; }
 .app-context-nav { border-radius: 10px; }
 .app-context-nav button { border-radius: 7px; text-align: start; }
-.projects-page .dashboard-heading .muted { color: #a5adbb; }
+.projects-page .dashboard-heading .muted { color: var(--app-text-5); }
 /* Match the global language control's two placement breakpoints. It must not
    cover the public CTA, project account actions, or Local/Cloud switcher. */
 @media (min-width: 768px) {
@@ -138,9 +138,9 @@ html.lh-motion [data-reveal].is-revealed { animation-duration: 560ms; }
 }
 @media (max-width: 767px) {
   .project-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .project-summary > div, .project-summary > div:nth-child(3) { min-height: 88px; padding: 12px; grid-column: auto; border-top: 0; border-inline-end: 1px solid #2d3440; }
+  .project-summary > div, .project-summary > div:nth-child(3) { min-height: 88px; padding: 12px; grid-column: auto; border-top: 0; border-inline-end: 1px solid var(--app-line); }
   .project-summary > div:nth-child(3) { border-inline-end: 0; }
-  .project-summary > aside { grid-column: 1 / -1; min-height: 68px; border-top: 1px solid #2d3440; padding: 14px; }
+  .project-summary > aside { grid-column: 1 / -1; min-height: 68px; border-top: 1px solid var(--app-line); padding: 14px; }
   .project-summary span { font-size: 9px; letter-spacing: .03em; line-height: 1.5; }
   .project-summary strong { font-size: 22px; }
   .local-home .local-drop { padding-top: 40px; gap: 24px; }

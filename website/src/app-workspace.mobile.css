@@ -41,14 +41,14 @@
     left: 0;
     right: 0;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-    background: #11151d;
-    border-top: 1px solid #343b47;
+    background: var(--app-well);
+    border-top: 1px solid var(--app-line);
     z-index: 4;
   }
   .mobile-nav button {
     border: 0;
     background: transparent;
-    color: #b9c0ca;
+    color: var(--app-text-4);
     font-size: 13px;
     padding: 12px;
     min-height: 48px;
@@ -56,7 +56,7 @@
     cursor: pointer;
     font: inherit;
   }
-  .mobile-nav button.active { color: #c9b8ff; background: #1d2036; }
+  .mobile-nav button.active { color: var(--app-accent-3); background: var(--app-violet-wash); }
 
   /* New-project modal as a bottom sheet */
   .dialog-backdrop { align-items: flex-end; }

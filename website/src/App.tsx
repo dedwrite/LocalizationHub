@@ -13,6 +13,7 @@ const LocalWorkspace = lazy(() => import('./LocalWorkspace'))
 const AdminConsole = lazy(() => import('./AdminConsole'))
 
 import './styles.css'
+import './app-palette.css'
 import './experience-polish.css'
 import './workspace-deep-polish.css'
 import './visual-refinement.css'
