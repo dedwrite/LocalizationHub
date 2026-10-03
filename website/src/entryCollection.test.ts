@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { EntryWorkflowMap } from '@localizationhub/core'
+import { duplicateTranslationIds, type EntryWorkflowMap } from '@localizationhub/core'
 import { buildEntryCollection, entryIssues, entryStatus } from './workspace/entryCollection'
 
 function makeEntries(count: number) {
@@ -78,6 +78,28 @@ describe('entry collection filtering', () => {
   it('detects no issues when tokens are preserved', () => {
     const issues = entryIssues({ source: 'Hello {0}', translation: 'Bonjour {0}' }, 'generic')
     expect(issues.filter((issue) => issue.severity === 'error').length).toBe(0)
+  })
+
+  it('adds the translation checks to the entry queue without duplicating token work', () => {
+    const issues = entryIssues({ source: 'Save 3 slots?', translation: 'احفظ الخانات' }, 'generic')
+    expect(issues.map((issue) => issue.kind)).toEqual(expect.arrayContaining(['number-dropped', 'terminal-punctuation-dropped']))
+    expect(issues.every((issue) => issue.severity === 'warning')).toBe(true)
+    // The concrete value travels with the issue so the UI can show it and Arabic can append it.
+    expect(issues.find((issue) => issue.kind === 'number-dropped')?.detail).toBe('3')
+  })
+
+  it('reports one translation reused for another source, and counts it as a warning', () => {
+    const entries = [
+      { id: 'a', source: 'Start', translation: 'ابدأ' },
+      { id: 'b', source: 'Begin', translation: 'ابدأ' },
+      { id: 'c', source: 'Stop', translation: 'توقف' },
+    ]
+    const duplicates = duplicateTranslationIds(entries)
+    const collection = buildEntryCollection({ entries, workflow: {}, filter: 'warnings', query: '', duplicateTranslationIds: duplicates })
+    expect(collection.counts.warnings).toBe(2)
+    expect(collection.views.map((view) => view.entry.id)).toEqual(['a', 'b'])
+    expect(collection.views[0].issues).toContainEqual(expect.objectContaining({ kind: 'duplicate-translation', detail: 'Begin' }))
+    expect(collection.views[0].hasError).toBe(false)
   })
 })
 

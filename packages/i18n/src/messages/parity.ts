@@ -24,6 +24,19 @@ export const parityMessages = {
   // Announced by the editor's status line once a draft no longer breaks any
   // protected token or tag: the clear state has no visible row of its own.
   'qa.clear': { en: 'Protected-token check is clear.', ar: 'فحص الرموز المحمية سليم.' },
+  // Translation checks that compare the draft with its own source. The concrete
+  // value (a code point, a number, an entity) is appended from the issue itself.
+  'qa.invisibleCharacters': { en: 'Invisible direction or zero-width characters in the translation.', ar: 'توجد محارف اتجاه أو محارف صفرية العرض غير مرئية في الترجمة.' },
+  'qa.replacementCharacter': { en: 'The translation contains a replacement character (U+FFFD): the text is corrupted.', ar: 'تحتوي الترجمة على محرف بديل (U+FFFD): النص تالف.' },
+  'qa.newlineDropped': { en: 'The source has line breaks the translation lost.', ar: 'يحتوي النص الأصلي على فواصل أسطر فُقدت في الترجمة.' },
+  'qa.newlineAdded': { en: 'The translation adds line breaks the source does not have.', ar: 'أُضيفت فواصل أسطر لا وجود لها في النص الأصلي.' },
+  'qa.edgeSpaceDropped': { en: 'The leading or trailing space of the source is missing.', ar: 'المسافة في بداية النص الأصلي أو نهايته مفقودة.' },
+  'qa.edgeSpaceAdded': { en: 'The translation adds a leading or trailing space.', ar: 'أُضيفت مسافة في بداية الترجمة أو نهايتها.' },
+  'qa.punctuationDropped': { en: 'The source ends with punctuation the translation lost.', ar: 'ينتهي النص الأصلي بعلامة ترقيم فُقدت في الترجمة.' },
+  'qa.numberDropped': { en: 'A number in the source is missing from the translation.', ar: 'رقم موجود في النص الأصلي مفقود في الترجمة.' },
+  'qa.numberAdded': { en: 'The translation has a number the source does not.', ar: 'تحتوي الترجمة على رقم غير موجود في النص الأصلي.' },
+  'qa.entityMismatch': { en: 'Markup entities differ from the source.', ar: 'كيانات الترميز مختلفة عن النص الأصلي.' },
+  'qa.duplicateTranslation': { en: 'The same translation is used for a different source.', ar: 'الترجمة نفسها مستخدمة لنص أصلي مختلف.' },
   'qa.missing': { en: 'Restore the missing protected token:', ar: 'أعد الرمز المحمي المفقود:' },
   'qa.extra': { en: 'Remove or correct the unexpected protected token:', ar: 'أزل الرمز المحمي غير المتوقع أو صححه:' },
   'qa.placement': { en: 'Check the changed protected-token position.', ar: 'تحقق من موضع الرمز المحمي الذي تغير.' },

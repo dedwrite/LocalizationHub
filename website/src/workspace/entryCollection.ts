@@ -4,7 +4,7 @@
  * Reuses @localizationhub/core for workflow status and protected-token
  * validation so Web and Desktop share the same authoritative behavior.
  */
-import { getEffectiveEntryWorkflowStatus, validateProtectedTokens, type EntryWorkflowMap, type TokenProfileId } from '@localizationhub/core'
+import { duplicateTranslationIssue, getEffectiveEntryWorkflowStatus, translationQaIssues, validateProtectedTokens, type EntryWorkflowMap, type TokenProfileId } from '@localizationhub/core'
 
 export type BulkSelection = Set<number>
 
@@ -37,7 +37,7 @@ export const ENTRY_FILTERS: EntryFilter[] = [
   { id: 'tags', label: 'Has Tags' },
 ]
 
-export type EntryIssue = { severity: 'error' | 'warning'; message: string; kind?: string; token?: { raw: string } }
+export type EntryIssue = { severity: 'error' | 'warning'; message: string; kind?: string; token?: { raw: string }; detail?: string }
 
 export type EntryView = {
   entry: any
@@ -52,7 +52,7 @@ export function entryStatus(entry: any, workflow: EntryWorkflowMap): string {
   return getEffectiveEntryWorkflowStatus(entry, workflow[entry.id])
 }
 
-export function entryIssues(entry: any, tokenProfileId: TokenProfileId = 'generic'): EntryIssue[] {
+export function entryIssues(entry: any, tokenProfileId: TokenProfileId = 'generic', duplicateOf?: string): EntryIssue[] {
   // Unstarted entries belong in Untranslated, not in the live error queue.
   // Export validation remains strict and still checks the original project.
   if (!entry.translation?.trim()) return []
@@ -61,6 +61,15 @@ export function entryIssues(entry: any, tokenProfileId: TokenProfileId = 'generi
   for (const token of result.missingTokens ?? []) issues.push({ severity: 'error', kind: 'missing', token, message: `Missing protected token: ${token.raw}` })
   for (const token of result.extraTokens ?? []) issues.push({ severity: 'error', kind: 'extra', token, message: `Unexpected protected token: ${token.raw}` })
   issues.push(...result.errors, ...result.warnings)
+  // The translation's own quality checks: numbers, line breaks, punctuation,
+  // edge spaces, invisible characters and entities the source carried.
+  for (const issue of translationQaIssues(entry.source ?? '', entry.translation ?? '', tokenProfileId)) {
+    issues.push({ severity: issue.severity, kind: issue.kind, detail: issue.detail, message: issue.message })
+  }
+  if (duplicateOf) {
+    const duplicate = duplicateTranslationIssue(duplicateOf)
+    issues.push({ severity: duplicate.severity, kind: duplicate.kind, detail: duplicate.detail, message: duplicate.message })
+  }
   return issues
 }
 
@@ -81,6 +90,7 @@ export type CollectionOptions = {
   taggedEntryIds?: Set<string>
   currentUserId?: string
   assignments?: Record<string, string | null>
+  duplicateTranslationIds?: Map<string, string>
 }
 
 function matchesQuery(view: EntryView, rawQuery: string): boolean {
@@ -129,7 +139,7 @@ export function buildEntryCollection(options: CollectionOptions): EntryCollectio
   for (let index = 0; index < entries.length; index++) {
     const entry = entries[index]
     const status = entryStatus(entry, workflow)
-    const issues = entryIssues(entry, tokenProfileId)
+    const issues = entryIssues(entry, tokenProfileId, options.duplicateTranslationIds?.get(entry.id))
     const view: EntryView = { entry, index, status, issues, hasError: issues.some((i) => i.severity === 'error'), hasWarning: issues.some((i) => i.severity === 'warning') }
     counts[status] = (counts[status] ?? 0) + 1
     if (view.hasError) counts.errors += 1

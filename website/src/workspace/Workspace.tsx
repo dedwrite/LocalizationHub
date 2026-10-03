@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { deleteProject, listAssignments, listCommentCounts, listMembers } from '../appApi'
 import ProjectDeleteDialog from '../../../frontend/src/ProjectDeleteDialog'
-import { createTokenProfileConfig, displayTokenProfile, TOKEN_PROFILE_LABELS, updateTokenProfileConfig, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
+import { createTokenProfileConfig, displayTokenProfile, duplicateTranslationIds as findDuplicateTranslations, TOKEN_PROFILE_LABELS, updateTokenProfileConfig, type TokenProfileConfig, type TokenProfileId } from '@localizationhub/core'
 import { canEdit } from '../appLogic'
 import { buildEntryCollection, entryIssues, type BulkSelection, type EntryFilterId } from './entryCollection'
 import { validateProjectV3 } from './projectValidation'
@@ -158,16 +158,19 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
     return set
   }, [draft])
 
+  // One translation reused for a different source is a project-level finding,
+  // so it is computed once for the whole collection instead of per entry.
+  const duplicateTranslationIds = useMemo(() => findDuplicateTranslations(entries), [entries])
   const collection = useMemo(
     () => buildEntryCollection({
-      entries, workflow: draft?.workflow?.entries ?? {}, filter: filter as any, query, tokenProfileId, commentEntryIds, taggedEntryIds, currentUserId: user.id, assignments,
+      entries, workflow: draft?.workflow?.entries ?? {}, filter: filter as any, query, tokenProfileId, commentEntryIds, taggedEntryIds, currentUserId: user.id, assignments, duplicateTranslationIds,
     }),
-    [entries, draft?.workflow, filter, query, tokenProfileId, commentEntryIds, taggedEntryIds, user.id, assignments],
+    [entries, draft?.workflow, filter, query, tokenProfileId, commentEntryIds, taggedEntryIds, user.id, assignments, duplicateTranslationIds],
   )
 
   const entry = entries[selected]
   const status = draft?.workflow?.entries?.[entry?.id]?.status ?? (entry?.translation ? 'translated' : 'draft')
-  const issues = entry ? entryIssues(entry, tokenProfileId) : []
+  const issues = entry ? entryIssues(entry, tokenProfileId, duplicateTranslationIds.get(entry.id)) : []
   const sourceDirection = draft?.document?.language?.sourceDirection ?? 'auto'
   const direction = draft?.document?.language?.translationDirection ?? 'auto'
   const sourceLocale = draft?.document?.language?.sourceLocale

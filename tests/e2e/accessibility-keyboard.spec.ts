@@ -140,7 +140,10 @@ test('inspector tabs follow the tab pattern', async ({ page }, testInfo) => {
   await expect(workflow).toHaveAttribute('aria-controls', 'inspector-tabpanel')
   await expect(panel).toBeVisible()
   await expect(panel).toHaveAttribute('aria-labelledby', 'inspector-tab-workflow')
+  // Confirm the tab really holds focus before the arrow: the workspace may still
+  // be settling, and a replaced node would swallow the key.
   await workflow.focus()
+  await expect(workflow).toBeFocused()
   await page.keyboard.press('ArrowRight')
   const quality = page.getByRole('tab', { name: 'Quality', exact: true })
   await expect(quality).toHaveAttribute('aria-selected', 'true')

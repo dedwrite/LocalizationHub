@@ -94,7 +94,12 @@ export default function EditorPanel(props: EditorPanelProps) {
   }
   const quietLengthKind = footprint.tone === 'expanded' ? 'very-long' : footprint.tone === 'compact' ? 'short' : footprint.tone
   const protectedTokens = extractProtectedTokens(source, tokenProfileId)
-  const issueKeys: Record<string, MessageKey> = { missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope' }
+  const issueKeys: Record<string, MessageKey> = {
+    missing: 'qa.missing', extra: 'qa.extra', 'token-placement-changed': 'qa.placement', 'token-order-changed': 'qa.order', 'tag-structure-invalid': 'qa.structure', 'tag-content-empty': 'qa.empty', 'tag-scope-changed': 'qa.scope',
+    'invisible-characters': 'qa.invisibleCharacters', 'replacement-character': 'qa.replacementCharacter', 'newline-dropped': 'qa.newlineDropped', 'newline-added': 'qa.newlineAdded',
+    'edge-space-dropped': 'qa.edgeSpaceDropped', 'edge-space-added': 'qa.edgeSpaceAdded', 'terminal-punctuation-dropped': 'qa.punctuationDropped',
+    'number-dropped': 'qa.numberDropped', 'number-added': 'qa.numberAdded', 'entity-mismatch': 'qa.entityMismatch', 'duplicate-translation': 'qa.duplicateTranslation',
+  }
   /*
    * The same sentence the eye reads, as plain text. Screen readers get the
    * symbol check through one status line instead of a list that only paints:
@@ -102,7 +107,10 @@ export default function EditorPanel(props: EditorPanelProps) {
    * state (which has no visible row of its own), and problems name their token.
    */
   function issueText(issue: EntryIssue) {
-    if (locale === 'ar' && issue.kind && issueKeys[issue.kind]) return issue.token ? `${t(issueKeys[issue.kind])} ${issue.token.raw}` : t(issueKeys[issue.kind])
+    if (locale === 'ar' && issue.kind && issueKeys[issue.kind]) {
+      const value = issue.token?.raw ?? issue.detail
+      return value ? `${t(issueKeys[issue.kind])} ${value}` : t(issueKeys[issue.kind])
+    }
     return issue.message
   }
   const issueAnnouncement = translation.trim() === '' ? '' : issues.length === 0 ? t('qa.clear') : issues.map(issueText).join(' ')
@@ -249,7 +257,9 @@ export default function EditorPanel(props: EditorPanelProps) {
           {issues.length > 0 && (
             <div className="inline-qa">
               {issues.map((issue, i) => (
-                <div key={i} className={`inline-qa-item qa-${issue.severity}`} data-i18n-skip>{locale === 'ar' && issue.kind && issueKeys[issue.kind] ? <>{t(issueKeys[issue.kind])}{issue.token && <> <code dir="ltr">{issue.token.raw}</code></>}</> : issue.message}</div>
+                <div key={i} className={`inline-qa-item qa-${issue.severity}`} data-i18n-skip>{locale === 'ar' && issue.kind && issueKeys[issue.kind]
+                  ? <>{t(issueKeys[issue.kind])}{(issue.token || issue.detail) && <> <code dir="ltr">{issue.token?.raw ?? issue.detail}</code></>}</>
+                  : issue.message}</div>
               ))}
             </div>
           )}
