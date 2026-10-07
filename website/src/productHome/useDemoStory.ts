@@ -8,7 +8,7 @@ export function useDemoStory({reducedMotion, visible}: {reducedMotion: boolean; 
   }, [reducedMotion])
   useLayoutEffect(() => {
     if (!visible || reducedMotion || state.paused) return
-    const delay = {select: 4000, translate: 6000, validate: 6000}[state.stage]
+    const delay = {select: 1800, translate: 2400, validate: 2800}[state.stage]
     const timer = setTimeout(() => {
       // Re-check at execution, not just scheduling: visibility can change
       // before React flushes this effect's cleanup (notably WebKit).
