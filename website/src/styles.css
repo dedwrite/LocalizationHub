@@ -105,7 +105,6 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; padding:
 .muted { color: var(--muted); }
 .creator-signature { color: var(--accent-strong); font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.1em; }
 .creator-signature:hover { color: var(--text); }
-.eyebrow { margin: 0; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-1); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* The lazy-route placeholder belongs to the shell, not to one page: it shows
    whichever route is still arriving. */
@@ -121,25 +120,43 @@ footer a { display: inline-flex; align-items: center; min-height: 44px; padding:
 /* Arabic documents take the Arabic face and drop Latin tracking; the mono face
    is only ever for Latin interface chrome. */
 html[lang='ar'] .inner-page :is(h1, h2, h3) { letter-spacing: 0; line-height: 1.5; }
-html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .download-access-note) { font-family: var(--font-arabic); letter-spacing: 0; }
-.inner-page { width: min(1120px, calc(100% - 48px)); min-height: calc(100vh - 165px); margin: auto; padding: clamp(56px, 6vw, 88px) 0 112px; }
-.inner-page h1 { margin: 0 0 24px; font-size: var(--fs-7); }
-.page-lede { max-width: 570px; color: var(--muted); font-size: var(--fs-3); line-height: 1.9; }
-.download-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(320px, 0.7fr); gap: var(--web-content-gap); align-items: center; margin-top: 40px; }
+html[lang='ar'] .inner-page :is(.panel-kicker, .download-fact span, .download-access-note) { font-family: var(--font-arabic); letter-spacing: 0; }
+.public-reading { --bg: var(--lh-canvas); --surface: var(--lh-surface); --surface-2: var(--lh-raised); --line: var(--lh-line); --text: var(--lh-text); --muted: var(--lh-secondary); --soft: var(--lh-text); --accent: var(--lh-accent); --accent-strong: var(--lh-accent); --green: var(--lh-accent); --shadow-panel: transparent; }
+.public-reading .home-shell { max-inline-size: 1440px; padding-block-end: 140px; }
+.public-reading ::selection { background: var(--lh-accent); color: var(--lh-canvas); }
+html:has(.public-reading) { --lh-scroll-track: #050505; --lh-scroll-thumb: #383d3b; --lh-scroll-thumb-hover: #949b95; --lh-scroll-thumb-active: #bafa61; scrollbar-color: var(--lh-scroll-thumb) var(--lh-scroll-track); }
+.public-reading [dir=rtl] { font-family: 'LH Public Arabic','LH Inter',sans-serif; }
+.public-reading .home-footer { border-block-start: 1px solid var(--lh-line); flex-wrap: wrap; }
+.public-reading .home-footer > div { flex-wrap: wrap; }
+.public-reading .home-footer :is(.secret-trigger,.secret-note) { color: var(--lh-secondary); background: var(--lh-surface); border-color: var(--lh-line); }
+.public-reading .home-footer .secret-trigger { min-inline-size: 44px; min-block-size: 44px; border: 1px solid var(--lh-line); border-radius: 6px; cursor: pointer; }
+.public-reading .home-footer .secret-note :is(b,strong) { color: var(--lh-accent); }
+.public-reading .home-footer .secret-note { box-shadow: none; }
+.public-reading .home-footer .secret-note[hidden] { display: none; }
+.inner-page { width: 100%; min-height: calc(100vh - 300px); margin: 0; padding: clamp(40px, 6vw, 80px) 0; }
+.public-reading .inner-page h1 { max-inline-size: 20ch; margin: 0 0 24px; font-size: clamp(32px,4vw,52px); font-weight: 500; line-height: 1.15; letter-spacing: -.03em; }
+.page-lede { max-width: 68ch; color: var(--muted); font-size: 16px; line-height: 1.85; }
+.reading-back { display: inline-flex; padding-block: 12px; margin-block-end: 24px; color: var(--lh-secondary); font-size: 13px; text-underline-offset: 4px; }
+.reading-back:hover { color: var(--lh-accent); }
+.inner-page .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; padding: 12px 18px; border: 1px solid var(--lh-line); border-radius: 6px; background: transparent; color: var(--lh-text); box-shadow: none; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1.5; gap: 12px; cursor: pointer; text-decoration: none; transition: color var(--lh-micro) var(--lh-ease),background var(--lh-micro) var(--lh-ease); }
+.inner-page .button-primary { background: var(--lh-text); color: var(--lh-canvas); }
+.inner-page .button:hover { background: var(--lh-line); transform: none; box-shadow: none; }
+.inner-page .button-primary:hover { background: var(--lh-accent); color: var(--lh-canvas); }
+.download-layout { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,.8fr); gap: clamp(32px,6vw,88px); align-items: start; margin-top: 0; }
 .download-layout .button { margin: 22px 10px 0 0; }
-.download-panel { padding: 32px; border: 1px solid var(--line); border-radius: var(--web-panel-radius); background: var(--surface); box-shadow: 0 16px 40px var(--shadow-panel); }
+.download-panel { padding: clamp(24px,3vw,40px); border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: none; }
 .panel-mark img { width: 42px; height: 42px; border-radius: var(--r-1); }
-.panel-kicker { display: block; margin-top: 28px; color: var(--accent); font-family: var(--font-mono); font-size: var(--fs-2); }
+.panel-kicker { display: block; margin-top: 24px; color: var(--muted); font-family: inherit; font-size: 13px; }
 .download-panel h2 { margin: 15px 0 28px; font-size: var(--fs-6); }
 .download-fact { display: grid; gap: 7px; padding: 16px 0; border-top: 1px solid var(--line); }
 .download-fact span { color: var(--muted); font-family: var(--font-mono); font-size: var(--fs-1); text-transform: uppercase; }
 .download-fact strong { color: var(--text); font-size: var(--fs-2); }
-.download-access-note { max-width: 55ch; padding-inline-start: 16px; border-inline-start: 2px solid var(--accent); color: var(--soft); font-size: var(--fs-3); line-height: 1.8; }
+.download-access-note { max-width: 55ch; padding-block: 20px; border-block: 1px solid var(--line); color: var(--muted); font-size: 14px; line-height: 1.8; margin-block: 24px 0; }
 /* The private build has no public download, so the request control opens onto
    the one address a visitor can write to: printed, copyable, and a mail link. */
 .download-request > svg { color: var(--accent); transition: transform 160ms ease; }
 .download-request[aria-expanded='true'] > svg { transform: rotate(45deg); }
-.download-request-address { display: grid; gap: 12px; max-width: 55ch; margin-top: 18px; padding: 18px 20px; border: 1px solid var(--line); border-inline-start: 2px solid var(--accent); border-radius: var(--r-2); background: var(--surface-2); }
+.download-request-address { display: grid; gap: 12px; max-width: 55ch; margin-top: 18px; padding: 20px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); }
 .download-request-address[hidden] { display: none; }
 .download-request-address p { margin: 0; color: var(--soft); font-size: var(--fs-2); line-height: 1.7; }
 .download-request-address .download-request-note { color: var(--muted); }
@@ -149,15 +166,21 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .download-copy { min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-1); background: transparent; color: var(--text); font-size: var(--fs-2); font-weight: 600; cursor: pointer; }
 .download-copy:hover { border-color: var(--accent); background: var(--surface); }
 .download-copy-status { color: var(--green); font-family: var(--font-mono); font-size: var(--fs-1); }
-.document-page article { width: min(720px, 100%); margin-top: 48px; }
+.document-page article { width: min(760px, 100%); margin: 0 auto; }
 .document-page article section { padding: 25px 0; border-top: 1px solid var(--line); }
 .document-page article h2 { margin-bottom: 10px; font-size: var(--fs-4); }
 .document-page article p { color: var(--muted); font-size: var(--fs-3); line-height: 1.85; }
+.reading-contents { margin-block: 32px; padding-block: 16px; border-block: 1px solid var(--lh-line); }
+.reading-contents summary { cursor: pointer; padding-block: 12px; color: var(--lh-text); }
+.reading-contents nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 24px; padding-block: 12px; }
+.reading-contents a { padding-block: 10px; color: var(--lh-secondary); font-size: 14px; text-underline-offset: 4px; }
+.reading-contents a:hover { color: var(--lh-accent); }
+.document-page article section { scroll-margin-block-start: 24px; }
 
 /* Reference pages (engines, formats, translation memory). One reading column,
    one rule per status group, mono for machine values — the same vocabulary the
    compatibility record uses, without turning a claim into a card. */
-.capability-page article { width: min(780px, 100%); margin-top: 48px; }
+.capability-page article { width: min(860px, 100%); margin: 0 auto; }
 .capability-group { margin-block-start: 40px; padding-block-start: 24px; border-block-start: 1px solid var(--line); }
 .capability-group h2 { margin: 0 0 16px; font-size: var(--fs-4); }
 .capability-group ul { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -170,7 +193,8 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .capability-index { display: grid; margin: 36px 0 0; padding: 0; list-style: none; }
 .capability-index li { border-block-start: 1px solid var(--line); }
 .capability-index li:last-child { border-block-end: 1px solid var(--line); }
-.capability-index a { display: grid; gap: 6px; padding-block: 20px; }
+.capability-index a { display: grid; grid-template-columns: minmax(140px,.65fr) minmax(0,1.5fr); gap: 24px; padding: 26px 12px; border-radius: 0; text-decoration: none; transition: background var(--lh-micro) var(--lh-ease); }
+.capability-index a:hover { background: var(--lh-raised); }
 .capability-index a:hover strong { color: var(--accent-strong); }
 .capability-index strong { font-size: var(--fs-4); font-weight: 600; }
 .capability-index span { max-width: 72ch; color: var(--soft); font-size: var(--fs-3); line-height: 1.8; }
@@ -180,7 +204,7 @@ html[lang='ar'] .inner-page :is(.eyebrow, .panel-kicker, .download-fact span, .d
 .capability-related a:hover { color: var(--accent-strong); }
 .not-found { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .not-found h1 { margin-bottom: 20px; }
-.not-found > p:not(.eyebrow) { color: var(--muted); font-size: var(--fs-3); }
+.not-found > p { color: var(--muted); font-size: var(--fs-3); }
 .not-found .button { margin-top: 25px; }
 
 /* ---------- One dark scrollbar language across every scroller ---------- */
@@ -240,6 +264,10 @@ html.lh-motion [data-reveal='fade'].is-revealed { animation-name: reveal-fade; }
   .download-panel { padding: 24px; }
   .download-layout .button { width: 100%; margin-right: 0; }
   .document-page article { margin-top: 32px; }
+  .public-reading .inner-page { width: 100%; }
+  .public-reading .home-header nav { justify-content: flex-start; }
+  .capability-index a { grid-template-columns: 1fr; gap: 8px; padding-inline: 0; }
+  .reading-contents nav { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   html.lh-motion [data-reveal],

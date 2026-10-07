@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useI18n } from '@localizationhub/i18n'
 import { site } from '../config/site'
-import { Header, Footer } from '../components/SiteChrome'
+import PublicLayout from '../components/PublicLayout'
 import Icon from '../components/Icon'
 import { InternalLink } from '../internalNavigation'
 
@@ -74,15 +74,13 @@ function RequestTesterAccess() {
 export function DownloadPage() {
   const { t } = useI18n()
   return (
-    <>
-      <Header />
+    <PublicLayout>
       <main
         id="main-content"
         tabIndex={-1}
         data-i18n-skip
         className="inner-page download-page"
       >
-        <p className="eyebrow">{t('website.download.kicker')}</p>
         <div className="download-layout">
           <div>
             <h1>
@@ -124,8 +122,7 @@ export function DownloadPage() {
           </div>
         </div>
       </main>
-      <Footer />
-    </>
+    </PublicLayout>
   )
 }
 
@@ -166,26 +163,22 @@ export function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) {
     [t('legal.terms.changes'), t('legal.terms.changesText')],
   ]
   return (
-    <>
-      <Header />
+    <PublicLayout>
       <main
         id="main-content"
         tabIndex={-1}
         data-i18n-skip
         className="inner-page document-page"
       >
-        <p className="eyebrow">
-          {t('website.document.prefix')}
-          {privacy ? t('legal.privacy.kicker') : t('legal.terms.kicker')}
-        </p>
         <article>
           <h1>{privacy ? t('legal.privacy.title') : t('legal.terms.title')}</h1>
           <p className="page-lede">
             {privacy ? t('legal.privacy.intro') : t('legal.terms.intro')}
           </p>
+          <details className="reading-contents"><summary>{privacy ? t('legal.privacy.kicker') : t('legal.terms.kicker')}</summary><nav aria-label={privacy ? t('legal.privacy.title') : t('legal.terms.title')}>{(privacy ? privacySections : termsSections).map(([heading], index) => <a key={heading} href={`#section-${index + 1}`}>{heading}</a>)}</nav></details>
           {(privacy ? privacySections : termsSections).map(
-            ([heading, text]) => (
-              <section key={heading}>
+            ([heading, text], index) => (
+              <section key={heading} id={`section-${index + 1}`}>
                 <h2>{heading}</h2>
                 <p>{text}</p>
               </section>
@@ -193,30 +186,26 @@ export function DocumentPage({ kind }: { kind: 'privacy' | 'terms' }) {
           )}
         </article>
       </main>
-      <Footer />
-    </>
+    </PublicLayout>
   )
 }
 
 export function NotFound() {
   const { t } = useI18n()
   return (
-    <>
-      <Header />
+    <PublicLayout>
       <main
         id="main-content"
         tabIndex={-1}
         data-i18n-skip
         className="inner-page not-found"
       >
-        <p className="eyebrow">{t('website.notFound.kicker')}</p>
         <h1>{t('website.notFound.title')}</h1>
         <p>{t('website.notFound.description')}</p>
         <InternalLink className="button button-primary" href="/">
           {t('website.notFound.back')}
         </InternalLink>
       </main>
-      <Footer />
-    </>
+    </PublicLayout>
   )
 }

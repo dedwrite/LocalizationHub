@@ -1,5 +1,5 @@
 import { useI18n, type MessageKey } from '@localizationhub/i18n'
-import { Header, Footer } from '../components/SiteChrome'
+import PublicLayout from '../components/PublicLayout'
 import { InternalLink } from '../internalNavigation'
 
 /*
@@ -101,10 +101,8 @@ export const referenceOrder: CapabilityPageId[] = ['godot', 'unreal', 'unity', '
 export function ReferenceIndex() {
   const { t } = useI18n()
   return (
-    <>
-      <Header />
+    <PublicLayout>
       <main id="main-content" tabIndex={-1} data-i18n-skip className="inner-page capability-page">
-        <p className="eyebrow">{t('capability.eyebrow')}{t('capability.index.nav')}</p>
         <article>
           <h1>{t('capability.index.title')}</h1>
           <p className="page-lede">{t('capability.index.lede')}</p>
@@ -121,8 +119,7 @@ export function ReferenceIndex() {
           <p className="capability-note">{t('capability.note')}</p>
         </article>
       </main>
-      <Footer />
-    </>
+    </PublicLayout>
   )
 }
 
@@ -131,13 +128,9 @@ export function CapabilityPage({ page }: { page: CapabilityPageId }) {
   const content = capabilityPages[page]
   const related = referenceOrder.filter((id) => id !== page)
   return (
-    <>
-      <Header />
+    <PublicLayout>
       <main id="main-content" tabIndex={-1} data-i18n-skip className="inner-page capability-page">
-        <p className="eyebrow">
-          {t('capability.eyebrow')}
-          {t(referenceRoutes[page].label)}
-        </p>
+        <InternalLink className="reading-back" href="/reference">{t('capability.index.title')}</InternalLink>
         <article>
           <h1>{t(content.title)}</h1>
           <p className="page-lede">{t(content.lede)}</p>
@@ -167,7 +160,6 @@ export function CapabilityPage({ page }: { page: CapabilityPageId }) {
           </nav>
         </article>
       </main>
-      <Footer />
-    </>
+    </PublicLayout>
   )
 }
