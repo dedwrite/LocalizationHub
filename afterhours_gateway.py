@@ -1,7 +1,7 @@
 """Narrow Telegram ingress for the owner-private AFTERHOURS Site.
 
-The Site remains the sole source of truth. This process has no Spotify logic,
-database, notification queue or local state that affects correctness.
+The Site remains the sole source of truth. This process schedules authenticated Site sync and streams observations.
+The Site keeps all tokens, canonical events and durable notification state.
 """
 import hashlib
 import hmac
@@ -9,6 +9,9 @@ import json
 import os
 import secrets
 import time
+import threading
+import random
+from urllib.parse import urlsplit, parse_qs
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -49,24 +52,85 @@ def private_outsider(update):
             and isinstance(message.get('text'), str))
 
 
-def forward_update(body):
+def site_request(path, body, timeout=8):
     now = str(int(time.time() * 1000))
     nonce = str(__import__('uuid').uuid4())
     digest = hashlib.sha256(body).hexdigest()
-    signed = f'POST\n{PATH}\n{now}\n{nonce}\n{digest}'.encode()
+    signed = f'POST\n{path}\n{now}\n{nonce}\n{digest}'.encode()
     signature = hmac.new(INTERNAL_KEY.encode(), signed, hashlib.sha256).hexdigest()
-    request = urllib.request.Request(SITE_ORIGIN + PATH, data=body, method='POST', headers={
+    request = urllib.request.Request(SITE_ORIGIN + path, data=body, method='POST', headers={
         'Content-Type': 'application/json',
         'OAI-Sites-Authorization': 'Bearer ' + MACHINE_TOKEN,
         'X-AF-Time': now, 'X-AF-Nonce': nonce, 'X-AF-Signature': signature,
     })
     try:
-        with urllib.request.urlopen(request, timeout=8) as response:
-            return response.status
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            raw = response.read()
+            try:
+                value = json.loads(raw or b'{}')
+            except (ValueError, UnicodeDecodeError):
+                value = {}
+            return response.status, value
     except urllib.error.HTTPError as error:
-        return error.code
+        return error.code, {}
     except (urllib.error.URLError, TimeoutError, OSError):
-        return 503
+        return 503, {}
+
+
+def forward_update(body):
+    return site_request(PATH, body)[0]
+
+
+STOP = threading.Event()
+CONDITION = threading.Condition()
+SNAPSHOT = None
+SEQUENCE = 0
+
+
+def valid_ticket(ticket):
+    if len(ticket) > 160:
+        return False
+    try:
+        expiry, nonce, signature = ticket.split('.')
+        expires = int(expiry)
+        if not 0 < expires - int(time.time() * 1000) <= 300000:
+            return False
+        if len(nonce) != 36:
+            return False
+        expected = hmac.new(INTERNAL_KEY.encode(), ('AFTERHOURS-STREAM-v1\n' + expiry + '.' + nonce).encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(signature, expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def background_loop(action):
+    global SNAPSHOT, SEQUENCE
+    failures = 0
+    last_report = 0
+    while not STOP.is_set():
+        delay = 30
+        if READY:
+            status, value = site_request('/api/internal/realtime', json.dumps({'action': action}).encode(), timeout=80 if action == 'delivery' else 40)
+            if status == 200 and value.get('ok'):
+                failures = 0
+                if action == 'tick':
+                    delay = max(3, min(3600, float(value.get('pollAfterMs', 20000)) / 1000))
+                    if not value.get('busy'):
+                        with CONDITION:
+                            SNAPSHOT = value
+                            SEQUENCE += 1
+                            CONDITION.notify_all()
+                else:
+                    delay = 15
+            else:
+                failures += 1
+                delay = min(300, 5 * 2 ** min(failures, 6))
+            if failures == 1 or time.time() - last_report >= 60:
+                last_report = time.time()
+                print(json.dumps({'event': 'realtime-' + action, 'site_status': status, 'ok': status == 200 and bool(value.get('ok')),
+                              'state': value.get('state'), 'poll_ms': value.get('pollAfterMs'),
+                              'history_result': value.get('historyResult'), 'history_revision': value.get('historyRevision')}), flush=True)
+        STOP.wait(delay + random.uniform(0, 0.25))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -79,6 +143,35 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        parsed = urlsplit(self.path)
+        if parsed.path == '/realtime/events':
+            ticket = parse_qs(parsed.query).get('ticket', [''])[0]
+            if self.headers.get('Origin') != SITE_ORIGIN or not READY or not valid_ticket(ticket):
+                return self.respond(401)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('Access-Control-Allow-Origin', SITE_ORIGIN)
+            self.send_header('Vary', 'Origin')
+            self.send_header('X-Accel-Buffering', 'no')
+            self.end_headers()
+            previous = -1
+            try:
+                while not STOP.is_set() and valid_ticket(ticket):
+                    with CONDITION:
+                        if SEQUENCE == previous:
+                            CONDITION.wait(timeout=10)
+                        value, sequence = SNAPSHOT, SEQUENCE
+                    if sequence != previous and value:
+                        self.wfile.write(('event: playback\nid: ' + str(sequence) + '\ndata: ' + json.dumps(value, ensure_ascii=False) + '\n\n').encode())
+                        previous = sequence
+                    else:
+                        self.wfile.write(b': heartbeat\n\n')
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                pass
+            self.close_connection = True
+            return
         if self.path != '/health':
             return self.respond(404)
         # Liveness only: credentials can be provisioned after deployment.
@@ -121,4 +214,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
+    for action in ('tick', 'delivery'):
+        threading.Thread(target=background_loop, args=(action,), daemon=True).start()
     ThreadingHTTPServer(('0.0.0.0', int(os.environ.get('PORT', '10000'))), Handler).serve_forever()
+
