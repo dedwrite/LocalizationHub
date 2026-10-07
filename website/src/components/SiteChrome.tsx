@@ -10,8 +10,8 @@ import Icon from './Icon';
 
 function navigation(t: ReturnType<typeof useI18n>["t"]) {
   return [
-    [t("landing.nav.editor"), "/#context"],
-    [t("landing.nav.files"), "/#engines"],
+    [t("landing.nav.editor"), "/product#context"],
+    [t("landing.nav.files"), "/product#engines"],
     [t("website.nav.webApp"), "/app"],
     [t("website.nav.download"), "/download"],
   ];

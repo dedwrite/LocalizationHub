@@ -1,5 +1,6 @@
 const origin = 'https://localizationhub.app'
 export const publicMetadata = {
+  '/product': { title: 'Product details — LocalizationHub', description: 'Game text extraction, context, protected tokens, Arabic RTL and local-first translation workflows in LocalizationHub.' },
   '/': { title: 'LocalizationHub — Game localization, local-first', description: 'Translate and review game text in a local-first workspace. Open JSON, CSV, and PO in your browser, or extract supported Godot, Unreal, and Unity text on Windows.' },
   '/privacy': { title: 'Privacy — LocalizationHub', description: 'How LocalizationHub handles browser-local projects, Cloud data, backups, retention, deletion, and third-party translation services.' },
   '/terms': { title: 'Terms — LocalizationHub', description: 'Terms for using LocalizationHub, keeping local backups, and collaborating on Cloud localization projects.' },
@@ -31,7 +32,7 @@ export function updateRouteMetadata(path: string) {
   }
   setMeta('name', 'description', meta.description)
   setMeta('name', 'robots', meta.robots)
-  setMeta('name', 'theme-color', path === '/' ? '#111016' : '#0b0d11')
+  setMeta('name', 'theme-color', path === '/' ? '#050505' : '#0b0d11')
   for (const prefix of ['og', 'twitter']) {
     const attribute = prefix === 'og' ? 'property' : 'name'
     setMeta(attribute, `${prefix}:title`, meta.title)

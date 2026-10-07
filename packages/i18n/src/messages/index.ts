@@ -13,9 +13,11 @@ import { workspaceMessages } from './workspace'
 import { parityMessages } from './parity'
 import { delightMessages } from './delight'
 import { quietMessages } from './quiet'
+import { productHomeMessages } from './productHome'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
+  ...productHomeMessages,
   ...capabilityMessages,
   ...commonMessages,
   ...adminMessages,

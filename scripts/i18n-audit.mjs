@@ -17,6 +17,7 @@ const properNounExemptions = new Set([
   'https://open.spotify.com/track/...', 'LocalizationHub_0.9.3_x64-setup.exe',
   'JSON · CSV · PO · LH Project', 'JSON · CSV · PO · GAME FOLDERS', 'JSON · CSV · PO · .lhproj', 'GODOT · UNREAL · UNITY',
   'LOCALIZATIONHUB /', 'ms',
+  'northern_gate.json', 'EN → AR',
 ])
 const contentExemptions = new Set([
   'menu.settings', '12 / 48', 'Friday · 11:59 PM', 'Developer', 'Translator',
@@ -36,6 +37,8 @@ const contentExemptions = new Set([
 // constrained to this component and these exact characters.
 const decorativeSourceExemptions = new Map([
   ['website/src/components/LanguageField.tsx', new Set(['ع', 'م'])],
+  // Editable fictional game data, never interface labels; exact file/values only.
+  ['website/src/productHome/demoModel.ts', new Set(['اثبُت يا {player_name}. لن تسقط البوابة الشمالية الليلة.', 'ابدأ اللعبة', 'ما زالت البوابة صامدة.', 'مفتاح حديدي قديم', 'انقطع الاتصال'])],
 ])
 
 function walk(directory) {

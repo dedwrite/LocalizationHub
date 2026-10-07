@@ -27,8 +27,8 @@ function publicHead(html: string, route: string) {
   if (route === '/') {
     // Both scripts appear above the fold. Preload only the landing's local
     // fonts; application and legal routes retain their own font choices.
-    next = next.replace(/<meta name="theme-color"[^>]*>/, '<meta name="theme-color" content="#111016" />')
-      .replace('</head>', `<link rel="preload" href="/fonts/schibsted-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+    next = next.replace(/<meta name="theme-color"[^>]*>/, '<meta name="theme-color" content="#050505" />')
+      .replace('</head>', `<link rel="preload" href="/fonts/inter-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/noto-sans-arabic.woff2" as="font" type="font/woff2" crossorigin />\n</head>`)
     const schema = { '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'LocalizationHub', url: meta.canonical, description: meta.description, applicationCategory: 'DeveloperApplication', operatingSystem: 'Windows, Web', inLanguage: ['en', 'ar'] }
     next = next.replace('</head>', `<script id="product-schema" type="application/ld+json">${JSON.stringify(schema)}</script>\n</head>`)

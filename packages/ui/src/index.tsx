@@ -1,7 +1,7 @@
 import React, { type ReactNode, type ComponentProps } from 'react'
 
 export function UiTheme({ children, className = '' }: {children: ReactNode; className?: string}) {
-  return <div data-lh-theme="product" className={className}>{children}</div>
+  return React.createElement('div', {'data-lh-theme': 'product', className}, children)
 }
 export function ActionLink({variant = 'quiet', className = '', ...props}: ComponentProps<'a'> & {variant?: 'primary' | 'quiet'}) {
   return <a {...props} className={`lh-action ${className}`} data-variant={variant} />
