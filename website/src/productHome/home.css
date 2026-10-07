@@ -48,7 +48,7 @@
 .product-home .demo-target-wrap[data-editing="true"] #demo-target { color: var(--lh-text); }
 .product-home .demo-target-wrap[data-editing="true"] .demo-target-display { visibility: hidden; }
 .product-home .demo-target-display bdi { unicode-bidi: isolate; font-family: 'LH Inter', sans-serif; }
-.product-home .demo-target-display[data-reveal="true"] { animation: home-translation var(--lh-story) var(--lh-ease) both; }
+.product-home .demo-target-display[data-reveal="true"] { animation: home-translation 1800ms var(--lh-ease) both; }
 .product-home .home-editor[data-stage="select"] .demo-target-wrap:not([data-editing="true"])::after { content: ''; position: absolute; right: 0; top: 8px; width: 2px; height: 38px; background: var(--lh-accent); }
 @keyframes home-translation { from { clip-path: inset(0 0 0 100%); opacity: .6; } to { clip-path: inset(0); opacity: 1; } }
 .product-home .demo-qa { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-block-size: 72px; border: 1px solid var(--lh-line); border-radius: 7px; padding: 14px; margin-block-start: 10px; font-size: 11px; color: var(--lh-secondary); }
