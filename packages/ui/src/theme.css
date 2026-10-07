@@ -1,0 +1,46 @@
+[data-lh-theme="product"] {
+  --lh-canvas: #050505;
+  --lh-surface: #070808;
+  --lh-raised: #0b0c0b;
+  --lh-line: #1a1d1c;
+  --lh-text: #f2f5f0;
+  --lh-secondary: #949b95;
+  --lh-decorative: #383d3b;
+  --lh-accent: #bafa61;
+  --lh-warning: #edbc69;
+  --lh-error: #f58b83;
+  --lh-micro: 140ms;
+  --lh-standard: 240ms;
+  --lh-functional: 400ms;
+  --lh-story: 600ms;
+  --lh-ease: cubic-bezier(.2, .7, .2, 1);
+  color: var(--lh-text);
+  background: var(--lh-canvas);
+  font-family: 'LH Inter', 'Noto Sans Arabic', sans-serif;
+  color-scheme: dark;
+}
+[data-lh-theme="product"] :where(a, button, textarea, select):focus-visible {
+  outline: 2px solid var(--lh-accent);
+  outline-offset: 5px;
+}
+[data-lh-theme="product"] .lh-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-block-size: 32px; padding: 8px 13px; border-radius: 6px;
+  font: inherit; font-size: 11px; font-weight: 600; line-height: 1.4;
+  color: var(--lh-secondary); text-decoration: none; border: 1px solid transparent;
+  transition: color var(--lh-micro) var(--lh-ease), background var(--lh-micro) var(--lh-ease);
+}
+[data-lh-theme="product"] .lh-action[data-variant="primary"] { background: var(--lh-text); color: var(--lh-canvas); }
+[data-lh-theme="product"] .lh-action:hover { color: var(--lh-text); background: var(--lh-line); }
+[data-lh-theme="product"] .lh-action[data-variant="primary"]:hover { background: var(--lh-accent); color: var(--lh-canvas); }
+[data-lh-theme="product"] .lh-icon-button { font: inherit; color: var(--lh-secondary); background: transparent; border: 1px solid var(--lh-line); border-radius: 6px; min-inline-size: 32px; min-block-size: 32px; cursor: pointer; }
+[data-lh-theme="product"] .lh-icon-button:disabled { opacity: .5; cursor: default; }
+[data-lh-theme="product"] .lh-status { display: inline-flex; border: 1px solid var(--lh-line); background: var(--lh-raised); padding: 6px 10px; border-radius: 6px; font-size: 10px; color: var(--lh-secondary); }
+[data-lh-theme="product"] .lh-status[data-tone="success"] { color: var(--lh-accent); }
+[data-lh-theme="product"] .lh-status[data-tone="warning"] { color: var(--lh-warning); }
+@media (pointer: coarse) {
+  [data-lh-theme="product"] :where(.lh-action, .lh-icon-button) { min-block-size: 44px; min-inline-size: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-lh-theme="product"] *, [data-lh-theme="product"] *::before, [data-lh-theme="product"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
