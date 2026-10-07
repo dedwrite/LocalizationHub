@@ -55,6 +55,8 @@ test('autoplay follows all states; pause and replay are explicit', async ({page}
   await expect(page.locator('.home-editor')).toHaveAttribute('data-stage', 'select')
   await page.clock.runFor(200)
   await expect(page.locator('.home-editor')).toHaveAttribute('data-stage', 'translate')
+  expect(await page.locator('.demo-workflow li').nth(1).evaluate(el => getComputedStyle(el).transitionDuration)).not.toBe('0s')
+  expect(await page.locator('.home-stage span').evaluate(el => getComputedStyle(el).animationName)).not.toBe('none')
   await page.screenshot({path: 'test-results/home-translate.png', fullPage: true})
   await page.clock.runFor(2500)
   await expect(page.locator('.home-editor')).toHaveAttribute('data-stage', 'validate')

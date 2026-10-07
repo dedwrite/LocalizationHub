@@ -34,7 +34,7 @@ export default function EditorDemo() {
   const status = !result ? t('home.pending') : !result.valid ? t('home.invalid') : story.entry.source.includes('{player_name}') ? t('home.preserved') : t('home.noTokens')
   const stageKey = {select: 'home.selectStage', translate: 'home.translateStage', validate: 'home.validateStage'} as const
   return <section ref={root} id="home-editor" className="home-editor" aria-label={t('home.demo')} data-stage={story.stage} data-paused={story.paused} data-ready={ready} data-visible={visible}>
-    <div className="home-stage" aria-hidden="true">{t(stageKey[story.stage])}</div>
+    <div className="home-stage" aria-hidden="true"><span key={story.stage}>{t(stageKey[story.stage])}</span></div>
     <div className="demo-chrome"><div><img src="/product-home/saved.svg" alt="" /><bdi dir="ltr">northern_gate.json</bdi><span className="demo-count">{t('home.count', {count: demoEntries.length})}</span></div><div><bdi dir="ltr">EN → AR</bdi><StatusBadge tone={result?.valid ? 'success' : 'neutral'}>{result?.valid ? t('home.valid') : t('home.local')}</StatusBadge></div></div>
     <div className="demo-body">
       <aside className="demo-rail" aria-label={t('home.strings')}><div className="demo-rail-title"><span>{t('home.strings')}</span><span>{demoEntries.length.toString().padStart(2, '0')}</span></div>
@@ -47,7 +47,7 @@ export default function EditorDemo() {
           <p className="demo-target-display" dir="rtl" aria-hidden="true" data-reveal={story.stage !== 'select'}><TokenText text={story.translation} /></p>
           <textarea id="demo-target" disabled={!ready} dir="rtl" lang="ar" spellCheck={false} value={story.translation} onFocus={() => {story.pause(); setEditing(true)}} onBlur={() => setEditing(false)} onChange={event => story.editTranslation(event.target.value)} onKeyDown={event => {if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {event.preventDefault(); story.validate()}}} />
         </div></div>
-        <div className="demo-qa" data-result={result?.valid ? 'valid' : result ? 'invalid' : 'pending'}><div><img src={`/product-home/${result?.valid ? 'success' : result ? 'error' : 'pending'}.svg`} alt="" /><span>{status}</span></div><button type="button" onClick={story.validate}>{t('home.validate')}<span aria-hidden="true"> ↵</span></button></div>
+        <div className="demo-qa" data-result={result?.valid ? 'valid' : result ? 'invalid' : 'pending'}><div key={status}><img src={`/product-home/${result?.valid ? 'success' : result ? 'error' : 'pending'}.svg`} alt="" /><span>{status}</span></div><button type="button" onClick={story.validate}>{t('home.validate')}<span aria-hidden="true"> ↵</span></button></div>
         <p className="demo-announcement" role="status">{story.manual && result ? status : ''}</p>
         <div className="demo-bottom"><ol className="demo-workflow">{(['home.source', 'home.translate', 'home.validate', 'home.export'] as const).map((key, i) => <li key={key} data-active={i === ['select', 'translate', 'validate'].indexOf(story.stage)}>{t(key)}</li>)}</ol><IconButton label={story.paused ? t('home.replay') : t('home.pause')} onClick={story.paused ? story.replay : story.pause}>{story.paused ? '↻' : 'Ⅱ'}</IconButton></div>
         {result?.valid && <span className="demo-ready">{t('home.ready')}</span>}

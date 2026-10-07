@@ -48,7 +48,7 @@
 .product-home .demo-target-wrap[data-editing="true"] #demo-target { color: var(--lh-text); }
 .product-home .demo-target-wrap[data-editing="true"] .demo-target-display { visibility: hidden; }
 .product-home .demo-target-display bdi { unicode-bidi: isolate; font-family: 'LH Inter', sans-serif; }
-.product-home .demo-target-display[data-reveal="true"] { animation: home-translation 1200ms cubic-bezier(.4, 0, .2, 1) both; }
+.product-home .demo-target-display[data-reveal="true"] { animation: home-translation 850ms cubic-bezier(.4, 0, .2, 1) both; }
 .product-home .home-editor[data-stage="select"] .demo-target-wrap:not([data-editing="true"])::after { content: ''; position: absolute; right: 0; top: 8px; width: 2px; height: 38px; background: var(--lh-accent); }
 @keyframes home-translation { from { clip-path: inset(0 0 0 100%); opacity: .6; } to { clip-path: inset(0); opacity: 1; } }
 .product-home .demo-qa { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-block-size: 72px; border: 1px solid var(--lh-line); border-radius: 7px; padding: 14px; margin-block-start: 10px; font-size: 11px; color: var(--lh-secondary); }
@@ -61,6 +61,10 @@
 .product-home .demo-workflow li:not(:last-child)::after { content: '→'; margin-inline-start: 16px; color: var(--lh-decorative); }
 .product-home [dir="rtl"] .demo-workflow li:not(:last-child)::after { content: '←'; }
 .product-home .demo-workflow [data-active="true"] { color: var(--lh-accent); }
+.product-home .demo-workflow li, .product-home .demo-qa { transition: color 350ms var(--lh-ease); }
+.product-home .home-stage span { display: inline-block; animation: home-stage-change 350ms var(--lh-ease) both; }
+.product-home .demo-qa > div, .product-home .demo-ready { animation: home-stage-change 350ms var(--lh-ease) both; }
+@keyframes home-stage-change { from { opacity: .35; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
 .product-home .demo-announcement { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
 .product-home .demo-ready { display: block; font-size: 10px; color: var(--lh-accent); margin-block-start: 16px; }
 .product-home .home-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; inline-size: 100%; margin: 0; padding: 34px 0 0; border: 0; color: var(--lh-secondary); font-size: 10px; }
