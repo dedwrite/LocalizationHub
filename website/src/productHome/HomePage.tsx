@@ -4,6 +4,7 @@ import { ActionLink, UiTheme } from '@localizationhub/ui'
 import { navigateInternal, shouldInterceptClick } from '../internalNavigation'
 import { legacyProductDestination } from './legacyAnchors'
 import EditorDemo from './EditorDemo'
+import CreatorCredit from '../components/CreatorCredit'
 import '@localizationhub/ui/theme.css'
 import './home.css'
 
@@ -35,6 +36,6 @@ export default function HomePage() {
       </section>
       <EditorDemo />
     </main>
-    <footer className="home-footer"><span>{t('home.localNote')}</span><div><ActionLink href="/privacy">{t('legal.privacy.kicker')}</ActionLink><ActionLink href="/terms">{t('legal.terms.kicker')}</ActionLink><span>{t('home.footer')}</span></div></footer>
+    <footer className="home-footer"><span>{t('home.localNote')}</span><div><ActionLink href="/privacy">{t('legal.privacy.kicker')}</ActionLink><ActionLink href="/terms">{t('legal.terms.kicker')}</ActionLink><CreatorCredit /><span>{t('home.footer')}</span></div></footer>
   </div></UiTheme>
 }

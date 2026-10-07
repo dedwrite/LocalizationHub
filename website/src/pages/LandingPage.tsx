@@ -19,7 +19,7 @@ const engineSupport = [
   { engine: 'unity', status: 'partial' },
 ] as const
 
-function EngineMatrix() {
+export function EngineMatrix() {
   const { t } = useI18n();
   return (
     <div className="compat">

@@ -7,6 +7,7 @@ import { openCommandCenter } from "../delight/commandEvents";
 import { FooterSecret } from "../delight/LittleSecrets";
 import ShortcutKey from './ShortcutKey';
 import Icon from './Icon';
+import CreatorCredit from './CreatorCredit';
 
 function navigation(t: ReturnType<typeof useI18n>["t"]) {
   return [
@@ -79,14 +80,7 @@ export function Footer() {
         <InternalLink href="/privacy">{t("legal.privacy.kicker")}</InternalLink>
         <InternalLink href="/terms">{t("legal.terms.kicker")}</InternalLink>
         <a href={`mailto:${site.contactEmail}`}>{t("website.footer.contact")}</a>
-        <a
-          className="creator-signature"
-          href="https://dedwrite.xyz/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          DEDWRITE
-        </a>
+        <CreatorCredit />
         <FooterSecret />
       </div>
     </footer>

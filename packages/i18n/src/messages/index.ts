@@ -14,10 +14,12 @@ import { parityMessages } from './parity'
 import { delightMessages } from './delight'
 import { quietMessages } from './quiet'
 import { productHomeMessages } from './productHome'
+import { productDetailsMessages } from './productDetails'
 import type { MessageCatalog } from '../types'
 
 export const messages = {
   ...productHomeMessages,
+  ...productDetailsMessages,
   ...capabilityMessages,
   ...commonMessages,
   ...adminMessages,

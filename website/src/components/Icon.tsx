@@ -13,6 +13,7 @@ export type IconName =
   | 'arrow-down'
   | 'plus'
   | 'refresh'
+  | 'pause'
   | 'menu'
   | 'check'
   | 'alert'
@@ -25,6 +26,7 @@ const strokes: Record<Exclude<IconName, 'empty'>, string[]> = {
   'arrow-down': ['M12 5v14', 'M6 13l6 6 6-6'],
   plus: ['M12 5.5v13', 'M5.5 12h13'],
   refresh: ['M20 12a8 8 0 1 1-2.6-5.9', 'M20 4.5V11h-6.5'],
+  pause: ['M9 5v14', 'M15 5v14'],
   menu: ['M4 7h16', 'M4 12h16', 'M4 17h16'],
   check: ['M5 12.5 9.5 17 19 7'],
   alert: ['M12 6.5v7', 'M12 17.2h.01'],

@@ -69,6 +69,9 @@
 .product-home .demo-ready { display: block; font-size: 10px; color: var(--lh-accent); margin-block-start: 16px; }
 .product-home .home-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; inline-size: 100%; margin: 0; padding: 34px 0 0; border: 0; color: var(--lh-secondary); font-size: 10px; }
 .product-home .home-footer > div { display: flex; gap: 8px; align-items: center; }
+.product-home .home-footer .creator-signature { color: var(--lh-secondary); padding: 12px 8px; text-decoration: none; text-underline-offset: 4px; }
+.product-home .home-footer .creator-signature:hover { color: var(--lh-accent); text-decoration: underline; }
+.product-home .home-footer .creator-signature:focus-visible { outline: 2px solid var(--lh-accent); outline-offset: 3px; }
 @media (max-width: 1100px) {
   .product-home .demo-body { grid-template-columns: 220px minmax(0, 1fr); }
   .product-home .demo-content, .product-home [dir="rtl"] .demo-content { padding-inline: 28px; }

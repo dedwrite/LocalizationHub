@@ -31,6 +31,8 @@ const contentExemptions = new Set([
   'اثبت يا {player_name}.', 'ابدأ اللعبة', 'لا تزال <b>البوابة الشمالية</b> صامدة.',
   // Fictional dialogue in the bilingual scene; UI labels use the catalog.
   'اثبُت يا', '. لن تسقط', 'الليلة.',
+  // Fixed Arabic game dialogue in the Product translation-memory example.
+  'ما زالت البوابة الشمالية صامدة.',
   'Motion:', 'Pointer:', 'Registered:', 'Revealed:',
 ])
 // User-requested decorative letters, not Arabic UI copy. Keep the exemption

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { LanguageSwitcher, useI18n } from '@localizationhub/i18n'
 import { allowHistoryNavigation } from './navigation'
-import Landing from './pages/LandingPage'
+import ProductDetails from './productDetails/ProductDetails'
 import HomePage from './productHome/HomePage'
 import { DownloadPage, DocumentPage, NotFound } from './pages/InfoPages'
 import { CapabilityPage, ReferenceIndex } from './pages/CapabilityPages'
@@ -65,7 +65,7 @@ export default function App({ initialPath = '/' }: { initialPath?: string }) {
 }
 
 function RoutedPage({ path }: { path: string }) {
-  if (path === '/product') return <Landing />
+  if (path === '/product') return <ProductDetails />
   if (path === '/app/local') return <LocalWorkspace />
   if (path === '/app/admin' || path.startsWith('/app/admin/'))
     return <AdminConsole />
