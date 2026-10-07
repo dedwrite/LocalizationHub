@@ -23,7 +23,7 @@ test('dialogue chips distinguish speaker from listener and DeepL is selectable',
 
 test('public header hosts the language switcher quietly', async ({ page }) => {
   await page.goto('/')
-  const header = page.locator('.site-header')
+  const header = page.locator('.home-header')
   await expect(header.locator('.lh-language-switcher')).toBeVisible()
   // The docked variant belongs to the app surfaces, not the public landing.
   await expect(page.locator('.lh-language-switcher.is-dock')).toHaveCount(0)

@@ -6,13 +6,13 @@ import { confirmLocalExport, localToast, openEditor, openEntries, openTools } fr
 test('public pages contain real React content without JavaScript', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false })
   const page = await context.newPage()
-  for (const path of ['/', '/privacy', '/terms', '/download']) {
+  for (const path of ['/', '/product', '/privacy', '/terms', '/download']) {
     await page.goto(`${baseURL}${path}`)
     await expect(page.locator('#root main h1')).toBeVisible()
     await expect(page.locator('#root')).toHaveAttribute('data-prerendered', path)
     await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href', `https://localizationhub.app${path}`)
   }
-  await page.goto(`${baseURL}/`)
+  await page.goto(`${baseURL}/product`)
   await expect(page.locator('#context')).toContainText('Captain Veyra')
   await expect(page.locator('#faq details')).toHaveCount(4)
   await context.close()
@@ -26,7 +26,7 @@ test('hydration preserves a stored Arabic preference and SPA route metadata', as
   await page.addInitScript(() => localStorage.setItem('localizationhub.ui-locale.v1', 'ar'))
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-  await expect(page.locator('h1')).toContainText('ألعاب تحبها')
+  await expect(page.locator('h1')).toContainText('المحرّر هو المنتج.')
   await page.locator('footer a[href="/privacy"]').click()
   await expect(page).toHaveTitle('Privacy — LocalizationHub')
   await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href', 'https://localizationhub.app/privacy')
@@ -59,7 +59,7 @@ test('direct sample workspace is styled, honest, and accessible in both language
 
 test('mobile navigation is available and closes after following a link', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1440) > 1000, 'Desktop has the full navigation')
-  await page.goto('/')
+  await page.goto('/product')
   await page.locator('.mobile-site-menu summary').click()
   await expect(page.locator('.mobile-site-menu nav')).toBeVisible()
   await page.locator('.mobile-site-menu a[href="/download"]').click()

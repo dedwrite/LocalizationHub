@@ -61,10 +61,10 @@ export function shouldInterceptClick(event: ClickLike, href: string, base = defa
   return !isExternalHref(href, base)
 }
 
-export function navigateInternal(href: string): void {
+export function navigateInternal(href: string, options: {replace?: boolean} = {}): void {
   const target = parseInternalTarget(href)
   if (!target) return
-  navigate(target.path + target.hash)
+  navigate(target.path + target.hash, options)
   // Defer scrolling until React commits the new route.
   requestAnimationFrame(() => {
     if (target.hash) {

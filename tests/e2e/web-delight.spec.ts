@@ -33,7 +33,7 @@ for (const locale of ['en', 'ar'] as const) {
     // cumulative scenario needs 60s; individual assertions/retries are unchanged.
     test.setTimeout(60_000)
     await radio(page)
-    await page.goto('/')
+    await page.goto('/product')
     await page.locator('.lh-language-switcher select').selectOption(locale)
     const tip = page.locator('.field-tip')
     await expect(tip).toHaveAttribute('aria-busy', 'false')
@@ -144,7 +144,7 @@ for (const locale of ['en', 'ar'] as const) {
     page.on('pageerror', error => errors.push(error.message))
     await radio(page, true)
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/')
+    await page.goto('/product')
     await page.locator('.lh-language-switcher select').selectOption(locale)
     const secret = page.getByRole('button', { name: labels.secret, exact: true })
     await expect(page.locator('.lh-radio-capsule-title')).toHaveText('Quiet review')
@@ -197,7 +197,7 @@ test('RTL showcase preserves mixed-direction game text', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   await radio(page)
-  await page.goto('/#arabic')
+  await page.goto('/product#arabic')
 
   const showcase = page.locator('.rtl-showcase')
   await expect(showcase).toBeVisible()

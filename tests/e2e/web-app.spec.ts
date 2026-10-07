@@ -63,11 +63,13 @@ test.describe('public routing and accessibility', () => {
     await expect(answer).toContainText('browser editor remains publicly available')
   })
 
-  test('the public pages offer no private-repository or release links', async ({ page }) => {
-    for (const path of ['/', '/download']) {
+  test('Home labels repository access honestly and public pages offer no release links', async ({ page }) => {
+    for (const path of ['/', '/product', '/download']) {
       await page.goto(path)
       const links = await page.locator('a[href]').evaluateAll(anchors => anchors.map(anchor => anchor.getAttribute('href') || ''))
-      expect(links.filter(href => /github\.com|\/releases|\.exe$/i.test(href))).toEqual([])
+      expect(links.filter(href => /\/releases|\.exe$/i.test(href))).toEqual([])
+      expect(links.filter(href => /github\.com/i.test(href))).toEqual(path === '/' ? ['https://github.com/dedwrite/LocalizationHub'] : [])
+      if (path === '/') await expect(page.getByRole('link', {name: 'GitHub (private)', exact: true})).toBeVisible()
       await expect(page.locator('.download-panel strong', { hasText: '.exe' })).toHaveCount(0)
     }
   })
@@ -88,7 +90,7 @@ test.describe('public routing and accessibility', () => {
 
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto('/')
+    await page.goto('/product')
     await expect(page.getByRole('heading', { name: 'Your game. Your words.' })).toBeVisible()
     await expect(page.locator('.format-options button')).toHaveCount(4)
     const state = await page.locator('.format-result-copy').evaluate((element: HTMLElement) => ({ opacity: getComputedStyle(element).opacity, transform: getComputedStyle(element).transform }))

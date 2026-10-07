@@ -20,6 +20,7 @@ test('old known sections retain destinations without hijacking unknown fragments
   expect(legacyProductDestination('#context')).toBe('/product#context')
   expect(legacyProductDestination('#engines')).toBe('/product#engines')
   expect(legacyProductDestination('#anything')).toBeNull()
+  expect(legacyProductDestination('#field-notes')).toBeNull()
   expect(legacyProductDestination('#%')).toBeNull()
   expect(metadataFor('/product').canonical).toBe('https://localizationhub.app/product')
   expect(metadataFor('/product').robots).toBe('index, follow')

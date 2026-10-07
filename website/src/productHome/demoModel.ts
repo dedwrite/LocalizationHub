@@ -14,7 +14,7 @@ export function validateDemoTranslation(source: string, translation: string) {
   return {valid: Boolean(translation.trim()) && result.missingTokens.length === 0 && result.extraTokens.length === 0 && result.errors.length === 0, missing: result.missingTokens.map(token => token.raw)}
 }
 export type DemoState = {stage: DemoStage; entry: DemoEntry; translation: string; paused: boolean; result: ReturnType<typeof validateDemoTranslation> | null; manual: boolean}
-export type DemoAction = {type: 'advance' | 'pause' | 'replay' | 'validate' | 'start' | 'complete'} | {type: 'edit'; value: string} | {type: 'select'; id: string}
+export type DemoAction = {type: 'advance' | 'pause' | 'replay' | 'validate' | 'start' | 'complete' | 'reset-complete'} | {type: 'edit'; value: string} | {type: 'select'; id: string}
 export function initialDemoState(reduced: boolean): DemoState {
   const entry = demoEntries[0]
   return {stage: reduced ? 'validate' : 'select', entry, translation: reduced ? entry.translation : '', paused: reduced, result: reduced ? validateDemoTranslation(entry.source, entry.translation) : null, manual: false}
@@ -26,6 +26,7 @@ export function nextDemoState(state: DemoState, action: DemoAction): DemoState {
     case 'pause': return {...state, paused: true, manual: true}
     case 'start': return state.manual ? state : initialDemoState(false)
     case 'complete': return state.manual ? {...state, paused: true} : initialDemoState(true)
+    case 'reset-complete': return initialDemoState(true)
     case 'replay': return initialDemoState(false)
     case 'validate': return {...state, paused: true, stage: 'validate', manual: true, result: validateDemoTranslation(state.entry.source, state.translation)}
     case 'advance':

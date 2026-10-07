@@ -10,7 +10,7 @@ import './home.css'
 export default function HomePage() {
   const {t, locale} = useI18n()
   React.useEffect(() => {
-    const redirect = () => { const destination = legacyProductDestination(window.location.hash); if (destination) navigateInternal(destination) }
+    const redirect = () => { const destination = legacyProductDestination(window.location.hash); if (destination) navigateInternal(destination, {replace: true}) }
     redirect()
     window.addEventListener('hashchange', redirect)
     return () => window.removeEventListener('hashchange', redirect)

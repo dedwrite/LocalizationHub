@@ -9,13 +9,13 @@ test.describe('English/Arabic UI preference', () => {
     await page.getByRole('combobox', { name: 'Interface language' }).selectOption('ar')
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-    await expect(page.getByRole('heading', { name: 'ألعاب تحبها. وترجمة تليق بها.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'المحرّر هو المنتج.' })).toBeVisible()
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
     await page.getByRole('combobox', { name: 'لغة الواجهة' }).selectOption('en')
     await page.reload()
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
-    await expect(page.getByRole('heading', { name: 'Your game. Your words.' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'The editor is the product.' })).toBeVisible()
   })
 
   test('Arabic public surfaces stay within the viewport and pass accessibility checks', async ({ page }) => {

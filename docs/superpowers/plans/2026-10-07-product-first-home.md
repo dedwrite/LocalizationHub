@@ -36,11 +36,11 @@
 
 **Interfaces:** Produce `UiTheme({children, className?})`, `ActionLink({href, children, variant?: 'primary' | 'quiet', ...nativeAnchorProps})`, `IconButton({label, children, ...nativeButtonProps})`, `StatusBadge({children, tone?: 'neutral' | 'success' | 'warning'})`. Export CSS explicitly as `@localizationhub/ui/theme.css`. No global theme activation.
 
-- [ ] Write tests `theme_is_opt_in`, `action_preserves_native_link_semantics`, `icon_button_has_accessible_name`, `disabled_button_stays_disabled`, and `css_does_not_target_unscoped_root_or_app`. Assert no global `:root`, `body`, `button` or app selectors in the new sheet; theme variables live under `[data-lh-theme="product"]`.
-- [ ] Run `npx vitest run packages/ui/src`; confirm failures reference missing implementation rather than test harness errors.
-- [ ] Implement the interfaces using native elements. Tokens: canvas `#050505`, surface `#070808`, raised `#0b0c0b`, line `#1a1d1c`, text `#f2f5f0`, secondary `#7d827d`, accent `#bafa61`; use measured accessible label variants, reserving `#383d3b` for decoration. Use logical spacing, visible focus and 44px coarse-pointer targets. Motion durations 140/240/400/600ms; reduced-motion disables nonessential motion.
-- [ ] Run the new tests plus `npx vitest run website/tests/appPalette.test.ts`; all pass. Build website to verify workspace export resolution.
-- [ ] Commit only foundation files: `feat(ui): add opt-in product-first foundations`.
+- [x] Write tests `theme_is_opt_in`, `action_preserves_native_link_semantics`, `icon_button_has_accessible_name`, `disabled_button_stays_disabled`, and `css_does_not_target_unscoped_root_or_app`. Assert no global `:root`, `body`, `button` or app selectors in the new sheet; theme variables live under `[data-lh-theme="product"]`.
+- [x] Run `npx vitest run packages/ui/src`; confirm failures reference missing implementation rather than test harness errors.
+- [x] Implement the interfaces using native elements. Tokens: canvas `#050505`, surface `#070808`, raised `#0b0c0b`, line `#1a1d1c`, text `#f2f5f0`, secondary `#7d827d`, accent `#bafa61`; use measured accessible label variants, reserving `#383d3b` for decoration. Use logical spacing, visible focus and 44px coarse-pointer targets. Motion durations 140/240/400/600ms; reduced-motion disables nonessential motion.
+- [x] Run the new tests plus `npx vitest run website/tests/appPalette.test.ts`; all pass. Build website to verify workspace export resolution.
+- [x] Commit only foundation files: `feat(ui): add opt-in product-first foundations`.
 
 ## Task 2: Demo model and motion controller
 
@@ -48,12 +48,12 @@
 
 **Interfaces:** Export `DemoStage = 'select' | 'translate' | 'validate'`; `DemoEntry = {id: string; source: string; translation: string}`; `demoEntries: readonly DemoEntry[]`; `validateDemoTranslation(source: string, translation: string): {valid: boolean; missing: string[]}` using existing generic token validation. Export `useDemoStory({reducedMotion, visible})` returning `{stage, entry, translation, paused, selectEntry, editTranslation, validate, pause, replay}`. The model owns timer scheduling; JSX does not.
 
-- [ ] Write tests asserting `{player_name}` retained => valid; removed/changed/duplicated => invalid according to core rules; empty translation never yields ready. Assert selection resets validation and count equals actual data length.
-- [ ] Write fake-timer tests for select → translate → validate → reset; editing/selection takes over; replay explicitly restarts; hidden/offscreen pauses; reduced motion starts complete and does not schedule playback; unmount cancels timers. No persistence/network writes.
-- [ ] Run `npx vitest run website/src/productHome`; confirm intended failures.
-- [ ] Implement the pure model and hook. Initial holds: select 1800ms, translate 2400ms including a 600ms reveal, validated 2800ms, then reset; adjust only after visual verification. Reduced-motion output is static completed example. Manual edits never autoplay again without replay.
-- [ ] Run tests with fake timers; all pass, no pending timers after unmount.
-- [ ] Commit: `feat(web): add safe editor demonstration controller`.
+- [x] Write tests asserting `{player_name}` retained => valid; removed/changed/duplicated => invalid according to core rules; empty translation never yields ready. Assert selection resets validation and count equals actual data length.
+- [x] Write fake-timer tests for select → translate → validate → reset; editing/selection takes over; replay explicitly restarts; hidden/offscreen pauses; reduced motion starts complete and does not schedule playback; unmount cancels timers. No persistence/network writes.
+- [x] Run `npx vitest run website/src/productHome`; confirm intended failures.
+- [x] Implement the pure model and hook. Initial holds: select 1800ms, translate 2400ms including a 600ms reveal, validated 2800ms, then reset; adjust only after visual verification. Reduced-motion output is static completed example. Manual edits never autoplay again without replay.
+- [x] Run tests with fake timers; all pass, no pending timers after unmount.
+- [x] Commit: `feat(web): add safe editor demonstration controller`.
 
 ## Task 3: Home and route preservation
 
@@ -61,25 +61,25 @@
 
 **Interfaces:** `HomePage()` consumes Task 1 primitives and Task 2 controller; `EditorDemo()` contains native selection buttons, editable target field, Validate, Pause/Replay. `legacyProductDestination(hash: string): string | null` returns `/product#...` only for actual existing section IDs, otherwise null. Public metadata registers `/product`; Vite continues rendering the real React tree into each public route.
 
-- [ ] Write Home tests: exact English headings “The editor is the product.” and “Open files. Translate. Validate. Export.”; editor link `/app/local`, details `/product`, docs `/reference`, download `/download`; GitHub labelled private. Assert no long feature tower in Home, both locales render, source stays LTR and Arabic target RTL with isolated placeholder. `/product` retains current content and secrets.
-- [ ] Add route/SSR tests: `/product` has its own canonical/title and real HTML, Home prerenders meaningful demo and working links, old known fragment resolves to preserved section, unknown fragment does not redirect, initial client markup matches server markup.
-- [ ] Run `npx vitest run website/src/productHome website/tests`; confirm expected failures before implementation.
-- [ ] Implement V3 layout: desktop gutters approximately 64px, 270px rail, dominant 700px editor at 1440px; 30px source and 32px Arabic reference scale. Compact header and footer, near-black surfaces and selective lime. Source/source context remains factual and illustrative. Use Figma assets locally. Do not import the real Workspace into Home.
-- [ ] Add EN/AR keys and truthful private-access labels. Use editable RTL target with isolated token preview; native textarea value remains plain text. Animation reveals from the physical right, never announces automatic cycles; manual validation uses one polite status.
-- [ ] Preserve long content at `/product`, audit its links so section links stay on `/product`, map old incoming Home hashes, update metadata/schema/theme color/font preload/sitemap for new route truth. Do not restyle Product Details yet.
-- [ ] Run targeted tests, `node scripts/i18n-audit.mjs`, `npm run build --workspace website`; all pass. Inspect built `dist/index.html` and `dist/product/index.html` for distinct real content/canonicals.
-- [ ] Commit: `feat(web): implement product-first Home and preserve product details`.
+- [x] Write Home tests: exact English headings “The editor is the product.” and “Open files. Translate. Validate. Export.”; editor link `/app/local`, details `/product`, docs `/reference`, download `/download`; GitHub labelled private. Assert no long feature tower in Home, both locales render, source stays LTR and Arabic target RTL with isolated placeholder. `/product` retains current content and secrets.
+- [x] Add route/SSR tests: `/product` has its own canonical/title and real HTML, Home prerenders meaningful demo and working links, old known fragment resolves to preserved section, unknown fragment does not redirect, initial client markup matches server markup.
+- [x] Run `npx vitest run website/src/productHome website/tests`; confirm expected failures before implementation.
+- [x] Implement V3 layout: desktop gutters approximately 64px, 270px rail, dominant 700px editor at 1440px; 30px source and 32px Arabic reference scale. Compact header and footer, near-black surfaces and selective lime. Source/source context remains factual and illustrative. Use Figma assets locally. Do not import the real Workspace into Home.
+- [x] Add EN/AR keys and truthful private-access labels. Use editable RTL target with isolated token preview; native textarea value remains plain text. Animation reveals from the physical right, never announces automatic cycles; manual validation uses one polite status.
+- [x] Preserve long content at `/product`, audit its links so section links stay on `/product`, map old incoming Home hashes, update metadata/schema/theme color/font preload/sitemap for new route truth. Do not restyle Product Details yet.
+- [x] Run targeted tests, `node scripts/i18n-audit.mjs`, `npm run build --workspace website`; all pass. Inspect built `dist/index.html` and `dist/product/index.html` for distinct real content/canonicals.
+- [x] Commit: `feat(web): implement product-first Home and preserve product details`.
 
 ## Task 4: Browser verification and local handoff
 
 **Files:** Create `tests/e2e/product-first-home.spec.ts`; adjust existing public tests for the intentional `/product` relocation without weakening their assertions; update the audit/planning evidence with actual results.
 
-- [ ] Add Playwright assertions at 1440, laptop 1280, tablet 768, mobile 430/390/360 in EN/AR: no horizontal overflow, readable source/target, usable selector, keyboard reachability, visible focus, accessible names and axe serious/critical issues zero.
-- [ ] Test real token removal/manual validation, edited content not overwritten after a full autoplay cycle, selection reset, pause/replay, reduced-motion static output, offscreen/hidden-tab scheduling, no console/page errors, legacy anchors and JS-disabled navigation.
-- [ ] Exercise Chromium and actual WebKit projects from existing config. Capture desktop/mobile EN/AR screenshots. Inspect them directly against all three approved Figma states; do not equate build success with visual acceptance.
-- [ ] Run `npx vitest run packages/ui/src website/src/productHome packages/core/src/tokens packages/i18n/src website/tests website/src/lhRadio`, `node scripts/i18n-audit.mjs`, `npm run build --workspace website`, relevant public/app/Admin/LH Radio Playwright smoke and `git diff --check`. Report actual totals and any coverage limitations; do not claim authenticated production tests.
-- [ ] Verify existing local review startup before launching; reuse project startup method without dropping ignored environment config. Do not print env values, kill unrelated processes or change production. Keep local preview running and open Home for human review.
-- [ ] Commit only any final verified fixes and evidence. Report branch, commits, test counts, screenshot locations, local URL and deferred surfaces. Stop for human Home acceptance; no push or later migration.
+- [x] Add Playwright assertions at 1440, laptop 1280, tablet 768, mobile 430/390/360 in EN/AR: no horizontal overflow, readable source/target, usable selector, keyboard reachability, visible focus, accessible names and axe serious/critical issues zero.
+- [x] Test real token removal/manual validation, edited content not overwritten after a full autoplay cycle, selection reset, pause/replay, reduced-motion static output, offscreen/hidden-tab scheduling, no console/page errors, legacy anchors and JS-disabled navigation.
+- [x] Exercise Chromium and actual WebKit projects from existing config. Capture desktop/mobile EN/AR screenshots. Inspect them directly against all three approved Figma states; do not equate build success with visual acceptance.
+- [x] Run `npx vitest run packages/ui/src website/src/productHome packages/core/src/tokens packages/i18n/src website/tests website/src/lhRadio`, `node scripts/i18n-audit.mjs`, `npm run build --workspace website`, relevant public/app/Admin/LH Radio Playwright smoke and `git diff --check`. Report actual totals and any coverage limitations; do not claim authenticated production tests.
+- [x] Verify existing local review startup before launching; reuse project startup method without dropping ignored environment config. Do not print env values, kill unrelated processes or change production. Keep local preview running and open Home for human review.
+- [x] Commit only any final verified fixes and evidence. Report branch, commits, test counts, screenshot locations, local URL and deferred surfaces. Stop for human Home acceptance; no push or later migration.
 
 ## Plan self-review
 

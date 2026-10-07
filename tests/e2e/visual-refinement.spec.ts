@@ -50,7 +50,7 @@ for (const locale of ['en', 'ar'] as const) {
 test('landing preview preserves edits across UI locales, with bounded section spacing', async ({ page }) => {
   await populatedRadio(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/product')
   await expect(page.locator('.site-header')).toBeVisible()
   await expect(page.locator('.format-options button')).toHaveCount(4)
   expect(await page.locator('.site-header, .format-guide').evaluateAll(elements => elements.every(element => {

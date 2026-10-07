@@ -71,7 +71,7 @@ test.describe('LH Radio native player', () => {
       const el = document.querySelector('.lh-radio') as HTMLElement
       el.dataset.instance = 'same'
     })
-    await page.getByRole('link', { name: 'Open the editor' }).first().click()
+    await page.locator('a[href="/app/local"]').first().click()
     await expect(page).toHaveURL(/\/app/)
     await expect(page.locator('.lh-radio')).toHaveCount(1)
     expect(await page.evaluate(() => (document.querySelector('.lh-radio') as HTMLElement).dataset.instance)).toBe('same')

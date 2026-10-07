@@ -22,6 +22,6 @@ export function useDemoStory({reducedMotion, visible}: {reducedMotion: boolean; 
     validate: () => dispatch({type: 'validate'}),
     pause: () => dispatch({type: 'pause'}),
     start: () => dispatch({type: 'start'}),
-    replay: () => dispatch({type: reducedMotion ? 'complete' : 'replay'}),
+    replay: () => dispatch({type: reducedMotion ? 'reset-complete' : 'replay'}),
   }
 }

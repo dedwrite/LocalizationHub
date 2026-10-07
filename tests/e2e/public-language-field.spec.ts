@@ -9,7 +9,7 @@ for (const locale of ['en', 'ar']) {
   test(`connected hero and narrow header hold their composition in ${locale}`, async ({ page }) => {
     await page.addInitScript(locale => localStorage.setItem('localizationhub.ui-locale.v1', locale), locale)
     await page.setViewportSize({ width: 1440, height: 900 })
-    await page.goto('/')
+    await page.goto('/product')
     const intro = (await page.locator('.hero-intro').boundingBox())!
     const proof = (await page.locator('.hero-visual').boundingBox())!
     expect(Math.abs(intro.y - proof.y)).toBeLessThan(120)
@@ -24,7 +24,7 @@ for (const locale of ['en', 'ar']) {
 
   test(`landing controls and long translations remain usable in ${locale}`, async ({ page }) => {
     await page.addInitScript(locale => localStorage.setItem('localizationhub.ui-locale.v1', locale), locale)
-    await page.goto('/')
+    await page.goto('/product')
     await expect(page.locator('html')).toHaveAttribute('lang', locale)
     for (const selector of ['.preview-reset', '.preview-entry', '.lh-language-switcher select', '.mobile-site-menu summary', '.site-command-launcher']) {
       for (const control of await page.locator(`#public-site ${selector}`).all()) {
@@ -69,7 +69,7 @@ for (const locale of ['en', 'ar']) {
     const errors: string[] = []
     page.on('pageerror', error => errors.push(error.message))
     await page.addInitScript(locale => localStorage.setItem('localizationhub.ui-locale.v1', locale), locale)
-    await page.goto('/')
+    await page.goto('/product')
     await expect(page.locator('html')).toHaveAttribute('lang', locale)
     await expect(page.locator('.language-glyph')).toHaveCount(40)
     await expect(page.locator('.language-field')).toHaveAttribute('aria-hidden', 'true')
@@ -105,15 +105,15 @@ for (const locale of ['en', 'ar']) {
 test('landing font preloads do not leak into the application shell', async ({ request }) => {
   const landing = await (await request.get('/')).text()
   const app = await (await request.get('/app/local')).text()
-  expect(landing).toContain('name="theme-color" content="#111016"')
-  expect(landing).toContain('rel="preload" href="/fonts/schibsted-grotesk-latin.woff2"')
+  expect(landing).toContain('name="theme-color" content="#050505"')
+  expect(landing).toContain('rel="preload" href="/fonts/inter-variable.woff2"')
   expect(landing).toContain('rel="preload" href="/fonts/noto-sans-arabic.woff2"')
   expect(app).not.toContain('rel="preload" href="/fonts/')
 })
 
 test('decoration stays static with reduced motion and is absent from the Web App', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('/product')
   await expect(page.locator('.language-glyph').first()).toHaveCSS('animation-name', 'none')
   const geometry = await page.locator('.language-glyph').evaluateAll(nodes => nodes.map(node => (node as HTMLElement).style.cssText))
   await page.locator('.lh-language-switcher select').selectOption('ar')
@@ -126,7 +126,7 @@ test('decoration stays static with reduced motion and is absent from the Web App
 test('forced colors hide nonessential characters', async ({ page, browserName }) => {
   test.skip(browserName === 'webkit', 'WebKit does not support forced-color emulation')
   await page.emulateMedia({ forcedColors: 'active' })
-  await page.goto('/')
+  await page.goto('/product')
   await expect(page.locator('.language-field')).toHaveCSS('display', 'none')
   await expect(page.locator('.hero a[href="/app/local"]')).toBeVisible()
 })

@@ -16,7 +16,7 @@ for (const locale of ['en', 'ar']) {
     const width = page.viewportSize()?.width ?? 1440
     test.skip(![1440, 1280, 1024, 390].includes(width), 'the lock is verified at 1440, 1280, 1024 and 390')
     await page.addInitScript(value => localStorage.setItem('localizationhub.ui-locale.v1', value), locale)
-    await page.goto('/')
+    await page.goto('/product')
     await expect(page.locator('#public-site')).toBeVisible()
     const report = await page.evaluate(() => {
       const site = document.querySelector('#public-site') as HTMLElement
@@ -79,7 +79,7 @@ for (const locale of ['en', 'ar']) {
 }
 
 test('every rule that addresses the landing draws from the declared tokens', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/product')
   const report = await page.evaluate(() => {
     const colourLiteral = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/i
     // A named step, a relative size or `inherit` all keep the scale; a non-zero
@@ -208,7 +208,7 @@ test('the download and legal pages have exactly one stylesheet owner', () => {
 test('the landing never leaves its own origin for a font', async ({ page, baseURL }) => {
   const fonts: string[] = []
   page.on('request', request => { if (request.resourceType() === 'font') fonts.push(request.url()) })
-  await page.goto('/')
+  await page.goto('/product')
   await page.waitForLoadState('networkidle')
   expect(fonts.length).toBeGreaterThan(0)
   const origin = new URL(baseURL!).origin

@@ -27,13 +27,14 @@ export function allowHistoryNavigation(event: PopStateEvent) {
   return true
 }
 
-export function navigate(path: string) {
-  if (guard && !guard(() => commitNavigation(path))) return
-  commitNavigation(path)
+export function navigate(path: string, options: {replace?: boolean} = {}) {
+  if (guard && !guard(() => commitNavigation(path, options.replace))) return
+  commitNavigation(path, options.replace)
 }
 
-function commitNavigation(path: string) {
-  window.history.pushState({}, '', path)
+function commitNavigation(path: string, replace = false) {
+  if (replace) window.history.replaceState({}, '', path)
+  else window.history.pushState({}, '', path)
   dispatchPopState()
 }
 
