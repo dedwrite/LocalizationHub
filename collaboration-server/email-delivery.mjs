@@ -1,7 +1,7 @@
 import {
   createHash,
 } from 'node:crypto'
-import { adminCodeHtml } from './email-template.mjs'
+import { adminCodeHtml, emailFrame } from './email-template.mjs'
 
 const RESEND_API_URL =
   'https://api.resend.com/emails'
@@ -267,116 +267,20 @@ export async function sendVerificationEmail({
       '\n',
     )
 
-  const html =
-    [
-      '<!doctype html>',
-      '<html>',
-      '<head>',
-      '<meta charset="utf-8">',
-      '<meta name="viewport" content="width=device-width,initial-scale=1">',
-      '<meta name="color-scheme" content="dark">',
-      '<meta name="supported-color-schemes" content="dark">',
-      '<title>Verify your LocalizationHub email</title>',
-      '</head>',
-
-      '<body style="margin:0;padding:0;background:#050505;color:#f3f4f7;font-family:Arial,Helvetica,sans-serif;">',
-
-      '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">',
-      'Confirm your email address to finish setting up your LocalizationHub account.',
-      '</div>',
-
-      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#050505" style="width:100%;background:#050505;">',
-      '<tr>',
-      '<td align="center" style="padding:44px 16px;">',
-
-      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px;background:#0b0c0b;border:1px solid #383d3b;border-radius:6px;">',
-
-      '<tr>',
-      '<td style="padding:36px 36px 0 36px;">',
-
-      '<table role="presentation" cellspacing="0" cellpadding="0" border="0">',
-      '<tr>',
-
-      '<td valign="middle" style="padding-right:12px;">',
-      '<img src="https://localizationhub.app/apple-touch-icon.png" alt="LocalizationHub" width="46" height="46" style="display:block;width:46px;height:46px;border:0;border-radius:12px;outline:none;text-decoration:none;">',
-      '</td>',
-
-      '<td valign="middle">',
-      '<div style="color:#f5f6f8;font-size:18px;font-weight:700;line-height:1.2;">LocalizationHub</div>',
-      '<div style="margin-top:4px;color:#a1aa9e;font-size:11px;letter-spacing:0.04em;">GAME LOCALIZATION WORKSPACE</div>',
-      '</td>',
-
-      '</tr>',
-      '</table>',
-
-      '</td>',
-      '</tr>',
-
-      '<tr>',
-      '<td style="padding:32px 36px 36px 36px;">',
-
-      '<h1 style="margin:0 0 14px 0;color:#f6f7f9;font-size:28px;line-height:1.2;font-weight:750;letter-spacing:-0.03em;">',
-      'Verify your email',
-      '</h1>',
-
-      `<p style="margin:0 0 10px 0;color:#c8ccd5;font-size:15px;line-height:1.7;">Hello <strong dir="auto" style="color:#ffffff;unicode-bidi:isolate;">${safeUsername}</strong>,</p>`,
-
-      '<p style="margin:0;color:#9da4b3;font-size:15px;line-height:1.7;">',
-      'Confirm your email address to finish setting up and securing your LocalizationHub account.',
-      '</p>',
-
-      '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:26px;">',
-      '<tr>',
-      '<td bgcolor="#bafa61" style="border-radius:6px;">',
-      `<a href="${safeUrl}" style="display:inline-block;padding:13px 22px;color:#050505;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;background:#bafa61;">Verify Email</a>`,
-      '</td>',
-      '</tr>',
-      '</table>',
-
-      displayExpiryText
-        ? `<div style="margin-top:22px;padding:11px 13px;background:#141714;border:1px solid #383d3b;border-radius:9px;color:#a1aa9e;font-size:12px;line-height:1.6;">This verification link expires <strong style="color:#aeb4c0;">${escapeHtml(displayExpiryText)}</strong>.</div>`
-        : '',
-
-      '<div style="margin-top:26px;border-top:1px solid #383d3b;padding-top:22px;">',
-
-      '<p style="margin:0 0 8px 0;color:#a1aa9e;font-size:12px;line-height:1.6;">',
-      'If the button does not work, copy and paste this link into your browser:',
-      '</p>',
-
-      `<p style="margin:0;word-break:break-all;color:#bafa61;font-size:11px;line-height:1.6;"><a href="${safeUrl}" style="color:#bafa61;text-decoration:none;">${safeUrl}</a></p>`,
-
-      '<p style="margin:18px 0 0 0;color:#a1aa9e;font-size:11px;line-height:1.6;">',
-      'If you did not create this account, you can safely ignore this email.',
-      '</p>',
-
-      '</div>',
-
-      '</td>',
-      '</tr>',
-
-      '<tr>',
-      '<td align="center" style="padding:19px 24px;border-top:1px solid #383d3b;background:#070808;border-radius:0 0 6px 6px;">',
-
-      '<a href="https://dedwrite.xyz/" target="_blank" style="text-decoration:none;">',
-      '<span style="color:#a1aa9e;font-size:9px;letter-spacing:0.18em;">A </span>',
-      '<span style="color:#9ba1ad;font-size:10px;font-weight:800;letter-spacing:0.16em;">DEDWRITE</span>',
-      '<span style="color:#a1aa9e;font-size:9px;letter-spacing:0.12em;"> PROJECT</span>',
-      '</a>',
-
-      '</td>',
-      '</tr>',
-
-      '</table>',
-
-      '</td>',
-      '</tr>',
-      '</table>',
-
-      '</body>',
-      '</html>',
-    ].join(
-      '',
-    )
+  const html = emailFrame({
+    title: 'Verify your email',
+    preview: 'Confirm your email address to finish setting up your LocalizationHub account.',
+    content: [
+      `<p style="font-size:15px;line-height:1.7;color:#c4ccc1">Hello <strong dir="auto" style="unicode-bidi:isolate;color:#f2f5f0">${safeUsername}</strong>,</p>`,
+      '<p style="font-size:15px;line-height:1.7;color:#c4ccc1">Confirm your email address to finish setting up and securing your LocalizationHub account.</p>',
+      '<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0"><tr><td bgcolor="#bafa61" style="border-radius:6px">',
+      `<a href="${safeUrl}" style="display:inline-block;padding:14px 22px;background:#bafa61;color:#050505;font-size:14px;font-weight:bold;text-decoration:none;border-radius:6px">Verify email</a></td></tr></table>`,
+      displayExpiryText ? `<p style="font-size:12px;line-height:1.7;color:#a1aa9e">This verification link expires ${escapeHtml(displayExpiryText)}.</p>` : '',
+      '<p style="font-size:12px;line-height:1.7;color:#a1aa9e">If the button does not work, copy and paste this link into your browser:</p>',
+      `<p dir="ltr" style="word-break:break-all;overflow-wrap:anywhere;font-size:12px;line-height:1.7"><a href="${safeUrl}" style="color:#bafa61">${safeUrl}</a></p>`,
+      '<p style="font-size:12px;line-height:1.7;color:#a1aa9e">If you did not create this account, you can safely ignore this email.</p>',
+    ].join(''),
+  })
 
   const response =
     await fetchImpl(
