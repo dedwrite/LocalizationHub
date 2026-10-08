@@ -1,17 +1,17 @@
 :root {
-  --admin-bg: linear-gradient(135deg, #0b0d10, #151321);
-  --admin-panel: #121923;
-  --admin-panel-2: #0d1117;
-  --admin-border: #30394a;
-  --admin-border-soft: #465064;
+  --admin-bg: var(--app-bg);
+  --admin-panel: #0b0c0b;
+  --admin-panel-2: #0b0c0b;
+  --admin-border: #383d3b;
+  --admin-border-soft: #383d3b;
   --admin-text: #f5f7fa;
-  --admin-muted: #aeb8c6;
-  --admin-accent: #5962a8;
-  --admin-accent-bg: #25234a;
+  --admin-muted: #c4ccc1;
+  --admin-accent: #bafa61;
+  --admin-accent-bg: #383d3b;
   --admin-danger: #b3505c;
   --admin-danger-bg: #3a1f26;
-  --admin-primary: #3d4a9e;
-  --admin-primary-bg: #2b2f66;
+  --admin-primary: #bafa61;
+  --admin-primary-bg: var(--app-primary);
 }
 
 .admin-console {
@@ -26,14 +26,14 @@
 }
 
 .admin-console h1 {
-  font-size: clamp(30px, 5vw, 48px);
+  font-size: 32px;
   font-weight: 700;
   line-height: 1.05;
   margin: 0 0 16px;
 }
 
 .admin-console h2 {
-  font-size: clamp(20px, 3vw, 28px);
+  font-size: 22px;
   font-weight: 700;
   margin: 0 0 18px;
 }
@@ -65,11 +65,11 @@
 }
 
 .admin-btn:hover:not(:disabled) {
-  background: #2e2c5c;
+  background: #383d3b;
 }
 
 .admin-btn:focus-visible {
-  outline: 2px solid #9aa5ff;
+  outline: 2px solid #bafa61;
   outline-offset: 2px;
 }
 
@@ -79,6 +79,7 @@
 }
 
 .admin-btn-primary {
+  color: var(--app-text-on-primary);
   background: var(--admin-primary-bg);
   border-color: var(--admin-primary);
 }
@@ -112,7 +113,7 @@
 
 .admin-console input:focus-visible,
 .admin-console select:focus-visible {
-  outline: 2px solid #9aa5ff;
+  outline: 2px solid #bafa61;
   outline-offset: 1px;
 }
 
@@ -198,7 +199,7 @@
 .admin-btn-link {
   background: transparent;
   border: none;
-  color: #9aa5ff;
+  color: #bafa61;
   padding: 6px 0;
   text-decoration: underline;
   cursor: pointer;
@@ -206,7 +207,7 @@
 }
 
 .admin-btn-link:hover {
-  color: #c3cbff;
+  color: #f2f5f0;
 }
 
 .totp-uri {
@@ -215,7 +216,7 @@
   padding: 14px;
   overflow-wrap: anywhere;
   background: var(--admin-panel-2);
-  color: #d4cfff;
+  color: #f2f5f0;
   border-radius: 6px;
   font-size: 13px;
 }
@@ -265,8 +266,15 @@
 }
 
 .admin-nav-active {
+  color: var(--app-text-on-primary);
   background: var(--admin-primary-bg);
   border-color: var(--admin-primary);
+}
+
+.admin-btn-primary:hover:not(:disabled),
+.admin-nav-active:hover:not(:disabled) {
+  background: var(--app-accent);
+  color: var(--app-text-on-primary);
 }
 
 /* Sections */
@@ -310,7 +318,7 @@
 }
 
 .admin-table-wrap:focus {
-  outline: 2px solid #9aa5ff;
+  outline: 2px solid #bafa61;
   outline-offset: 2px;
 }
 
@@ -593,7 +601,7 @@
 .radio-step-label { color: var(--admin-muted); font: 11px var(--font-mono), monospace; text-transform: uppercase; }
 .radio-source-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .radio-source-tabs button { border: 1px solid var(--admin-border); background: var(--admin-panel-2); color: var(--admin-muted); padding: 11px 12px; text-align: left; cursor: pointer; border-radius: 5px; font: inherit; }
-.radio-source-tabs button.active { border-color: #7767e7; background: #242044; color: #f5f7fa; }
+.radio-source-tabs button.active { border-color: #bafa61; background: #383d3b; color: #f5f7fa; }
 .radio-source-tabs small { display: block; margin-top: 4px; color: inherit; opacity: .7; font-size: 10px; }
 .radio-link-import { display: grid; gap: 8px; margin-bottom: 14px; padding: 12px; border: 1px solid var(--admin-border); background: var(--admin-panel-2); border-radius: 6px; }
 .radio-link-note { margin: 0; color: var(--admin-muted); font-size: 12px; }
@@ -601,18 +609,18 @@
 .radio-link-preview img { width: 52px; height: 52px; object-fit: cover; border-radius: 5px; border: 1px solid var(--admin-border); }
 .radio-link-preview div { display: grid; gap: 3px; min-width: 0; }
 .radio-link-preview span, .radio-link-preview small { color: var(--admin-muted); font-size: 12px; }
-.radio-suggestion { color: #b7abff; font-size: 10px; font-weight: 400; }
-.radio-analysis { margin: 14px 0; padding: 12px; border: 1px solid #49406f; background: #151326; border-radius: 6px; }
-.radio-analysis-head { display: flex; justify-content: space-between; gap: 12px; color: #e8e4ff; }
+.radio-suggestion { color: #bafa61; font-size: 10px; font-weight: 400; }
+.radio-analysis { margin: 14px 0; padding: 12px; border: 1px solid #383d3b; background: #0b0c0b; border-radius: 6px; }
+.radio-analysis-head { display: flex; justify-content: space-between; gap: 12px; color: #f2f5f0; }
 .radio-analysis-head span { color: var(--admin-muted); font: 10px var(--font-mono), monospace; text-transform: uppercase; }
 .radio-analysis dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0 0; }
 .radio-analysis dl div { display: grid; gap: 3px; }
 .radio-analysis dt { color: var(--admin-muted); font-size: 10px; text-transform: uppercase; }
 .radio-analysis dd { margin: 0; color: #f5f7fa; font-size: 13px; }
-.radio-operation-status { margin: 12px 0; color: #c8c0ff; font: 12px var(--font-mono), monospace; }
+.radio-operation-status { margin: 12px 0; color: #f2f5f0; font: 12px var(--font-mono), monospace; }
 .radio-analysis-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .radio-analysis-error .admin-error { margin: 0; }
-.radio-smart-match { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #3b3559; color: #ded9ff; font-size: 12px; }
+.radio-smart-match { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #383d3b; color: #f2f5f0; font-size: 12px; }
 .radio-smart-match span { color: var(--admin-muted); }
 .radio-smart-match .match-pass { color: #8fdcb5; }
 .radio-smart-match .match-warn { color: #e8ca8a; }
@@ -646,7 +654,7 @@
   border: 1px solid var(--admin-border);
   margin-top: 6px;
 }
-.radio-remove-cover { width: max-content; margin-top: 6px; border: 0; background: transparent; color: #b7abff; padding: 0; cursor: pointer; font-size: 11px; }
+.radio-remove-cover { width: max-content; margin-top: 6px; border: 0; background: transparent; color: #bafa61; padding: 0; cursor: pointer; font-size: 11px; }
 
 .radio-rights-note {
   color: var(--admin-muted);

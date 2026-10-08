@@ -4,14 +4,14 @@
   align-items: center;
   gap: 8px;
 
-  color: #a9b1c3;
+  color: #c4ccc1;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .token-profile-control span {
-  color: #c7cede;
+  color: #c4ccc1;
 }
 
 .token-profile-control select {
@@ -20,11 +20,11 @@
 
   padding: 0 30px 0 11px;
 
-  border: 1px solid #343a49;
+  border: 1px solid #383d3b;
   border-radius: 7px;
 
-  background-color: #181c26;
-  color: #e8ebf2;
+  background-color: #0b0c0b;
+  color: #f2f5f0;
 
   font: inherit;
   font-size: 12px;
@@ -38,23 +38,23 @@
 }
 
 .token-profile-control select:hover {
-  border-color: #565d72;
-  background-color: #1d2230;
+  border-color: #383d3b;
+  background-color: #141714;
 }
 
 .token-profile-control select:focus {
-  border-color: #7667ff;
+  border-color: #bafa61;
 }
 
 .token-profile-control select option {
-  background-color: #181c26;
-  color: #e8ebf2;
+  background-color: #0b0c0b;
+  color: #f2f5f0;
 }
 
 .token-profile-status {
   flex-basis: 100%;
   display: block;
-  color: #9ba8c4;
+  color: #c4ccc1;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.35;
@@ -69,7 +69,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: #bcb2ff;
+  color: #bafa61;
   font: inherit;
   text-decoration: underline;
   cursor: pointer;

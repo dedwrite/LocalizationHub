@@ -6,11 +6,11 @@
    ============================================================ */
 
 .lh-radio {
-  --lh-bg: #101319;
-  --lh-line: #2b2f3a;
-  --lh-muted: #8e929e;
-  --lh-accent: var(--accent, #a79cff);
-  --lh-accent-strong: var(--accent-strong, #c8c1ff);
+  --lh-bg: #0b0c0b;
+  --lh-line: #141714;
+  --lh-muted: #949b95;
+  --lh-accent: var(--accent, #bafa61);
+  --lh-accent-strong: var(--accent-strong, #f2f5f0);
   font-family: var(--font-ui), sans-serif;
   color: #e9e8ed;
 }
@@ -28,11 +28,11 @@
   border-radius: 50%;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 50%, #1a1c25 0%, #0b0d12 62%);
-  border: 1px solid #343848;
+    radial-gradient(circle at 50% 50%, #0b0c0b 0%, #0b0d12 62%);
+  border: 1px solid #383d3b;
   box-shadow:
-    0 0 0 3px rgba(167, 156, 255, 0.05),
-    0 0 22px rgba(167, 156, 255, 0.16),
+    0 0 0 3px rgba(148, 155, 149, 0.05),
+    0 0 22px rgba(148, 155, 149, 0.16),
     inset 0 0 12px rgba(0, 0, 0, 0.6);
 }
 
@@ -52,7 +52,7 @@
   place-items: center;
   font-size: 1.2rem;
   color: var(--lh-accent);
-  background: radial-gradient(circle at 50% 40%, #1c1f2c 0%, #0d0f15 70%);
+  background: radial-gradient(circle at 50% 40%, #0b0c0b 0%, #0b0c0b 70%);
 }
 
 .lh-radio-disc-hub {
@@ -64,7 +64,7 @@
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: #08090c;
-  border: 2px solid rgba(167, 156, 255, 0.35);
+  border: 2px solid rgba(148, 155, 149, 0.35);
   box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.9);
 }
 
@@ -98,10 +98,10 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: rgba(16, 19, 25, 0.94);
+  background: rgba(11, 12, 11, 0.94);
   border: 1px solid var(--lh-line);
   border-radius: 999px;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 20px rgba(167, 156, 255, 0.1);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5), 0 0 20px rgba(148, 155, 149, 0.1);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   max-width: calc(100vw - 32px);
@@ -122,7 +122,7 @@
   stroke: var(--lh-accent);
   stroke-width: 1.5;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(167, 156, 255, 0.32));
+  filter: drop-shadow(0 0 4px rgba(148, 155, 149, 0.32));
 }
 
 .lh-radio-capsule-main {
@@ -184,15 +184,15 @@
   transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
-.lh-radio-capsule-btn:hover { color: #fff; background: #1d202a; }
+.lh-radio-capsule-btn:hover { color: #fff; background: #0b0c0b; }
 
 .lh-radio-capsule-play {
-  background: #241f3a;
-  border-color: #4a4068;
+  background: #141714;
+  border-color: #383d3b;
   color: var(--lh-accent-strong);
 }
 
-.lh-radio-capsule-play:hover { background: #2c2447; border-color: var(--lh-accent); }
+.lh-radio-capsule-play:hover { background: #383d3b; border-color: var(--lh-accent); }
 
 /* ---------- Expanded panel ---------- */
 .lh-radio-panel {
@@ -204,7 +204,7 @@
   background: var(--lh-bg);
   border: 1px solid var(--lh-line);
   border-radius: 14px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(167, 156, 255, 0.08), 0 0 34px rgba(167, 156, 255, 0.1);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(148, 155, 149, 0.08), 0 0 34px rgba(148, 155, 149, 0.1);
   overflow: hidden;
 }
 
@@ -283,7 +283,7 @@
   text-overflow: ellipsis;
 }
 
-.lh-radio-now-artist { color: var(--lh-soft, #b6b8c1); font-size: 0.82rem; }
+.lh-radio-now-artist { color: var(--lh-soft, #c4ccc1); font-size: 0.82rem; }
 
 .lh-radio-now-album {
   color: var(--lh-muted);
@@ -312,7 +312,7 @@
   -webkit-appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--lh-accent) var(--seek-pct, 0%), #262a34 var(--seek-pct, 0%));
+  background: linear-gradient(90deg, var(--lh-accent) var(--seek-pct, 0%), #141714 var(--seek-pct, 0%));
   cursor: pointer;
 }
 
@@ -323,7 +323,7 @@
   border-radius: 50%;
   background: #fff;
   border: 2px solid var(--lh-accent);
-  box-shadow: 0 0 8px rgba(167, 156, 255, 0.6);
+  box-shadow: 0 0 8px rgba(148, 155, 149, 0.6);
 }
 
 .lh-radio-seek-input::-moz-range-thumb {
@@ -361,14 +361,14 @@
 .lh-radio-ctl-primary {
   width: 46px;
   height: 46px;
-  background: #241f3a;
-  border-color: #4a4068;
+  background: #141714;
+  border-color: #383d3b;
   color: var(--lh-accent-strong);
   font-size: 0.86rem;
-  box-shadow: 0 0 18px rgba(167, 156, 255, 0.22);
+  box-shadow: 0 0 18px rgba(148, 155, 149, 0.22);
 }
 
-.lh-radio-ctl-primary:hover { background: #2c2447; border-color: var(--lh-accent); }
+.lh-radio-ctl-primary:hover { background: #383d3b; border-color: var(--lh-accent); }
 
 /* Volume */
 .lh-radio-volume {
@@ -396,7 +396,7 @@
   -webkit-appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: #262a34;
+  background: #141714;
   cursor: pointer;
 }
 
@@ -451,19 +451,19 @@
   max-height: 220px;
   overflow-y: auto;
   scrollbar-width: auto;
-  scrollbar-color: #5f4b87 #0a0c12;
+  scrollbar-color: #949b95 #0b0c0b;
 }
 
 .lh-radio-playlist::-webkit-scrollbar { width: 11px; }
-.lh-radio-playlist::-webkit-scrollbar-track { background: #0a0c12; }
+.lh-radio-playlist::-webkit-scrollbar-track { background: #0b0c0b; }
 .lh-radio-playlist::-webkit-scrollbar-thumb {
   min-height: 44px;
-  border: 3px solid #0a0c12;
+  border: 3px solid #0b0c0b;
   border-radius: 999px;
-  background: #5f4b87;
+  background: #949b95;
 }
-.lh-radio-playlist::-webkit-scrollbar-thumb:hover { background: #7961a8; }
-.lh-radio-playlist::-webkit-scrollbar-thumb:active { background: #9475cf; }
+.lh-radio-playlist::-webkit-scrollbar-thumb:hover { background: #bafa61; }
+.lh-radio-playlist::-webkit-scrollbar-thumb:active { background: #bafa61; }
 
 .lh-radio-playlist-label {
   display: block;
@@ -499,11 +499,11 @@
   text-align: left;
 }
 
-.lh-radio-playlist-item:hover { background: #171a22; }
+.lh-radio-playlist-item:hover { background: #0b0c0b; }
 
 .lh-radio-playlist-item.is-current {
-  background: #1c1c2e;
-  border-color: #3a3560;
+  background: #141714;
+  border-color: #383d3b;
 }
 
 .lh-radio-playlist-num {

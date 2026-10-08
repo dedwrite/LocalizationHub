@@ -38,18 +38,18 @@
   text-rendering: optimizeLegibility;
   --bg: #090a0d;
   --surface: #111318;
-  --surface-2: #17191f;
-  --line: #292c35;
-  --muted: #8e929e;
-  --soft: #b6b8c1;
-  --accent: #b9a0ed;
-  --accent-strong: #d7c3f7;
-  --accent-ink: #1b1428;
+  --surface-2: #0b0c0b;
+  --line: #141714;
+  --muted: #949b95;
+  --soft: #c4ccc1;
+  --accent: #bafa61;
+  --accent-strong: #f2f5f0;
+  --accent-ink: #0b0c0b;
   --green: #87c5a0;
   /* Reading White. The landing re-declares it inside `#public-site`; the shell
      declares it here so a shared rule never depends on a fallback value that
      only the landing happened to define. */
-  --text: #f0edf5;
+  --text: #f2f5f0;
   /* The one panel shadow the shared shell draws. The landing declares no box
      shadow at all (DESIGN.md), so this role belongs to the shell alone. */
   --shadow-panel: rgb(0 0 0 / 20%);
@@ -209,10 +209,10 @@ html:has(.public-reading) { --lh-scroll-track: #050505; --lh-scroll-thumb: #383d
 
 /* ---------- One dark scrollbar language across every scroller ---------- */
 :root {
-  --lh-scroll-track: #090b11;
-  --lh-scroll-thumb: #4e416f;
-  --lh-scroll-thumb-hover: #6d58a0;
-  --lh-scroll-thumb-active: #8b70c7;
+  --lh-scroll-track: #0b0c0b;
+  --lh-scroll-thumb: #383d3b;
+  --lh-scroll-thumb-hover: #bafa61;
+  --lh-scroll-thumb-active: #bafa61;
 }
 html,
 body,

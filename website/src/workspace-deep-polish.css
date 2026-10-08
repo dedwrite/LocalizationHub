@@ -30,7 +30,7 @@
 .support-facts strong { color: var(--app-text-2); font-size: .74rem; font-weight: 600; }
 .support-actions { display: grid; gap: 7px; margin-top: auto; }
 .support-actions button { border: 1px solid var(--app-line-strong); background: var(--app-panel); color: var(--app-text-2); padding: 9px 11px; border-radius: 3px; cursor: pointer; text-align: left; font: inherit; font-size: .72rem; }
-.support-actions .primary-button { background: var(--app-primary); border-color: var(--app-primary-line); font-weight: 700; }
+.support-actions .primary-button { background: var(--app-primary); color: var(--app-text-on-primary); border-color: var(--app-primary-line); font-weight: 700; }
 .support-actions button:hover { border-color: var(--app-scroll-thumb-violet-active); transform: translateY(-1px); }
 
 /* Application shell: compact, connected header and intentional canvas depth. */
@@ -74,13 +74,13 @@
 .workspace-shell .toolbar-group:first-of-type { margin-left: auto; }
 .workspace-shell .toolbar-button { color: var(--app-text-3); }
 .workspace-shell .toolbar-button:hover { color: var(--app-text); border-color: var(--app-line-accent); }
-.workspace-shell .toolbar-save { color: var(--app-text); box-shadow: 0 5px 18px var(--app-primary-glow); }
+.workspace-shell .toolbar-save { color: var(--app-text-on-primary); box-shadow: none; }
 
 /* Inspector hierarchy and empty states. */
 .workspace-shell .inspector-pane { border-left: 1px solid var(--app-line-soft); }
 .workspace-shell .inspector-tabs { padding: 9px 10px; background: var(--app-veil-soft); }
 .workspace-shell .inspector-tab { padding: 7px 9px; }
-.workspace-shell .inspector-tab.active { color: var(--app-text-on-primary); background: var(--app-violet-active); box-shadow: inset 0 -2px var(--app-focus-line); }
+.workspace-shell .inspector-tab.active { color: var(--app-accent); background: var(--app-violet-active); box-shadow: inset 0 -2px var(--app-focus-line); }
 .workspace-shell .inspector-section h3 { color: var(--app-text-2); letter-spacing: .1em; }
 .workspace-shell .detail-list { padding: 12px; border: 1px solid var(--app-line-soft); background: var(--app-well-haze-deep); }
 .workspace-shell .muted { line-height: 1.65; }

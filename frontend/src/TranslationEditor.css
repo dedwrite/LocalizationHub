@@ -12,7 +12,7 @@
 
   border:
     1px solid
-    #383d4d;
+    #383d3b;
 
   border-radius:
     10px;
@@ -21,7 +21,7 @@
     hidden;
 
   background:
-    #181b24;
+    #0b0c0b;
 
   color:
     #f1f2f5;
@@ -35,16 +35,11 @@
 
 .translation-editor:focus-within {
   border-color:
-    #6d5dfc;
+    #bafa61;
 
   box-shadow:
     0 0 0 3px
-    rgba(
-      109,
-      93,
-      252,
-      0.12
-    );
+    rgba(148, 155, 149, 0.12);
 }
 
 .translation-editor
@@ -83,8 +78,8 @@
     thin;
 
   scrollbar-color:
-    #343945
-    #181b24;
+    #383d3b
+    #0b0c0b;
 }
 
 .translation-editor
@@ -96,13 +91,13 @@
 .translation-editor
 .cm-scroller::-webkit-scrollbar-track {
   background:
-    #181b24;
+    #0b0c0b;
 }
 
 .translation-editor
 .cm-scroller::-webkit-scrollbar-thumb {
   background:
-    #343945;
+    #383d3b;
 
   border-radius:
     999px;
@@ -111,7 +106,7 @@
 .translation-editor
 .cm-scroller::-webkit-scrollbar-thumb:hover {
   background:
-    #4b5261;
+    #383d3b;
 }
 
 .translation-editor
@@ -183,24 +178,14 @@
 .translation-editor
 .cm-selectionBackground {
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.28
-    ) !important;
+    rgba(148, 155, 149, 0.28) !important;
 }
 
 .translation-editor
 .cm-focused
 .cm-selectionBackground {
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.34
-    ) !important;
+    rgba(148, 155, 149, 0.34) !important;
 }
 
 /*
@@ -209,7 +194,7 @@
 .translation-editor
 .cm-placeholder {
   color:
-    #747b8a;
+    #949b95;
 
   opacity:
     1;
@@ -266,24 +251,14 @@
     4px;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.14
-    );
+    rgba(148, 155, 149, 0.14);
 
   color:
-    #d7d2ff;
+    #f2f5f0;
 
   box-shadow:
     inset 0 0 0 1px
-    rgba(
-      109,
-      93,
-      252,
-      0.22
-    );
+    rgba(148, 155, 149, 0.22);
 
   font-family:
     ui-monospace,
@@ -302,12 +277,7 @@
 .translation-editor
 .cm-protected-token::selection {
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.42
-    );
+    rgba(11, 12, 11, 0.42);
 }
 
 .translation-editor.direction-rtl
@@ -342,7 +312,7 @@
     8px 4px 0;
 
   color:
-    #737b91;
+    #949b95;
 
   font-size:
     11px;
@@ -386,19 +356,19 @@
 
   border:
     1px solid
-    #343a49;
+    #383d3b;
 
   border-bottom-color:
-    #444b5c;
+    #383d3b;
 
   border-radius:
     5px;
 
   background:
-    #191c25;
+    #0b0c0b;
 
   color:
-    #b8bfd0;
+    #c4ccc1;
 
   box-shadow:
     0 1px 0
@@ -434,7 +404,7 @@
     3px;
 
   color:
-    #7d8599;
+    #949b95;
 }
 
 .shortcut-divider {
@@ -445,7 +415,7 @@
     16px;
 
   background:
-    #2d3240;
+    #141714;
 }
 
 /*
@@ -454,14 +424,14 @@
 .translation-editor
 .cm-gutters {
   background:
-    #151820;
+    #0b0c0b;
 
   color:
-    #737b8a;
+    #949b95;
 
   border-right:
     1px solid
-    #2d3240;
+    #141714;
 }
 
 .translation-editor

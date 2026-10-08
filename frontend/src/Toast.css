@@ -24,18 +24,13 @@
 
   border:
     1px solid
-    #353a49;
+    #383d3b;
 
   border-radius:
     12px;
 
   background:
-    rgba(
-      20,
-      23,
-      31,
-      0.96
-    );
+    rgba(11, 12, 11, 0.96);
 
   color:
     #f1f2f5;
@@ -82,7 +77,7 @@
     999px;
 
   background:
-    #8f96a8;
+    #949b95;
 }
 
 .toast-message {
@@ -124,7 +119,7 @@
     transparent;
 
   color:
-    #8e96a8;
+    #949b95;
 
   font-size:
     22px;
@@ -244,27 +239,17 @@
  */
 .toast-info {
   border-color:
-    rgba(
-      109,
-      93,
-      252,
-      0.45
-    );
+    rgba(11, 12, 11, 0.45);
 }
 
 .toast-info
 .toast-indicator {
   background:
-    #6d5dfc;
+    #bafa61;
 
   box-shadow:
     0 0 14px
-    rgba(
-      109,
-      93,
-      252,
-      0.55
-    );
+    rgba(11, 12, 11, 0.55);
 }
 
 @keyframes toast-enter {

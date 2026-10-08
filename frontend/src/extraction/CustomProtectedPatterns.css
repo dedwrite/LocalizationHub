@@ -62,7 +62,7 @@
 }
 
 .cpp-button {
-  background: var(--accent, #2f6fed);
+  background: var(--accent, #bafa61);
   border: none;
   color: white;
   padding: 8px 14px;
@@ -119,7 +119,7 @@
 .cpp-row-pattern {
   font-family: var(--mono, monospace);
   font-size: 0.85rem;
-  color: var(--accent, #7aa2f7);
+  color: var(--accent, #bafa61);
 }
 
 .cpp-row-matches {

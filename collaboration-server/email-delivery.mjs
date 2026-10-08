@@ -1,6 +1,7 @@
 import {
   createHash,
 } from 'node:crypto'
+import { adminCodeHtml } from './email-template.mjs'
 
 const RESEND_API_URL =
   'https://api.resend.com/emails'
@@ -278,17 +279,17 @@ export async function sendVerificationEmail({
       '<title>Verify your LocalizationHub email</title>',
       '</head>',
 
-      '<body style="margin:0;padding:0;background:#07090d;color:#f3f4f7;font-family:Arial,Helvetica,sans-serif;">',
+      '<body style="margin:0;padding:0;background:#050505;color:#f3f4f7;font-family:Arial,Helvetica,sans-serif;">',
 
       '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">',
       'Confirm your email address to finish setting up your LocalizationHub account.',
       '</div>',
 
-      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#07090d" style="width:100%;background:#07090d;">',
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#050505" style="width:100%;background:#050505;">',
       '<tr>',
       '<td align="center" style="padding:44px 16px;">',
 
-      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px;background:#0e1117;border:1px solid #242936;border-radius:18px;">',
+      '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px;background:#0b0c0b;border:1px solid #383d3b;border-radius:6px;">',
 
       '<tr>',
       '<td style="padding:36px 36px 0 36px;">',
@@ -302,7 +303,7 @@ export async function sendVerificationEmail({
 
       '<td valign="middle">',
       '<div style="color:#f5f6f8;font-size:18px;font-weight:700;line-height:1.2;">LocalizationHub</div>',
-      '<div style="margin-top:4px;color:#7e8595;font-size:11px;letter-spacing:0.04em;">GAME LOCALIZATION WORKSPACE</div>',
+      '<div style="margin-top:4px;color:#a1aa9e;font-size:11px;letter-spacing:0.04em;">GAME LOCALIZATION WORKSPACE</div>',
       '</td>',
 
       '</tr>',
@@ -318,7 +319,7 @@ export async function sendVerificationEmail({
       'Verify your email',
       '</h1>',
 
-      `<p style="margin:0 0 10px 0;color:#c8ccd5;font-size:15px;line-height:1.7;">Hello <strong style="color:#ffffff;">${safeUsername}</strong>,</p>`,
+      `<p style="margin:0 0 10px 0;color:#c8ccd5;font-size:15px;line-height:1.7;">Hello <strong dir="auto" style="color:#ffffff;unicode-bidi:isolate;">${safeUsername}</strong>,</p>`,
 
       '<p style="margin:0;color:#9da4b3;font-size:15px;line-height:1.7;">',
       'Confirm your email address to finish setting up and securing your LocalizationHub account.',
@@ -326,25 +327,25 @@ export async function sendVerificationEmail({
 
       '<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:26px;">',
       '<tr>',
-      '<td bgcolor="#6d5dfc" style="border-radius:10px;">',
-      `<a href="${safeUrl}" style="display:inline-block;padding:13px 22px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;border-radius:10px;background:#6d5dfc;">Verify Email</a>`,
+      '<td bgcolor="#bafa61" style="border-radius:6px;">',
+      `<a href="${safeUrl}" style="display:inline-block;padding:13px 22px;color:#050505;font-size:14px;font-weight:700;text-decoration:none;border-radius:6px;background:#bafa61;">Verify Email</a>`,
       '</td>',
       '</tr>',
       '</table>',
 
       displayExpiryText
-        ? `<div style="margin-top:22px;padding:11px 13px;background:#121620;border:1px solid #252b38;border-radius:9px;color:#7f8797;font-size:12px;line-height:1.6;">This verification link expires <strong style="color:#aeb4c0;">${escapeHtml(displayExpiryText)}</strong>.</div>`
+        ? `<div style="margin-top:22px;padding:11px 13px;background:#141714;border:1px solid #383d3b;border-radius:9px;color:#a1aa9e;font-size:12px;line-height:1.6;">This verification link expires <strong style="color:#aeb4c0;">${escapeHtml(displayExpiryText)}</strong>.</div>`
         : '',
 
-      '<div style="margin-top:26px;border-top:1px solid #202530;padding-top:22px;">',
+      '<div style="margin-top:26px;border-top:1px solid #383d3b;padding-top:22px;">',
 
-      '<p style="margin:0 0 8px 0;color:#777f8f;font-size:12px;line-height:1.6;">',
+      '<p style="margin:0 0 8px 0;color:#a1aa9e;font-size:12px;line-height:1.6;">',
       'If the button does not work, copy and paste this link into your browser:',
       '</p>',
 
-      `<p style="margin:0;word-break:break-all;color:#8e84ff;font-size:11px;line-height:1.6;"><a href="${safeUrl}" style="color:#8e84ff;text-decoration:none;">${safeUrl}</a></p>`,
+      `<p style="margin:0;word-break:break-all;color:#bafa61;font-size:11px;line-height:1.6;"><a href="${safeUrl}" style="color:#bafa61;text-decoration:none;">${safeUrl}</a></p>`,
 
-      '<p style="margin:18px 0 0 0;color:#6f7685;font-size:11px;line-height:1.6;">',
+      '<p style="margin:18px 0 0 0;color:#a1aa9e;font-size:11px;line-height:1.6;">',
       'If you did not create this account, you can safely ignore this email.',
       '</p>',
 
@@ -354,12 +355,12 @@ export async function sendVerificationEmail({
       '</tr>',
 
       '<tr>',
-      '<td align="center" style="padding:19px 24px;border-top:1px solid #202530;background:#0b0e14;border-radius:0 0 18px 18px;">',
+      '<td align="center" style="padding:19px 24px;border-top:1px solid #383d3b;background:#070808;border-radius:0 0 6px 6px;">',
 
       '<a href="https://dedwrite.xyz/" target="_blank" style="text-decoration:none;">',
-      '<span style="color:#5f6675;font-size:9px;letter-spacing:0.18em;">A </span>',
+      '<span style="color:#a1aa9e;font-size:9px;letter-spacing:0.18em;">A </span>',
       '<span style="color:#9ba1ad;font-size:10px;font-weight:800;letter-spacing:0.16em;">DEDWRITE</span>',
-      '<span style="color:#5f6675;font-size:9px;letter-spacing:0.12em;"> PROJECT</span>',
+      '<span style="color:#a1aa9e;font-size:9px;letter-spacing:0.12em;"> PROJECT</span>',
       '</a>',
 
       '</td>',
@@ -497,7 +498,7 @@ export async function sendAdminAccessCodeEmail({
   const response = await fetchImpl(RESEND_API_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `admin-access/${hashForEmail(code)}` },
-    body: JSON.stringify({ from, to: [email], subject: 'LocalizationHub Admin Access Code', text, html: `<p>LocalizationHub Admin Access Code</p><p><strong>${code}</strong></p><p>If you did not request Admin access, you can safely ignore this email.</p>`, tags: [{ name: 'category', value: 'admin_access' }] }),
+    body: JSON.stringify({ from, to: [email], subject: 'LocalizationHub Admin Access Code', text, html: adminCodeHtml(code), tags: [{ name: 'category', value: 'admin_access' }] }),
   })
   if (!response.ok) throw new EmailDeliveryError(`Email provider returned HTTP ${response.status}.`, { statusCode: response.status })
   return { provider: 'resend' }

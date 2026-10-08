@@ -30,18 +30,18 @@
    block is referenced through a role, so a new one-off tone cannot appear
    without being named here first. */
 #public-site {
-  --bg: #111016;
-  --surface: #1b1823;
-  --surface-2: #24202e;
-  --line: #3b3449;
+  --bg: #050505;
+  --surface: #0b0c0b;
+  --surface-2: #141714;
+  --line: #383d3b;
   --text: #f0edf5;
   --soft: #c4becf;
   --muted: #aca3bb;
-  --accent: #b9a0ed;
-  --accent-strong: #d7c3f7;
-  --accent-ink: #1b1428;
-  --selected: #33283f;
-  --glyph: #4a3b64;
+  --accent: #bafa61;
+  --accent-strong: #d4efa9;
+  --accent-ink: #050505;
+  --selected: #20281b;
+  --glyph: #383d3b;
   --success: #87c5a0;
   --danger: #e8897f;
   /* Decorative glyphs are the one place a script fallback is allowed: the

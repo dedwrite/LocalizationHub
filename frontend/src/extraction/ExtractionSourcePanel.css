@@ -14,7 +14,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #c8ced8;
+  color: #c4ccc1;
 }
 
 .ex-detail {
@@ -25,7 +25,7 @@
   font-size: 12px;
 }
 
-.ex-detail dt { color: #8b93a7; }
-.ex-detail dd { margin: 0; color: #d6dbe5; word-break: break-word; font-family: 'DM Mono', monospace; }
+.ex-detail dt { color: #949b95; }
+.ex-detail dd { margin: 0; color: #c4ccc1; word-break: break-word; font-family: 'DM Mono', monospace; }
 
-.ex-classification { margin: 0; font-size: 13px; color: #9686ff; text-transform: capitalize; }
+.ex-classification { margin: 0; font-size: 13px; color: #bafa61; text-transform: capitalize; }

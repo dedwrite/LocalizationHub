@@ -12,7 +12,7 @@ const name = 'Desktop disposable'
 
 // Actual production Desktop React bundle, with only HTTP and native host
 // boundaries isolated. Never launches an installer or contacts production.
-for (const role of ['owner', 'editor', 'viewer'] as const) test(`Desktop ${role} deletion flow preserves state until success`, async ({ page }) => {
+for (const role of ['owner', 'editor', 'viewer'] as const) test(`Desktop ${role} deletion flow preserves state until success`, async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 })
   const user = { id: 'synthetic-desktop-user', username: 'desktop_test', email: 'desktop@example.invalid', emailVerified: true, createdAt: new Date().toISOString() }
   await page.addInitScript((user) => {
@@ -57,6 +57,7 @@ for (const role of ['owner', 'editor', 'viewer'] as const) test(`Desktop ${role}
   const card = page.locator('.cloud-project-card').filter({ hasText: name })
   await expect.poll(async () => ({ text: (await page.locator('body').innerText()).includes(name), errors: runtimeErrors, unexpected })).toEqual({ text: true, errors: [], unexpected: [] })
   await card.getByRole('button', { name: 'Open', exact: true }).click()
+  await page.screenshot({path:testInfo.outputPath('desktop-editor.png'),fullPage:true})
   if (role === 'owner') await page.locator('.cm-content[contenteditable="true"]').fill('unsaved Desktop draft')
   await page.getByRole('button', { name: 'Project Overview', exact: true }).click()
   const destroy = page.getByRole('button', { name: 'Delete project', exact: true })

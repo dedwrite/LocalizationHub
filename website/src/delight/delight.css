@@ -15,7 +15,7 @@
 .field-tip-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
 .field-tip .field-tip-actions button { display: inline-flex; gap: 8px; align-items: center; background: transparent; border: 0; padding: 6px 0; min-height: 40px; color: var(--app-warning-deep); font: inherit; font-size: 11px; cursor: pointer; border-radius: 4px; }
 .field-tip .field-tip-actions button:last-child { color: var(--app-text-4); margin-inline-start: auto; }
-.field-tip .field-tip-actions button:hover { color: var(--app-text-on-primary); }
+.field-tip .field-tip-actions button:hover { color: var(--app-text); }
 .field-tip.is-hidden { padding-block: 4px; background: none; border-inline-start-style: dashed; border-inline-start-color: var(--app-line); }
 .field-tip.is-hidden .field-tip-actions button { margin-inline-start: 0; }
 .local-drop > .field-tip, .local-drop > .resume-card { grid-column: 1 / -1; }
@@ -38,7 +38,7 @@ html[dir='rtl'] .resume-kicker { letter-spacing: 0; }
 .resume-card::before { content: ''; pointer-events: none; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 5% 0%, var(--app-violet-haze-soft), transparent 65%); }
 .dashboard > .resume-card { margin-bottom: 24px; }
 .resume-copy { min-width: 0; }
-.resume-copy h2 { margin: 6px 0 8px; color: var(--app-text-on-primary); font-size: clamp(20px, 2vw, 26px); font-weight: 500; line-height: 1.4; }
+.resume-copy h2 { margin: 6px 0 8px; color: var(--app-text); font-size: clamp(20px, 2vw, 26px); font-weight: 500; line-height: 1.4; }
 .resume-name { display: block; color: var(--app-warning-deep); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .resume-copy p { margin: 6px 0 0; font-size: 11px; line-height: 1.75; color: var(--app-text-4); }
 .resume-progress { display: grid; min-width: 0; gap: 10px; }
@@ -50,7 +50,7 @@ html[dir='rtl'] .resume-kicker { letter-spacing: 0; }
 .resume-progress progress::-moz-progress-bar { background: var(--app-accent-fill); border-radius: 99px; }
 .resume-progress small { font-size: 11px; color: var(--app-text-4); line-height: 1.65; }
 .resume-progress .resume-milestone { color: var(--app-success-soft); }
-.resume-card .resume-progress button { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 42px; padding: 10px 14px; border: 1px solid var(--app-accent-deep); border-radius: 8px; background: var(--app-primary-deep-2); color: var(--app-text-on-primary); cursor: pointer; font: inherit; font-size: 12px; transition: background 150ms ease; }
+.resume-card .resume-progress button { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 42px; padding: 10px 14px; border: 1px solid var(--app-accent-deep); border-radius: 8px; background: var(--app-primary-deep-2); color: var(--app-text); cursor: pointer; font: inherit; font-size: 12px; transition: background 150ms ease; }
 .resume-card .resume-progress button:hover { background: var(--app-primary-hover); }
 .local-home:has(.resume-card) .local-intro h1 { font-size: clamp(2rem, 3vw, 3rem); }
 .local-home:has(.resume-card) .local-open-panel { padding-block: 22px; }
@@ -113,7 +113,7 @@ html[dir='rtl'] .resume-kicker { letter-spacing: 0; }
 .completion-orbit::before { inset: 7px; border: 1px dashed var(--app-accent-fill); }.completion-orbit::after { width: 7px; height: 7px; background: var(--app-success-bright); top: -3px; left: 17px; box-shadow: 0 0 10px var(--app-success-bright); }
 .completion-kicker { display: block; margin-bottom: 4px; color: var(--app-success-text); font: 650 9px/1.4 var(--font-mono), monospace; letter-spacing: .1em; }
 .completion-moment strong { display: block; font-size: 14px; }.completion-moment p { margin: 4px 0 0; color: var(--app-text-4); font-size: 11px; line-height: 1.6; }
-.completion-review { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 9px 13px; border: 1px solid var(--app-scroll-line-strong); border-radius: 8px; color: var(--app-text-on-primary); background: var(--app-violet-raised); cursor: pointer; }
+.completion-review { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 9px 13px; border: 1px solid var(--app-scroll-line-strong); border-radius: 8px; color: var(--app-text); background: var(--app-violet-raised); cursor: pointer; }
 .completion-dismiss { position: absolute; inset-inline-end: 13px; inset-block-start: 10px; width: 30px; height: 30px; border: 0; color: var(--app-text-5); background: transparent; cursor: pointer; font-size: 18px; }
 
 .translation-footprint { display: grid; gap: 7px; margin-top: 10px; padding: 11px 12px; border: 1px solid var(--app-line); border-radius: 8px; color: var(--app-text-5); background: var(--app-well); }
@@ -135,14 +135,14 @@ html[dir='rtl'] .resume-kicker { letter-spacing: 0; }
 .command-search input::placeholder { color: var(--app-text-7); }
 .command-results { max-height: min(430px, 48dvh); overflow-y: auto; padding: 0 10px 10px; scrollbar-width: thin; scrollbar-color: var(--app-scroll-thumb-violet-strong) var(--app-scroll-track); }
 .command-results button { width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px; border: 1px solid transparent; border-radius: 10px; color: var(--app-text-3); background: transparent; text-align: start; cursor: pointer; }
-.command-results button.active { border-color: var(--app-scroll-thumb-violet); color: var(--app-text-on-primary); background: linear-gradient(90deg, var(--app-violet-raised), var(--app-panel)); }
+.command-results button.active { border-color: var(--app-scroll-thumb-violet); color: var(--app-text); background: linear-gradient(90deg, var(--app-violet-raised), var(--app-panel)); }
 .command-results button > span { display: flex; align-items: center; gap: 12px; }.command-results button i { width: 24px; color: var(--app-accent-fill); text-align: center; font-style: normal; }
 .command-center kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; padding: 4px 7px; border: 1px solid var(--app-line-strong); border-bottom-color: var(--app-scroll-line); border-radius: 6px; color: var(--app-text-4); background: var(--app-panel-2); font: 9px var(--font-mono), monospace; direction: ltr; }
 .command-empty { padding: 28px 18px; color: var(--app-text-6); text-align: center; font-size: 13px; }
 .command-footer { display: flex; gap: 18px; padding: 12px 20px; border-top: 1px solid var(--app-line); color: var(--app-text-7); font-size: 10px; }.command-footer span { display: flex; align-items: center; gap: 5px; }
 .shortcut-guide { padding: 22px; }.shortcut-guide > p { margin: 0 0 18px; color: var(--app-text-5); font-size: 12px; line-height: 1.8; }.shortcut-guide > div { display: grid; }
 .shortcut-guide > div > span { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px 4px; border-bottom: 1px solid var(--app-line-soft); font-size: 12px; }.shortcut-guide > div strong { font-weight: 500; }
-.shortcut-guide > button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; border: 1px solid var(--app-scroll-line-soft); border-radius: 9px; color: var(--app-text-on-primary); background: var(--app-violet-raised); cursor: pointer; }
+.shortcut-guide > button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; border: 1px solid var(--app-scroll-line-soft); border-radius: 9px; color: var(--app-text); background: var(--app-violet-raised); cursor: pointer; }
 .command-launcher { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 10px; border: 1px solid var(--app-line-violet-soft); border-radius: 8px; color: var(--app-text-2); background: var(--app-panel); cursor: pointer; white-space: nowrap; }
 .command-launcher kbd { color: var(--app-accent-dim); font: 9px var(--font-mono), monospace; direction: ltr; }
 .toolbar-command { min-height: 34px; border-radius: 5px; font-size: 11px; }

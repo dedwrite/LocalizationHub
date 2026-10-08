@@ -12,7 +12,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.025);
-  color: var(--text-muted, #8f96a8);
+  color: var(--text-muted, #949b95);
   font: inherit;
   font-size: 11px;
   white-space: nowrap;
@@ -25,8 +25,8 @@
 }
 
 .workspace-collaboration-status.connected {
-  border-color: rgba(99, 102, 241, 0.24);
-  background: rgba(99, 102, 241, 0.07);
+  border-color: rgba(148, 155, 149, 0.24);
+  background: rgba(148, 155, 149, 0.07);
 }
 
 .workspace-collaboration-dot {
@@ -34,7 +34,7 @@
   height: 7px;
   flex: 0 0 auto;
   border-radius: 999px;
-  background: #64748b;
+  background: #949b95;
 }
 
 .workspace-collaboration-status.connected
@@ -64,7 +64,7 @@
   padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  background: rgba(18, 20, 27, 0.98);
+  background: rgba(11, 12, 11, 0.98);
   box-shadow:
     0 18px 50px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(16px);
@@ -88,7 +88,7 @@
 > span {
   display: block;
   margin-bottom: 3px;
-  color: var(--text-muted, #8f96a8);
+  color: var(--text-muted, #949b95);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -103,8 +103,8 @@
 .workspace-collaboration-connection {
   padding: 4px 7px;
   border-radius: 999px;
-  background: rgba(100, 116, 139, 0.12);
-  color: #94a3b8;
+  background: rgba(148, 155, 149, 0.12);
+  color: #c4ccc1;
   font-size: 10px;
   font-weight: 700;
 }
@@ -140,10 +140,10 @@
   width: 28px;
   height: 28px;
   flex: 0 0 auto;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(148, 155, 149, 0.3);
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.14);
-  color: #c7d2fe;
+  background: rgba(148, 155, 149, 0.14);
+  color: #f2f5f0;
   font-size: 11px;
   font-weight: 800;
 }
@@ -172,7 +172,7 @@
 > div
 > span {
   flex: 0 0 auto;
-  color: var(--text-muted, #8f96a8);
+  color: var(--text-muted, #949b95);
   font-size: 10px;
 }
 
@@ -180,7 +180,7 @@
   display: block;
   margin-top: 2px;
   overflow: hidden;
-  color: var(--text-muted, #8f96a8);
+  color: var(--text-muted, #949b95);
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -236,13 +236,13 @@
 }
 
 .workspace-collaboration-person.navigable:hover {
-  background: rgba(99, 102, 241, 0.09);
+  background: rgba(148, 155, 149, 0.09);
 }
 
 .workspace-collaboration-person.navigable:hover
 .workspace-collaboration-person-avatar {
-  border-color: rgba(99, 102, 241, 0.55);
-  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(11, 12, 11, 0.55);
+  background: rgba(148, 155, 149, 0.22);
 }
 
 
@@ -259,7 +259,7 @@
 > span:first-child
 > span {
   flex: 0 0 auto;
-  color: var(--text-muted, #8f96a8);
+  color: var(--text-muted, #949b95);
   font-size: 10px;
 }
 

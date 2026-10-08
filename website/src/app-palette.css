@@ -55,90 +55,90 @@
 :root {
   /* Canvas: the page gradient, its two page-specific washes and the fixed
      graph paper the projects page draws behind its content. */
-  --app-canvas: linear-gradient(135deg, #0b0d10, #10131a 55%, #151321);
-  --app-canvas-projects: radial-gradient(circle at 78% 8%, rgb(100 82 178 / 13%), transparent 26%), var(--app-canvas);
-  --app-canvas-auth: radial-gradient(circle at 80% 10%, #2a1f43 0, #0b0d10 42%);
-  --app-canvas-local: radial-gradient(circle at 78% 12%, rgb(103 83 183 / 12%), transparent 27%), #0b0d10;
-  --app-grid: linear-gradient(rgb(150 134 255 / 4%) 1px, transparent 1px), linear-gradient(90deg, rgb(150 134 255 / 4%) 1px, transparent 1px);
+  --app-canvas: #050505;
+  --app-canvas-projects: #050505;
+  --app-canvas-auth: #050505;
+  --app-canvas-local: #050505;
+  --app-grid: none;
   --app-grid-mask: linear-gradient(to bottom, #000, transparent 70%);
 
   /* Composed surfaces: the sheets, cards and bars the product paints as a
      gradient. Each is a role because it is a surface the app owns, not a
      place to restate two inks. */
-  --app-card: linear-gradient(145deg, #141821, #0f1219);
-  --app-card-hover: linear-gradient(145deg, #191d2a, #161724);
-  --app-card-quiet: linear-gradient(145deg, rgb(17 21 28 / 78%), rgb(13 15 21 / 55%));
-  --app-sheet: linear-gradient(145deg, rgb(18 22 29 / 98%), rgb(13 16 22 / 92%));
-  --app-pane: linear-gradient(180deg, #0d1016, #0a0c10);
-  --app-toolbar: linear-gradient(90deg, #0d1117, #12131c);
-  --app-progress: linear-gradient(90deg, #6758d0, #9b8df2);
-  --app-progress-primary: linear-gradient(90deg, #4f3db5, #6f61d8);
+  --app-card: #0b0c0b;
+  --app-card-hover: #141714;
+  --app-card-quiet: #0b0c0b;
+  --app-sheet: #0b0c0b;
+  --app-pane: #070808;
+  --app-toolbar: #070808;
+  --app-progress: #bafa61;
+  --app-progress-primary: #bafa61;
 
   /* Surfaces, darkest first. */
-  --app-bg: #0b0d10;
-  --app-well: #0e1218;
-  --app-panel: #171c24;
-  --app-panel-2: #1a2029;
-  --app-track: #242c38;
-  --app-violet-wash: #201d34;
-  --app-violet-selected: #262448;
-  --app-violet-raised: #2c2440;
-  --app-violet-active: #302a57;
+  --app-bg: #050505;
+  --app-well: #070808;
+  --app-panel: #0b0c0b;
+  --app-panel-2: #141714;
+  --app-track: #242924;
+  --app-violet-wash: #0b0c0b;
+  --app-violet-selected: #20281b;
+  --app-violet-raised: #141714;
+  --app-violet-active: #20281b;
   --app-success-canvas: #15241f;
-  --app-danger-wash: #211b2b;
+  --app-danger-wash: #241916;
   --app-danger-wash-strong: #3a1f26;
   --app-warning-wash: #4a3f2a;
 
   /* Lines: three neutral weights, two violet separators, one accent edge and
      the three feedback strokes. */
-  --app-line-soft: #1f2530;
-  --app-line: #303744;
-  --app-line-strong: #3b4350;
-  --app-line-violet-soft: #3a3346;
-  --app-line-violet: #494363;
-  --app-line-accent: #6e63a8;
+  --app-line-soft: #1a1d1c;
+  --app-line: #242924;
+  --app-line-strong: #383d3b;
+  --app-line-violet-soft: #242924;
+  --app-line-violet: #383d3b;
+  --app-line-accent: #6a814b;
   --app-danger-line: #694052;
   --app-danger-line-strong: #99485b;
   --app-warning-line: #6f5528;
   --app-success-wash: #2a4a3a;
 
   /* Reading ladder, brightest first. */
-  --app-text: #f5f7fa;
-  --app-text-2: #d6dbe5;
-  --app-text-3: #c8ced8;
-  --app-text-4: #aeb6c2;
-  --app-text-5: #9ea6b3;
-  --app-text-6: #8b93a7;
-  --app-text-7: #747d89;
-  --app-text-on-primary: #f0eaff;
+  --app-text: #f2f5f0;
+  --app-text-2: #d8ded6;
+  --app-text-3: #c4ccc1;
+  --app-text-4: #b0b8ad;
+  --app-text-5: #a1aa9e;
+  --app-text-6: #949b95;
+  --app-text-7: #949b95;
+  --app-text-on-primary: #050505;
 
   /* Accent text and accent surfaces. */
-  --app-accent: #9686ff;
-  --app-accent-2: #b2aaff;
-  --app-accent-3: #c9b8ff;
-  --app-accent-4: #ddd7ff;
-  --app-accent-label: #b7a5ed;
-  --app-accent-fill: #ad93e5;
-  --app-accent-dim: #8f84c4;
-  --app-accent-deep: #7b66b6;
-  --app-accent-link: #c4a8fa;
+  --app-accent: #bafa61;
+  --app-accent-2: #bafa61;
+  --app-accent-3: #d4efa9;
+  --app-accent-4: #d4efa9;
+  --app-accent-label: #d4efa9;
+  --app-accent-fill: #bafa61;
+  --app-accent-dim: #a9c484;
+  --app-accent-deep: #a9c484;
+  --app-accent-link: #bafa61;
 
   /* The primary action keeps its own five values: fill, hover, edge, brighter
      edge and deep well. */
-  --app-primary: #4f3db5;
-  --app-primary-strong: #675bb5;
-  --app-primary-line: #6f61d8;
-  --app-primary-bright: #7868ee;
-  --app-primary-deep: #2b2f66;
-  --app-primary-deep-2: #49357a;
-  --app-primary-hover: #59418f;
-  --app-primary-quiet: #6d6788;
-  --app-primary-quiet-2: #76658f;
+  --app-primary: #f2f5f0;
+  --app-primary-strong: #d8ded6;
+  --app-primary-line: #6a814b;
+  --app-primary-bright: #bafa61;
+  --app-primary-deep: #20281b;
+  --app-primary-deep-2: #20281b;
+  --app-primary-hover: #bafa61;
+  --app-primary-quiet: #383d3b;
+  --app-primary-quiet-2: #383d3b;
 
   /* Focus: the ring, the focused field's stroke and the ring's wash. */
-  --app-focus: #b2a5ff;
-  --app-focus-line: #9b8df2;
-  --app-focus-wash: rgb(139 122 233 / 16%);
+  --app-focus: #bafa61;
+  --app-focus-line: #bafa61;
+  --app-focus-wash: rgb(186 250 97 / 12%);
 
   /* Feedback. Colour never carries a state alone; these are the paint only. */
   --app-success: #55c987;
@@ -165,51 +165,51 @@
   --app-warning-soft: #c9b58a;
   --app-warning-bright: #ffd08a;
   --app-warning-muted: #d5a08f;
-  --app-warning-deep: #cabddf;
-  --app-warning-ink: #9ba8c4;
+  --app-warning-deep: #edbc69;
+  --app-warning-ink: #edbc69;
   --app-warning-coin: #d9ba7c;
   --app-warning-glow: #e8ca8a;
 
   /* Context: who is speaking, who is listening, the neutral info cue and the
      "different from the source" cue the length and footprint meters draw. */
-  --app-speaker: #8f7ae0;
+  --app-speaker: #bafa61;
   --app-listener: #5f9aa0;
   --app-info: #78a9cf;
-  --app-cue-over: #c58ebd;
+  --app-cue-over: #edbc69;
 
   /* One scrollbar language for the workspace scrollers, matching the site's
      global scrollbar roles rather than a second near-identical set. */
-  --app-scroll-track: #090b11;
-  --app-scroll-thumb: #4e416f;
-  --app-scroll-thumb-hover: #6d58a0;
-  --app-scroll-thumb-active: #8b70c7;
-  --app-scroll-thumb-violet: #514b73;
-  --app-scroll-thumb-violet-hover: #6a6094;
-  --app-scroll-thumb-violet-active: #7b70ad;
-  --app-scroll-thumb-violet-strong: #66567e;
-  --app-scroll-line: #646572;
-  --app-scroll-line-soft: #675589;
-  --app-scroll-line-mid: #665486;
-  --app-scroll-line-strong: #6b5d8d;
+  --app-scroll-track: #090b09;
+  --app-scroll-thumb: #3c443c;
+  --app-scroll-thumb-hover: #56634e;
+  --app-scroll-thumb-active: #7b8f67;
+  --app-scroll-thumb-violet: #3c443c;
+  --app-scroll-thumb-violet-hover: #56634e;
+  --app-scroll-thumb-violet-active: #7b8f67;
+  --app-scroll-thumb-violet-strong: #56634e;
+  --app-scroll-line: #3c443c;
+  --app-scroll-line-soft: #3c443c;
+  --app-scroll-line-mid: #3c443c;
+  --app-scroll-line-strong: #56634e;
 
   /* Translucent ink. A surface that has to sit over content — the app header,
      the toolbar, the local page's sheet — declares its own veil here instead
      of spelling a fourth near-black. */
-  --app-veil: rgb(12 15 20 / 86%);
-  --app-veil-soft: rgb(15 18 25 / 75%);
-  --app-veil-deep: rgb(9 12 17 / 86%);
-  --app-violet-haze: rgb(39 32 65 / 35%);
-  --app-violet-haze-soft: rgb(102 80 153 / 14%);
+  --app-veil: rgb(11 12 11 / 90%);
+  --app-veil-soft: rgb(11 12 11 / 90%);
+  --app-veil-deep: rgb(11 12 11 / 90%);
+  --app-violet-haze: rgb(186 250 97 / 12%);
+  --app-violet-haze-soft: rgb(186 250 97 / 12%);
   --app-hairline: rgb(255 255 255 / 3%);
-  --app-accent-hairline: rgb(150 134 255 / 8%);
-  --app-accent-wash: rgb(150 134 255 / 4%);
-  --app-line-haze: rgb(103 96 142 / 18%);
-  --app-violet-mist: rgb(27 28 39 / 42%);
-  --app-violet-mist-strong: rgb(31 27 52 / 54%);
-  --app-sheet-haze: rgb(29 28 45 / 80%);
-  --app-well-haze: rgb(20 23 32 / 60%);
-  --app-well-haze-deep: rgb(16 19 26 / 60%);
-  --app-scrim-haze: rgb(18 21 29 / 60%);
+  --app-accent-hairline: rgb(186 250 97 / 6%);
+  --app-accent-wash: rgb(186 250 97 / 6%);
+  --app-line-haze: rgb(56 61 59 / 30%);
+  --app-violet-mist: rgb(11 12 11 / 90%);
+  --app-violet-mist-strong: rgb(11 12 11 / 90%);
+  --app-sheet-haze: rgb(11 12 11 / 90%);
+  --app-well-haze: rgb(11 12 11 / 90%);
+  --app-well-haze-deep: rgb(11 12 11 / 90%);
+  --app-scrim-haze: rgb(11 12 11 / 90%);
 
   /* Depth. Scrims and shadows are the only inks here that exist to darken
      something else; each is declared once and mixed with transparency. */
@@ -221,5 +221,5 @@
   --app-shadow: rgb(0 0 0 / 45%);
   --app-shadow-strong: rgb(0 0 0 / 65%);
   --app-shadow-slab: rgb(15 17 23 / 75%);
-  --app-primary-glow: rgb(79 61 181 / 25%);
+  --app-primary-glow: rgb(0 0 0 / 20%);
 }

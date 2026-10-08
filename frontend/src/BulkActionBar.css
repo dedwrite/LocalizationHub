@@ -1,5 +1,5 @@
-.bulk-action-bar { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid #303646; background: #171b24; color: #e7e9f0; font-size: 0.78rem; }
-.bulk-action-bar strong { margin-right: auto; color: #c9c4ff; }
-.bulk-action-bar button { min-height: 32px; border: 1px solid #303646; border-radius: 5px; padding: 0 0.65rem; background: #11151d; color: #d8dbea; font-size: 0.74rem; }
-.bulk-action-bar button:hover:not(:disabled) { border-color: #6d5dfc; }
+.bulk-action-bar { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid #383d3b; background: #0b0c0b; color: #f2f5f0; font-size: 0.78rem; }
+.bulk-action-bar strong { margin-right: auto; color: #f2f5f0; }
+.bulk-action-bar button { min-height: 32px; border: 1px solid #383d3b; border-radius: 5px; padding: 0 0.65rem; background: #0b0c0b; color: #f2f5f0; font-size: 0.74rem; }
+.bulk-action-bar button:hover:not(:disabled) { border-color: #bafa61; }
 .bulk-action-bar button:disabled { opacity: 0.45; }

@@ -47,9 +47,9 @@
 }
 
 .entry-status-indicator.protected {
-  background: #8b93a7;
+  background: #949b95;
 
   box-shadow:
     0 0 0 1px
-    rgba(139, 147, 167, 0.2);
+    rgba(148, 155, 149, 0.2);
 }

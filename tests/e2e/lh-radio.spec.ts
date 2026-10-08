@@ -102,16 +102,20 @@ test.describe('LH Radio native player', () => {
     await expect(page.locator('.lh-radio-capsule-title')).toHaveText('Second Bloom')
   })
 
-  test('expanded panel exposes seek, volume, and playlist', async ({ page }) => {
+  test('expanded panel exposes seek, volume, and playlist', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'desktop') await page.setViewportSize({width:1280,height:720})
     await stubPlayback(page)
     await mockRadio(page)
     await page.goto('/')
+    await expect(page.locator('.lh-radio-capsule')).toHaveCSS('background-color', 'rgba(11, 12, 11, 0.94)')
+    await page.screenshot({path:testInfo.outputPath('radio-capsule.png')})
     await page.getByRole('button', { name: 'Open LH Radio' }).press('Enter')
     await expect(page.locator('.lh-radio-panel')).toBeVisible()
     await expect(page.getByLabel('Seek')).toBeVisible()
     await expect(page.getByLabel('Volume')).toBeVisible()
     await expect(page.getByLabel('Mute')).toBeVisible()
     await expect(page.locator('.lh-radio-playlist-item')).toHaveCount(3)
+    await page.screenshot({path:testInfo.outputPath('radio-expanded.png')})
   })
 
   test('selecting a track from the playlist plays it', async ({ page }) => {

@@ -67,20 +67,10 @@
 
 .welcome-drop-zone:hover {
   border-color:
-    rgba(
-      124,
-      108,
-      255,
-      0.34
-    );
+    rgba(148, 155, 149, 0.34);
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.045
-    );
+    rgba(148, 155, 149, 0.045);
 
   color:
     rgba(
@@ -114,20 +104,10 @@
     8px;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.08
-    );
+    rgba(148, 155, 149, 0.08);
 
   color:
-    rgba(
-      170,
-      160,
-      255,
-      0.8
-    );
+    rgba(11, 12, 11, 0.8);
 
   font-size:
     1.05rem;

@@ -207,11 +207,16 @@ test.describe('admin console routing and views', () => {
     await expect(page.getByRole('button', { name: 'Request email code' })).toBeVisible()
   })
 
-  test('renders the dashboard with platform metrics', async ({ page }) => {
+  test('renders the dashboard with platform metrics', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'desktop') await page.setViewportSize({width:1280,height:720})
     await page.goto('/app/admin')
     await expect(page.getByText('Platform metrics')).toBeVisible()
     await expect(page.getByText('Total users')).toBeVisible()
     await expect(page.getByText('Recent activity')).toBeVisible()
+    await page.locator('.admin-nav-active').hover()
+    await expect(page.locator('.admin-nav-active')).toHaveCSS('background-color', 'rgb(186, 250, 97)')
+    await expect(page.locator('.admin-nav-active')).toHaveCSS('color', 'rgb(5, 5, 5)')
+    await page.screenshot({path:testInfo.outputPath('admin.png'),fullPage:true})
   })
 
   test('navigates to users, opens detail, and lists sessions', async ({ page }) => {

@@ -27,12 +27,7 @@
     14px;
 
   background:
-    rgba(
-      10,
-      12,
-      18,
-      0.62
-    );
+    rgba(11, 12, 11, 0.62);
 
   text-align:
     left;
@@ -70,7 +65,7 @@
 .auth-panel-heading span,
 .auth-panel-status span {
   color:
-    #7d8494;
+    #949b95;
 
   font-size:
     12px;
@@ -122,7 +117,7 @@
     transparent;
 
   color:
-    #7f8797;
+    #949b95;
 
   font:
     inherit;
@@ -136,20 +131,15 @@
 
 .auth-mode-button:hover:not(:disabled) {
   color:
-    #d2d5de;
+    #c4ccc1;
 }
 
 .auth-mode-button.active {
   background:
-    rgba(
-      132,
-      112,
-      255,
-      0.16
-    );
+    rgba(148, 155, 149, 0.16);
 
   color:
-    #c9c4ff;
+    #f2f5f0;
 }
 
 .auth-mode-button:disabled {
@@ -201,7 +191,7 @@
 
   border:
     1px solid
-    #292e39;
+    #141714;
 
   border-radius:
     9px;
@@ -210,7 +200,7 @@
     none;
 
   background:
-    #101219;
+    #0b0c0b;
 
   color:
     #eef0f5;
@@ -224,24 +214,19 @@
 
 .auth-input::placeholder {
   color:
-    #626978;
+    #949b95;
 }
 
 .auth-input:focus {
   border-color:
-    #6f62c7;
+    #bafa61;
 
   box-shadow:
     0
     0
     0
     2px
-    rgba(
-      111,
-      98,
-      199,
-      0.12
-    );
+    rgba(148, 155, 149, 0.12);
 }
 
 .auth-input:disabled {
@@ -256,7 +241,7 @@
 
 .auth-register-hint {
   color:
-    #686f7e;
+    #949b95;
 
   font-size:
     11px;
@@ -314,7 +299,7 @@
 
 .auth-account-label {
   color:
-    #727989;
+    #949b95;
 
   font-size:
     10px;
@@ -359,7 +344,7 @@
     hidden;
 
   color:
-    #7d8494;
+    #949b95;
 
   font-size:
     11px;
@@ -507,7 +492,7 @@
 
 .auth-verification-notice span {
   color:
-    #7d8494;
+    #949b95;
 
   font-size:
     11px;
@@ -539,26 +524,16 @@
 
   border:
     1px solid
-    rgba(
-      152,
-      136,
-      255,
-      0.28
-    );
+    rgba(148, 155, 149, 0.28);
 
   border-radius:
     10px;
 
   background:
-    rgba(
-      132,
-      112,
-      255,
-      0.12
-    );
+    rgba(148, 155, 149, 0.12);
 
   color:
-    #c9c4ff;
+    #f2f5f0;
 
   font-weight:
     700;

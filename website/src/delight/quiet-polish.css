@@ -2,7 +2,7 @@
    No continuous animation. Always honor prefers-reduced-motion. */
 
 .project-mark {
-  --project-accent: #a993de;
+  --project-accent: #bafa61;
   --project-accent-soft: #66509933;
   position: relative;
   display: inline-grid;
@@ -30,7 +30,7 @@
 .project-mark-lg .project-mark-glyph { font-size: 22px; }
 .project-card .project-glyph.project-mark,
 .project-card .project-mark { width: 42px; height: 42px; }
-.project-card-shell { --project-accent: #a993de; }
+.project-card-shell { --project-accent: #bafa61; }
 .project-card-shell .project-progress-fill {
   background: linear-gradient(90deg, color-mix(in srgb, var(--project-accent) 80%, var(--app-primary-strong)), var(--project-accent));
 }
@@ -193,7 +193,7 @@ html[dir='rtl'] .progress-pulse-kicker { letter-spacing: 0; }
   padding: 11px 12px; border: 0; border-radius: 8px; background: transparent;
   color: inherit; font: inherit; text-align: start; cursor: pointer; min-height: 44px;
 }
-.command-palette-list button.active, .command-palette-list button:hover { background: var(--app-violet-wash); color: var(--app-text-on-primary); }
+.command-palette-list button.active, .command-palette-list button:hover { background: var(--app-violet-wash); color: var(--app-text); }
 .command-palette-list kbd, .shortcuts-center kbd {
   font: 11px/1 var(--font-mono), monospace; color: var(--app-accent-label); border: 1px solid var(--app-line-violet);
   border-radius: 6px; padding: 5px 7px; background: var(--app-panel);

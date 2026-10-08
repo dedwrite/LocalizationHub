@@ -1,18 +1,18 @@
 .workflow-tools { display: grid; gap: 0.75rem; margin: 0.75rem 0; }
-.workflow-tools { position: absolute; inset: 0.75rem 0.75rem auto auto; width: min(360px, 34%); max-height: calc(100% - 1.5rem); overflow: auto; z-index: 2; padding: 0.65rem; background: rgba(18, 21, 28, 0.96); border: 1px solid #2d3240; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28); }
+.workflow-tools { position: absolute; inset: 0.75rem 0.75rem auto auto; width: min(360px, 34%); max-height: calc(100% - 1.5rem); overflow: auto; z-index: 2; padding: 0.65rem; background: rgba(11, 12, 11, 0.96); border: 1px solid #141714; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28); }
 .inspector-tabs { display: flex; gap: 0.3rem; position: sticky; top: 0; z-index: 1; padding-bottom: 0.4rem; background: inherit; }
-.inspector-collapse { justify-self: end; border: 0; padding: 0.25rem 0; background: transparent !important; color: #8f98aa !important; font-size: 0.72rem; }
+.inspector-collapse { justify-self: end; border: 0; padding: 0.25rem 0; background: transparent !important; color: #949b95 !important; font-size: 0.72rem; }
 .workflow-tools.collapsed { width: auto; }
 .workflow-tools.collapsed .inspector-tabs, .workflow-tools.collapsed .workflow-tools-grid, .workflow-tools.collapsed .bulk-tools { display: none !important; }
-.inspector-tabs button { border: 1px solid #303646; border-radius: 5px; padding: 0.45rem 0.55rem; background: #171b24; color: #9aa3b5; font-size: 0.78rem; }
-.inspector-tabs button.active { border-color: #6d5dfc; color: #f1f0ff; background: rgba(109, 93, 252, 0.18); }
+.inspector-tabs button { border: 1px solid #383d3b; border-radius: 5px; padding: 0.45rem 0.55rem; background: #0b0c0b; color: #c4ccc1; font-size: 0.78rem; }
+.inspector-tabs button.active { border-color: #bafa61; color: #f2f5f0; background: rgba(148, 155, 149, 0.18); }
 .workflow-tools.workflow .workflow-tools-grid > section:nth-child(3), .workflow-tools.workflow .workflow-tools-grid > section:nth-child(4), .workflow-tools.workflow .bulk-tools,
 .workflow-tools.quality .workflow-tools-grid > section:nth-child(1), .workflow-tools.quality .workflow-tools-grid > section:nth-child(2), .workflow-tools.quality .bulk-tools,
 .workflow-tools.bulk .workflow-tools-grid, .workflow-tools:not(.bulk) .bulk-tools { display: none; }
-.workflow-tools input, .workflow-tools select, .workflow-tools textarea, .workflow-tools button { background: #11151d; color: #e7e9f0; border-color: #303646; }
-.workflow-tools input::placeholder, .workflow-tools textarea::placeholder { color: #6e7687; }
-.workflow-tools input:focus, .workflow-tools select:focus, .workflow-tools textarea:focus { outline: none; border-color: #6d5dfc; box-shadow: 0 0 0 2px rgba(109, 93, 252, 0.16); }
-.workflow-tools button:disabled { color: #626a7a; background: #151820; cursor: not-allowed; }
+.workflow-tools input, .workflow-tools select, .workflow-tools textarea, .workflow-tools button { background: #0b0c0b; color: #f2f5f0; border-color: #383d3b; }
+.workflow-tools input::placeholder, .workflow-tools textarea::placeholder { color: #949b95; }
+.workflow-tools input:focus, .workflow-tools select:focus, .workflow-tools textarea:focus { outline: none; border-color: #bafa61; box-shadow: 0 0 0 2px rgba(148, 155, 149, 0.16); }
+.workflow-tools button:disabled { color: #949b95; background: #0b0c0b; cursor: not-allowed; }
 .workflow-tools.workflow .workflow-tools-grid > section:nth-child(1) { display: block; }
 .workflow-tools.bulk .workflow-tools-grid { display: none; }
 .workflow-selection-list { display: none; }
@@ -21,12 +21,12 @@
 .workflow-chip-list, .workflow-inline-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .workflow-inline-form input:not([type='checkbox']), .workflow-inline-form select, .workflow-inline-form button { min-height: 34px; }
 .workflow-inline-form input:not([type='checkbox']) { min-width: 8rem; flex: 1; padding: 0 0.6rem; }
-.workflow-inline-form button { border: 1px solid #303646; border-radius: 6px; padding: 0 0.7rem; background: #171b24 !important; color: #e7e9f0 !important; font-size: 0.78rem; }
-.workflow-inline-form button:hover:not(:disabled) { border-color: #6d5dfc; background: rgba(109, 93, 252, 0.16) !important; }
-.workflow-inline-form label { color: #929bad; font-size: 0.76rem; }
-.workflow-tools input[type='checkbox'] { appearance: none; width: 15px; height: 15px; min-height: 15px; margin: 0 0.35rem 0 0; border: 1px solid #4a5263; border-radius: 3px; background: #0d1016; vertical-align: middle; }
-.workflow-tools input[type='checkbox']:checked { border-color: #8b7dff; background: #6d5dfc; box-shadow: inset 0 0 0 3px #171923; }
-.workflow-tools input[type='checkbox']:focus-visible { outline: 2px solid rgba(139, 125, 255, 0.65); outline-offset: 2px; }
+.workflow-inline-form button { border: 1px solid #383d3b; border-radius: 6px; padding: 0 0.7rem; background: #0b0c0b !important; color: #f2f5f0 !important; font-size: 0.78rem; }
+.workflow-inline-form button:hover:not(:disabled) { border-color: #bafa61; background: rgba(148, 155, 149, 0.16) !important; }
+.workflow-inline-form label { color: #949b95; font-size: 0.76rem; }
+.workflow-tools input[type='checkbox'] { appearance: none; width: 15px; height: 15px; min-height: 15px; margin: 0 0.35rem 0 0; border: 1px solid #383d3b; border-radius: 3px; background: #0b0c0b; vertical-align: middle; }
+.workflow-tools input[type='checkbox']:checked { border-color: #bafa61; background: #bafa61; box-shadow: inset 0 0 0 3px #0b0c0b; }
+.workflow-tools input[type='checkbox']:focus-visible { outline: 2px solid rgba(11, 12, 11, 0.65); outline-offset: 2px; }
 .workflow-suggestion { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.3rem 0; }
 .workflow-selection-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 12rem; overflow: auto; gap: 0.25rem 0.75rem; font-size: 0.78rem; }
 @media (max-width: 800px) { .workflow-tools-grid { grid-template-columns: 1fr; } .workflow-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -516,13 +516,13 @@ function TranslationEditor({
               '.cm-selectionBackground':
                 {
                   backgroundColor:
-                    'rgba(109, 93, 252, 0.28) !important',
+                    'rgba(186, 250, 97, 0.18) !important',
                 },
 
               '&.cm-focused .cm-selectionBackground':
                 {
                   backgroundColor:
-                    'rgba(109, 93, 252, 0.34) !important',
+                    'rgba(186, 250, 97, 0.24) !important',
                 },
 
               '&.cm-focused': {

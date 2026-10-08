@@ -4,7 +4,7 @@
   position: static;
   display: inline-flex;
   align-items: center;
-  color: #c4becf;
+  color: #c4ccc1;
   font: 600 13px/1.2 var(--font-ui), system-ui, sans-serif;
 }
 
@@ -12,16 +12,16 @@
   min-block-size: 44px;
   padding-block: 5px;
   padding-inline: 10px 28px;
-  border: 1px solid #3b3449;
+  border: 1px solid #383d3b;
   border-radius: 8px;
   color: inherit;
-  background: #17151f;
+  background: #0b0c0b;
   color-scheme: dark;
   cursor: pointer;
 }
 
-.lh-language-switcher select:hover { border-color: #b9a0ed; }
-.lh-language-switcher select:focus-visible { outline: 2px solid #d7c3f7; outline-offset: 2px; }
+.lh-language-switcher select:hover { border-color: #bafa61; }
+.lh-language-switcher select:focus-visible { outline: 2px solid #bafa61; outline-offset: 2px; }
 .lh-visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Quiet bottom dock for app/desktop shells that lack a marketing footer. */

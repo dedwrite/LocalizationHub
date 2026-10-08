@@ -7,7 +7,7 @@
 
   border-top:
     1px solid
-    #232834;
+    #141714;
 
   padding-top:
     9px;
@@ -30,7 +30,7 @@
     pointer;
 
   color:
-    #aeb4c2;
+    #c4ccc1;
 
   font-size:
     12px;
@@ -52,7 +52,7 @@
     '\203A';
 
   color:
-    #707788;
+    #949b95;
 
   font-size:
     16px;
@@ -72,7 +72,7 @@
     rotate(90deg);
 
   color:
-    #9d90ff;
+    #bafa61;
 }
 
 .cloud-project-members-panel > summary span {
@@ -85,7 +85,7 @@
 
 .cloud-project-members-panel > summary small {
   color:
-    #6f7685;
+    #949b95;
 
   text-transform:
     capitalize;
@@ -106,13 +106,13 @@
 
   border:
     1px solid
-    #292e3b;
+    #141714;
 
   border-radius:
     9px;
 
   background:
-    #0b0e14;
+    #0b0c0b;
 }
 
 .cloud-project-members-toolbar {
@@ -142,7 +142,7 @@
 
 .cloud-project-members-toolbar strong {
   color:
-    #e8eaf0;
+    #f2f5f0;
 
   font-size:
     13px;
@@ -150,7 +150,7 @@
 
 .cloud-project-members-toolbar span {
   color:
-    #777f90;
+    #949b95;
 
   font-size:
     11px;
@@ -168,16 +168,16 @@
 
   border:
     1px solid
-    #343a49;
+    #383d3b;
 
   border-radius:
     7px;
 
   background:
-    #151923;
+    #0b0c0b;
 
   color:
-    #c8ccd6;
+    #c4ccc1;
 
   font: inherit;
 
@@ -197,10 +197,10 @@
 .cloud-project-members-refresh:hover:not(:disabled),
 .cloud-project-member-add button:hover:not(:disabled) {
   border-color:
-    #6256c8;
+    #bafa61;
 
   background:
-    #191d2a;
+    #0b0c0b;
 }
 
 .cloud-project-member-add {
@@ -230,7 +230,7 @@
 
   border:
     1px solid
-    #343a49;
+    #383d3b;
 
   border-radius:
     7px;
@@ -239,10 +239,10 @@
     none;
 
   background:
-    #10141c;
+    #0b0c0b;
 
   color:
-    #d9dce4;
+    #c4ccc1;
 
   font:
     inherit;
@@ -268,19 +268,14 @@
 .cloud-project-member-add select:focus,
 .cloud-project-member-actions select:focus {
   border-color:
-    #6d5dfc;
+    #bafa61;
 
   box-shadow:
     0
     0
     0
     2px
-    rgba(
-      109,
-      93,
-      252,
-      0.12
-    );
+    rgba(148, 155, 149, 0.12);
 }
 
 .cloud-project-members-list {
@@ -313,13 +308,13 @@
 
   border:
     1px solid
-    #252a35;
+    #141714;
 
   border-radius:
     8px;
 
   background:
-    #10131a;
+    #0b0c0b;
 }
 
 .cloud-project-member-identity {
@@ -341,7 +336,7 @@
     hidden;
 
   color:
-    #e3e6ed;
+    #f2f5f0;
 
   font-size:
     12px;
@@ -355,7 +350,7 @@
 
 .cloud-project-member-identity span {
   color:
-    #686f7e;
+    #949b95;
 
   font-size:
     10px;
@@ -391,13 +386,13 @@
 
   border:
     1px solid
-    #303645;
+    #383d3b;
 
   border-radius:
     999px;
 
   color:
-    #aeb4c2;
+    #c4ccc1;
 
   font-size:
     10px;
@@ -411,28 +406,18 @@
 
 .cloud-project-member-role.is-owner {
   border-color:
-    rgba(
-      157,
-      144,
-      255,
-      0.32
-    );
+    rgba(148, 155, 149, 0.32);
 
   color:
-    #c9c4ff;
+    #f2f5f0;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.08
-    );
+    rgba(148, 155, 149, 0.08);
 }
 
 .cloud-project-member-role.is-viewer {
   color:
-    #8f97a8;
+    #949b95;
 }
 
 .cloud-project-member-remove {
@@ -541,7 +526,7 @@
     0;
 
   color:
-    #6f7685;
+    #949b95;
 
   font-size:
     11px;

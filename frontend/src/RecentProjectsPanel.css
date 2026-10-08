@@ -51,7 +51,7 @@
 .recent-projects-header h2 {
   margin: 0;
 
-  color: #dfe2e9;
+  color: #f2f5f0;
 
   font-size: 14px;
 
@@ -71,7 +71,7 @@
 
   background: transparent;
 
-  color: #666e7e;
+  color: #949b95;
 
   font-size: 10px;
 
@@ -84,7 +84,7 @@
   background:
     rgba(255, 255, 255, 0.04);
 
-  color: #a5abba;
+  color: #c4ccc1;
 }
 
 .recent-projects-list {
@@ -147,10 +147,10 @@
     translateY(-1px);
 
   border-color:
-    rgba(109, 93, 252, 0.24);
+    rgba(148, 155, 149, 0.24);
 
   background:
-    rgba(109, 93, 252, 0.055);
+    rgba(148, 155, 149, 0.055);
 }
 
 .recent-project-icon {
@@ -168,9 +168,9 @@
 
   border-radius: 8px;
 
-  background: #151822;
+  background: #0b0c0b;
 
-  color: #aaa4ff;
+  color: #bafa61;
 
   font-size: 9px;
 
@@ -192,7 +192,7 @@
 .recent-project-info strong {
   overflow: hidden;
 
-  color: #d7dae2;
+  color: #c4ccc1;
 
   font-size: 12px;
 
@@ -206,7 +206,7 @@
 .recent-project-info > span {
   overflow: hidden;
 
-  color: #686f7e;
+  color: #949b95;
 
   font-size: 10px;
 
@@ -216,7 +216,7 @@
 }
 
 .recent-project-arrow {
-  color: #5d6473;
+  color: #949b95;
 
   font-size: 13px;
 
@@ -230,7 +230,7 @@
   transform:
     translateX(2px);
 
-  color: #aaa4ff;
+  color: #bafa61;
 }
 
 .recent-project-remove {
@@ -256,7 +256,7 @@
 
   background: transparent;
 
-  color: #555d6b;
+  color: #383d3b;
 
   font-size: 15px;
 

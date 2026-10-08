@@ -55,6 +55,15 @@ function rawColourDeclarations(css: string): string[] {
 }
 
 describe('the application palette is declared once and referenced everywhere', () => {
+  test('the shared product accent and action contrast match the approved identity', () => {
+    const palette = read(palettePath)
+    expect(palette).toContain('--app-accent: #bafa61;')
+    expect(palette).toContain('--app-primary: #f2f5f0;')
+    expect(palette).toContain('--app-text-on-primary: #050505;')
+    for (const path of [palettePath, 'website/src/admin-console.css', 'packages/i18n/src/styles.css', 'frontend/src/TranslationEditor.tsx']) {
+      expect(read(path)).not.toMatch(/#(?:9686ff|b9a0ed|d7c3f7|a993de)\b|rgba\(109, 93, 252/gi)
+    }
+  })
   test('the palette file declares every role the product layers use', () => {
     const palette = withoutComments(read(palettePath))
     const declared = new Set([...palette.matchAll(/--app-([a-z0-9-]+)\s*:/g)].map(match => match[1]))

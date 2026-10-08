@@ -34,22 +34,12 @@
 
 .machine-translation-panel:hover {
   border-color:
-    rgba(
-      122,
-      108,
-      255,
-      0.16
-    );
+    rgba(148, 155, 149, 0.16);
 }
 
 .machine-translation-panel.open {
   border-color:
-    rgba(
-      122,
-      108,
-      255,
-      0.14
-    );
+    rgba(148, 155, 149, 0.14);
 
   background:
     rgba(
@@ -104,24 +94,14 @@
 
 .machine-translation-toggle:hover {
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.035
-    );
+    rgba(148, 155, 149, 0.035);
 }
 
 .machine-translation-toggle:focus-visible {
   box-shadow:
     inset
     0 0 0 2px
-    rgba(
-      109,
-      93,
-      252,
-      0.28
-    );
+    rgba(148, 155, 149, 0.28);
 }
 
 .machine-translation-toggle-title {
@@ -212,31 +192,16 @@ span:not(.machine-translation-toggle-icon) {
 
   border:
     1px solid
-    rgba(
-      125,
-      110,
-      255,
-      0.13
-    );
+    rgba(148, 155, 149, 0.13);
 
   border-radius:
     8px;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.07
-    );
+    rgba(148, 155, 149, 0.07);
 
   color:
-    rgba(
-      176,
-      166,
-      255,
-      0.8
-    );
+    rgba(11, 12, 11, 0.8);
 
   font-size:
     0.6rem;
@@ -270,12 +235,7 @@ span:not(.machine-translation-toggle-icon) {
 .machine-translation-toggle:hover
 .machine-translation-chevron {
   color:
-    rgba(
-      180,
-      170,
-      255,
-      0.78
-    );
+    rgba(11, 12, 11, 0.78);
 }
 
 .machine-translation-chevron.open {
@@ -348,12 +308,7 @@ span:not(.machine-translation-toggle-icon) {
 
 .machine-translation-eyebrow {
   color:
-    rgba(
-      167,
-      155,
-      255,
-      0.72
-    );
+    rgba(11, 12, 11, 0.72);
 
   font-size:
     0.6rem;
@@ -374,31 +329,16 @@ span:not(.machine-translation-toggle-icon) {
 
   border:
     1px solid
-    rgba(
-      128,
-      112,
-      255,
-      0.18
-    );
+    rgba(148, 155, 149, 0.18);
 
   border-radius:
     999px;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.08
-    );
+    rgba(148, 155, 149, 0.08);
 
   color:
-    rgba(
-      190,
-      182,
-      255,
-      0.82
-    );
+    rgba(11, 12, 11, 0.82);
 
   font-size:
     0.6rem;
@@ -540,12 +480,7 @@ span:not(.machine-translation-toggle-icon) {
 .machine-translation-controls input:focus,
 .machine-translation-input textarea:focus {
   border-color:
-    rgba(
-      122,
-      108,
-      255,
-      0.42
-    );
+    rgba(11, 12, 11, 0.42);
 
   background:
     rgba(
@@ -557,12 +492,7 @@ span:not(.machine-translation-toggle-icon) {
 
   box-shadow:
     0 0 0 2px
-    rgba(
-      109,
-      93,
-      252,
-      0.08
-    );
+    rgba(148, 155, 149, 0.08);
 }
 
 .machine-translation-languages {
@@ -644,23 +574,13 @@ span:not(.machine-translation-toggle-icon) {
 
   border:
     1px solid
-    rgba(
-      120,
-      105,
-      255,
-      0.15
-    );
+    rgba(148, 155, 149, 0.15);
 
   border-radius:
     7px;
 
   background:
-    rgba(
-      109,
-      93,
-      252,
-      0.12
-    );
+    rgba(148, 155, 149, 0.12);
 
   color:
     rgba(
@@ -835,16 +755,16 @@ span:not(.machine-translation-toggle-icon) {
 .machine-translation-actions button:not(:disabled) {
   background: linear-gradient(
     135deg,
-    #6f5cff,
-    #8b6cff
+    #bafa61,
+    #bafa61
   );
 
-  border-color: rgba(139, 108, 255, 0.8);
+  border-color: rgba(11, 12, 11, 0.8);
   color: white;
 
   box-shadow:
-    0 0 12px rgba(111, 92, 255, 0.45),
-    0 0 28px rgba(111, 92, 255, 0.22);
+    0 0 12px rgba(11, 12, 11, 0.45),
+    0 0 28px rgba(148, 155, 149, 0.22);
 
   transition:
     transform 0.18s ease,
@@ -857,8 +777,8 @@ span:not(.machine-translation-toggle-icon) {
   filter: brightness(1.1);
 
   box-shadow:
-    0 0 16px rgba(111, 92, 255, 0.65),
-    0 0 34px rgba(111, 92, 255, 0.32);
+    0 0 16px rgba(11, 12, 11, 0.65),
+    0 0 34px rgba(148, 155, 149, 0.32);
 }
 
 .machine-translation-actions button:not(:disabled):active {
@@ -890,10 +810,10 @@ span:not(.machine-translation-toggle-icon) {
   height: 38px;
   padding: 0 34px 0 12px;
 
-  border: 1px solid rgba(124, 92, 255, 0.22);
+  border: 1px solid rgba(148, 155, 149, 0.22);
   border-radius: 9px;
 
-  background: #151821;
+  background: #0b0c0b;
   color: #f4f4f7;
 
   font: inherit;
@@ -911,16 +831,16 @@ span:not(.machine-translation-toggle-icon) {
 }
 
 .machine-translation-languages select:hover {
-  border-color: rgba(124, 92, 255, 0.55);
-  background: #181b26;
+  border-color: rgba(11, 12, 11, 0.55);
+  background: #0b0c0b;
 }
 
 .machine-translation-languages select:focus {
-  border-color: rgba(124, 92, 255, 0.85);
+  border-color: rgba(11, 12, 11, 0.85);
 
   box-shadow:
-    0 0 0 3px rgba(124, 92, 255, 0.12),
-    0 0 18px rgba(124, 92, 255, 0.08);
+    0 0 0 3px rgba(148, 155, 149, 0.12),
+    0 0 18px rgba(148, 155, 149, 0.08);
 }
 
 .machine-translation-languages select:disabled {
@@ -944,11 +864,11 @@ span:not(.machine-translation-toggle-icon) {
 
   padding: 0;
 
-  border: 1px solid rgba(124, 92, 255, 0.32);
+  border: 1px solid rgba(148, 155, 149, 0.32);
   border-radius: 9px;
 
-  background: rgba(124, 92, 255, 0.08);
-  color: #927fff;
+  background: rgba(148, 155, 149, 0.08);
+  color: #bafa61;
 
   font: inherit;
   font-size: 1.05rem;
@@ -967,12 +887,12 @@ span:not(.machine-translation-toggle-icon) {
 .machine-translation-swap-button:hover:not(:disabled) {
   transform: rotate(180deg);
 
-  border-color: rgba(139, 108, 255, 0.82);
-  background: rgba(124, 92, 255, 0.15);
-  color: #b4a9ff;
+  border-color: rgba(11, 12, 11, 0.82);
+  background: rgba(148, 155, 149, 0.15);
+  color: #bafa61;
 
   box-shadow:
-    0 0 16px rgba(124, 92, 255, 0.22);
+    0 0 16px rgba(148, 155, 149, 0.22);
 }
 
 .machine-translation-swap-button:active:not(:disabled) {
@@ -983,8 +903,8 @@ span:not(.machine-translation-toggle-icon) {
   outline: none;
 
   box-shadow:
-    0 0 0 3px rgba(124, 92, 255, 0.18),
-    0 0 18px rgba(124, 92, 255, 0.16);
+    0 0 0 3px rgba(148, 155, 149, 0.18),
+    0 0 18px rgba(148, 155, 149, 0.16);
 }
 
 .machine-translation-swap-button:disabled {

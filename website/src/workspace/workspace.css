@@ -176,7 +176,7 @@
 }
 
 .toolbar-button:hover { background: var(--app-panel-2); }
-.toolbar-save { background: var(--app-primary); border-color: var(--app-primary-line); font-weight: 700; }
+.toolbar-save { background: var(--app-primary); color: var(--app-text-on-primary); border-color: var(--app-primary-line); font-weight: 700; }
 
 .workspace-body {
   display: flex;
@@ -614,7 +614,7 @@ body:has(.workspace-shell) .lh-language-switcher.is-dock {
   font-size: 12px;
 }
 
-.nav-primary { background: var(--app-primary); border-color: var(--app-primary-line); font-weight: 700; }
+.nav-primary { background: var(--app-primary); color: var(--app-text-on-primary); border-color: var(--app-primary-line); font-weight: 700; }
 .nav-button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .editor-hint { color: var(--app-text-4); font-size: 11px; }
@@ -700,7 +700,7 @@ body:has(.workspace-shell) .lh-language-switcher.is-dock {
 .comment-form button {
   border: 1px solid var(--app-primary);
   background: var(--app-primary);
-  color: var(--app-text);
+  color: var(--app-text-on-primary);
   padding: 8px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -849,7 +849,7 @@ body:has(.workspace-shell) .lh-language-switcher.is-dock {
   font-size: 13px;
 }
 
-.dialog-button-primary { background: var(--app-primary); border-color: var(--app-primary-line); font-weight: 700; }
+.dialog-button-primary { background: var(--app-primary); color: var(--app-text-on-primary); border-color: var(--app-primary-line); font-weight: 700; }
 .dialog-button-danger { background: var(--app-danger-wash-strong); border-color: var(--app-danger-line); color: var(--app-danger-text); }
 .dialog-button:disabled { opacity: 0.5; cursor: not-allowed; }
 

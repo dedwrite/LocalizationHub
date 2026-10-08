@@ -8,12 +8,12 @@ export type ProjectIdentity = {
 }
 
 const PALETTE = [
-  { accent: '#a993de', soft: '#66509933' },
+  { accent: '#bafa61', soft: '#66803d33' },
   { accent: '#7eb8c9', soft: '#3d6e7a33' },
   { accent: '#c9a07e', soft: '#7a5a3d33' },
   { accent: '#8fc49a', soft: '#3d7a4d33' },
   { accent: '#d09bb8', soft: '#7a3d5f33' },
-  { accent: '#9aa7d8', soft: '#3d4a7a33' },
+  { accent: '#a6b6b0', soft: '#455b5233' },
   { accent: '#c9c07e', soft: '#7a733d33' },
   { accent: '#7ec9b0', soft: '#3d7a6833' },
 ] as const

@@ -85,7 +85,7 @@
   flex-shrink: 0;
   border: 1px solid var(--app-primary);
   background: var(--app-primary);
-  color: var(--app-text);
+  color: var(--app-text-on-primary);
   padding: 0 16px;
   border-radius: 9px;
   font: inherit;

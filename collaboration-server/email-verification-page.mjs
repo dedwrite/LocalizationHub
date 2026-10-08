@@ -33,16 +33,18 @@ export const EMAIL_VERIFICATION_PAGE =
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-      background: #0b0d10;
-      color: #f5f7fa;
+      color-scheme: dark;
+      background: #050505;
+      color: #f2f5f0;
     }
 
     main {
       width: min(460px, 100%);
       padding: 32px;
-      border: 1px solid #272b31;
-      border-radius: 16px;
-      background: #111419;
+      border: 1px solid #383d3b;
+      border-top: 2px solid #bafa61;
+      border-radius: 6px;
+      background: #0b0c0b;
     }
 
     h1 {
@@ -60,7 +62,7 @@ export const EMAIL_VERIFICATION_PAGE =
       width: 100%;
       min-height: 46px;
       border: 0;
-      border-radius: 10px;
+      border-radius: 6px;
       font: inherit;
       font-weight: 700;
       cursor: pointer;
@@ -72,6 +74,9 @@ export const EMAIL_VERIFICATION_PAGE =
       cursor: wait;
       opacity: 0.65;
     }
+
+    button:focus-visible { outline: 2px solid #bafa61; outline-offset: 4px; }
+    button:hover:not(:disabled) { background: #bafa61; }
 
     #status {
       margin-top: 18px;

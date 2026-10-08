@@ -71,21 +71,21 @@
  */
 .filter-tabs > .filter-button:nth-child(6):hover {
   border-color:
-    rgba(109, 93, 252, 0.32);
+    rgba(148, 155, 149, 0.32);
 
   background:
-    rgba(109, 93, 252, 0.055);
+    rgba(148, 155, 149, 0.055);
 }
 
 .filter-tabs > .filter-button:nth-child(6).active {
   border-color:
-    rgba(109, 93, 252, 0.48);
+    rgba(11, 12, 11, 0.48);
 
   background:
-    rgba(109, 93, 252, 0.12);
+    rgba(148, 155, 149, 0.12);
 
   color:
-    #d8d4ff;
+    #f2f5f0;
 }
 
 /*
