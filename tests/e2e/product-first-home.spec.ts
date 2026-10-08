@@ -17,6 +17,10 @@ for (const locale of ['en', 'ar']) {
     await expect(page.locator('.home-editor')).toHaveAttribute('data-stage', 'validate')
     await expect(page.locator('.demo-source p')).toHaveAttribute('dir', 'ltr')
     await expect(page.locator('#demo-target')).toHaveAttribute('dir', 'rtl')
+    expect(await page.locator('.demo-target-display').evaluate(element => {
+      const caret = getComputedStyle(element, '::after')
+      return {color: caret.backgroundColor, width: caret.width, motion: caret.animationName}
+    })).toEqual({color: 'rgb(186, 250, 97)', width: '2px', motion: 'none'})
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     for (const asset of await page.locator('.home-editor img').all()) {
       expect(await asset.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0 && img.width === img.naturalWidth && img.height === img.naturalHeight)).toBe(true)
