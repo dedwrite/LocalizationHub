@@ -4,7 +4,6 @@ import {
 } from '../appApi'
 import ConfirmDialog from './ConfirmDialog'
 import { useI18n } from '@localizationhub/i18n'
-import TipCard from '../delight/TipCard'
 import EmptyState from '../delight/EmptyState'
 import { handleTabListKeys, tabStopIndex } from '../../../frontend/src/a11y/tabList'
 
@@ -236,7 +235,6 @@ export default function Inspector(props: InspectorProps) {
             )}
           </div>
         )}
-        <TipCard context={tab === 'quality' || tab === 'glossary' ? 'review' : 'editor'} />
       </div>
 
       {confirmRestore && (

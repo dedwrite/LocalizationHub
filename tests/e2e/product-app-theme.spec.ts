@@ -6,6 +6,7 @@ for (const locale of ['en','ar']) test(`Local editor uses the product palette an
   await page.goto('/app/local?sample=northern-gate')
   const editor = page.getByRole('textbox', {name:locale === 'ar' ? 'الترجمة' : 'Translation', exact:true})
   await expect(editor).toBeVisible()
+  await expect(page.locator('.field-tip')).toHaveCount(0)
   const accent = await editor.evaluate(el => getComputedStyle(el).getPropertyValue('--app-accent').trim())
   expect(accent).toBe('#bafa61')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
