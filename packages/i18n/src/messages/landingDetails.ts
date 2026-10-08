@@ -26,7 +26,7 @@ export const landingDetailMessages = {
   'website.workflow.exportTitle': { en: 'Export', ar: 'تصدير' },
   'website.workflow.exportText': { en: "Export the translated file in its supported format.", ar: "صدّر الملف المترجم بصيغته المدعومة." },
   'website.faq.freeQuestion': { en: 'Is LocalizationHub free?', ar: 'هل LocalizationHub مجاني؟' },
-    'website.faq.freeAnswer': { en: 'The current v0.9.9 release is available through GitHub Releases. Local Projects work without an account.', ar: 'الإصدار الحالي v0.9.9 متاح عبر GitHub Releases. تعمل المشاريع المحلية دون حساب.' },
+    'website.faq.freeAnswer': { en: 'The current v0.9.10 release is available through GitHub Releases. Local Projects work without an account.', ar: 'الإصدار الحالي v0.9.10 متاح عبر GitHub Releases. تعمل المشاريع المحلية دون حساب.' },
   'website.faq.accountQuestion': { en: 'Do I need an account?', ar: 'هل أحتاج إلى حساب؟' },
   'website.faq.accountAnswer': { en: 'No. Local Projects work without an account. An account is only needed for Cloud Projects and online collaboration.', ar: 'لا. تعمل المشاريع المحلية دون حساب. تحتاج الحساب فقط للمشاريع السحابية والتعاون عبر الإنترنت.' },
   'website.faq.formatsQuestion': { en: 'What can I open?', ar: 'ماذا يمكنني فتحه؟' },

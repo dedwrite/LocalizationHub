@@ -30,7 +30,7 @@ Open JSON, CSV or gettext PO files, and save work as a LocalizationHub project (
 
 **In your browser:** [open the Northern Gate sample](https://localizationhub.app/app/local?sample=northern-gate), edit a translation, check its tokens and export. No account needed for local files.
 
-**On Windows:** download the **v0.9.9 x64 installer** and its SHA-256 checksum from [Releases](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.9). Release assets require repository access while this repository is private.
+**On Windows:** download the **v0.9.10 x64 installer** and its SHA-256 checksum from [Releases](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.10). Release assets require repository access while this repository is private.
 
 **With a team:** create an account, verify your email and use Cloud Projects. Owners, Editors and Viewers have server-enforced permissions.
 
@@ -63,7 +63,7 @@ npm run test:i18n
 
 ## Learn more
 
-[Release notes](docs/releases/v0.9.9.md) · [Engine compatibility](docs/dev/v0.7-engine-compatibility.md) · [Token profiles](docs/dev/token-profiles.md) · [UI internationalization](docs/dev/ui-internationalization.md)
+[Release notes](docs/releases/v0.9.10.md) · [Engine compatibility](docs/dev/v0.7-engine-compatibility.md) · [Token profiles](docs/dev/token-profiles.md) · [UI internationalization](docs/dev/ui-internationalization.md)
 
 ---
 

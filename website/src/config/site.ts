@@ -1,6 +1,6 @@
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.9',
+  version: '0.9.10',
   /*
    * The one public address the site is allowed to print. The Windows app is
    * distributed to approved testers, so no repository or release URL belongs on
