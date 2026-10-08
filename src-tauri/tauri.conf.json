@@ -45,7 +45,6 @@
                        "nsis": {
                            "sidebarImage": "installer/sidebar.bmp",
                            "headerImage": "installer/header.bmp",
-                           "installerHooks": "installer/theme.nsh",
                            "installerIcon": "icons/icon.ico",
                            "uninstallerIcon": "icons/icon.ico"
                        }
