@@ -8,6 +8,7 @@ import { FooterSecret } from "../delight/LittleSecrets";
 import ShortcutKey from './ShortcutKey';
 import Icon from './Icon';
 import CreatorCredit from './CreatorCredit';
+import Brand from './Brand';
 
 function navigation(t: ReturnType<typeof useI18n>["t"]) {
   return [
@@ -28,8 +29,7 @@ export function Header() {
       </a>
       <header className="site-header" data-i18n-skip>
         <InternalLink className="brand" href="/">
-          <img className="brand-icon" src="/localizationhub-logo.jpg" alt="" />
-          <span>{site.name}</span>
+          <Brand />
         </InternalLink>
         <nav className="main-nav" aria-label={t("website.nav.label")}>
           {navigation(t).map(([label, href]) => (
@@ -68,7 +68,7 @@ export function Footer() {
   return (
     <footer data-i18n-skip>
       <InternalLink className="brand" href="/">
-        <img className="brand-icon" src="/localizationhub-logo.jpg" alt="" />
+        <img className="brand-icon" src="/brand-mono.svg" alt="" />
         <span>{site.name}</span>
       </InternalLink>
       <span>{t("website.footer.release")}</span>

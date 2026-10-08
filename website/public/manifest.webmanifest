@@ -9,9 +9,15 @@
   "description": "Browser-based localization translation workspace.",
   "icons": [
     {
-      "src": "/localizationhub-logo.jpg",
+      "src": "/brand-app.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand-app.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     }
   ]

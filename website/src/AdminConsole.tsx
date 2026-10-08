@@ -1695,7 +1695,7 @@ export default function AdminConsole() {
   return (
     <main className="admin-console">
       <header className="admin-header">
-        <span className="admin-brand">Admin · {dashboard.user.username}</span>
+        <span className="admin-brand"><img src="/brand-alternative.svg" width="28" height="28" alt="LocalizationHub" style={{ verticalAlign: 'middle', marginInlineEnd: 10 }} />Admin · {dashboard.user.username}</span>
         <nav className="admin-nav" aria-label="Admin navigation">
           <NavButton active={route.page === 'dashboard'} onClick={() => navigate('/app/admin')}>Dashboard</NavButton>
           <NavButton active={route.page === 'users' || route.page === 'user-detail'} onClick={() => navigate('/app/admin/users')}>Users</NavButton>

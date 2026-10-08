@@ -77,7 +77,7 @@ export default function LocalWorkspace() {
   if (opened && storage) return <Workspace key={opened.id} storage={storage} user={localUser} onHome={() => { setOpened(null); refresh() }} />
   return <main className="local-page local-home" data-i18n-skip>
     <header className="local-header">
-      <button className="local-brand" onClick={() => navigate('/')}><img src="/localizationhub-logo.jpg" alt="" /><span>LocalizationHub<small>{t('local.browserProject')}</small></span></button>
+      <button className="local-brand" onClick={() => navigate('/')}><img src="/brand-primary.svg" alt="" /><span>LocalizationHub<small>{t('local.browserProject')}</small></span></button>
       <nav className="app-context-nav local-context-nav" aria-label={t('projects.context')}><button onClick={() => navigate('/app/projects')}><span>{t('projects.cloud')}</span><small>{t('projects.collaborative')}</small></button><button className="active" aria-current="page"><span>{t('projects.local')}</span><small>{t('projects.onDevice')}</small></button></nav>
       <button type="button" className="command-launcher" onClick={() => openCommandCenter()} aria-label={t('delight.command.open')}><span>{t('delight.command.quick')}</span><ShortcutKey /></button>
     </header>

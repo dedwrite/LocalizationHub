@@ -53,7 +53,7 @@ function AuthView({ mode, onAuth }: { mode: 'login' | 'register'; onAuth: (user:
 function AppHeader({ user, onLogout }: { user: AuthUser; onLogout: () => void }) {
   const { t } = useI18n()
   return <header className="app-header">
-    <button className="app-brand" onClick={() => navigate('/app/projects')}><img className="brand-mark" src="/localizationhub-logo.jpg" alt="" /><span>LocalizationHub <small>WEB APP</small></span></button>
+    <button className="app-brand" onClick={() => navigate('/app/projects')}><img className="brand-mark" src="/brand-primary.svg" alt="" /><span>LocalizationHub <small>WEB APP</small></span></button>
     <nav className="app-context-nav" aria-label="Project context">
       <button className="active" aria-current="page" onClick={() => navigate('/app/projects')}><span>Cloud</span><small>Collaborative</small></button>
       <button onClick={() => navigate('/app/local')}><span>Local</span><small>On this device</small></button>

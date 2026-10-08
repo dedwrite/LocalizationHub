@@ -4,6 +4,7 @@ import {ActionLink, UiTheme} from '@localizationhub/ui'
 import {InternalLink} from '../internalNavigation'
 import {FooterSecret} from '../delight/LittleSecrets'
 import CreatorCredit from './CreatorCredit'
+import Brand from './Brand'
 import '../productHome/home.css'
 
 /** The reading surfaces extend the approved product world, not the old landing. */
@@ -12,7 +13,7 @@ export default function PublicLayout({children}: {children: ReactNode}) {
   return <UiTheme className="product-home public-reading"><div className="home-shell" dir={locale === 'ar' ? 'rtl' : 'ltr'} data-i18n-skip>
     <a className="home-skip" href="#main-content">{t('website.skipContent')}</a>
     <header className="home-header">
-      <InternalLink href="/" className="home-brand"><span className="home-mark" aria-hidden="true"><span /></span>LocalizationHub</InternalLink>
+      <InternalLink href="/" className="home-brand"><Brand /></InternalLink>
       <nav aria-label={t('home.nav')}><ActionLink href="/">{t('product.home')}</ActionLink><ActionLink href="/product">{t('home.product')}</ActionLink><ActionLink href="/reference">{t('home.docs')}</ActionLink><LanguageSwitcher /><ActionLink href="/app/local" variant="primary">{t('home.open')}</ActionLink></nav>
     </header>
     {children}

@@ -3548,7 +3548,7 @@ try {
           <div className="welcome-card">
             <img
               className="welcome-logo"
-              src="/images/logo-center.jpg"
+              src="/brand-primary.svg"
               alt="LocalizationHub"
             />
 
@@ -4033,7 +4033,7 @@ try {
           <div className="topbar-brand">
             <img
               className="brand-mark brand-mark-image small"
-              src="/images/logo-center.jpg"
+              src="/brand-primary.svg"
               alt="LocalizationHub"
             />
 

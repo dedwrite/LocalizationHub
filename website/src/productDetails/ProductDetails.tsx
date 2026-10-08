@@ -6,6 +6,7 @@ import {EngineMatrix} from '../pages/LandingPage'
 import TipCard from '../delight/TipCard'
 import AmbientGreeting from '../delight/AmbientGreeting'
 import CreatorCredit from '../components/CreatorCredit'
+import Brand from '../components/Brand'
 import {FaqLocaleSecret, FooterSecret, OnDeviceSecret} from '../delight/LittleSecrets'
 import '../productHome/home.css'
 import './product-details.css'
@@ -19,7 +20,7 @@ export default function ProductDetails() {
   ] as const
   return <UiTheme className="product-home product-details"><div className="home-shell" dir={locale === 'ar' ? 'rtl' : 'ltr'} data-i18n-skip>
     <a className="home-skip" href="#product">{t('home.skip')}</a>
-    <header className="home-header"><a className="home-brand" href="/"><span className="home-mark" aria-hidden="true"><span /></span>LocalizationHub</a><nav aria-label={t('home.nav')}><ActionLink href="/">{t('product.home')}</ActionLink><ActionLink href="/reference">{t('home.docs')}</ActionLink><LanguageSwitcher /><ActionLink href="/app/local" variant="primary">{t('home.open')}</ActionLink></nav></header>
+    <header className="home-header"><a className="home-brand" href="/"><Brand /></a><nav aria-label={t('home.nav')}><ActionLink href="/">{t('product.home')}</ActionLink><ActionLink href="/reference">{t('home.docs')}</ActionLink><LanguageSwitcher /><ActionLink href="/app/local" variant="primary">{t('home.open')}</ActionLink></nav></header>
     <main id="product"><div className="pd-intro"><p className="home-kicker">{t('product.kicker')}</p><h1>{t('product.title')}</h1><p>{t('product.body')}</p></div>
       {sections.map(([id, name, Demo]) => <section id={id} key={id} className="pd-row" aria-labelledby={`${id}-title`}><div className="pd-copy"><p className="home-kicker">{t(`product.${name}.label`)}</p><h2 id={`${id}-title`}>{t(`product.${name}.title`)}</h2><p>{t(`product.${name}.body`)}</p>{name === 'local' && <><OnDeviceSecret label={t('product.browser')} /><p>{t('product.local.note')}</p></>}</div><Demo /></section>)}
       <section className="pd-support" aria-labelledby="pd-support-title"><h2 id="pd-support-title">{t('product.support')}</h2><FormatGuide /><div id="engines"><EngineMatrix /></div></section>

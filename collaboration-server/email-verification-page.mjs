@@ -11,7 +11,7 @@ export const EMAIL_VERIFICATION_PAGE =
 
   <link
     rel="icon"
-    href="/favicon.ico"
+    href="/brand-app.svg"
     type="image/x-icon"
   >
 

@@ -6,8 +6,6 @@
 .product-home .home-skip:focus { inset-block-start: 10px; }
 .product-home .home-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; min-block-size: 69px; padding-block-end: 16px; border-block-end: 1px solid var(--lh-line); }
 .product-home .home-brand { display: inline-flex; gap: 10px; align-items: center; color: var(--lh-text); text-decoration: none; font-size: 14px; font-weight: 600; }
-.product-home .home-mark { display: grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 5px; background: var(--lh-text); }
-.product-home .home-mark span { inline-size: 8px; block-size: 8px; background: var(--lh-canvas); border-radius: 2px; }
 .product-home .home-header nav { display: flex; align-items: center; gap: 12px; }
 .product-home .lh-language-switcher select { background: transparent; border-color: var(--lh-line); color: var(--lh-secondary); font-size: 11px; }
 .product-home .home-intro { padding-block: 30px 22px; }

@@ -5,6 +5,7 @@ import { navigateInternal, shouldInterceptClick } from '../internalNavigation'
 import { legacyProductDestination } from './legacyAnchors'
 import EditorDemo from './EditorDemo'
 import CreatorCredit from '../components/CreatorCredit'
+import Brand from '../components/Brand'
 import '@localizationhub/ui/theme.css'
 import './home.css'
 
@@ -24,7 +25,7 @@ export default function HomePage() {
   }}>
     <a className="home-skip" href="#home-editor">{t('home.skip')}</a>
     <header className="home-header">
-      <a href="/" className="home-brand" aria-label="LocalizationHub"><span className="home-mark" aria-hidden="true"><span /></span><span>LocalizationHub</span></a>
+      <a href="/" className="home-brand" aria-label="LocalizationHub"><Brand /></a>
       <nav aria-label={t('home.nav')}><ActionLink href="/product">{t('home.product')}</ActionLink><ActionLink href="/reference">{t('home.docs')}</ActionLink><LanguageSwitcher /><ActionLink href="/app/local" variant="primary">{t('home.open')}</ActionLink></nav>
     </header>
     <main>

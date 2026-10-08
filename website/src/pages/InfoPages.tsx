@@ -99,7 +99,7 @@ export function DownloadPage() {
           </div>
           <div className="download-panel">
             <div className="panel-mark">
-              <img src="/localizationhub-logo.jpg" alt="" />
+              <img src="/brand-alternative.svg" alt="" />
             </div>
             <span className="panel-kicker">
               {t('website.download.privateKicker')}
