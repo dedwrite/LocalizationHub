@@ -67,4 +67,4 @@ npm run test:i18n
 
 ---
 
-Made by [DEDWRITE](https://dedwrite.xyz/) · [Privacy](https://localizationhub.app/privacy) · [Terms](https://localizationhub.app/terms)
+Made by [DEDTYPE](https://dedtype.com/) · [Privacy](https://localizationhub.app/privacy) · [Terms](https://localizationhub.app/terms)
