@@ -57,14 +57,15 @@ test('direct sample workspace is styled, honest, and accessible in both language
   expect(errors).toEqual([])
 })
 
-test('mobile navigation is available and closes after following a link', async ({ page }) => {
+test('mobile navigation reaches the public Windows download', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1440) > 1000, 'Desktop has the full navigation')
   await page.goto('/product')
-  await page.locator('.mobile-site-menu summary').click()
-  await expect(page.locator('.mobile-site-menu nav')).toBeVisible()
-  await page.locator('.mobile-site-menu a[href="/download"]').click()
-  await expect(page).toHaveTitle('Windows app — LocalizationHub')
-  await expect(page.locator('.mobile-site-menu')).not.toHaveAttribute('open')
+  const home = page.locator('.home-header nav a[href="/"]')
+  await expect(home).toBeVisible()
+  await home.click()
+  await page.locator('.home-actions a[href="/download"]').click()
+  await expect(page).toHaveTitle('Download for Windows — LocalizationHub')
+  await expect(page.getByRole('link', {name:'Download for Windows', exact:true})).toBeVisible()
 })
 
 test('sample tour supports real QA, local saving, reopening, and original-format export', async ({ page }) => {
