@@ -2,6 +2,7 @@
     "name": "localizationhub-collaboration-server",
     "version": "0.9.10",
     "private": true,
+    "license": "MIT",
     "description": "WebSocket collaboration relay for LocalizationHub.",
     "type": "module",
     "scripts": {

@@ -29,3 +29,25 @@ collaboration-server/scripts/pass-2g-email-staging-smoke.mjs
 test-results/
 playwright-report/
 Thumbs.db
+
+# Local credentials, signing material, data and audit output.
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.dmp
+*.env.bak
+*.env.backup
+.env.*.bak
+*.local
+coverage/
+website/dist/
+.superpowers/
+gitleaks*.json
+gitleaks*.sarif

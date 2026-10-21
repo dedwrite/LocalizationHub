@@ -23,13 +23,11 @@ for (const locale of ['en','ar']) for (const route of routes) {
   })
 }
 
-test('Windows access disclosure and legal contents still work', async ({page}) => {
+test('public Windows checksum and legal contents are accessible', async ({page}) => {
   await page.goto('/download')
-  await page.locator('.download-request').click()
-  await expect(page.locator('.download-request-address')).toBeVisible()
-  await expect(page.locator('.download-address')).toHaveAttribute('href',/^mailto:/)
-  await page.locator('.download-request').click()
-  await expect(page.locator('.download-request-address')).toBeHidden()
+  await expect(page.getByRole('link', {name: 'Download for Windows', exact:true})).toHaveAttribute('href', /^https:\/\/github.com\/dedwrite\/LocalizationHub\/releases\/download\/.+\.exe$/)
+  await page.locator('.download-verification summary').click()
+  await expect(page.locator('.download-digest')).toBeVisible()
   await page.goto('/privacy')
   await page.locator('.reading-contents summary').click()
   await page.locator('.reading-contents a').first().click()

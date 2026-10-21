@@ -14,7 +14,8 @@ test.each(['en', 'ar'] as const)('Home presents real destinations and independen
   expect(html).toContain('data-i18n-skip')
   expect(html).not.toContain('class="feature-grid"')
   expect(html).toContain(locale === 'en' ? 'The editor is the product.' : 'المحرّر هو المنتج.')
-  expect(html).toContain(locale === 'en' ? 'GitHub (private)' : 'GitHub (خاص)')
+  expect(html).toContain('href="https://github.com/dedwrite/LocalizationHub"')
+  expect(html).not.toContain('GitHub (private)')
 })
 test('old known sections retain destinations without hijacking unknown fragments', () => {
   expect(legacyProductDestination('#context')).toBe('/product#context')

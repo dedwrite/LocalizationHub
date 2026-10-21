@@ -1,0 +1,4 @@
+# RFC 4226 public test vector; not an application credential.
+58965355bdbfb516859a3301c4b3848672170055:collaboration-server/tests/admin.test.mjs:generic-api-key:141
+# Synthetic Admin session hash in the Playwright fixture.
+6b4587783be5454e333f4a777d69c64c79e7632b:tests/e2e/admin.spec.ts:generic-api-key:50

@@ -1,0 +1,16 @@
+name: Feature request
+description: Explain a localization problem and the smallest useful improvement.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe your workflow, file format and current workaround without private data.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement and alternatives
+    validations:
+      required: true

@@ -7,7 +7,7 @@ const repositoryRoot = path.resolve(import.meta.dirname, '..')
 const uiRoots = ['frontend/src', 'website/src']
 const localizedAttributes = new Set(['aria-label', 'aria-description', 'placeholder', 'title'])
 const properNounExemptions = new Set([
-  'LocalizationHub', 'LH Radio', 'LH RADIO', 'GitHub', 'Releases', 'DEDWRITE',
+  'LocalizationHub', 'LH Radio', 'LH RADIO', 'GitHub', 'Releases', 'DEDWRITE', 'DEDTYPE',
   'Godot', 'Unity', 'Unreal', 'Unreal Engine', 'Steam', 'Spotify', 'YouTube',
   'Google Authenticator', 'Google Cloud Translation', 'Gemini · Google AI Studio', 'DeepL',
   'JSON', 'CSV', 'PO', 'POT', 'PCK', 'LOCRES', 'LOCMETA', 'UAsset', 'MP3', 'ID3',

@@ -30,7 +30,7 @@ Open JSON, CSV or gettext PO files, and save work as a LocalizationHub project (
 
 **In your browser:** [open the Northern Gate sample](https://localizationhub.app/app/local?sample=northern-gate), edit a translation, check its tokens and export. No account needed for local files.
 
-**On Windows:** download the **v0.9.10 x64 installer** and its SHA-256 checksum from [Releases](https://github.com/dedwrite/LocalizationHub/releases/tag/v0.9.10). Release assets require repository access while this repository is private.
+**On Windows:** [download the public Windows x64 installer](https://localizationhub.app/download), with its version and SHA-256 checksum. No tester approval or GitHub sign-in is required. Other operating systems do not currently have verified packaged releases.
 
 **With a team:** create an account, verify your email and use Cloud Projects. Owners, Editors and Viewers have server-enforced permissions.
 
@@ -53,7 +53,7 @@ npm ci
 npm run website:dev
 ```
 
-For Desktop setup and builds, see [frontend/README.md](frontend/README.md). For a same-origin local backend, configure the ignored `collaboration-server/.env.local`, then run `node collaboration-server/dev.mjs`. Cloud features require PostgreSQL and the appropriate service configuration; never commit secrets.
+For full setup, see [CONTRIBUTING.md](CONTRIBUTING.md), the [development map](docs/development.md) and [Desktop instructions](frontend/README.md). Use your own development database and ignored local configuration; never commit secrets or use production data for tests.
 
 ```sh
 npm test
@@ -61,10 +61,18 @@ npm run website:build
 npm run test:i18n
 ```
 
+## Contribute and report security issues
+
+Bug reports, synthetic fixtures, EN/AR improvements and focused pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately through [SECURITY.md](SECURITY.md), not public issues.
+
+## License
+
+First-party code is [MIT licensed](LICENSE). Fonts, external extraction tools and dependencies retain their own licenses; see [Third-Party Notices](THIRD_PARTY_NOTICES.md). Workspace `private: true` flags prevent accidental npm publication, not public access to the code.
+
 ## Learn more
 
 [Release notes](docs/releases/v0.9.10.md) · [Engine compatibility](docs/dev/v0.7-engine-compatibility.md) · [Token profiles](docs/dev/token-profiles.md) · [UI internationalization](docs/dev/ui-internationalization.md)
 
 ---
 
-Made by [DEDTYPE](https://dedtype.com/) · [Privacy](https://localizationhub.app/privacy) · [Terms](https://localizationhub.app/terms)
+Made by [DEDTYPE](https://dedtype.com/) · [Release process](docs/releases/windows-release-process.md) · [Maintainer summary](docs/maintainer-summary.md) · [Privacy](https://localizationhub.app/privacy) · [Terms](https://localizationhub.app/terms)

@@ -56,36 +56,21 @@ test.describe('public routing and accessibility', () => {
     await expect(page.locator('.rtl-showcase-context')).toContainText('Northern Gate')
   })
 
-  test('Landing FAQ states the Windows build is private and the browser editor is public', async ({ page }) => {
-    await page.goto('/#faq')
-    const answer = page.locator('.faq-list details').first().locator('p')
-    await expect(answer).toContainText('approved testers')
-    await expect(answer).toContainText('browser editor remains publicly available')
+  test('Product FAQ explains public Windows availability', async ({ page }) => {
+    await page.goto('/product#faq')
+    const answer = page.locator('#faq details').first()
+    await answer.locator('summary').click()
+    await expect(answer).toContainText('GitHub Releases')
+    await expect(answer).toContainText('No account or tester approval')
   })
 
-  test('Home labels repository access honestly and public pages offer no release links', async ({ page }) => {
-    for (const path of ['/', '/product', '/download']) {
-      await page.goto(path)
-      const links = await page.locator('a[href]').evaluateAll(anchors => anchors.map(anchor => anchor.getAttribute('href') || ''))
-      expect(links.filter(href => /\/releases|\.exe$/i.test(href))).toEqual([])
-      expect(links.filter(href => /github\.com/i.test(href))).toEqual(path === '/' ? ['https://github.com/dedwrite/LocalizationHub'] : [])
-      if (path === '/') await expect(page.getByRole('link', {name: 'GitHub (private)', exact: true})).toBeVisible()
-      await expect(page.locator('.download-panel strong', { hasText: '.exe' })).toHaveCount(0)
-    }
-  })
-
-  test('the tester request prints the one support address instead of only mailing it', async ({ page, context, browserName }) => {
-    test.skip(browserName === 'webkit', 'headless WebKit does not grant the async clipboard this control relies on')
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  test('public download links lead to official releases without a mail request', async ({ page }) => {
     await page.goto('/download')
-    const panel = page.locator('#download-request-address')
-    await expect(panel).toBeHidden()
-    await page.getByRole('button', { name: 'Request tester access' }).click()
-    await expect(panel).toBeVisible()
-    await expect(page.getByRole('link', { name: 'support@localizationhub.app' })).toHaveAttribute('href', 'mailto:support@localizationhub.app?subject=LocalizationHub%20Windows%20app%20access')
-    await page.getByRole('button', { name: 'Copy address' }).click()
-    await expect(panel.getByRole('status')).toHaveText('Address copied')
-    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('support@localizationhub.app')
+    await expect(page.getByRole('link', {name: 'Download for Windows', exact: true})).toHaveAttribute('href', /^https:\/\/github.com\/dedwrite\/LocalizationHub\/releases\/download\/.+\.exe$/)
+    await expect(page.getByRole('link', {name: 'View all releases on GitHub'})).toHaveAttribute('href', 'https://github.com/dedwrite/LocalizationHub/releases')
+    await expect(page.locator('main a[href^="mailto:"]')).toHaveCount(0)
+    await page.locator('.download-verification summary').click()
+    await expect(page.locator('.download-digest')).toBeVisible()
   })
 
   test('honors reduced motion while keeping Landing content visible', async ({ page }) => {

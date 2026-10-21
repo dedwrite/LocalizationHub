@@ -49,7 +49,7 @@ export const landingExperienceMessages = {
   'landing.privacy.details': { en: 'Read the privacy details', ar: 'تفاصيل الخصوصية' },
   "landing.closing.title": { en: "Start with a file.", ar: "ابدأ بملف." },
   "landing.closing.body": { en: "Open your file in the editor, or try the Northern Gate sample. No account needed.", ar: "افتح ملفك في المحرر، أو جرّب عينة البوابة الشمالية. ما تحتاج حساب." },
-  "landing.download.access": { en: "The Windows app is currently available to approved testers. The browser editor remains publicly available.", ar: "تطبيق ويندوز متاح حاليًا لمختبرين معتمدين، ويبقى محرر المتصفح متاحًا للجميع." },
+  "landing.download.access": { en: 'The Windows x64 app is available to everyone through GitHub Releases. No account or tester approval is required to download it. You can also use the browser editor.', ar: 'تطبيق ويندوز x64 متاح للجميع عبر إصدارات GitHub. لا تحتاج إلى حساب أو موافقة لتنزيله، ويمكنك أيضًا استخدام محرر المتصفح.' },
 "landing.try.keepTokens": { en: "Keep these in your translation", ar: "رموز يجب إبقاؤها في الترجمة" },
 "landing.try.tokenMissing": { en: "Token missing", ar: "ناقص" },
 "landing.try.tokenKept": { en: "Present", ar: "موجود" },

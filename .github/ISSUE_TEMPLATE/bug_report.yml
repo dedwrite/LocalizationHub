@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible problem in the editor, website or desktop client.
+body:
+  - type: markdown
+    attributes:
+      value: "Do not post secrets, private project data or exploitable security details. For vulnerabilities, follow SECURITY.md."
+  - type: input
+    id: platform
+    attributes:
+      label: Version and platform
+      description: Desktop version or website URL, Windows/browser version and interface language.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include a minimal synthetic file if needed; no copyrighted game assets or private logs.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

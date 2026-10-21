@@ -1,35 +1,35 @@
 # Third-Party Notices
 
-LocalizationHub v0.7 extraction may invoke the following third-party tools as
-**optional external adapters** (not bundled into LocalizationHub itself). Each
-is invoked as a separate process with strict isolation (no shell interpolation,
-timeouts, isolated temp directories). Users must obtain and configure these
-tools separately.
+The root MIT license applies to first-party LocalizationHub code only. Third-party code, fonts and tools keep their own licenses. Do not treat this page as a substitute for their full copyright/license texts.
 
-## Unreal Engine tooling
+## Bundled fonts
 
-- **repak** — Unreal `.pak` reader/writer.
-  - License: Apache-2.0 and MIT (see upstream).
-  - https://github.com/trumank/repak
-- **retoc** — Unreal IoStore (`.utoc`/`.ucas`) reader.
-  - License: permissive (see upstream LICENSE).
-- **UAssetAPI** (via UAssetDumper) — Unreal `.uasset` JSON import/export.
-  - License: MIT.
-  - https://github.com/atenfyr/UAssetAPI
+The website ships these font files and their full SIL Open Font License 1.1 notices:
 
-## Godot tooling
+- Inter — [notice](website/public/fonts/Inter-LICENSE.txt).
+- Noto Sans Arabic — [notice](website/public/fonts/noto-sans-arabic-OFL.txt).
+- Schibsted Grotesk — [notice](website/public/fonts/schibsted-grotesk-OFL.txt).
 
-- **gdsdecomp** (or equivalent PCK reader) — Godot `.pck` extraction.
-  - License: MIT.
-  - https://github.com/GDRETools/gdsdecomp
+Retain these notices when redistributing the fonts. The font licenses are not changed to MIT.
 
-## Unity tooling
+## Application dependencies
 
-- **UnityPy** — Unity SerializedFile / AssetBundle reader.
-  - License: MIT.
-  - https://github.com/K0lb3/UnityPy
+The browser/Desktop frontend uses React, CodeMirror, Tauri plugins and other npm dependencies; the Node backend uses PostgreSQL/ws/music-metadata packages. The native app also links Rust crates including Tauri, Serde and reqwest. These are third-party dependencies, not first-party MIT code.
 
-No other third-party runtime code is bundled by LocalizationHub in this batch.
-License compatibility was verified against the declared upstream licenses; users
-redistributing these tools must comply with their respective NOTICE and
-attribution requirements.
+Exact npm versions, license identifiers and integrity hashes are recorded in `package-lock.json`; full dependency license files are included in installed packages. Exact Rust versions are in `src-tauri/Cargo.lock`, with license declarations and notices in each crate. A distributor must retain applicable license/copyright notices for the dependencies actually shipped, including transitive dependencies. New dependencies and binary releases need their own attribution review.
+
+This source-repository cleanup does not replace or relicense already-published installer assets. It does not certify that every historical binary bundled a complete attribution inventory.
+
+## Optional external extraction tools
+
+These tools are installed/configured separately and invoked as external processes. They are not bundled by the current extraction adapters. Users redistributing them must comply with the relevant upstream licenses and notices.
+
+| Tool | Use | Upstream license |
+| --- | --- | --- |
+| [repak](https://github.com/trumank/repak) | Unreal PAK resources | MIT OR Apache-2.0; see both upstream license files |
+| [retoc](https://github.com/trumank/retoc/blob/master/LICENSE) | Unreal IoStore resources | MIT |
+| [UAssetAPI](https://github.com/atenfyr/UAssetAPI/blob/master/LICENSE) | Unreal asset inspection via separately configured adapters | MIT |
+| [GDRE/gdsdecomp](https://github.com/GDRETools/gdsdecomp/blob/master/LICENSE) | Godot PCK resources | MIT |
+| [UnityPy](https://github.com/K0lb3/UnityPy/blob/master/LICENSE) | Unity asset resources | MIT |
+
+Upstream repository license declarations were checked on 2026-10-22. Support limits and helper requirements are documented in [engine compatibility](docs/dev/v0.7-engine-compatibility.md). Game engines, game text, media and third-party trademarks are not relicensed by LocalizationHub.
