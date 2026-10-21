@@ -72,8 +72,6 @@ export function Footer() {
         <span>{site.name}</span>
       </InternalLink>
       <span>{t("website.footer.release")}</span>
-      {/* No repository or release links: the desktop build is private, so a
-          public link would send visitors to a 404. */}
       <div>
         <InternalLink href="/download">{t("website.nav.download")}</InternalLink>
         <InternalLink href="/reference">{t("capability.index.nav")}</InternalLink>
@@ -81,6 +79,7 @@ export function Footer() {
         <InternalLink href="/terms">{t("legal.terms.kicker")}</InternalLink>
         <a href={`mailto:${site.contactEmail}`}>{t("website.footer.contact")}</a>
         <CreatorCredit />
+        <a href={site.githubUrl}>{t('home.github')}</a>
         <FooterSecret />
       </div>
     </footer>

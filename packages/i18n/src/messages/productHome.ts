@@ -7,7 +7,7 @@ export const productHomeMessages = {
   'home.product': {en: 'Product', ar: 'المنتج'},
   'home.details': {en: 'Product details →', ar: 'تفاصيل المنتج ←'},
   'home.docs': {en: 'Docs', ar: 'المرجع'},
-  'home.github': {en: 'GitHub (private)', ar: 'GitHub (خاص)'},
+  'home.github': {en: 'GitHub', ar: 'GitHub'},
   'home.download': {en: 'Download', ar: 'تنزيل'},
   'home.selectStage': {en: '01 / SELECT STRING', ar: '01 / اختر نصًا'},
   'home.translateStage': {en: '02 / TRANSLATE', ar: '02 / ترجم'},

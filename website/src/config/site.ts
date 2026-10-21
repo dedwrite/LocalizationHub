@@ -1,12 +1,18 @@
+const version = '0.9.10'
+const githubUrl = 'https://github.com/dedwrite/LocalizationHub'
+const assetUrl = `${githubUrl}/releases/download/v${version}/LocalizationHub_${version}_x64-setup.exe`
+
+// Update only after the stable installer and checksum have been published and verified.
 export const site = {
   name: 'LocalizationHub',
-  version: '0.9.10',
-  /*
-   * The one public address the site is allowed to print. The Windows app is
-   * distributed to approved testers, so no repository or release URL belongs on
-   * a public page: every public path to the desktop build goes through this
-   * mail address instead.
-   */
+  version,
+  githubUrl,
+  releasesUrl: `${githubUrl}/releases`,
+  desktopRelease: {
+    installerUrl: assetUrl,
+    checksumUrl: `${assetUrl}.sha256`,
+    sha256: '9ddc36bbde45fea0c198c5549f09b6380b27b271a9833a210c4f07ca10e64495',
+  },
   contactEmail: 'support@localizationhub.app',
   supportedPlatforms: ['Windows x64'],
   supportedFormats: ['JSON', 'CSV', 'gettext PO', 'LocalizationHub Project (.lhproj)'],
