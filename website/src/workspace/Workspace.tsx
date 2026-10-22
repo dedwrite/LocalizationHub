@@ -694,7 +694,7 @@ export default function Workspace({ user, onHome, storage: suppliedStorage }: { 
             onPrev={() => goto(selected - 1)}
             entry={entry}
             extractionContext={draft?.metadata?.extraction?.entries?.[entry?.id]?.context}
-            sampleGuide={local && projectId.startsWith('sample:northern-gate:')}
+            sampleGuide={local && projectId.startsWith('sample:last-broadcast:')}
             status={status}
             writable={writable}
             tokenProfileId={tokenProfileId}

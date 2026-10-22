@@ -21,8 +21,8 @@ describe('downloadable landing samples', () => {
       )
       expect(result.document.entries.map((entry) => entry.source)).toEqual([
         'Start game',
-        'Hold the line, {player_name}.',
-        'The <b>Northern Gate</b> holds.',
+        'Stay on this frequency, {player_name}.',
+        'The <b>Relay Station</b> is transmitting.',
       ])
       expect(
         result.document.entries.every((entry) => entry.translation === ''),
@@ -31,7 +31,7 @@ describe('downloadable landing samples', () => {
       expect(
         validateProtectedTokens(
           dialogue.source,
-          'اثبت يا {player_name}.',
+          'ابقَ على هذا التردد يا {player_name}.',
           'generic',
         ).hasErrors,
       ).toBe(false)

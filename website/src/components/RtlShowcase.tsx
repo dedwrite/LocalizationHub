@@ -20,11 +20,11 @@ export default function RtlShowcase() {
       <div className="rtl-showcase-context">
         <span>
           <small>{t("website.context.speaker")}</small>
-          <strong>{t("website.context.speakerVeyra")}</strong>
+          <strong>{t("website.context.speakerMira")}</strong>
         </span>
         <span>
           <small>{t("website.context.scene")}</small>
-          <strong>{t("website.context.sceneGate")}</strong>
+          <strong>{t("website.context.sceneRelay")}</strong>
         </span>
         <span>
           <small>{t("website.context.listener")}</small>
@@ -34,8 +34,7 @@ export default function RtlShowcase() {
       <div className="rtl-showcase-source" dir="ltr">
         <small>{t("website.context.source")}</small>
         <p lang="en">
-          Hold the line, <mark dir="ltr">{"{player_name}"}</mark>. The Northern
-          Gate does not fall tonight.
+          Stay on this frequency, <mark dir="ltr">{"{player_name}"}</mark>. I can hear you through the static.
         </p>
       </div>
       <div className="rtl-showcase-translation">
@@ -44,8 +43,7 @@ export default function RtlShowcase() {
           <span>{t("landing.context.review")}</span>
         </div>
         <p lang="ar" dir="rtl">
-          اثبُت يا <mark dir="ltr">{"{player_name}"}</mark>. لن تسقط{" "}
-          <em>البوابة الشمالية</em> الليلة.
+          ابقَ على هذا التردد يا <mark dir="ltr">{"{player_name}"}</mark>؛ أسمع صوتك وسط <em>التشويش</em>.
         </p>
       </div>
       <div className="rtl-showcase-foot">

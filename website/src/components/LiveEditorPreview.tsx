@@ -5,15 +5,15 @@ import Icon from './Icon'
 
 const samples = [
   {
-    key: 'quest.northern_gate',
-    source: 'Hold the line, {player_name}.',
-    translation: 'اثبت يا {player_name}.',
+    key: 'quest.last_broadcast',
+    source: 'Stay on this frequency, {player_name}.',
+    translation: 'ابقَ على هذا التردد يا {player_name}.',
   },
   { key: 'ui.menu.start', source: 'Start game', translation: 'ابدأ اللعبة' },
   {
-    key: 'npc.veyra.line',
-    source: 'The <b>Northern Gate</b> holds.',
-    translation: 'لا تزال <b>البوابة الشمالية</b> صامدة.',
+    key: 'npc.mira.line',
+    source: 'The <b>Relay Station</b> is transmitting.',
+    translation: 'عادت <b>محطة الاتصال</b> إلى البث.',
   },
 ] as const
 

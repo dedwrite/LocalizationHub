@@ -11,7 +11,7 @@ npm ci
 npm run website:dev
 ```
 
-The website runs at `http://127.0.0.1:5174`. Browser Local Projects and the Northern Gate sample require no production credentials. Use synthetic fixtures, not real game files or account data, in tests and screenshots.
+The website runs at `http://127.0.0.1:5174`. Browser Local Projects and the Last Broadcast sample require no production credentials. Use synthetic fixtures, not real game files or account data, in tests and screenshots.
 
 For a same-origin backend, configure your own PostgreSQL database and an ignored `collaboration-server/.env.local`, run `npm run db:migrate --workspace collaboration-server`, then `npm run dev --workspace collaboration-server`. Never point development or tests at the production database. Migration and configuration details are in [the backend guide](docs/development.md).
 

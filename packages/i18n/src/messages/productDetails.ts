@@ -30,7 +30,7 @@ export const productDetailsMessages = {
   'product.review.title': {en: 'Know what is done. And what still needs a human.', ar: 'اعرف ما اكتمل. وما يزال يحتاج إنسانًا.'},
   'product.review.body': {en: 'Move entries through Draft, Translated, Needs Review and Approved. Keep assignments, comments and previous versions beside the line.', ar: 'انقل النصوص من المسودة إلى الترجمة والمراجعة والاعتماد. واجعل التكليفات والتعليقات والإصدارات السابقة بجانب السطر.'},
   'product.review.assignee': {en: 'Assigned to reviewer', ar: 'مُسنَد إلى المراجع'},
-  'product.review.comment': {en: 'Keep “Northern Gate” consistent with the glossary entry.', ar: 'حافظ على «البوابة الشمالية» كما وردت في المسرد.'},
+  'product.review.comment': {en: 'Keep “Relay Station” consistent with the glossary entry.', ar: 'حافظ على «محطة الاتصال» كما وردت في المسرد.'},
   'product.review.example': {en: 'Interactive example · changes stay on this page', ar: 'مثال تفاعلي · تبقى التغييرات في هذه الصفحة'},
   'product.review.version': {en: 'VERSION 03 · ILLUSTRATIVE HISTORY', ar: 'الإصدار 03 · سجل توضيحي'},
   'product.review.restore': {en: 'Restore example', ar: 'استعادة المثال'},

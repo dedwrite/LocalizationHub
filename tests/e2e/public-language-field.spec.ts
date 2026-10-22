@@ -52,7 +52,7 @@ for (const locale of ['en', 'ar']) {
     expect((await input.inputValue()).length).toBe(2000)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)
     await page.locator('.preview-reset').click()
-    await expect(input).toHaveValue('اثبت يا {player_name}.')
+    await expect(input).toHaveValue('ابقَ على هذا التردد يا {player_name}.')
     await expect(page.locator('.preview-token-guide code').first()).toHaveAttribute('translate', 'no')
     // Keyboard focus on the native language control must remain visible.
     await page.locator('.mobile-site-menu summary').isVisible().then(async visible => {
@@ -90,9 +90,9 @@ for (const locale of ['en', 'ar']) {
     await expect(page.locator('.preview-check')).toHaveClass(/is-error/)
     await page.locator('.preview-reset').click()
     await expect(page.locator('.preview-check')).toHaveClass(/is-valid/)
-    await expect(page.locator('.live-preview textarea')).toHaveValue('اثبت يا {player_name}.')
+    await expect(page.locator('.live-preview textarea')).toHaveValue('ابقَ على هذا التردد يا {player_name}.')
     await page.locator('.preview-entry').nth(2).click()
-    await expect(page.locator('.preview-source p')).toContainText('<b>Northern Gate</b>')
+    await expect(page.locator('.preview-source p')).toContainText('<b>Relay Station</b>')
     await page.locator('.preview-entry').first().click()
     await page.locator('#context').scrollIntoViewIfNeeded()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width)

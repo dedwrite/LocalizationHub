@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test('brand variants load across public pages and local editor', async ({ page }) => {
-  for (const route of ['/', '/product', '/download', '/privacy', '/app/local?sample=northern-gate']) {
+  for (const route of ['/', '/product', '/download', '/privacy', '/app/local?sample=last-broadcast']) {
     await page.goto(route)
     const marks = page.locator('img[src^="/brand-"]')
     await expect(marks.first()).toBeVisible()

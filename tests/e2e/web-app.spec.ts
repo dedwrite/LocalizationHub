@@ -52,8 +52,8 @@ test.describe('public routing and accessibility', () => {
     await expect(page.getByRole('heading', { name: 'Keep the context. Keep the code intact.' })).toBeVisible()
     await expect(page.getByText('TOKENS VALID')).toBeVisible()
     await expect(page.locator('.rtl-showcase-source mark')).toHaveText('{player_name}')
-    await expect(page.getByText('Captain Veyra')).toBeVisible()
-    await expect(page.locator('.rtl-showcase-context')).toContainText('Northern Gate')
+    await expect(page.getByText('Engineer Mira')).toBeVisible()
+    await expect(page.locator('.rtl-showcase-context')).toContainText('Relay Station')
   })
 
   test('Product FAQ explains public Windows availability', async ({ page }) => {

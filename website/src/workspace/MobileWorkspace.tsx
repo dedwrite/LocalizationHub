@@ -154,7 +154,7 @@ export default function MobileWorkspace(props: MobileWorkspaceProps) {
 
         {surface === 'editor' && (
           <EditorPanel
-            sampleGuide={Boolean(props.local && props.projectId.startsWith('sample:northern-gate:'))}
+            sampleGuide={Boolean(props.local && props.projectId.startsWith('sample:last-broadcast:'))}
             local={props.local}
             entry={props.entry}
             extractionContext={props.draft?.metadata?.extraction?.entries?.[props.entry?.id]?.context}

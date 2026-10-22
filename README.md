@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://localizationhub.app/">Website</a> ·
-  <a href="https://localizationhub.app/app/local?sample=northern-gate">Try the editor</a> ·
+  <a href="https://localizationhub.app/app/local?sample=last-broadcast">Try the editor</a> ·
   <a href="https://github.com/dedwrite/LocalizationHub/releases/latest">Windows download</a> ·
   <a href="https://localizationhub.app/reference">Documentation</a>
 </p>
@@ -28,7 +28,7 @@ Open JSON, CSV or gettext PO files, and save work as a LocalizationHub project (
 
 ## Get started
 
-**In your browser:** [open the Northern Gate sample](https://localizationhub.app/app/local?sample=northern-gate), edit a translation, check its tokens and export. No account needed for local files.
+**In your browser:** [open the Last Broadcast sample](https://localizationhub.app/app/local?sample=last-broadcast), edit a translation, check its tokens and export. No account needed for local files.
 
 **On Windows:** [download the public Windows x64 installer](https://localizationhub.app/download), with its version and SHA-256 checksum. No tester approval or GitHub sign-in is required. Other operating systems do not currently have verified packaged releases.
 

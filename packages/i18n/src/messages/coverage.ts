@@ -119,7 +119,7 @@ export const coverageMessages = {
   'website.extraction.titleEnd': { en: 'game folder.', ar: 'مجلد اللعبة.' },
   'website.context.titleStart': { en: "Keep the context.", ar: "افهم الحوار." },
   'website.context.titleEnd': { en: "Keep the code intact.", ar: "وحافظ على رموزه." },
-  'website.context.demoId': { en: 'ILLUSTRATIVE ENTRY / quest.northern_gate.greeting', ar: 'نص توضيحي / quest.northern_gate.greeting' },
+  'website.context.demoId': { en: 'ILLUSTRATIVE ENTRY / quest.last_broadcast.greeting', ar: 'نص توضيحي / quest.last_broadcast.greeting' },
   'website.feature.titleStart': { en: "From first draft", ar: "من أول مسودة" },
   'website.feature.titleEnd': { en: "to final review.", ar: "إلى آخر مراجعة." },
   'website.handoff.titleStart': { en: 'From file to', ar: 'من الملف إلى' },

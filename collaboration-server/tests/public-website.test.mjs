@@ -75,7 +75,7 @@ describe('public website serving', () => {
     await writeFile(path.join(directory, 'app-shell.html'), '<!doctype html><title>Workspace</title><div id="root"></div>')
     for (const method of ['GET', 'HEAD']) {
       const response = responseRecorder()
-      assert.equal(await servePublicWebsite({ method, url: '/app/local?sample=northern-gate' }, response, directory), true)
+      assert.equal(await servePublicWebsite({ method, url: '/app/local?sample=last-broadcast' }, response, directory), true)
       assert.equal(response.headers['Cache-Control'], 'no-cache')
       if (method === 'GET') assert.match(String(response.body), /<title>Workspace<\/title>/)
       else assert.equal(response.body, undefined)

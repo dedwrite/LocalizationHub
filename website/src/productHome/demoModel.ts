@@ -3,10 +3,10 @@ import { validateProtectedTokens } from '@localizationhub/core'
 export type DemoStage = 'select' | 'translate' | 'validate'
 export type DemoEntry = {id: string; source: string; translation: string}
 export const demoEntries: readonly DemoEntry[] = [
-  {id: 'quest.northern_gate', source: 'Hold the line, {player_name}. The Northern Gate does not fall tonight.', translation: 'اثبُت يا {player_name}. لن تسقط البوابة الشمالية الليلة.'},
+  {id: 'quest.last_broadcast', source: 'Stay on this frequency, {player_name}. I can hear you through the static.', translation: 'ابقَ على هذا التردد يا {player_name}؛ أسمع صوتك وسط التشويش.'},
   {id: 'ui.start', source: 'Start game', translation: 'ابدأ اللعبة'},
-  {id: 'npc.veyra.line', source: 'The gate still holds.', translation: 'ما زالت البوابة صامدة.'},
-  {id: 'item.old_key', source: 'Old iron key', translation: 'مفتاح حديدي قديم'},
+  {id: 'npc.mira.line', source: 'The signal is clear.', translation: 'الإشارة واضحة.'},
+  {id: 'item.spare_cell', source: 'Spare power cell', translation: 'خلية طاقة احتياطية'},
   {id: 'sys.warning', source: 'Connection lost', translation: 'انقطع الاتصال'},
 ]
 export function validateDemoTranslation(source: string, translation: string) {

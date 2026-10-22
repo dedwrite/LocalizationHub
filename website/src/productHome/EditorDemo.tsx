@@ -35,13 +35,13 @@ export default function EditorDemo() {
   const stageKey = {select: 'home.selectStage', translate: 'home.translateStage', validate: 'home.validateStage'} as const
   return <section ref={root} id="home-editor" className="home-editor" aria-label={t('home.demo')} data-stage={story.stage} data-paused={story.paused} data-ready={ready} data-visible={visible}>
     <div className="home-stage" aria-hidden="true"><span key={story.stage}>{t(stageKey[story.stage])}</span></div>
-    <div className="demo-chrome"><div><img src="/product-home/saved.svg" alt="" /><bdi dir="ltr">northern_gate.json</bdi><span className="demo-count">{t('home.count', {count: demoEntries.length})}</span></div><div><bdi dir="ltr">EN → AR</bdi><StatusBadge tone={result?.valid ? 'success' : 'neutral'}>{result?.valid ? t('home.valid') : t('home.local')}</StatusBadge></div></div>
+    <div className="demo-chrome"><div><img src="/product-home/saved.svg" alt="" /><bdi dir="ltr">last_broadcast.json</bdi><span className="demo-count">{t('home.count', {count: demoEntries.length})}</span></div><div><bdi dir="ltr">EN → AR</bdi><StatusBadge tone={result?.valid ? 'success' : 'neutral'}>{result?.valid ? t('home.valid') : t('home.local')}</StatusBadge></div></div>
     <div className="demo-body">
       <aside className="demo-rail" aria-label={t('home.strings')}><div className="demo-rail-title"><span>{t('home.strings')}</span><span>{demoEntries.length.toString().padStart(2, '0')}</span></div>
         <div className="demo-entries">{demoEntries.map((entry, index) => <button type="button" key={entry.id} aria-pressed={story.entry.id === entry.id} onClick={() => {story.selectEntry(entry.id); setEditing(false)}}><span className="demo-number">{(index + 1).toString().padStart(2, '0')}</span><bdi dir="ltr" className="demo-id">{entry.id}</bdi><img src={`/product-home/${index === 0 ? 'warning' : index === 4 ? 'error' : 'success'}.svg`} alt="" /><span dir="ltr" className="demo-excerpt">{entry.source.split('. ')[0]}</span></button>)}</div>
       </aside>
       <div className="demo-content">
-        <p className="demo-context">{t(story.entry.id === 'quest.northern_gate' ? 'home.context' : 'home.example')}</p>
+        <p className="demo-context">{t(story.entry.id === 'quest.last_broadcast' ? 'home.context' : 'home.example')}</p>
         <div className="demo-source"><h2>{t('home.source')}</h2><p dir="ltr"><TokenText text={story.entry.source} /></p></div>
         <div className="demo-translation"><label htmlFor="demo-target">{t('home.arabic')}</label><div className="demo-target-wrap" data-editing={editing}>
           <p className="demo-target-display" dir="rtl" aria-hidden="true" data-reveal={story.stage !== 'select'}><TokenText text={story.translation} /></p>

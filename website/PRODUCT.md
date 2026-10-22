@@ -20,7 +20,7 @@ Local-first game localization with speaker/listener/scene context, protected tok
 
 ## Operating Context
 
-Browser users open JSON, CSV or PO/POT, or explore the fictional Northern Gate sample. Browser-local work stays in that profile and needs explicit backups. Teams may choose authenticated Cloud projects.
+Browser users open JSON, CSV or PO/POT, or explore the fictional Last Broadcast sample. Browser-local work stays in that profile and needs explicit backups. Teams may choose authenticated Cloud projects.
 
 ## Capabilities and Constraints
 
@@ -32,7 +32,7 @@ The user confirmed on 2026-09-30: retain LocalizationHub name and existing logo,
 
 ## Evidence on Hand
 
-Real interactive token-validation demo, bilingual context example, editable 24-entry Northern Gate sample, supported-format guidance, existing legal pages, 74 tips and existing hidden interactions. No invented customers, metrics, testimonials or pricing.
+Real interactive token-validation demo, bilingual context example, editable 24-entry Last Broadcast sample, supported-format guidance, existing legal pages, 74 tips and existing hidden interactions. No invented customers, metrics, testimonials or pricing.
 
 ## Product Principles
 

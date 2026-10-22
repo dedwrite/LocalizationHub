@@ -2,15 +2,15 @@ import { expect, test } from 'vitest'
 import { demoEntries, validateDemoTranslation, nextDemoState, initialDemoState } from './demoModel'
 
 test('validation rejects missing, changed, duplicated tokens and empty text', () => {
-  const source = 'Hold the line, {player_name}.'
-  expect(validateDemoTranslation(source, 'اثبت يا {player_name}.').valid).toBe(true)
+  const source = 'Stay on this frequency, {player_name}.'
+  expect(validateDemoTranslation(source, 'ابقَ على هذا التردد يا {player_name}.').valid).toBe(true)
   for (const text of ['', 'اثبت.', 'اثبت {name}', '{player_name} {player_name}']) expect(validateDemoTranslation(source, text).valid).toBe(false)
 })
 test('story cycles through real translation and validation then resets', () => {
   const start = initialDemoState(false)
   expect(start.stage).toBe('select')
   const translated = nextDemoState(start, {type: 'advance'})
-  expect(translated.translation).toBe('اثبُت يا {player_name}. لن تسقط البوابة الشمالية الليلة.')
+  expect(translated.translation).toBe('ابقَ على هذا التردد يا {player_name}؛ أسمع صوتك وسط التشويش.')
   const validated = nextDemoState(translated, {type: 'advance'})
   expect(validated.stage).toBe('validate')
   expect(nextDemoState(validated, {type: 'advance'}).translation).toBe('')

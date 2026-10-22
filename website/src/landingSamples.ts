@@ -1,5 +1,5 @@
 export const landingSamples = [
-  { format: 'JSON', href: '/samples/northern-gate.json' },
-  { format: 'CSV', href: '/samples/northern-gate.csv' },
-  { format: 'PO', href: '/samples/northern-gate.po' },
+  { format: 'JSON', href: '/samples/last-broadcast.json' },
+  { format: 'CSV', href: '/samples/last-broadcast.csv' },
+  { format: 'PO', href: '/samples/last-broadcast.po' },
 ] as const

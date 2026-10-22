@@ -19,7 +19,7 @@ import './workspace-tools.css'
 import './app-workspace.css'
 import './app-workspace.mobile.css'
 import ShortcutKey from './components/ShortcutKey'
-import { createNorthernGateSample } from './samples/northernGate'
+import { createLastBroadcastSample } from './samples/lastBroadcast'
 
 type LocalRow = { id: string; value: any; savedAt: string }
 type OpenLocal = { id: string; project: LocalizationProjectV3; savedAt?: string }
@@ -37,13 +37,13 @@ export default function LocalWorkspace() {
   function refresh() { loadLocalProjects().then(setRecent).catch(() => setNotice(t('local.storageUnavailable'))) }
   useEffect(refresh, [])
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('sample') === 'northern-gate') openSample()
+    if (new URLSearchParams(window.location.search).get('sample') === 'last-broadcast') openSample()
   }, [])
 
   function openSample() {
     try {
       // Each exploration is a separate copy. Never overwrite a saved sample.
-      setOpened({ id: `sample:northern-gate:${crypto.randomUUID()}`, project: createNorthernGateSample() })
+      setOpened({ id: `sample:last-broadcast:${crypto.randomUUID()}`, project: createLastBroadcastSample() })
       setNotice('')
     } catch { setNotice(t('local.openFailed')) }
   }

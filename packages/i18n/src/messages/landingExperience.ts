@@ -2,11 +2,11 @@ import type { MessageCatalog } from '../types'
 
 export const landingExperienceMessages = {
   'landing.nav.menu': { en: 'Menu', ar: 'القائمة' },
-  'landing.sample.explore': { en: 'Explore Northern Gate', ar: 'جرّب البوابة الشمالية' },
+  'landing.sample.explore': { en: 'Explore Last Broadcast', ar: 'جرّب آخر بث' },
   'landing.sample.noUpload': { en: '24 game lines. No upload. No account.', ar: '٢٤ نصًا من لعبة. دون رفع ملفات أو حساب.' },
   'landing.hero.browser': { en: 'Browser · JSON / CSV / PO', ar: 'المتصفح · JSON / CSV / PO' },
   'landing.hero.desktop': { en: 'Windows · game-text extraction', ar: 'ويندوز · استخراج نصوص الألعاب' },
-  'local.sample.guide': { en: 'Northern Gate is a practice project. Review the dialogue, try the glossary, or fix the missing {gold} token in the reward line. Save keeps your edits in this browser; export a backup for safekeeping.', ar: 'البوابة الشمالية مشروع للتجربة. راجع الحوار، وجرّب قاموس المصطلحات، أو أصلح الرمز الناقص {gold} في نص المكافأة. الحفظ يحتفظ بتعديلاتك في هذا المتصفح؛ صدّر نسخة احتياطية للعمل المهم.' },
+  'local.sample.guide': { en: 'Last Broadcast is a practice project. Review the dialogue, try the glossary, or fix the missing {credits} token in the reward line. Save keeps your edits in this browser; export a backup for safekeeping.', ar: 'آخر بث مشروع للتجربة. راجع الحوار، وجرّب قاموس المصطلحات، أو أصلح الرمز الناقص {credits} في نص المكافأة. الحفظ يحتفظ بتعديلاتك في هذا المتصفح؛ صدّر نسخة احتياطية للعمل المهم.' },
   'landing.nav.editor': { en: 'Inside the editor', ar: 'داخل المحرر' },
   'landing.nav.files': { en: 'Files & engines', ar: 'الملفات والمحركات' },
   'landing.context.example': { en: 'SCENE 01 / TRANSLATION NOTES', ar: 'المشهد 01 / ملاحظات الترجمة' },
@@ -48,7 +48,7 @@ export const landingExperienceMessages = {
   "landing.extraction.details": { en: "How game-folder extraction works", ar: "كيف تُستخرج النصوص من مجلد اللعبة؟" },
   'landing.privacy.details': { en: 'Read the privacy details', ar: 'تفاصيل الخصوصية' },
   "landing.closing.title": { en: "Start with a file.", ar: "ابدأ بملف." },
-  "landing.closing.body": { en: "Open your file in the editor, or try the Northern Gate sample. No account needed.", ar: "افتح ملفك في المحرر، أو جرّب عينة البوابة الشمالية. ما تحتاج حساب." },
+  "landing.closing.body": { en: "Open your file in the editor, or try the Last Broadcast sample. No account needed.", ar: "افتح ملفك في المحرر، أو جرّب عينة آخر بث. ما تحتاج حساب." },
   "landing.download.access": { en: 'The Windows x64 app is available to everyone through GitHub Releases. No account or tester approval is required to download it. You can also use the browser editor.', ar: 'تطبيق ويندوز x64 متاح للجميع عبر إصدارات GitHub. لا تحتاج إلى حساب أو موافقة لتنزيله، ويمكنك أيضًا استخدام محرر المتصفح.' },
 "landing.try.keepTokens": { en: "Keep these in your translation", ar: "رموز يجب إبقاؤها في الترجمة" },
 "landing.try.tokenMissing": { en: "Token missing", ar: "ناقص" },
@@ -59,7 +59,7 @@ export const landingExperienceMessages = {
 "landing.samples.download": { en: "Download {format} sample", ar: "تنزيل عينة {format}" },
   /* One real screenshot of the workspace is the only product visual on the
    * landing. These notes name what the picture actually shows. */
-  'landing.proof.alt': { en: 'The LocalizationHub editor with the Northern Gate sample open: the entry list on the left, the selected line with its speaker, listener and scene in the middle, and the quality, memory and glossary tabs on the right.', ar: 'محرر LocalizationHub وعليه عينة البوابة الشمالية: قائمة النصوص على اليسار، والنص المحدد مع المتحدث والمستمع والمشهد في الوسط، وتبويبات الجودة والذاكرة والمصطلحات على اليمين.' },
+  'landing.proof.alt': { en: 'The LocalizationHub editor with the Last Broadcast sample open: the entry list on the left, the selected line with its speaker, listener and scene in the middle, and the quality, memory and glossary tabs on the right.', ar: 'محرر LocalizationHub وعليه عينة آخر بث: قائمة النصوص على اليسار، والنص المحدد مع المتحدث والمستمع والمشهد في الوسط، وتبويبات الجودة والذاكرة والمصطلحات على اليمين.' },
   'landing.proof.context': { en: 'Context', ar: 'السياق' },
   'landing.proof.contextText': { en: 'Speaker, listener and scene sit beside the line.', ar: 'المتحدث والمستمع والمشهد بجانب النص.' },
   'landing.proof.tokens': { en: 'Protected tokens', ar: 'رموز محمية' },

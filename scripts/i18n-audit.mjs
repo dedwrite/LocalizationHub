@@ -17,22 +17,22 @@ const properNounExemptions = new Set([
   'https://open.spotify.com/track/...', 'LocalizationHub_0.9.3_x64-setup.exe',
   'JSON · CSV · PO · LH Project', 'JSON · CSV · PO · GAME FOLDERS', 'JSON · CSV · PO · .lhproj', 'GODOT · UNREAL · UNITY',
   'LOCALIZATIONHUB /', 'ms',
-  'northern_gate.json', 'EN → AR',
+  'last_broadcast.json', 'EN → AR',
 ])
 const contentExemptions = new Set([
   'menu.settings', '12 / 48', 'Friday · 11:59 PM', 'Developer', 'Translator',
   'Adjust the game settings', 'ضبط إعدادات اللعبة', 'Assigned to samira',
   'Check the tone against the glossary.', 'v0.2', '01', '02', '03', '04', '05',
   'new lines before', 'midnight', '"هوتفكس بسيط. بس', 'سطر جديد قبل', 'منتصف الليل',
-  'quest.northern_gate', 'DIALOGUE', 'Hold the line,', 'Entry 01 of 48', 'does not fall tonight.',
-  'اثبت،', 'اثبت يا', 'البوابة الشمالية', 'لا تسقط الليلة.', 'مثال', '. البوابة الشمالية لا تسقط الليلة.',
-  'Captain Veyra', 'Northern Gate', 'Start game',
+  'quest.last_broadcast', 'DIALOGUE', 'Stay on this frequency,', 'Entry 01 of 48', 'I can hear you through the static.',
+  'ابقَ على هذا التردد يا', 'آخر بث', 'مثال',
+  'Engineer Mira', 'Last Broadcast', 'Start game',
   // Editable game examples in LiveEditorPreview; these are not UI labels.
-  'اثبت يا {player_name}.', 'ابدأ اللعبة', 'لا تزال <b>البوابة الشمالية</b> صامدة.',
+  'ابقَ على هذا التردد يا {player_name}.', 'ابدأ اللعبة', 'عادت <b>محطة الاتصال</b> إلى البث.',
   // Fictional dialogue in the bilingual scene; UI labels use the catalog.
-  'اثبُت يا', '. لن تسقط', 'الليلة.',
+  '؛ أسمع صوتك وسط', 'التشويش',
   // Fixed Arabic game dialogue in the Product translation-memory example.
-  'ما زالت البوابة الشمالية صامدة.',
+  'عادت محطة الاتصال إلى البث.',
   'Motion:', 'Pointer:', 'Registered:', 'Revealed:',
 ])
 // User-requested decorative letters, not Arabic UI copy. Keep the exemption
@@ -40,7 +40,9 @@ const contentExemptions = new Set([
 const decorativeSourceExemptions = new Map([
   ['website/src/components/LanguageField.tsx', new Set(['ع', 'م'])],
   // Editable fictional game data, never interface labels; exact file/values only.
-  ['website/src/productHome/demoModel.ts', new Set(['اثبُت يا {player_name}. لن تسقط البوابة الشمالية الليلة.', 'ابدأ اللعبة', 'ما زالت البوابة صامدة.', 'مفتاح حديدي قديم', 'انقطع الاتصال'])],
+  ['website/src/productHome/demoModel.ts', new Set(['ابقَ على هذا التردد يا {player_name}؛ أسمع صوتك وسط التشويش.', 'ابدأ اللعبة', 'الإشارة واضحة.', 'خلية طاقة احتياطية', 'انقطع الاتصال'])],
+  ['website/src/productDetails/ProductDemos.tsx', new Set(['محطة الاتصال'])],
+  ['website/src/samples/lastBroadcast.ts', new Set(['محطة الاتصال'])],
 ])
 
 function walk(directory) {
